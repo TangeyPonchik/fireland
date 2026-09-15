@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://firelandlauncher.netlify.app">
-    <img src="https://img.shields.io/badge/🎮_Играть-firelandlauncher.netlify.app-6a8aff?style=for-the-badge" alt="Play" />
+  <a href="https://tangeyponchik.github.io/fireland/">
+    <img src="https://img.shields.io/badge/🎮_Играть-tangeyponchik.github.io-6a8aff?style=for-the-badge" alt="Play" />
   </a>
 </p>
 
@@ -19,7 +19,7 @@
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" />
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
   <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Netlify-00C7B7?style=flat-square&logo=netlify&logoColor=white" alt="Netlify" />
+  <img src="https://img.shields.io/badge/GitHub_Pages-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub Pages" />
 </p>
 
 ---
@@ -32,8 +32,10 @@
 - **Frontend:** чистый HTML + CSS + JavaScript (без React/Vue/Svelte)
 - **Сборка:** нет (без Webpack/Vite/npm)
 - **База данных:** Supabase (Postgres + REST + Realtime)
-- **Хостинг:** Netlify (деплой из GitHub)
+- **Хостинг:** GitHub Pages (деплой из GitHub)
 - **Реалтайм:** WebSocket через Supabase Realtime
+
+**⚠️ VPN не нужен.** Сайт работает в России без VPN.
 
 ---
 
@@ -92,7 +94,7 @@
 
 ## 🚀 Как играть?
 
-1. Открой **[firelandlauncher.netlify.app](https://firelandlauncher.netlify.app)**
+1. Открой **[tangeyponchik.github.io/fireland](https://tangeyponchik.github.io/fireland/)**
 2. Введи **ник** (онбординг при первом заходе).
 3. Выбери игру → **Играть**.
 4. Зарабатывай XP, выполняй задания, общайся в чате.
@@ -106,32 +108,32 @@
 ### Архитектура
 
 ```
-┌──────────────────┐
-│   Браузер        │
-│   (index.html)   │
-└────────┬─────────┘
-         │
-         ├── script.js      ← логика лаунчера (игры, XP, задания)
-         ├── messenger.js   ← чат (Realtime через WebSocket)
-         ├── leaderboard.js ← топ игроков (REST)
-         ├── style.css      ← стили (темы, адаптив, TV)
-         │
-         ▼
-┌──────────────────┐
-│   Supabase       │
-│   (Postgres)     │
-│                  │
-│  • messages      │ ← общий чат + ЛС + комнаты
-│  • reactions     │ ← реакции на сообщения
-│  • leaderboard   │ ← XP и уровни игроков
-└──────────────────┘
+┌──────────────────────┐
+│   Браузер            │
+│   (index.html)       │
+└──────────┬───────────┘
+           │
+           ├── script.js       ← логика лаунчера (игры, XP, задания)
+           ├── messenger.js    ← чат (Realtime через WebSocket)
+           ├── leaderboard.js  ← топ игроков (REST)
+           ├── style.css       ← стили (темы, адаптив, TV)
+           │
+           ▼
+┌──────────────────────┐
+│   Supabase           │
+│   (Postgres)         │
+│                      │
+│  • chat_messages     │ ← общий чат + ЛС + комнаты
+│  • chat_reactions    │ ← реакции на сообщения
+│  • leaderboard       │ ← XP и уровни игроков
+└──────────────────────┘
 ```
 
 ### Без фреймворков
 
 **Весь фронтенд — чистый HTML/CSS/JS.** Это значит:
 - **Быстро загружается** — нет бандлов по 500 КБ.
-- **Просто хостить** — Netlify отдаёт статику.
+- **Просто хостить** — GitHub Pages отдаёт статику.
 - **Легко читать код** — открыл DevTools и разобрался.
 
 ### Realtime через Supabase
@@ -154,8 +156,9 @@ FireLand/
 ├── script.js               ← логика лаунчера
 ├── messenger.js            ← чат
 ├── leaderboard.js          ← топ игроков
-├── netlify.toml            ← конфиг деплоя
+├── push.bat                ← скрипт деплоя (двойной клик → git push)
 ├── .gitignore              ← игнор для Git
+├── README.md               ← этот файл
 ├── fireek.mp4              ← маскот (видео)
 │
 ├── ИГРЫ/                   ← основная библиотека
@@ -201,7 +204,7 @@ npx serve
 
 ### Деплой
 
-**Автоматический через GitHub + Netlify:**
+**Автоматический через GitHub + GitHub Pages:**
 
 ```bash
 git add .
@@ -209,7 +212,9 @@ git commit -m "что изменил"
 git push
 ```
 
-**Netlify сам задеплоит за 10-20 секунд.**
+**Или двойной клик на `push.bat`** → введи сообщение → Enter.
+
+**GitHub Pages сам задеплоит за 10-20 секунд.**
 
 ### База данных
 
@@ -218,8 +223,8 @@ git push
 **Схема:**
 
 ```sql
--- Сообщения чата
-CREATE TABLE messages (
+-- Сообщения чата (общий + ЛС + комнаты)
+CREATE TABLE chat_messages (
   id BIGSERIAL PRIMARY KEY,
   room TEXT NOT NULL DEFAULT 'general',
   nickname TEXT NOT NULL,
@@ -229,7 +234,7 @@ CREATE TABLE messages (
 );
 
 -- Реакции
-CREATE TABLE reactions (
+CREATE TABLE chat_reactions (
   id BIGSERIAL PRIMARY KEY,
   message_id BIGINT NOT NULL,
   nickname TEXT NOT NULL,
@@ -259,7 +264,6 @@ CREATE TABLE leaderboard (
 - 🎤 **Голосовые сообщения** — MediaRecorder API.
 - 👥 **Друзья** — таблица friends, добавление по нику.
 - 🔔 **Push-уведомления** — Service Worker.
-- 🌐 **Свой домен** — вместо `netlify.app`.
 - 🎮 **Мультиплеер** — realtime-игры (шахматы, крестики-нолики).
 
 ---
@@ -279,7 +283,7 @@ CREATE TABLE leaderboard (
 
 ## 🔗 Ссылки
 
-- 🌐 **Сайт:** [firelandlauncher.netlify.app](https://firelandlauncher.netlify.app)
+- 🌐 **Сайт (без VPN):** [tangeyponchik.github.io/fireland](https://tangeyponchik.github.io/fireland/)
 - 💻 **GitHub:** [github.com/TangeyPonchik/fireland](https://github.com/TangeyPonchik/fireland)
 - 📧 **Email:** ronormav@gmail.com
 

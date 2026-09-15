@@ -23,6 +23,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.4)}50%{box-shadow:0 0 28px rgba(251,191,36,0.6)}}
 @keyframes reactionPop{0%{transform:scale(0.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 @keyframes replySlide{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
+
 .logo{display:flex;align-items:baseline;gap:6px;user-select:none;line-height:1}
 .logo .fire{font-size:30px;line-height:1;display:inline-block;animation:fireBurn 1.5s ease-in-out infinite;transform-origin:center bottom}
 .logo .launcher{font-family:'Manrope',sans-serif;font-weight:800;color:var(--text-secondary);font-size:26px;letter-spacing:-0.02em;display:inline-block;line-height:1}
@@ -556,8 +557,10 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 
 /* ============================================
-   CHAT / MESSENGER v15
+   CHAT / MESSENGER v18
+   Fixed: hover-actions bug, actions inside message
    ============================================ */
+
 .chat-layout{
   display:grid;
   grid-template-columns:300px 1fr;
@@ -759,7 +762,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   text-align:center;
   animation:pulse 1.5s infinite;
 }
-/* Комнаты */
 .room-item{
   display:flex;
   align-items:center;
@@ -875,7 +877,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   font-style:italic;
   animation:pulse 1.5s infinite;
 }
-/* Панель поиска */
 .chat-search-panel{
   display:none;
   align-items:center;
@@ -923,7 +924,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   transition:background 0.2s,color 0.2s;
 }
 .chat-search-close:hover{background:var(--bg-hover);color:var(--text)}
-/* Сообщения */
 .chat-messages{
   flex:1;
   overflow-y:auto;
@@ -960,6 +960,8 @@ body[data-device="tv"] .support-info{font-size:18px}
   letter-spacing:1px;
   background:var(--panel-bg);
 }
+
+/* ═══ ИСПРАВЛЕНО: кнопки действий ВНУТРИ сообщения, hover не сбрасывается ═══ */
 .chat-message{
   display:flex;
   gap:8px;
@@ -999,6 +1001,7 @@ body[data-device="tv"] .support-info{font-size:18px}
   gap:2px;
   min-width:0;
   max-width:100%;
+  position:relative;
 }
 .chat-author{
   font-size:11px;
@@ -1039,7 +1042,6 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 .chat-message:hover .chat-time{opacity:1}
 .chat-message.grouped .chat-time{opacity:0.5}
-/* Reply-цитата внутри сообщения */
 .chat-reply-quote{
   display:flex;
   flex-direction:column;
@@ -1069,7 +1071,8 @@ body[data-device="tv"] .support-info{font-size:18px}
   max-width:250px;
   font-weight:500;
 }
-/* Кнопки действий (hover) */
+
+/* ═══ FIX: кнопки действий — внутри .chat-message, hover не сбрасывается ═══ */
 .chat-message-actions{
   position:absolute;
   top:-8px;
@@ -1082,12 +1085,26 @@ body[data-device="tv"] .support-info{font-size:18px}
   opacity:0;
   pointer-events:none;
   transition:opacity 0.2s;
-  z-index:5;
+  z-index:10;
   box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  white-space:nowrap;
 }
-.chat-message.me .chat-message-actions{right:calc(100% + 6px);top:4px}
-.chat-message:not(.me) .chat-message-actions{left:calc(100% + 6px);top:4px}
-.chat-message:hover .chat-message-actions{opacity:1;pointer-events:auto}
+.chat-message.me .chat-message-actions{
+  right:0;
+  transform:translateY(-100%);
+}
+.chat-message:not(.me) .chat-message-actions{
+  left:0;
+  transform:translateY(-100%);
+}
+.chat-message:hover .chat-message-actions{
+  opacity:1;
+  pointer-events:auto;
+}
+.chat-message-actions:hover{
+  opacity:1;
+  pointer-events:auto;
+}
 .chat-action-btn{
   background:transparent;
   border:none;
@@ -1105,7 +1122,7 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 .chat-action-btn:hover{background:var(--bg-hover);transform:scale(1.15)}
 .chat-action-btn.danger:hover{background:#ef4444;color:#fff}
-/* Реакции под сообщением */
+
 .chat-reactions{
   display:flex;
   flex-wrap:wrap;
@@ -1138,7 +1155,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   font-size:11px;
   font-weight:800;
 }
-/* Плашка "Ответ на..." */
 .chat-reply-preview{
   display:flex;
   align-items:center;
@@ -1182,7 +1198,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   transition:background 0.2s,color 0.2s;
 }
 .chat-reply-cancel:hover{background:var(--bg-hover);color:var(--text)}
-/* Пустой чат */
 .chat-empty{
   text-align:center;
   padding:40px 20px;
@@ -1190,7 +1205,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   font-size:13px;
   font-weight:600;
 }
-/* Панель эмодзи */
 .chat-emoji-panel{
   display:flex;
   flex-wrap:wrap;
@@ -1215,7 +1229,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   line-height:1;
 }
 .chat-emoji-btn-pick:hover{background:var(--bg-hover);transform:scale(1.2)}
-/* Строка ввода */
 .chat-input-row{
   display:flex;
   gap:8px;
@@ -1275,7 +1288,6 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 .chat-send-btn:hover{background:var(--accent-hover);transform:scale(1.05)}
 .chat-send-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-/* Кнопка "вниз" */
 .chat-scroll-down{
   position:absolute;
   bottom:90px;
@@ -1312,7 +1324,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   border:2px solid var(--bg-card);
   animation:pulse 1.5s infinite;
 }
-/* Модалка профиля другого игрока */
 .user-profile-modal .modal-content{
   max-width:420px;
   text-align:center;
@@ -1394,7 +1405,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   color:#060a1a;
 }
 .user-profile-actions .btn-dm:hover{transform:scale(1.05);background:var(--accent-hover)}
-/* Модалка создания комнаты */
 .room-create-modal .modal-content{max-width:440px}
 .room-create-info{
   font-size:13px;
@@ -1455,7 +1465,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   transition:background 0.2s;
 }
 .room-create-cancel:hover{background:var(--bg-hover)}
-/* Онбординг */
 .nick-onboarding{
   position:fixed;
   inset:0;
@@ -1550,7 +1559,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   transition:color 0.2s;
 }
 .nick-onboarding-skip:hover{color:var(--text)}
-/* Подсказка "Профиль" */
 .level-header-badge::after{
   content:'👤 Профиль';
   position:absolute;
@@ -1573,7 +1581,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   z-index:100;
 }
 .level-header-badge:hover::after{opacity:1}
-/* Адаптив чата */
 @media (max-width:1000px){
   .chat-layout{grid-template-columns:240px 1fr;gap:10px}
 }
@@ -1600,7 +1607,6 @@ body[data-device="tv"] .support-info{font-size:18px}
   .chat-send-btn{min-width:44px;padding:0 14px;font-size:16px}
   .chat-emoji-btn{width:36px;height:36px;font-size:18px}
 }
-/* TV */
 body[data-device="tv"] .chat-layout{
   grid-template-columns:340px 1fr;
   gap:24px;
