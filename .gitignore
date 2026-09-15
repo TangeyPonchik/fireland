@@ -1,2 +1,12 @@
 # Local Netlify folder
 .netlify
+# Local Netlify folder
+.netlify
+
+# Логи
+*.log
+
+# Системные
+desktop.ini
+Thumbs.db
+.DS_Store
