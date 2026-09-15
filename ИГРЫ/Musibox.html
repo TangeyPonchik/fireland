@@ -1,0 +1,2843 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+<meta name="theme-color" content="#0d0d1f" />
+<title>🎧 Musibox Pro</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;min-height:100%;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:radial-gradient(circle at 20% 0%,#1a1a3e 0%,transparent 60%),radial-gradient(circle at 80% 100%,#3e1a3a 0%,transparent 60%),linear-gradient(160deg,#0d0d1f,#16162e);min-height:100vh;color:#fff;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+  body.no-scroll{overflow:hidden}
+  .app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;gap:12px;padding:16px 12px 24px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  .app__header{text-align:center}
+  .app__title{font-size:32px;margin:0 0 4px;font-weight:900;letter-spacing:1.5px;background:linear-gradient(90deg,#4dabf7,#9775fa,#f783ac,#ffd43b,#4dabf7);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:title-shine 8s ease-in-out infinite,title-float 4s ease-in-out infinite}
+  @keyframes title-shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  @keyframes title-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+  .app__subtitle{margin:0;opacity:.6;font-size:12px}
+  .topbar{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;justify-content:center;max-width:1200px;width:100%;margin:0 auto;padding:10px;background:#ffffff08;border-radius:14px;border:1px solid #ffffff15;box-shadow:0 8px 24px #0004,0 0 0 1px #ffffff08 inset}
+  .search-wrap{position:relative;flex:1;min-width:180px;max-width:500px;display:flex}
+  .search-input{flex:1;width:100%;padding:12px 40px 12px 40px;border-radius:12px;border:1px solid #ffffff22;background:#ffffff0d url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'><circle cx='11' cy='11' r='7'/><path d='m21 21-4.35-4.35'/></svg>") no-repeat 14px center;color:#fff;font-size:15px;outline:none;font-family:inherit;min-height:46px}
+  .search-input:focus{border-color:#4dabf7}
+  .search-input::placeholder{color:#8899bb}
+  .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:#ffffff11;border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .search-clear:hover{background:#ffffff22}
+  .fav-filter-btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;padding:12px 18px;border-radius:12px;min-height:46px;background:#ffffff0d;border:1px solid #ffffff1a;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap}
+  .fav-filter-btn:hover,.fav-filter-btn:focus-visible{background:#ffffff1a;outline:none}
+  .fav-filter-btn.active{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#fbbf24;color:#1a1a00;box-shadow:0 0 18px #fbbf2480}
+  .fav-filter-btn .count{background:#00000044;padding:2px 8px;border-radius:8px;font-size:12px;opacity:.85}
+  .guide-btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;padding:12px 18px;border-radius:12px;min-height:46px;background:linear-gradient(180deg,#a855f7,#7c3aed);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px #7c3aed80;transition:transform .15s}
+  .guide-btn:hover{transform:translateY(-2px)}
+  .modes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:1200px;width:100%;margin:0 auto;padding:10px;background:#ffffff08;border-radius:14px;border:1px solid #ffffff15;box-shadow:0 6px 20px #0004,0 0 0 1px #ffffff08 inset}
+  .mode-btn{background:#ffffff0d;border:1px solid #ffffff1a;color:#fff;padding:12px 16px;font-size:14px;font-weight:700;border-radius:12px;cursor:pointer;min-height:46px;display:inline-flex;align-items:center;gap:8px;transition:all .25s cubic-bezier(.34,1.2,.64,1);font-family:inherit;position:relative;overflow:hidden;box-shadow:0 2px 6px #0004}
+  .mode-btn:hover,.mode-btn:focus-visible{background:#ffffff1a;outline:none}
+  .mode-btn.active{background:linear-gradient(180deg,#4dabf7,#1c7ed6);border-color:#4dabf7;box-shadow:0 0 18px #4dabf780}
+  .mode-btn:focus-visible{outline:3px solid #4dabf7;outline-offset:3px}
+  .mode-btn.multi{border-color:#9775fa}
+  .mode-btn.multi.active{background:linear-gradient(180deg,#9775fa,#6741d9);border-color:#9775fa;box-shadow:0 0 18px #9775fa80}
+  .mode-btn .badge{background:#00000044;padding:2px 8px;border-radius:8px;font-size:12px;opacity:.85}
+  .mode-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,#ffffff22 50%,transparent 70%);transform:translateX(-100%);transition:transform .5s ease;pointer-events:none}
+  .mode-btn:hover::after{transform:translateX(100%)}
+  .app__stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .mode-section{width:100%;max-width:1200px;display:flex;flex-direction:column;gap:8px;animation:section-appear .5s ease-out both}
+  @keyframes section-appear{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+  .mode-section__title{font-size:14px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;opacity:.7;margin:0;padding:0 4px;display:flex;align-items:center;gap:8px}
+  .mode-section__title .line{flex:1;height:1px;background:linear-gradient(90deg,#ffffff22,transparent)}
+  .app__characters{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px 8px;max-width:1200px;width:100%;padding:0 4px}
+  .character-wrap{position:relative;display:flex;justify-content:center;animation:char-appear .4s cubic-bezier(.2,.9,.3,1.3) both}
+  .character-wrap:nth-child(1){animation-delay:0ms}
+  .character-wrap:nth-child(2){animation-delay:20ms}
+  .character-wrap:nth-child(3){animation-delay:40ms}
+  .character-wrap:nth-child(4){animation-delay:60ms}
+  .character-wrap:nth-child(5){animation-delay:80ms}
+  .character-wrap:nth-child(6){animation-delay:100ms}
+  .character-wrap:nth-child(7){animation-delay:120ms}
+  .character-wrap:nth-child(8){animation-delay:140ms}
+  .character-wrap:nth-child(9){animation-delay:160ms}
+  .character-wrap:nth-child(10){animation-delay:180ms}
+  .character-wrap:nth-child(11){animation-delay:200ms}
+  .character-wrap:nth-child(12){animation-delay:220ms}
+  .character-wrap:nth-child(n+13){animation-delay:240ms}
+  @keyframes char-appear{0%{opacity:0;transform:translateY(12px) scale(.85)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  .character{background:none;border:none;cursor:pointer;padding:6px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .2s ease;width:100%;font-family:inherit;color:inherit;border-radius:14px;position:relative;overflow:hidden}
+  .character:hover,.character:focus-visible{transform:translateY(-3px);outline:none}
+  .character:focus-visible{box-shadow:0 0 0 3px #4dabf7,0 0 0 6px #4dabf755}
+  .circle{width:56px;height:56px;border-radius:50%;position:relative;transition:all .25s cubic-bezier(.34,1.2,.64,1);display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--char-color);opacity:.55;box-shadow:0 4px 10px #0008;border:2px solid transparent}
+  .character:hover .circle{opacity:.8;transform:scale(1.06);box-shadow:0 6px 16px #000a,0 0 0 1px #ffffff22 inset}
+  .character--active .circle{opacity:1;box-shadow:0 6px 16px #000a,0 0 20px var(--char-color),0 0 0 1px #ffffff44 inset;animation:circle-breathe 1.6s ease-in-out infinite}
+  @keyframes circle-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  .character--preview .circle{opacity:1;box-shadow:0 6px 16px #000a,0 0 20px #fbbf24,0 0 0 2px #fbbf24 inset;animation:circle-breathe 1.2s ease-in-out infinite}
+  .character--pending .circle{opacity:.85;box-shadow:0 6px 16px #000a,0 0 20px #22d3ee,0 0 0 2px #22d3ee inset;animation:circle-breathe 1s ease-in-out infinite}
+  .character--pending .character__label{color:#22d3ee;opacity:1}
+  .character--preview .character__label{color:#fbbf24;opacity:1}
+  .character--active .character__label{color:var(--char-color);opacity:1}
+  .character--muted .circle{opacity:.2;filter:grayscale(.6)}
+  .character--muted .character__label{opacity:.3}
+  .character--fav .circle{border-color:#fbbf24;border-width:2px}
+  .character--soloed .circle{border-color:#22c55e;border-width:2px;box-shadow:0 6px 16px #000a,0 0 14px #22c55e80}
+  .character__label{font-size:10px;font-weight:700;letter-spacing:.5px;color:#fff;opacity:.6;text-transform:uppercase;text-align:center;word-break:break-word;line-height:1.1;max-width:100%}
+  .pending-bar{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:70%;height:3px;background:#00000066;border-radius:2px;overflow:hidden;pointer-events:none}
+  .pending-bar__fill{height:100%;width:0%;transition:width .1s linear;animation:bar-glow .9s ease-in-out infinite}
+  @keyframes bar-glow{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 12px currentColor}}
+  .badges{position:absolute;top:-4px;right:-2px;display:flex;gap:2px;pointer-events:none}
+  .badge-mini{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;border:1.5px solid #0d0d1f}
+  .badge-mini.fav{background:#fbbf24;color:#1a1a00}
+  .badge-mini.solo{background:#22c55e;color:#fff}
+  .badge-mini.mute{background:#ef4444;color:#fff}
+  .character .ripple{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--char-color),transparent 70%);pointer-events:none;animation:ripple-out .6s ease-out forwards;z-index:0}
+  @keyframes ripple-out{0%{transform:scale(.3);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+  .no-results{grid-column:1/-1;text-align:center;padding:60px 20px;opacity:.6;font-size:15px;line-height:1.6}
+  .control-bar{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:14px 16px;background:#ffffff0d;border-radius:16px;border:1px solid #ffffff1a;max-width:1200px;width:100%;box-shadow:0 8px 24px #0004,0 0 0 1px #ffffff08 inset}
+  .btn{background:linear-gradient(180deg,#4dabf7,#1c7ed6);color:#fff;border:none;padding:12px 20px;font-size:15px;font-weight:700;border-radius:12px;cursor:pointer;transition:transform .15s,box-shadow .15s,background .2s;box-shadow:0 4px 12px #1c7ed680;display:inline-flex;align-items:center;gap:8px;font-family:inherit;min-height:46px;text-decoration:none;position:relative;overflow:hidden}
+  .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,#ffffff33 50%,transparent 80%);transform:translateX(-150%);transition:transform .6s ease;pointer-events:none}
+  .btn:hover::before{transform:translateX(150%)}
+  .btn:hover,.btn:focus-visible{transform:translateY(-2px);box-shadow:0 6px 16px #1c7ed6b0;outline:none}
+  .btn:focus-visible{outline:3px solid #4dabf7;outline-offset:3px}
+  .btn:active{transform:translateY(0)}
+  .btn--stop{background:linear-gradient(180deg,#ff6b6b,#e03131);box-shadow:0 4px 12px #e0313180}
+  .btn--ghost{background:#ffffff11;box-shadow:none;border:1px solid #ffffff22}
+  .btn--ghost::before{display:none}
+  .btn--ghost:hover,.btn--ghost:focus-visible{background:#ffffff22;box-shadow:none}
+  .btn--green{background:linear-gradient(180deg,#22c55e,#16a34a);box-shadow:0 4px 12px #22c55e80}
+  .btn--blue{background:linear-gradient(180deg,#3b82f6,#2563eb);box-shadow:0 4px 12px #3b82f680}
+  .btn--rec.active{background:linear-gradient(180deg,#fa5252,#c92a2a);animation:rec-glow 1.2s infinite}
+  @keyframes rec-glow{0%,100%{box-shadow:0 0 0 0 #fa5252aa,0 4px 12px #e0313180}50%{box-shadow:0 0 0 14px #fa525200,0 4px 12px #e0313180}}
+  .counter{color:#fff;font-size:14px;opacity:.75}
+  .counter b{color:#4dabf7}
+  .bars-selector{display:inline-flex;background:#ffffff0d;border-radius:12px;border:1px solid #ffffff1a;overflow:hidden;box-shadow:0 2px 6px #0004}
+  .bars-selector button{background:transparent;border:none;color:#fff;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;opacity:.6;transition:all .2s;font-family:inherit;min-height:46px}
+  .bars-selector button:hover,.bars-selector button:focus-visible{opacity:1;background:#ffffff11;outline:none}
+  .bars-selector button.active{background:#4dabf7;opacity:1}
+  .bonus-popup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:100;animation:bonus-bounce 3.2s ease-out forwards;padding:20px}
+  @keyframes bonus-bounce{0%{opacity:0;transform:scale(.5) rotate(-6deg)}20%{opacity:1;transform:scale(1.08) rotate(2deg)}35%{transform:scale(.98) rotate(-1deg)}50%{transform:scale(1.02) rotate(1deg)}70%{transform:scale(1) rotate(0)}85%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
+  .bonus-popup__inner{background:linear-gradient(135deg,#1a1a3e,#3e1a3a);padding:24px 36px;border-radius:20px;text-align:center;border:2px solid #9775fa;box-shadow:0 0 60px #9775fa88,0 0 120px #9775fa44;max-width:90vw}
+  .bonus-popup__emoji{font-size:52px;margin-bottom:6px}
+  .bonus-popup__title{font-size:22px;font-weight:800;background:linear-gradient(90deg,#4dabf7,#f783ac,#ffd43b);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:4px}
+  .bonus-popup__desc{font-size:13px;opacity:.85}
+  .presets-wrap{display:flex;flex-direction:column;gap:10px;align-items:center;max-width:1200px;width:100%}
+  .presets-row{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;justify-content:center;width:100%}
+  .presets-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .presets-list .preset{display:flex;border-radius:12px;overflow:hidden;border:1px solid #ffffff22}
+  .presets-list .preset .btn{border-radius:0}
+  .preset-input{padding:12px 14px;border-radius:12px;border:1px solid #ffffff22;background:#ffffff0d;color:#fff;font-size:15px;min-width:180px;outline:none;font-family:inherit;min-height:46px}
+  .preset-input:focus{border-color:#4dabf7}
+  .preset-input::placeholder{color:#8899bb}
+  .welcome{position:fixed;inset:0;z-index:500;background:rgba(13,13,31,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:24px;animation:fade-in .3s ease}
+  @keyframes fade-in{from{opacity:0}to{opacity:1}}
+  .welcome h2{font-size:28px;margin:0;background:linear-gradient(90deg,#4dabf7,#f783ac);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .welcome p{opacity:.75;max-width:560px;margin:0;line-height:1.6;font-size:15px}
+  .welcome .btn{font-size:17px;padding:16px 40px;animation:welcome-btn-glow 2s ease-in-out infinite}
+  @keyframes welcome-btn-glow{0%,100%{box-shadow:0 4px 12px #1c7ed680,0 0 0 0 #4dabf7aa}50%{box-shadow:0 6px 20px #1c7ed6c0,0 0 0 14px #4dabf700}}
+  .save-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:12px 24px;border-radius:12px;font-weight:700;z-index:9999;box-shadow:0 8px 24px #22c55e66;animation:toast-pop .35s cubic-bezier(.34,1.4,.64,1) both}
+  @keyframes toast-pop{0%{opacity:0;transform:translate(-50%,-20px) scale(.9)}60%{opacity:1;transform:translate(-50%,4px) scale(1.02)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .tooltip{position:fixed;background:#1a1a2e;border:1px solid #4dabf7;color:#fff;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:500;line-height:1.4;max-width:280px;z-index:1000;box-shadow:0 8px 24px #000a;pointer-events:none;opacity:0;transition:opacity .15s}
+  .tooltip.visible{opacity:1;animation:tooltip-in .18s ease-out both}
+  @keyframes tooltip-in{0%{opacity:0;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+  .tooltip__title{font-weight:800;color:#4dabf7;margin-bottom:2px;font-size:14px}
+  .tooltip__desc{opacity:.85}
+  .guide-modal{position:fixed;inset:0;z-index:2000;background:rgba(13,13,31,.94);display:none;align-items:center;justify-content:center;padding:20px}
+  .guide-modal.show{display:flex}
+  .guide-modal__content{background:#0d0d1f;border:1px solid #ffffff22;border-radius:20px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;position:relative;box-shadow:0 20px 60px #000c;scroll-behavior:smooth}
+  .guide-modal__close{position:absolute;top:12px;right:16px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:.7;transition:opacity .2s}
+  .guide-modal__close:hover{opacity:1}
+  .guide-modal__title{font-size:28px;font-weight:800;margin:0 0 8px;background:linear-gradient(90deg,#4dabf7,#f783ac);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .guide-modal__subtitle{opacity:.7;font-size:14px;margin:0 0 24px}
+  .guide-modal__section{margin-bottom:24px}
+  .guide-modal__section h3{font-size:18px;font-weight:800;margin:0 0 12px;color:#4dabf7;border-bottom:1px solid #ffffff15;padding-bottom:6px}
+  .guide-modal__list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+  .guide-modal__item{background:#ffffff08;border:1px solid #ffffff15;border-radius:10px;padding:8px 12px;font-size:13px}
+  .guide-modal__item b{color:#4dabf7}
+  .guide-modal__tips{background:linear-gradient(135deg,#22c55e15,#16a34a08);border:1px solid #22c55e44;border-radius:12px;padding:16px;margin-top:16px}
+  .guide-modal__tips h4{margin:0 0 8px;color:#22c55e;font-size:15px}
+  .guide-modal__tips ul{margin:0;padding-left:20px;line-height:1.8;font-size:14px;opacity:.9}
+  .guide-modal__tips li{margin-bottom:4px}
+  .master-bar{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:#ffffff0d;border-radius:12px;border:1px solid #ffffff1a;max-width:1200px;width:100%;box-shadow:0 6px 20px #0004,0 0 0 1px #ffffff08 inset}
+  .master-bar label{font-size:12px;opacity:.75;display:flex;align-items:center;gap:6px}
+  .master-bar input[type="range"]{width:110px;accent-color:#4dabf7}
+  .fx-toggle{padding:8px 12px;border-radius:10px;background:#ffffff0d;border:1px solid #ffffff1a;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+  .fx-toggle.active{background:linear-gradient(180deg,#22d3ee,#0891b2);border-color:#22d3ee;color:#001a1f}
+  .settings-popup{position:fixed;background:linear-gradient(180deg,#1e1e33,#15152a);border:1px solid #ffffff22;border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;gap:10px;z-index:1500;box-shadow:0 12px 40px #000d,0 0 0 1px #ffffff10 inset;min-width:230px;animation:popup-in .22s cubic-bezier(.34,1.3,.64,1) both}
+  @keyframes popup-in{0%{opacity:0;transform:translateY(6px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  .settings-popup__title{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--char-color);text-transform:uppercase;text-align:center;padding-bottom:6px;border-bottom:1px solid #ffffff15;margin-bottom:2px}
+  .settings-popup__row{display:flex;align-items:center;gap:8px}
+  .settings-popup__row label{font-size:11px;opacity:.7;min-width:56px}
+  .settings-popup__row input[type="range"]{flex:1;accent-color:var(--char-color)}
+  .settings-popup__val{font-family:'Consolas',monospace;font-size:11px;color:#fff;opacity:.85;min-width:42px;text-align:right}
+  .settings-popup__section{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;opacity:.5;margin-top:4px;margin-bottom:-2px}
+  .settings-popup__pattern-row{display:flex;gap:4px;flex-wrap:wrap}
+  .settings-popup__pattern-btn{padding:4px 8px;border-radius:6px;background:#ffffff11;border:1px solid #ffffff22;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;min-width:30px;transition:all .15s;flex:1}
+  .settings-popup__pattern-btn:hover{background:#ffffff22}
+  .settings-popup__pattern-btn.active{background:linear-gradient(180deg,#a855f7,#7c3aed);border-color:#a855f7;box-shadow:0 0 8px #a855f780}
+  .settings-popup__actions{display:flex;gap:6px;margin-top:4px}
+  .settings-popup__action{flex:1;padding:8px;border-radius:8px;background:#ffffff11;border:1px solid #ffffff22;color:#fff;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+  .settings-popup__action:hover{background:#ffffff22}
+  .settings-popup__action.fav-active{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#fbbf24;color:#1a1a00}
+  .settings-popup__action.solo-active{background:linear-gradient(180deg,#22c55e,#15803d);border-color:#22c55e;color:#fff}
+  .settings-popup__action.mute-active{background:linear-gradient(180deg,#ef4444,#b91c1c);border-color:#ef4444;color:#fff}
+  .seq-modal{position:fixed;inset:0;z-index:2500;background:rgba(13,13,31,.96);display:none;align-items:center;justify-content:center;padding:20px}
+  .seq-modal.show{display:flex}
+  .seq-modal__content{background:#0d0d1f;border:1px solid #ffffff22;border-radius:16px;max-width:1400px;width:100%;max-height:92vh;overflow:hidden;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px #000c}
+  .seq-modal__header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .seq-modal__title{font-size:22px;font-weight:800;margin:0;background:linear-gradient(90deg,#22d3ee,#4dabf7);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .seq-modal__close{background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:.7;padding:0 8px}
+  .seq-modal__close:hover{opacity:1}
+  .seq-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .seq-presets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 10px;background:#ffffff08;border-radius:10px;border:1px solid #ffffff15}
+  .seq-presets__label{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;opacity:.55;margin-right:4px}
+  .seq-preset-btn{padding:8px 12px;border-radius:8px;background:linear-gradient(180deg,#ffffff15,#ffffff08);border:1px solid #ffffff22;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+  .seq-preset-btn:hover{background:linear-gradient(180deg,#ffffff25,#ffffff15);transform:translateY(-1px);box-shadow:0 4px 10px #0006}
+  .seq-preset-btn:active{transform:translateY(0)}
+  .seq-preset-btn--danger{background:linear-gradient(180deg,#ef444422,#b91c1c11);border-color:#ef444455;color:#fca5a5}
+  .seq-preset-btn--danger:hover{background:linear-gradient(180deg,#ef444433,#b91c1c22);box-shadow:0 4px 10px #ef444433}
+  .seq-grid-wrap{overflow:auto;flex:1;border:1px solid #ffffff15;border-radius:10px;background:#ffffff05;scroll-behavior:smooth}
+  .seq-grid{border-collapse:separate;border-spacing:2px;font-size:11px;min-width:100%}
+  .seq-grid th,.seq-grid td{padding:0;text-align:center}
+  .seq-grid th{background:#ffffff08;color:#fff;font-weight:700;padding:4px 6px;position:sticky;top:0;z-index:2}
+  .seq-grid th.beat-mark{background:linear-gradient(180deg,#22d3ee33,#0891b233);color:#22d3ee}
+  .seq-grid th.now-mark{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#1a1a00;box-shadow:0 0 12px #fbbf24}
+  .seq-grid th.label-col,.seq-grid td.label-col{position:sticky;left:0;background:#0d0d1f;z-index:3;text-align:left;padding:4px 10px;font-weight:700;font-size:11px;min-width:130px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:2px solid #ffffff22}
+  .seq-grid th.label-col{z-index:4;background:#1a1a2e}
+  .seq-cell{width:24px;height:24px;background:#ffffff08;border:1px solid #ffffff11;border-radius:4px;cursor:pointer;transition:all .1s}
+  .seq-cell:hover{background:#ffffff1a}
+  .seq-cell.on{background:linear-gradient(135deg,#4dabf7,#1c7ed6);border-color:#4dabf7;box-shadow:0 0 6px #4dabf780;animation:cell-pop .25s cubic-bezier(.34,1.6,.64,1)}
+  @keyframes cell-pop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .seq-cell.now{outline:2px solid #fbbf24;outline-offset:-2px;animation:step-pulse 1s ease-in-out infinite}
+  @keyframes step-pulse{0%,100%{box-shadow:0 0 0 0 #fbbf24cc}50%{box-shadow:0 0 0 6px #fbbf2400}}
+  .seq-cell.beat{background:#ffffff11}
+  .seq-cell.on.beat{background:linear-gradient(135deg,#4dabf7,#1c7ed6)}
+  .seq-legend{display:flex;gap:14px;font-size:11px;opacity:.7;flex-wrap:wrap}
+  .seq-legend span{display:inline-flex;align-items:center;gap:5px}
+  .seq-legend .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .seq-legend .dot.on{background:linear-gradient(135deg,#4dabf7,#1c7ed6)}
+  .seq-legend .dot.off{background:#ffffff11;border:1px solid #ffffff22}
+  @media(max-width:640px){.app{gap:10px;padding:12px 8px 20px}.app__title{font-size:24px}.app__subtitle{font-size:11px}.app__characters{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px 4px}.circle{width:48px;height:48px;font-size:18px}.character__label{font-size:9px}.mode-btn{padding:10px 12px;font-size:13px}.btn{padding:10px 16px;font-size:14px}.guide-modal__content{padding:16px}.guide-modal__title{font-size:22px}.seq-cell{width:20px;height:20px}.seq-modal__content{padding:12px}.seq-preset-btn{padding:6px 8px;font-size:11px}.seq-presets__label{display:none}}
+  @media(min-width:1400px){.app{gap:20px;padding:28px 24px 40px}.app__title{font-size:44px}.app__characters{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:14px 10px;max-width:1600px}.circle{width:72px;height:72px;font-size:26px}.character__label{font-size:12px}.mode-btn{padding:14px 22px;font-size:17px;min-height:56px}.btn{padding:16px 28px;font-size:18px;min-height:56px}.search-input{font-size:18px;min-height:56px;padding:16px 48px}.fav-filter-btn,.guide-btn{padding:16px 24px;font-size:16px;min-height:56px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#ffffff22;border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:#ffffff44}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script src="https://unpkg.com/preact@10.19.3/dist/preact.umd.js"></script>
+<script src="https://unpkg.com/preact@10.19.3/hooks/dist/hooks.umd.js"></script>
+
+<script>
+const { h, render } = preact;
+const { useState, useEffect, useRef, useCallback, useMemo } = preactHooks;
+const html = htm.bind(h);
+
+const BPM = 120;
+const BEAT = 60 / BPM;
+const ONE_BAR = BEAT * 4;
+const DEFAULT_VOL = 0.65;
+const DEFAULT_CUTOFF = 20000;
+const PREVIEW_SECONDS = 4;
+const SEQ_STEPS = 16;
+const TAU = Math.PI * 2;
+
+/* ============================================================
+   ДЕТЕРМИНИРОВАННЫЙ PRNG
+   ============================================================ */
+let __prngState = 0x9E3779B9 >>> 0;
+function resetSeed(s) { __prngState = (s >>> 0) || 0x9E3779B9; }
+function rnd() {
+  __prngState = (__prngState + 0x6D2B79F5) >>> 0;
+  let t = __prngState;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function seedFromString(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+const noise = () => rnd() * 2 - 1;
+
+const N = {
+  A1: 55.00, C2: 65.41, D2: 73.42, E2: 82.41, G2: 98.00,
+  A2: 110.00, C3: 130.81, D3: 146.83, E3: 164.81, G3: 196.00,
+  A3: 220.00, C4: 261.63, D4: 293.66, E4: 329.63, G4: 392.00,
+  A4: 440.00, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99,
+  A5: 880.00, C6: 1046.50, E6: 1318.51,
+};
+
+const DB_NAME = 'musibox_db_pro';
+const DB_VERSION = 1;
+const STORE = 'kv';
+let dbInstance = null;
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (dbInstance) return resolve(dbInstance);
+    try {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      };
+      req.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
+      req.onerror = () => reject(req.error);
+    } catch(err) { reject(err); }
+  });
+}
+async function idbGet(key) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(undefined);
+    });
+  } catch(e) { return undefined; }
+}
+async function idbSet(key, value) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).put(value, key);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    });
+  } catch(e) { return false; }
+}
+
+/* ============================================================
+   МИГРАЦИЯ СТАРЫХ ВЕРСИЙ БД
+   Переносит данные из musibox-*-v1..v8 в текущий v8.
+   Запускается ОДИН РАЗ при загрузке страницы.
+   ============================================================ */
+const CURRENT_VER = 8;
+async function migrateOldData() {
+  const VERSIONS = [1,2,3,4,5,6,7,8];
+  const KEYS = [
+    { name: 'presets',   old: v => `musibox-presets-v${v}`,   cur: `musibox-presets-v${CURRENT_VER}` },
+    { name: 'favorites', old: v => `musibox-favorites-v${v}`, cur: `musibox-favorites-v${CURRENT_VER}` },
+    { name: 'volumes',   old: v => `musibox-volumes-v${v}`,   cur: `musibox-volumes-v${CURRENT_VER}` },
+    { name: 'cutoffs',   old: v => `musibox-cutoffs-v${v}`,   cur: `musibox-cutoffs-v${CURRENT_VER}` },
+    { name: 'master',    old: v => `musibox-master-v${v}`,    cur: `musibox-master-v${CURRENT_VER}` },
+    { name: 'muted',     old: v => `musibox-muted-v${v}`,     cur: `musibox-muted-v${CURRENT_VER}` },
+    { name: 'soloed',    old: v => `musibox-soloed-v${v}`,    cur: `musibox-soloed-v${CURRENT_VER}` },
+    { name: 'patterns',  old: v => `musibox-patterns-v${v}`,  cur: `musibox-patterns-v${CURRENT_VER}` },
+    { name: 'grid',      old: v => `musibox-grid-v${v}`,      cur: `musibox-grid-v${CURRENT_VER}` },
+  ];
+  for (const entry of KEYS) {
+    const existing = await idbGet(entry.cur);
+    if (existing !== undefined && existing !== null) continue;
+    for (let i = VERSIONS.length - 1; i >= 0; i--) {
+      const v = VERSIONS[i];
+      if (v === CURRENT_VER) continue;
+      const data = await idbGet(entry.old(v));
+      if (data !== undefined && data !== null) {
+        await idbSet(entry.cur, data);
+        console.log(`[Musibox] Миграция ${entry.name}: v${v} → v${CURRENT_VER}`);
+        break;
+      }
+    }
+  }
+}
+
+function adsr(i, n, attack, decay, sustain, release) {
+  const t = i / n;
+  if (t < attack) return t / attack;
+  if (t < attack + decay) return 1 - (1 - sustain) * ((t - attack) / decay);
+  if (t < 1 - release) return sustain;
+  return sustain * Math.max(0, (1 - t) / release);
+}
+function softClip(x, drive = 1.5) {
+  const d = Math.tanh(drive);
+  return Math.tanh(x * drive) / (d || 1);
+}
+function hann(n, i) { return 0.5 - 0.5 * Math.cos(TAU * i / n); }
+function applyFade(d, sr, ms = 8) {
+  const n = d.length;
+  let f = Math.floor(sr * ms / 1000); f = Math.min(f, Math.floor(n / 2));
+  if (f <= 0) return;
+  for (let i = 0; i < f; i++) { const k = i / f; d[i] *= k; d[n - 1 - i] *= k; }
+}
+function normalize(d, peak = 0.7) {
+  let p = 0;
+  for (let i = 0; i < d.length; i++) { const a = d[i] < 0 ? -d[i] : d[i]; if (a > p) p = a; }
+  if (p > 1e-6) { const g = peak / p; for (let i = 0; i < d.length; i++) d[i] *= g; }
+}
+function dcBlock(d) {
+  let pIn = 0, pOut = 0; const R = 0.995;
+  for (let i = 0; i < d.length; i++) {
+    const x = d[i]; const y = x - pIn + R * pOut; pIn = x; pOut = y; d[i] = y;
+  }
+}
+function lp1(d, sr, cut) {
+  const dt = 1 / sr, rc = 1 / (TAU * cut), a = dt / (rc + dt); let y = 0;
+  for (let i = 0; i < d.length; i++) { y += a * (d[i] - y); d[i] = y; }
+}
+function hp1(d, sr, cut) {
+  const dt = 1 / sr, rc = 1 / (TAU * cut), a = rc / (rc + dt);
+  let pIn = 0, pOut = 0;
+  for (let i = 0; i < d.length; i++) {
+    const x = d[i]; const y = a * (pOut + x - pIn); pIn = x; pOut = y; d[i] = y;
+  }
+}
+function comb(d, sr, delayMs, fb) {
+  const delay = Math.floor(sr * delayMs / 1000); const buf = new Float32Array(delay); let idx = 0;
+  for (let i = 0; i < d.length; i++) {
+    const out = buf[idx]; buf[idx] = d[i] + out * fb; d[i] = d[i] + out * 0.5; idx = (idx + 1) % delay;
+  }
+}
+function allpass(d, sr, delayMs, fb) {
+  const delay = Math.floor(sr * delayMs / 1000); const buf = new Float32Array(delay); let idx = 0;
+  for (let i = 0; i < d.length; i++) {
+    const bOut = buf[idx]; const out = -d[i] + bOut; buf[idx] = d[i] + bOut * fb; d[i] = out; idx = (idx + 1) % delay;
+  }
+}
+function schroederReverb(d, sr, mix = 0.22) {
+  const dry = new Float32Array(d);
+  comb(d, sr, 29.7, 0.76); comb(d, sr, 37.1, 0.72); comb(d, sr, 41.1, 0.70); comb(d, sr, 43.7, 0.68);
+  allpass(d, sr, 5.0, 0.7); allpass(d, sr, 1.7, 0.7);
+  for (let i = 0; i < d.length; i++) d[i] = dry[i] * (1 - mix) + d[i] * mix * 0.6;
+}
+function makeStereo(ctx, mono, pan = 0) {
+  const sr = ctx.sampleRate;
+  const L = new Float32Array(mono.length), R = new Float32Array(mono.length);
+  const gL = Math.cos((pan + 1) * Math.PI / 4), gR = Math.sin((pan + 1) * Math.PI / 4);
+  const haas = Math.floor(sr * 0.0006);
+  for (let i = 0; i < mono.length; i++) {
+    L[i] = mono[i] * gL;
+    R[i] = (i >= haas ? mono[i - haas] : 0) * gR;
+  }
+  const buf = ctx.createBuffer(2, mono.length, sr);
+  buf.copyToChannel(L, 0); buf.copyToChannel(R, 1);
+  return buf;
+}
+function toBuf(ctx, len) {
+  const b = ctx.createBuffer(1, len, ctx.sampleRate);
+  return { buf: b, d: b.getChannelData(0), sr: ctx.sampleRate, len };
+}
+function bars(len, sr) {
+  const barS = Math.floor(ONE_BAR * sr);
+  return { barS, totalBars: Math.ceil(len / barS) };
+}
+function sawBl(freq, sr, phase) {
+  const t = (phase / TAU) % 1;
+  const dt = freq / sr;
+  let v = 2 * t - 1;
+  if (t < dt) { const x = t / dt; v -= x + x - x * x - 1; }
+  else if (t > 1 - dt) { const x = (t - 1) / dt; v -= x * x + x + x + 1; }
+  return v;
+}
+function makeReverbIR(ctx, dur = 3.2, decay = 2.2) {
+  const sr = ctx.sampleRate, len = Math.floor(sr * dur);
+  const ir = ctx.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      const env = Math.pow(1 - i / len, decay);
+      data[i] = noise() * env * 0.75;
+    }
+    lp1(data, sr, 9000);
+    hp1(data, sr, 120);
+    [0.009, 0.017, 0.025, 0.038, 0.052, 0.071, 0.094].forEach((tap, k) => {
+      const pos = Math.floor(tap * sr) + (ch === 1 ? 43 : 0);
+      if (pos < len) data[pos] += (0.7 - k * 0.08) * (ch === 1 ? -1 : 1);
+    });
+  }
+  return ir;
+}
+function makeDelay(ctx, time = 0.32, fb = 0.42, wet = 0.4) {
+  const input = ctx.createGain();
+  const delay = ctx.createDelay(1.0); delay.delayTime.value = time;
+  const fbg = ctx.createGain(); fbg.gain.value = fb;
+  const damp = ctx.createBiquadFilter(); damp.type = 'lowpass'; damp.frequency.value = 7000; damp.Q.value = 0.5;
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 200;
+  const wg = ctx.createGain(); wg.gain.value = wet;
+  input.connect(delay);
+  delay.connect(damp); damp.connect(hp); hp.connect(fbg); fbg.connect(delay);
+  delay.connect(wg);
+  return { input, output: wg, delay, fb: fbg, damp, hp };
+}
+
+function genMelody(ctx, len, opts) {
+  const { notes, beats, wave = 'saw', env = [0.02, 0.15, 0.65, 0.15], detune = 0, filter = 0, drive = 1.4, pan = 0, reverb = 0, sub = 0, gliss = 0, vibrato = 0 } = opts;
+  const sr = ctx.sampleRate;
+  const mono = new Float32Array(len);
+  const { barS, totalBars } = bars(len, sr);
+  let noteIdx = 0;
+  for (let bar = 0; bar < totalBars; bar++) {
+    for (const b of beats) {
+      const beatPos = typeof b === 'number' ? b : b.t;
+      const fTarget = typeof b === 'number' ? notes[noteIdx++ % notes.length] : b.f;
+      const off = Math.floor(bar * barS + beatPos * BEAT * sr);
+      const noteLen = (typeof b === 'object' && b.d) ? b.d : 0.9;
+      const n = Math.floor(sr * BEAT * noteLen);
+      let p1 = 0, p2 = 0, p3 = 0, lp = 0, vibPhase = 0, f = fTarget * 0.85;
+      for (let i = 0; i < n && off + i < len; i++) {
+        const t = i / sr;
+        const envV = adsr(i, n, env[0], env[1], env[2], env[3]);
+        if (gliss > 0 && t < gliss) {
+          f += (fTarget - f) * (1 / sr / gliss) * 2;
+        } else {
+          f = fTarget;
+        }
+        let vib = 1;
+        if (vibrato > 0) {
+          vibPhase += TAU * 5.5 / sr;
+          vib = 1 + Math.sin(vibPhase) * vibrato;
+        }
+        let s = 0;
+        if (wave === 'saw') {
+          p1 += TAU * f * vib / sr; p2 += TAU * f * vib * (1 + detune) / sr; p3 += TAU * f * vib * (1 - detune) / sr;
+          s = (sawBl(f * vib, sr, p1) + (detune ? sawBl(f * vib * (1 + detune), sr, p2) : 0) + (detune ? sawBl(f * vib * (1 - detune), sr, p3) : 0)) / (detune ? 2.5 : 1);
+        } else if (wave === 'sine') {
+          p1 += TAU * f * vib / sr; s = Math.sin(p1) + (sub ? Math.sin(p1 * 0.5) * sub : 0);
+        } else if (wave === 'tri') {
+          p1 += TAU * f * vib / sr; s = Math.sin(p1) * 0.7 + Math.sin(p1 * 3) * 0.15 + Math.sin(p1 * 5) * 0.08;
+        } else if (wave === 'square') {
+          p1 += TAU * f * vib / sr; s = Math.sign(Math.sin(p1)) * 0.6 + Math.sin(p1) * 0.4;
+        } else if (wave === 'bell') {
+          p1 += TAU * f * vib / sr; p2 += TAU * f * vib * 2.76 / sr;
+          s = Math.sin(p1) * Math.exp(-t * 3) + Math.sin(p2) * Math.exp(-t * 6) * 0.4;
+        } else if (wave === 'reed') {
+          p1 += TAU * f * vib / sr;
+          const saw = sawBl(f * vib, sr, p1);
+          s = Math.tanh(saw * 2.2) * 0.6 + Math.sin(p1 * 2) * 0.2 + Math.sin(p1 * 3) * 0.1;
+        } else if (wave === 'air') {
+          p1 += TAU * f * vib / sr;
+          s = Math.sin(p1) * 0.75 + noise() * 0.06 * Math.exp(-t * 1.5);
+        }
+        if (filter > 0) {
+          const a = (TAU * filter / sr) / (1 + TAU * filter / sr);
+          lp += a * (s - lp); s = lp;
+        }
+        mono[off + i] += softClip(s, drive) * envV;
+      }
+    }
+  }
+  dcBlock(mono);
+  if (reverb > 0) schroederReverb(mono, sr, reverb);
+  normalize(mono, 0.62); applyFade(mono, sr, 5);
+  return makeStereo(ctx, mono, pan);
+}
+
+function genDrum(ctx, len, opts) {
+  const { hits, kind = 'kick', pan = 0, reverb = 0 } = opts;
+  const sr = ctx.sampleRate;
+  const mono = new Float32Array(len);
+  const { barS, totalBars } = bars(len, sr);
+  for (let bar = 0; bar < totalBars; bar++) {
+    for (const h of hits) {
+      const off = Math.floor(bar * barS + h.t * BEAT * sr);
+      if (off >= len) continue;
+      const accent = h.a ?? 1;
+      if (kind === 'kick') {
+        const n = Math.floor(sr * 0.28); let p = 0;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p += TAU * (48 + 130 * Math.exp(-t * 24)) / sr;
+          const body = Math.sin(p) * Math.exp(-t * 6.5) * 0.9;
+          const click = noise() * Math.exp(-t * 260) * 0.22;
+          mono[off + i] += softClip(body + click, 1.4) * accent;
+        }
+      } else if (kind === 'snare') {
+        const n = Math.floor(sr * 0.2); let p = 0;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p += TAU * 185 / sr;
+          const tone = Math.sin(p) * Math.exp(-t * 30) * 0.4;
+          const nz = noise() * Math.exp(-t * 16) * 0.85;
+          mono[off + i] += softClip(tone + nz, 1.3) * 0.65 * accent;
+        }
+      } else if (kind === 'hat') {
+        const n = Math.floor(sr * 0.05);
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          mono[off + i] += noise() * Math.exp(-t * 80) * 0.42 * accent;
+        }
+      } else if (kind === 'clap') {
+        [0, 0.009, 0.018, 0.028].forEach((delay, k) => {
+          const o = off + Math.floor(delay * sr);
+          const n = Math.floor(sr * 0.14);
+          for (let i = 0; i < n && o + i < len; i++) {
+            mono[o + i] += noise() * Math.exp(-(i/sr) * 32) * (0.5 - k * 0.08) * accent;
+          }
+        });
+      } else if (kind === 'tom') {
+        const n = Math.floor(sr * 0.35); let p = 0;
+        const f0 = h.f || 90;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p += TAU * (f0 + f0 * 1.4 * Math.exp(-t * 8)) / sr;
+          mono[off + i] += softClip(Math.sin(p) * Math.exp(-t * 5), 1.3) * 0.85 * accent;
+        }
+      } else if (kind === 'cowbell') {
+        const n = Math.floor(sr * 0.32); let p1 = 0, p2 = 0;
+        const f1 = h.f || 540, f2 = h.f2 || 800;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p1 += TAU * f1 / sr; p2 += TAU * f2 / sr;
+          const envV = adsr(i, n, 0.005, 0.25, 0.3, 0.5);
+          mono[off + i] += softClip((Math.sin(p1) + Math.sin(p2) * 0.65) * envV * 0.5, 1.3) * accent;
+        }
+      } else if (kind === 'shaker') {
+        const n = Math.floor(sr * 0.045);
+        for (let i = 0; i < n && off + i < len; i++) {
+          mono[off + i] += noise() * Math.exp(-(i/sr) * 70) * 0.4 * accent;
+        }
+      } else if (kind === 'rim') {
+        const n = Math.floor(sr * 0.045); let p = 0;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p += TAU * 1700 * Math.exp(-t * 40) / sr;
+          mono[off + i] += (Math.sin(p) * 0.55 + noise() * 0.45) * Math.exp(-t * 70) * 0.6 * accent;
+        }
+      } else if (kind === 'wood') {
+        const n = Math.floor(sr * 0.08); let p = 0;
+        for (let i = 0; i < n && off + i < len; i++) {
+          p += TAU * (h.f || 1200) / sr;
+          mono[off + i] += Math.sin(p) * Math.exp(-(i/sr) * 50) * 0.6 * accent;
+        }
+      } else if (kind === 'triangle') {
+        const n = Math.floor(sr * 1.4); let p1 = 0, p2 = 0;
+        for (let i = 0; i < n && off + i < len; i++) {
+          const t = i / sr;
+          p1 += TAU * 3600 / sr; p2 += TAU * 5400 / sr;
+          const envV = Math.exp(-t * 2.8);
+          mono[off + i] += (Math.sin(p1) * 0.5 + Math.sin(p2) * 0.3) * envV * 0.42 * accent;
+        }
+      }
+    }
+  }
+  if (kind === 'snare') hp1(mono, sr, 220);
+  if (kind === 'hat' || kind === 'shaker') hp1(mono, sr, 6500);
+  if (kind === 'clap') hp1(mono, sr, 900);
+  if (kind === 'cowbell') hp1(mono, sr, 300);
+  dcBlock(mono);
+  if (reverb > 0) schroederReverb(mono, sr, reverb);
+  const target = (kind === 'kick') ? 0.85 : (kind === 'snare') ? 0.7 : (kind === 'hat' || kind === 'shaker') ? 0.5 : 0.65;
+  normalize(mono, target); applyFade(mono, sr, 4);
+  return makeStereo(ctx, mono, pan);
+}
+
+function genChordPad(ctx, len, opts) {
+  const { notes, attack = 0.25, reverb = 0, pan = 0, detune = 0.003, lp = 0 } = opts;
+  const sr = ctx.sampleRate;
+  const voices = [];
+  notes.forEach(f => {
+    if (detune > 0) {
+      voices.push({ f: f * (1 - detune), p: rnd() * TAU, g: 0.4, ch: 0 });
+      voices.push({ f: f * (1 + detune), p: rnd() * TAU, g: 0.4, ch: 1 });
+    } else {
+      voices.push({ f, p: rnd() * TAU, g: 0.5, ch: 0 });
+      voices.push({ f, p: rnd() * TAU, g: 0.5, ch: 1 });
+    }
+  });
+  const L = new Float32Array(len), R = new Float32Array(len);
+  let lpL = 0, lpR = 0;
+  for (let i = 0; i < len; i++) {
+    const env = adsr(i, len, attack, 0.2, 0.8, 0.25);
+    let l = 0, r = 0;
+    voices.forEach(v => {
+      v.p += TAU * v.f / sr;
+      const s = Math.sin(v.p) * v.g;
+      if (v.ch === 0) l += s; else r += s;
+    });
+    if (lp > 0) {
+      const a = (TAU * lp / sr) / (1 + TAU * lp / sr);
+      lpL += a * (l - lpL); lpR += a * (r - lpR);
+      l = lpL; r = lpR;
+    }
+    L[i] = l * env; R[i] = r * env;
+  }
+  dcBlock(L); dcBlock(R);
+  if (reverb > 0) { schroederReverb(L, sr, reverb); schroederReverb(R, sr, reverb); }
+  normalize(L, 0.6); normalize(R, 0.6);
+  const buf = ctx.createBuffer(2, len, sr);
+  buf.copyToChannel(L, 0); buf.copyToChannel(R, 1);
+  return buf;
+}
+
+/* ============ ТРЕКИ ============ */
+const genKick = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:2}] });
+const genKick2 = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:2},{t:2.5,a:0.7}] });
+const genSnare = (ctx, len) => genDrum(ctx, len, { kind: 'snare', hits: [{t:1},{t:3}] });
+const genSnare2 = (ctx, len) => genDrum(ctx, len, { kind: 'snare', hits: [{t:1,a:1.1},{t:3,a:1.1},{t:3.5,a:0.5}] });
+const genHihat = (ctx, len) => genDrum(ctx, len, { kind: 'hat', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t => ({t,a:t%1===0?1:0.7})) });
+const genOpenhat = (ctx, len) => genDrum(ctx, len, { kind: 'hat', hits: [{t:1.5},{t:3.5}] });
+const genRide = (ctx, len) => genDrum(ctx, len, { kind: 'triangle', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,a:0.6})) });
+const genCrash = (ctx, len) => { const b = toBuf(ctx, len); const n = Math.min(Math.floor(b.sr*1.4), len);
+  for (let i=0;i<n;i++){const t=i/b.sr;b.d[i]+=noise()*Math.exp(-t*2.5)*0.5;}
+  hp1(b.d,b.sr,3200);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,6);return makeStereo(ctx,b.d,0.2); };
+const genTom = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:1,f:90},{t:3,f:90}] });
+const genTom2 = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0.5,f:180},{t:2.5,f:180}] });
+const genClap = (ctx, len) => genDrum(ctx, len, { kind: 'clap', hits: [{t:1},{t:3}] });
+const genRim = (ctx, len) => genDrum(ctx, len, { kind: 'rim', hits: [0.5,1.5,2.5,3.5].map(t=>({t})) });
+const genShaker = (ctx, len) => genDrum(ctx, len, { kind: 'shaker', hits: [0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75].map(t=>({t,a:t%0.5===0?1:0.6})) });
+const genShaker2 = (ctx, len) => genDrum(ctx, len, { kind: 'shaker', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,a:1})) });
+const genClave2 = (ctx, len) => genDrum(ctx, len, { kind: 'wood', hits: [{t:0,f:2400},{t:1.5,f:2400},{t:2.5,f:2400},{t:3,f:2400}] });
+const genPerc = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0.5,f:620},{t:1.5,f:830},{t:2.5,f:510},{t:3.5,f:940}], pan: 0 });
+const genConga = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0.5,f:230},{t:1.25,f:260},{t:2,f:210},{t:3,f:250}], pan: -0.15 });
+const genBongo = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0.25,f:420},{t:0.75,f:520},{t:1.5,f:400},{t:2.5,f:470},{t:3.25,f:440}], pan: 0.2 });
+const genCowbell = (ctx, len) => genDrum(ctx, len, { kind: 'cowbell', hits: [0.5,1.5,2.5,3.5].map(t=>({t})) });
+const genWoodblock = (ctx, len) => genDrum(ctx, len, { kind: 'wood', hits: [{t:0,f:1250},{t:1,f:1250},{t:2,f:1250},{t:3,f:1250}] });
+const genTamb = (ctx, len) => genDrum(ctx, len, { kind: 'shaker', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,a:0.9})), pan: 0.15 });
+const genTriangle = (ctx, len) => genDrum(ctx, len, { kind: 'triangle', hits: [{t:0}] });
+const genClave = (ctx, len) => genDrum(ctx, len, { kind: 'wood', hits: [{t:0,f:2100},{t:0.75,f:2100},{t:1.5,f:2100},{t:2,f:2100},{t:3,f:2100}] });
+const genAgogo = (ctx, len) => genDrum(ctx, len, { kind: 'cowbell', hits: [{t:0.5,f:900,f2:1120},{t:1.5,f:1120,f2:1400},{t:2.5,f:900,f2:1120},{t:3.5,f:1120,f2:1400}] });
+const genVibraslap = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS+2*BEAT*b.sr);const n=Math.min(Math.floor(b.sr*0.35),len-off);let p=0;
+  for(let i=0;i<n;i++){const t=i/b.sr;const vib=0.5+Math.sin(TAU*18*t)*0.5;p+=TAU*420/b.sr;b.d[off+i]+=softClip((Math.sin(p)*0.5+noise()*0.5)*vib*Math.exp(-t*7),1.3)*0.5;}}
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,-0.1); };
+const genGuiro = (ctx, len) => { const b=toBuf(ctx,len);const stepS=Math.floor((BEAT/4)*b.sr);
+  for(let i=0;i<len;i+=stepS){const idx=Math.floor(i/stepS)%4;const isL=idx===0||idx===2;const n=Math.floor(b.sr*(isL?0.2:0.09));let modP=0;const modF=isL?58:88;
+  for(let j=0;j<n&&i+j<len;j++){const t=j/b.sr;modP+=TAU*modF/b.sr;const mod=0.5+Math.sin(modP)*0.5;b.d[i+j]+=noise()*mod*Math.min(1,t*50)*Math.exp(-t*(isL?7:14))*0.42;}}
+  hp1(b.d,b.sr,800);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0.1); };
+const genCabasa = (ctx, len) => { const b=toBuf(ctx,len);const stepS=Math.floor((BEAT/2)*b.sr);
+  for(let i=0;i<len;i+=stepS){const n=Math.floor(b.sr*0.08);let m1=0,m2=0;
+  for(let j=0;j<n&&i+j<len;j++){const t=j/b.sr;m1+=TAU*4600/b.sr;m2+=TAU*7200/b.sr;b.d[i+j]+=(noise()*0.65+(Math.sin(m1)+Math.sin(m2)*0.6)*0.28)*Math.exp(-t*55)*0.4;}}
+  hp1(b.d,b.sr,2500);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0.2); };
+const genTrumpet = (ctx, len) => genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.C5, N.A5, N.E5], beats: [{t:0, f:N.A3, d:0.35},{t:0.5, f:N.C4, d:0.35},{t:1, f:N.E4, d:0.35},{t:1.75, f:N.G4, d:0.7},{t:2.5, f:N.A4, d:0.35},{t:3, f:N.C5, d:0.35},{t:3.5, f:N.A4, d:0.5}], wave: 'saw', filter: 4500, env: [0.02, 0.1, 0.7, 0.15], drive: 1.8, pan: -0.15, reverb: 0.18 });
+const genSax = (ctx, len) => genMelody(ctx, len, { notes: [N.D3, N.E3, N.G3, N.A3, N.C4], beats: [{t:0, f:N.D3, d:0.9},{t:1, f:N.G3, d:1.4},{t:2.75, f:N.A3, d:0.5},{t:3.25, f:N.G3, d:0.35},{t:3.6, f:N.E3, d:0.35}], wave: 'reed', filter: 3200, env: [0.1, 0.25, 0.75, 0.2], drive: 1.5, pan: -0.1, reverb: 0.25, vibrato: 0.018, gliss: 0.08 });
+const genOboe = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.D5, N.E5, N.D5, N.C5, N.A4, N.G4], beats: [{t:0.25, f:N.A4, d:0.5},{t:1, f:N.C5, d:0.5},{t:1.75, f:N.D5, d:0.6},{t:2.5, f:N.E5, d:0.4},{t:3, f:N.C5, d:0.35},{t:3.5, f:N.A4, d:0.45}], wave: 'sine', filter: 5000, env: [0.06, 0.15, 0.75, 0.15], drive: 1.3, pan: 0.1, reverb: 0.22, vibrato: 0.012 });
+const genPanflute = (ctx, len) => genMelody(ctx, len, { notes: [N.E5, N.G5, N.A5, N.G5, N.E5, N.D5, N.C5, N.D5], beats: [{t:0, f:N.E5, d:0.2},{t:0.35, f:N.G5, d:0.2},{t:0.7, f:N.A5, d:0.25},{t:1.2, f:N.G5, d:0.2},{t:1.55, f:N.E5, d:0.3},{t:2, f:N.D5, d:0.2},{t:2.35, f:N.C5, d:0.25},{t:2.75, f:N.D5, d:0.2},{t:3.2, f:N.E5, d:0.5}], wave: 'air', env: [0.08, 0.15, 0.8, 0.15], drive: 1, pan: 0.15, reverb: 0.3, vibrato: 0.008 });
+
+const genBass = (ctx, len) => genMelody(ctx, len, { notes: [N.A2, N.A2, N.C3, N.G2], beats: [0,1,2,3], wave: 'sine', env: [0.02,0.1,0.85,0.12], drive: 1.2, pan: 0 });
+const genSub = (ctx, len) => genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.C2], beats: [0,2], wave: 'sine', env: [0.05,0.1,0.9,0.15], drive: 1, pan: 0 });
+const genPad = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4], attack: 0.3, reverb: 0.2, detune: 0.004 });
+const genChoir = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], attack: 0.35, reverb: 0.28, detune: 0.005 });
+const genVocal = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.E4, N.A4, N.G4], beats: [1,3], wave: 'sine', env: [0.1,0.15,0.7,0.2], drive: 1, pan: 0, reverb: 0.22 });
+const genDeepbass = (ctx, len) => genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.1,0.9,0.15], drive: 1.1, pan: 0 });
+const genAcidbass = (ctx, len) => genMelody(ctx, len, { notes: [N.A2, N.C3, N.D3, N.E3, N.D3, N.C3], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.1,0.6,0.3], filter: 2200, drive: 2, pan: 0 });
+const genWarmpad = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], attack: 0.35, reverb: 0.25, detune: 0.005, lp: 1200 });
+const genStringens = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4], attack: 0.4, reverb: 0.28, detune: 0.006, lp: 2500 });
+const genDrone = (ctx, len) => genChordPad(ctx, len, { notes: [N.A2, N.A2*1.5], attack: 0.5, reverb: 0.3, detune: 0.002, lp: 800 });
+const genSynth = (ctx, len) => genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.C4], beats: [0,1,2,3], wave: 'saw', detune: 0.005, filter: 3500, env: [0.01,0.15,0.7,0.15], drive: 1.4, pan: 0 });
+const genArp = (ctx, len) => genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.2,0.5,0.3], drive: 1.3, pan: 0.1, reverb: 0.15 });
+const genPluck = (ctx, len) => genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.E4], beats: [0,1,2,3], wave: 'tri', env: [0.005,0.5,0.15,0.4], drive: 1.2, pan: 0.05 });
+const genBell = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.A5], beats: [0,2], wave: 'bell', env: [0.005,0.3,0.3,0.6], drive: 1, pan: 0.15, reverb: 0.3 });
+const genStab = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4], attack: 0.005, reverb: 0.15, detune: 0.003, lp: 3500 });
+const genChordTrack = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], attack: 0.02, reverb: 0.2, detune: 0.004 });
+const genMarimba = (ctx, len) => genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.A4, N.G4, N.E4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.4,0.2,0.4], drive: 1, pan: 0.05, reverb: 0.15 });
+const genOrgan = (ctx, len) => genChordPad(ctx, len, { notes: [N.A2, N.C3, N.E3], attack: 0.05, reverb: 0.2, detune: 0.003 });
+const genMusicbox = (ctx, len) => genMelody(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.G5, N.E5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], drive: 1, pan: 0.1, reverb: 0.3 });
+const genGlass = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);const notes=[N.C6,N.E6,N.G5];
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*1.2),len-off);const phases=notes.map(()=>0),mods=notes.map(()=>0);
+  for(let i=0;i<n;i++){const t=i/b.sr;const env=Math.exp(-t*3);let s=0;
+  notes.forEach((f,k)=>{mods[k]+=TAU*f*4.7/b.sr;const mod=Math.sin(mods[k])*Math.exp(-t*12)*700;phases[k]+=TAU*f/b.sr;s+=Math.sin(phases[k]+mod)*0.33;});
+  b.d[off+i]+=(s+noise()*0.02*Math.exp(-t*15))*env*0.4;}}
+  schroederReverb(b.d,b.sr,0.22);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0.2); };
+const genLead = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.A4, N.C5], beats: [0,1,2,3], wave: 'square', env: [0.01,0.15,0.65,0.2], drive: 1.3, pan: 0, reverb: 0.15 });
+const genVocoder = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);const fF=[800,1200,2500];
+  for(let bar=0;bar<totalBars;bar++)for(let beat=0;beat<4;beat++){const off=Math.floor(bar*barS+beat*BEAT*b.sr);const f=[N.A2,N.C3,N.G2,N.E3][(bar+beat)%4];const n=Math.floor(b.sr*BEAT*0.85);let p=0;const fp=fF.map(()=>0);
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*f/b.sr;const saw=sawBl(f,b.sr,p);let form=0;fF.forEach((ff,k)=>{fp[k]+=TAU*ff/b.sr;form+=Math.sin(fp[k])*(0.5-k*0.1);});
+  const env=adsr(i,n,0.02,0.2,0.7,0.2);b.d[off+i]+=softClip(saw*(0.4+Math.abs(form)*0.7),1.5)*env*0.4;}}
+  dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0.05); };
+const genRiser = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS+3*BEAT*b.sr);const sLen=Math.min(Math.floor(b.sr*BEAT*0.95),len-off);if(sLen<=0)continue;let p=0;
+  for(let i=0;i<sLen;i++){const q=i/sLen;p+=TAU*(80+q*q*2400)/b.sr;const env=hann(sLen,i)*Math.min(1,(1-q)*2.5);b.d[off+i]+=(Math.sin(p)*0.5+noise()*0.5)*env*0.42;}}
+  dcBlock(b.d);normalize(b.d,0.58);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.2); };
+const genSweep = (ctx, len) => { const b=toBuf(ctx,len);let p=0;
+  for(let i=0;i<len;i++){const t=i/len;p+=TAU*(5000*Math.exp(-t*5)+100)/b.sr;const env=hann(len,i);b.d[i]+=Math.sin(p)*env*0.4;}
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,6);return makeStereo(ctx,b.d,0); };
+const genZap = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.12);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*(2200*Math.exp(-t*40)+180)/b.sr;b.d[off+i]+=Math.sin(p)*Math.exp(-t*28)*0.7;}});
+  dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0); };
+const genNoise = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.floor(b.sr*0.18);
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;b.d[off+i]+=noise()*Math.exp(-t*26)*0.6;}}
+  hp1(b.d,b.sr,1200);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0.15); };
+const genDownlifter = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS+3*BEAT*b.sr);const n=Math.min(Math.floor(b.sr*BEAT*0.9),len-off);if(n<=0)continue;let p=0;
+  for(let i=0;i<n;i++){const q=i/n;p+=TAU*(900*Math.exp(-q*4)+90)/b.sr;const env=hann(n,i);b.d[off+i]+=Math.sin(p)*env*0.42;}}
+  dcBlock(b.d);normalize(b.d,0.58);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,-0.15); };
+const genImpact = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*0.9),len-off);let p=0;
+  for(let i=0;i<n;i++){const t=i/b.sr;p+=TAU*(55*Math.exp(-t*5)+28)/b.sr;const env=Math.exp(-t*3.5);b.d[off+i]+=softClip(Math.sin(p)*env+noise()*Math.exp(-t*12)*0.5,1.7)*0.75;}}
+  schroederReverb(b.d,b.sr,0.25);dcBlock(b.d);normalize(b.d,0.78);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0); };
+const genAlarm = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)for(let beat=0;beat<4;beat++){const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.35);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*(820+Math.sin(TAU*8*t)*320)/b.sr;const env=adsr(i,n,0.02,0.2,0.6,0.3);b.d[off+i]+=Math.sin(p)*env*0.4;}}
+  dcBlock(b.d);normalize(b.d,0.58);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.15); };
+const genGlitch = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)for(let k=0;k<10;k++){const step=Math.floor(rnd()*16);const off=Math.floor(bar*barS+step*(BEAT/4)*b.sr);const n=Math.floor(b.sr*0.025);const bc=4+Math.floor(rnd()*8);
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;const raw=noise()*Math.exp(-t*90)*0.7;b.d[off+i]+=Math.round(raw*bc)/bc;}}
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,2);return makeStereo(ctx,b.d,0.25); };
+const genCowbellphonk = (ctx, len) => genDrum(ctx, len, { kind: 'cowbell', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,f:400,f2:610,a:t%1===0?1:0.75})) });
+const genBass808 = (ctx, len) => genMelody(ctx, len, { notes: [N.A1, N.C2, N.A1, 49], beats: [0,2], wave: 'sine', env: [0.02,0.05,0.9,0.2], drive: 1.4, pan: 0 });
+const genMemphiskick = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0}] });
+const genPhonksnare = (ctx, len) => genDrum(ctx, len, { kind: 'snare', hits: [{t:2,a:1.1}] });
+const genHatroll = (ctx, len) => genDrum(ctx, len, { kind: 'hat', hits: [0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75].map(t=>({t,a:t%1===0?1:0.6})) });
+const genDarkpad = (ctx, len) => genChordPad(ctx, len, { notes: [N.D3, N.A3, N.D4], attack: 0.3, reverb: 0.25, detune: 0.005, lp: 900 });
+const genTapenoise = (ctx, len) => { const b=toBuf(ctx,len);let wp=0;
+  for(let i=0;i<len;i++){wp+=TAU*0.5/b.sr;b.d[i]=noise()*(0.7+Math.sin(wp)*0.3)*0.09;}
+  lp1(b.d,b.sr,6500);hp1(b.d,b.sr,90);dcBlock(b.d);normalize(b.d,0.35);applyFade(b.d,b.sr,6);return makeStereo(ctx,b.d,0.1); };
+const genVocalchop = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[1,3.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.2);let p0=0,p1=0,p2=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p0+=TAU*200/b.sr;p1+=TAU*660/b.sr;p2+=TAU*1700/b.sr;const saw=sawBl(200,b.sr,p0);const form=Math.sin(p1)*0.5+Math.sin(p2)*0.35;const hN=t<0.015?noise()*0.4:0;const env=adsr(i,n,0.005,0.1,0.5,0.5);b.d[off+i]+=softClip(saw*(0.5+Math.abs(form)*0.5)+hN,1.5)*env*0.5;}});
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,-0.1); };
+const genDetunedlead = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.E4, N.G4], beats: [0,1,2,3], wave: 'saw', detune: 0.006, env: [0.01,0.15,0.65,0.2], drive: 1.5, pan: 0.1, reverb: 0.2 });
+const genPhonkbell = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*2),len-off);let p=0,m1=0,m2=0;
+  for(let i=0;i<n;i++){const t=i/b.sr;m1+=TAU*N.A4*2.76/b.sr;m2+=TAU*N.A4*5.4/b.sr;const mod1=Math.sin(m1)*Math.exp(-t*4)*420;const mod2=Math.sin(m2)*Math.exp(-t*8)*160;p+=TAU*N.A4/b.sr;b.d[off+i]+=Math.sin(p+mod1+mod2)*Math.exp(-t*1.4)*0.5;}}
+  schroederReverb(b.d,b.sr,0.22);dcBlock(b.d);normalize(b.d,0.6);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0.15); };
+const genMemphisvox = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);const hg=[1,0.55,0.35,0.2,0.12,0.06,0.03];
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*ONE_BAR*0.95),len-off);const ph=hg.map(()=>rnd()*TAU);
+  for(let i=0;i<n;i++){const t=i/b.sr;let s=0;hg.forEach((g,k)=>{const f=N.A1*(k+1);ph[k]+=TAU*f/b.sr;const d1=Math.exp(-Math.pow((f-380)/70,2));const d2=Math.exp(-Math.pow((f-700)/100,2))*0.6;s+=Math.sin(ph[k])*g*(1+d1*2.5+d2*1.5);});const env=adsr(i,n,0.05,0.15,0.7,0.2);b.d[off+i]+=s*env*0.24;}}
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,-0.1); };
+const genPhonkbrass = (ctx, len) => genChordPad(ctx, len, { notes: [N.A2, N.E3, N.A3, N.C4, N.E4], attack: 0.02, reverb: 0.2, detune: 0.003, lp: 3500 });
+const genScrew808 = (ctx, len) => genMelody(ctx, len, { notes: [N.A1, 49, N.E2, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.08,0.9,0.2], drive: 1.6, pan: 0 });
+const genVintkick = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:1.5,a:0.7},{t:2}] });
+const genVinylsnare = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let i=0;i<len;i++)b.d[i]+=noise()*0.012;
+  for(let bar=0;bar<totalBars;bar++)[1,3].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.25);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*200/b.sr;const tone=Math.sin(p)*Math.exp(-t*18)*0.35;const nz=noise()*Math.exp(-t*16)*0.8;b.d[off+i]+=softClip(tone+nz,1.5)*0.5;}});
+  hp1(b.d,b.sr,250);dcBlock(b.d);normalize(b.d,0.68);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0); };
+const genHuhsample = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.14);let p0=0,p1=0,p2=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p0+=TAU*130/b.sr;p1+=TAU*500/b.sr;p2+=TAU*1100/b.sr;const saw=sawBl(130,b.sr,p0);const form=Math.sin(p1)*0.5+Math.sin(p2)*0.3;const hN=t<0.01?noise()*0.6:0;const env=adsr(i,n,0.005,0.1,0.5,0.5);b.d[off+i]+=softClip(saw*(0.5+Math.abs(form)*0.5)+hN,1.6)*env*0.6;}});
+  dcBlock(b.d);normalize(b.d,0.7);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,-0.05); };
+const genYeahsample = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS+2*BEAT*b.sr);const n=Math.floor(b.sr*0.4);let p0=0,p1=0,p2=0,p3=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p0+=TAU*180/b.sr;p1+=TAU*660/b.sr;p2+=TAU*1700/b.sr;p3+=TAU*2400/b.sr;const saw=sawBl(180,b.sr,p0);const form=Math.sin(p1)*0.5+Math.sin(p2)*0.3+Math.sin(p3)*0.15;const hN=t<0.012?noise()*0.5:0;const am=1+Math.sin(t*42)*0.05;const env=adsr(i,n,0.01,0.15,0.6,0.4);b.d[off+i]+=softClip(saw*(0.5+Math.abs(form)*0.5)+hN,1.6)*env*am*0.5;}}
+  dcBlock(b.d);normalize(b.d,0.7);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.05); };
+const genLofihat = (ctx, len) => { const b=toBuf(ctx,len);const stepS=Math.floor((BEAT/2)*b.sr);let wp=0;
+  for(let i=0;i<len;i+=stepS){wp+=TAU*0.7/b.sr*stepS;const off=Math.max(0,Math.floor(i+Math.sin(wp)*b.sr*0.005));const n=Math.floor(b.sr*0.07);let met=0;
+  for(let j=0;j<n&&off+j<len;j++){const t=j/b.sr;met+=TAU*7200/b.sr;b.d[off+j]+=(noise()*0.8+Math.sin(met)*0.2)*Math.exp(-t*55)*0.32;}}
+  hp1(b.d,b.sr,6500);dcBlock(b.d);normalize(b.d,0.5);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0.1); };
+const genCassettepad = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4], attack: 0.3, reverb: 0.22, detune: 0.006, lp: 2500 });
+const genScrewdark = (ctx, len) => genChordPad(ctx, len, { notes: [N.D3, 174.61, N.A3], attack: 0.4, reverb: 0.28, detune: 0.005, lp: 1200 });
+const genOldbell = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*2),len-off);let p=0,mod=0;
+  for(let i=0;i<n;i++){const t=i/b.sr;mod+=TAU*N.E4*2.5/b.sr;const modSig=Math.sin(mod)*Math.exp(-t*3)*250;p+=TAU*N.E4/b.sr;b.d[off+i]+=Math.sin(p+modSig)*Math.exp(-t*1.2)*0.5;}}
+  schroederReverb(b.d,b.sr,0.28);dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0.15); };
+const genMemphisbrass2 = (ctx, len) => genChordPad(ctx, len, { notes: [N.A2, N.C3, N.E3, N.G3], attack: 0.02, reverb: 0.2, detune: 0.003, lp: 3000 });
+const genSurdo = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:2}] });
+const genRepinique = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0,f:390},{t:1,f:390},{t:1.5,f:390},{t:2,f:390},{t:3,f:390},{t:3.5,f:390}] });
+const genPandeiro = (ctx, len) => genDrum(ctx, len, { kind: 'shaker', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,a:1})), pan: 0.15 });
+const genCuica = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0.5,1.5,2.5,3.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.28);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*(200+Math.sin(t*32)*160+t*420)/b.sr;const env=adsr(i,n,0.02,0.15,0.6,0.35);b.d[off+i]+=Math.sin(p)*env*0.5;}});
+  dcBlock(b.d);normalize(b.d,0.58);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0); };
+const genApito = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.18);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*(2250+Math.sin(t*110)*110)/b.sr;const env=adsr(i,n,0.005,0.1,0.6,0.4);b.d[off+i]+=Math.sin(p)*env*0.42;}});
+  hp1(b.d,b.sr,1800);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0.1); };
+const genBerimbau = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,1.5,3].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.45);let p1=0,p2=0,p3=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p1+=TAU*80/b.sr;p2+=TAU*80*2.3/b.sr;p3+=TAU*80*4.5/b.sr;const env=Math.exp(-t*5);b.d[off+i]+=(Math.sin(p1)+Math.sin(p2)*0.3+Math.sin(p3)*0.15)*env*0.55;}});
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,-0.1); };
+const genShakerwave = (ctx, len) => { const b=toBuf(ctx,len);let w1=0,w2=0;
+  for(let i=0;i<len;i++){w1+=TAU*0.3/b.sr;w2+=TAU*0.15/b.sr;b.d[i]=noise()*0.35*(0.3+(0.5+Math.sin(w1)*0.5)*0.4+(0.5+Math.sin(w2)*0.5)*0.3);}
+  lp1(b.d,b.sr,1400);hp1(b.d,b.sr,80);dcBlock(b.d);normalize(b.d,0.45);applyFade(b.d,b.sr,8);return makeStereo(ctx,b.d,0.25); };
+const genMarimba2 = (ctx, len) => genMelody(ctx, len, { notes: [N.G4, N.A4, N.C5, N.D5, N.E5, N.D5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.4,0.2,0.4], drive: 1, pan: 0.05, reverb: 0.15 });
+const genFlute = (ctx, len) => genMelody(ctx, len, { notes: [N.C5, N.D5, N.E5, N.G5, N.E5, N.D5, N.C5, N.A4], beats: [0,1,2,3], wave: 'air', env: [0.08,0.15,0.8,0.15], drive: 1, pan: 0.1, reverb: 0.25, vibrato: 0.012 });
+const genSeagull = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.45);let p=0,mP=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;mP+=TAU*6/b.sr;const f=(1400+Math.sin(t*16)*220)*(1+Math.sin(mP)*0.15);p+=TAU*f/b.sr;const env=adsr(i,n,0.02,0.15,0.6,0.4);b.d[off+i]+=softClip(Math.sin(p)+noise()*0.15,1.5)*env*0.35;}});
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.2); };
+const genVoxah = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)for(let beat=0;beat<4;beat++){if(beat===0||beat===2)continue;const off=Math.floor(bar*barS+beat*BEAT*b.sr);const f=[N.A3,N.A3,N.C4,N.G3][(bar+beat)%4];const n=Math.floor(b.sr*BEAT*0.85);const hg=[1,0.75,0.5,0.35,0.18,0.1,0.05];const ph=hg.map(()=>rnd()*TAU);let vibP=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;vibP+=TAU*5.5/b.sr;const vib=1+Math.sin(vibP)*0.022;let s=0;hg.forEach((g,k)=>{const f0=f*(k+1)*vib;ph[k]+=TAU*f0/b.sr;const d1=Math.exp(-Math.pow((f0-800)/90,2));const d2=Math.exp(-Math.pow((f0-1200)/100,2))*0.6;const d3=Math.exp(-Math.pow((f0-2500)/200,2))*0.4;s+=Math.sin(ph[k])*g*(1+d1*2+d2*1.5+d3*0.8);});const env=adsr(i,n,0.08,0.2,0.7,0.25);b.d[off+i]+=s*env*0.13;}}
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0); };
+const genVoxooh = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)for(let beat=0;beat<4;beat++){const off=Math.floor(bar*barS+beat*BEAT*b.sr);const f=[N.D3,N.E3,N.C3,N.D3][beat];const n=Math.floor(b.sr*BEAT*0.95);const hg=[1,0.5,0.15,0.08,0.04];const ph=hg.map(()=>rnd()*TAU);let vibP=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;vibP+=TAU*4.5/b.sr;const vib=1+Math.sin(vibP)*0.02;let s=0;hg.forEach((g,k)=>{const f0=f*(k+1)*vib;ph[k]+=TAU*f0/b.sr;const d1=Math.exp(-Math.pow((f0-300)/60,2));const d2=Math.exp(-Math.pow((f0-870)/80,2))*0.5;s+=Math.sin(ph[k])*g*(1+d1*2.5+d2*1.5);});const env=adsr(i,n,0.1,0.2,0.75,0.25);b.d[off+i]+=s*env*0.14;}}
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0); };
+const genVoxhey = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const hL=Math.floor(b.sr*0.03);
+  for(let i=0;i<hL&&off+i<len;i++)b.d[off+i]+=noise()*Math.exp(-(i/b.sr)*60)*0.4;const vOff=off+hL;const vLen=Math.floor(b.sr*0.5);const hg=[1,0.7,0.4,0.25,0.15,0.08];const ph=hg.map(()=>rnd()*TAU);
+  for(let i=0;i<vLen&&vOff+i<len;i++){const t=i/b.sr;let s=0;hg.forEach((g,k)=>{const f0=220*(k+1);ph[k]+=TAU*f0/b.sr;const d1=Math.exp(-Math.pow((f0-500)/90,2));const d2=Math.exp(-Math.pow((f0-1800)/100,2))*0.6;s+=Math.sin(ph[k])*g*(1+d1*2+d2*1.5);});const env=adsr(i,vLen,0.02,0.15,0.5,0.5);b.d[vOff+i]+=s*env*0.16;}});
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0); };
+const genVoxhum = (ctx, len) => { const b=toBuf(ctx,len);const hg=[1,0.3,0.15,0.05,0.02];const ph=hg.map(()=>rnd()*TAU);let vibP=0;
+  for(let i=0;i<len;i++){const t=i/b.sr;const env=adsr(i,len,0.15,0.2,0.75,0.25);vibP+=TAU*3.5/b.sr;const vib=1+Math.sin(vibP)*0.02;let s=0;hg.forEach((g,k)=>{const f0=N.A2*(k+1)*vib;ph[k]+=TAU*f0/b.sr;const d1=Math.exp(-Math.pow((f0-250)/50,2));const d2=Math.exp(-Math.pow((f0-2500)/200,2))*0.3;s+=Math.sin(ph[k])*g*(1+d1*3+d2*1.5);});b.d[i]+=s*env*0.35;}
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0); };
+const genWhisper = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0.5,1.5,2.5,3.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.38);let m1=0,m2=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;m1+=TAU*35/b.sr;m2+=TAU*52/b.sr;const env=adsr(i,n,0.02,0.2,0.6,0.4);const mod=0.4+(0.5+Math.sin(m1)*0.5)*0.3+(0.5+Math.sin(m2)*0.5)*0.3;b.d[off+i]+=noise()*mod*env*0.35;}});
+  hp1(b.d,b.sr,1200);lp1(b.d,b.sr,6000);dcBlock(b.d);normalize(b.d,0.5);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.2); };
+const genGrowl = (ctx, len) => { const b=toBuf(ctx,len);let p0=0,sub=0,fmP=0;
+  for(let i=0;i<len;i++){const t=i/b.sr;const env=adsr(i,len,0.1,0.2,0.8,0.2);sub+=TAU*30/b.sr;fmP+=TAU*7/b.sr;p0+=TAU*(55+Math.sin(fmP)*15)/b.sr;const body=softClip(Math.sin(p0)*4,2.5);const subS=Math.sin(sub)*0.45;const nm=noise()*(0.5+Math.sin(TAU*13*t)*0.5)*0.2;b.d[i]=(body*0.5+subS+nm)*env*0.55;}
+  dcBlock(b.d);normalize(b.d,0.72);applyFade(b.d,b.sr,5);return makeStereo(ctx,b.d,0); };
+const genSynthvox = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);const fF=[800,1150,2900,3900,4950];const fG=[0.5,0.35,0.2,0.1,0.05];
+  for(let bar=0;bar<totalBars;bar++)for(let beat=0;beat<4;beat++){const off=Math.floor(bar*barS+beat*BEAT*b.sr);const f0=[N.D3,N.E3,N.C3,N.G3][beat];const n=Math.floor(b.sr*BEAT*0.9);const fp=fF.map(()=>0);let p0=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p0+=TAU*f0/b.sr;const saw=sawBl(f0,b.sr,p0);let fe=0;for(let k=0;k<5;k++){fp[k]+=TAU*fF[k]/b.sr;fe+=Math.sin(fp[k])*fG[k];}const env=adsr(i,n,0.03,0.15,0.7,0.2);b.d[off+i]+=softClip(saw*0.5+Math.abs(fe)*saw*0.5,1.5)*env*0.4;}}
+  dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.05); };
+const genRobot = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){[{t:0,f:N.A1},{t:1,f:N.C2},{t:2,f:N.E2},{t:3,f:49}].forEach(s=>{const off=Math.floor(bar*barS+s.t*BEAT*b.sr);const n=Math.floor(b.sr*BEAT*0.85);let p=0,ring=0,lfsr=0xACE1,sp=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;sp+=TAU*20/b.sr;const sm=[1,1.059,1.122,0.943][Math.floor(sp/(Math.PI/2))%4];p+=TAU*s.f*sm/b.sr;ring+=TAU*157/b.sr;const bit=((lfsr>>0)^(lfsr>>2)^(lfsr>>3)^(lfsr>>5))&1;lfsr=((lfsr>>1)|(bit<<15))&0xFFFF;const dig=(lfsr/32768)-1;const env=adsr(i,n,0.01,0.15,0.6,0.2);b.d[off+i]+=softClip(softClip(Math.sin(p)*4,3)*Math.sin(ring)*0.7+dig*0.15,1.6)*env*0.45;}});}
+  dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0); };
+const genAngel = (ctx, len) => genChordPad(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.C6], attack: 0.35, reverb: 0.32, detune: 0.004 });
+const genDemon = (ctx, len) => genChordPad(ctx, len, { notes: [N.A2, N.E3, N.A3, N.C4], attack: 0.25, reverb: 0.22, detune: 0.005, lp: 1800 });
+const genGuzheng = (ctx, len) => genMelody(ctx, len, { notes: [N.A3, N.C4, N.D4, N.E4, N.G4, N.E4, N.D4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.2,0.4], drive: 1, pan: 0.05, reverb: 0.22 });
+const genErhu = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.D5, N.C5, N.A4, N.G4, N.A4], beats: [0,1,2,3], wave: 'sine', env: [0.05,0.15,0.7,0.2], drive: 1.1, pan: 0.05, reverb: 0.2, vibrato: 0.02 });
+const genDizi = (ctx, len) => genMelody(ctx, len, { notes: [N.E5, N.G5, N.A5, N.G5, N.E5, N.D5, N.C5, N.D5], beats: [0,1,2,3], wave: 'air', env: [0.06,0.15,0.75,0.2], drive: 1, pan: 0.1, reverb: 0.25, vibrato: 0.015 });
+const genPipa = (ctx, len) => genMelody(ctx, len, { notes: [N.G4, N.A4, N.C5, N.D5, N.E5, N.D5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.35,0.2,0.4], drive: 1, pan: 0.05, reverb: 0.18 });
+const genGong = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++){const off=Math.floor(bar*barS);const n=Math.min(Math.floor(b.sr*ONE_BAR*0.98),len-off);let p1=0,p2=0,p3=0,p4=0;
+  for(let i=0;i<n;i++){const t=i/b.sr;const env=Math.exp(-t*1.4);p1+=TAU*N.A1/b.sr;p2+=TAU*N.A1*1.5/b.sr;p3+=TAU*N.A1*2.4/b.sr;p4+=TAU*N.A1*3.8/b.sr;b.d[off+i]+=softClip(Math.sin(p1)*0.5+Math.sin(p2)*0.3+Math.sin(p3)*0.15+Math.sin(p4)*0.08,1.3)*env*0.5;}}
+  schroederReverb(b.d,b.sr,0.3);dcBlock(b.d);normalize(b.d,0.72);applyFade(b.d,b.sr,6);return makeStereo(ctx,b.d,0); };
+const genBells_cn = (ctx, len) => genMelody(ctx, len, { notes: [N.C5, N.D5, N.E5, N.G5], beats: [0,1,2,3], wave: 'bell', env: [0.005,0.3,0.35,0.6], drive: 1, pan: 0.2, reverb: 0.3 });
+const genTemple = (ctx, len) => genDrum(ctx, len, { kind: 'wood', hits: [{t:0,f:1400},{t:1.5,f:1400},{t:2,f:1400},{t:3.5,f:1400}], pan: -0.15 });
+const genCricket = (ctx, len) => { const b=toBuf(ctx,len);
+  for(let i=0;i<len;i++){const t=i/b.sr;const mod=Math.sin(TAU*8*t)>0.7?1:0;b.d[i]+=noise()*0.025*mod;b.d[i]+=Math.sin(TAU*120*t)*0.008;}
+  hp1(b.d,b.sr,2500);dcBlock(b.d);normalize(b.d,0.4);applyFade(b.d,b.sr,6);return makeStereo(ctx,b.d,0.3); };
+const genTaiko = (ctx, len) => genDrum(ctx, len, { kind: 'tom', hits: [{t:0,f:95},{t:2,f:95}] });
+const genYangqin = (ctx, len) => genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.G5, N.E5, N.C5, N.A4, N.G4], beats: [0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75], wave: 'sine', env: [0.005,0.3,0.2,0.4], drive: 1, pan: 0.05 });
+const genHarp = (ctx, len) => genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], drive: 1, pan: 0.1, reverb: 0.28 });
+const genViolin = (ctx, len) => genMelody(ctx, len, { notes: [N.G4, N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.E4], beats: [0,1,2,3], wave: 'saw', detune: 0.003, filter: 3500, env: [0.08,0.15,0.75,0.2], drive: 1.2, pan: 0, reverb: 0.22, vibrato: 0.018 });
+const genCello = (ctx, len) => genMelody(ctx, len, { notes: [N.G3, N.A3, N.C4, N.E3], beats: [0,1,2,3], wave: 'saw', detune: 0.003, filter: 2000, env: [0.08,0.15,0.78,0.2], drive: 1.2, pan: -0.05, reverb: 0.25, vibrato: 0.014 });
+const genMusicbox2 = (ctx, len) => genMelody(ctx, len, { notes: [N.C5, N.D5, N.E5, N.G5, N.E5, N.D5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], drive: 1, pan: 0.1, reverb: 0.28 });
+const genGlockenspiel = (ctx, len) => genMelody(ctx, len, { notes: [N.A5, N.C6, N.A5, N.E5], beats: [0,1,2,3], wave: 'bell', env: [0.005,0.3,0.35,0.55], drive: 1, pan: 0.2, reverb: 0.3 });
+const genRomancepad = (ctx, len) => genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4], attack: 0.35, reverb: 0.28, detune: 0.004, lp: 2500 });
+const genRomancebass = (ctx, len) => genMelody(ctx, len, { notes: [N.A2, N.E2, N.G2, N.A2], beats: [0,2], wave: 'sine', env: [0.04,0.15,0.8,0.2], drive: 1.1, pan: 0 });
+const genWaterdrop = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,1.25,2.5,3.25].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.18);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;const f=800+1200*Math.exp(-t*12);p+=TAU*f/b.sr;b.d[off+i]+=Math.sin(p)*Math.exp(-t*18)*0.5;}});
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.2); };
+const genHeartbeat = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:0.3,a:0.55}] });
+const genBreath = (ctx, len) => { const b=toBuf(ctx,len);let p=0;
+  for(let i=0;i<len;i++){const t=i/b.sr;const env=adsr(i,len,0.25,0.2,0.8,0.25);p+=TAU*0.3/b.sr;const mod=0.5+Math.sin(p)*0.5;b.d[i]=noise()*0.02*mod*env;}
+  lp1(b.d,b.sr,5500);hp1(b.d,b.sr,120);dcBlock(b.d);normalize(b.d,0.36);applyFade(b.d,b.sr,8);return makeStereo(ctx,b.d,0.15); };
+const genBt_kick = (ctx, len) => genDrum(ctx, len, { kind: 'kick', hits: [{t:0},{t:2}] });
+const genBt_snare = (ctx, len) => genDrum(ctx, len, { kind: 'snare', hits: [{t:1},{t:3}] });
+const genBt_hihat = (ctx, len) => genDrum(ctx, len, { kind: 'hat', hits: [0,0.5,1,1.5,2,2.5,3,3.5].map(t=>({t,a:t%1===0?1:0.7})) });
+const genBt_bass = (ctx, len) => genMelody(ctx, len, { notes: [N.A2, N.C3, N.G2, N.E2], beats: [0,1,2,3], wave: 'sine', env: [0.02,0.1,0.85,0.15], drive: 1.4, pan: 0 });
+const genBt_scratch = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.28);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;const mod=0.5+Math.sin(TAU*12*t)*0.5;p+=TAU*420/b.sr;const env=adsr(i,n,0.02,0.15,0.6,0.3);b.d[off+i]+=softClip((noise()*0.6+Math.sin(p)*0.4)*mod,1.5)*env*0.5;}});
+  dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.1); };
+const genBt_beatbox = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,0.5,1,1.5,2,2.5,3,3.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const isB=beat%1===0;const n=Math.floor(b.sr*0.09);
+  if(isB){let p=0;for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*(80*Math.exp(-t*26)+42)/b.sr;b.d[off+i]+=softClip(Math.sin(p)*Math.exp(-t*16),1.5)*0.65;}}
+  else{for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;b.d[off+i]+=noise()*Math.exp(-t*90)*0.4;}}});
+  dcBlock(b.d);normalize(b.d,0.65);applyFade(b.d,b.sr,3);return makeStereo(ctx,b.d,0); };
+const genBt_inward = (ctx, len) => genMelody(ctx, len, { notes: [N.A1, 49, N.A1, N.C2], beats: [0,2], wave: 'sine', env: [0.05,0.15,0.8,0.2], drive: 1.3, pan: 0 });
+const genBt_liproll = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0,2].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.55);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*35/b.sr;const mod=0.5+Math.sin(p)*0.5;const env=adsr(i,n,0.05,0.15,0.7,0.25);b.d[off+i]+=noise()*mod*env*0.4;}});
+  lp1(b.d,b.sr,3000);dcBlock(b.d);normalize(b.d,0.55);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0); };
+const genBt_pf = (ctx, len) => { const b=toBuf(ctx,len);const{barS,totalBars}=bars(len,b.sr);
+  for(let bar=0;bar<totalBars;bar++)[0.5,2.5].forEach(beat=>{const off=Math.floor(bar*barS+beat*BEAT*b.sr);const n=Math.floor(b.sr*0.32);let p=0;
+  for(let i=0;i<n&&off+i<len;i++){const t=i/b.sr;p+=TAU*180/b.sr;const env=adsr(i,n,0.005,0.1,0.5,0.4);b.d[off+i]+=softClip(Math.sign(Math.sin(p))*0.5+noise()*0.15,1.5)*env*0.5;}});
+  dcBlock(b.d);normalize(b.d,0.62);applyFade(b.d,b.sr,4);return makeStereo(ctx,b.d,0.05); };
+const genBt_synth = (ctx, len) => genMelody(ctx, len, { notes: [N.D3, N.E3, N.G3, N.A3], beats: [0,1,2,3], wave: 'saw', detune: 0.004, filter: 3000, env: [0.03,0.15,0.7,0.2], drive: 1.3, pan: 0.05 });
+
+const GENERATORS = {
+  kick:genKick, kick2:genKick2, snare:genSnare, snare2:genSnare2, hihat:genHihat, openhat:genOpenhat,
+  ride:genRide, crash:genCrash, tom:genTom, tom2:genTom2, clap:genClap, rim:genRim,
+  shaker:genShaker, shaker2:genShaker2, clave2:genClave2,
+  perc:genPerc, conga:genConga, bongo:genBongo, cowbell:genCowbell, woodblock:genWoodblock,
+  tamb:genTamb, triangle:genTriangle, clave:genClave, agogo:genAgogo, vibraslap:genVibraslap,
+  guiro:genGuiro, cabasa:genCabasa,
+  trumpet:genTrumpet, sax:genSax, oboe:genOboe, panflute:genPanflute,
+  bass:genBass, sub:genSub, pad:genPad, choir:genChoir, vocal:genVocal,
+  deepbass:genDeepbass, acidbass:genAcidbass, warmpad:genWarmpad, stringens:genStringens, drone:genDrone,
+  synth:genSynth, arp:genArp, pluck:genPluck, bell:genBell, stab:genStab, chord:genChordTrack,
+  marimba:genMarimba, organ:genOrgan, musicbox:genMusicbox, glass:genGlass,
+  lead:genLead, vocoder:genVocoder, riser:genRiser, sweep:genSweep, zap:genZap, noise:genNoise,
+  downlifter:genDownlifter, impact:genImpact, alarm:genAlarm, glitch:genGlitch,
+  cowbellphonk:genCowbellphonk, bass808:genBass808, memphiskick:genMemphiskick, phonksnare:genPhonksnare,
+  hatroll:genHatroll, darkpad:genDarkpad, tapenoise:genTapenoise, vocalchop:genVocalchop,
+  detunedlead:genDetunedlead, phonkbell:genPhonkbell, memphisvox:genMemphisvox, phonkbrass:genPhonkbrass,
+  screw808:genScrew808, vintkick:genVintkick, vinylsnare:genVinylsnare, huhsample:genHuhsample,
+  yeahsample:genYeahsample, lofihat:genLofihat, cassettepad:genCassettepad, screwdark:genScrewdark,
+  oldbell:genOldbell, memphisbrass2:genMemphisbrass2,
+  surdo:genSurdo, repinique:genRepinique, pandeiro:genPandeiro, cuica:genCuica, apito:genApito,
+  berimbau:genBerimbau, shakerwave:genShakerwave, marimba2:genMarimba2, flute:genFlute, seagull:genSeagull,
+  voxah:genVoxah, voxooh:genVoxooh, voxhey:genVoxhey, voxhum:genVoxhum, whisper:genWhisper,
+  growl:genGrowl, synthvox:genSynthvox, robot:genRobot, angel:genAngel, demon:genDemon,
+  guzheng:genGuzheng, erhu:genErhu, dizi:genDizi, pipa:genPipa, gong:genGong,
+  bells_cn:genBells_cn, temple:genTemple, cricket:genCricket, taiko:genTaiko, yangqin:genYangqin,
+  harp:genHarp, violin:genViolin, cello:genCello, musicbox2:genMusicbox2, glockenspiel:genGlockenspiel,
+  romancepad:genRomancepad, romancebass:genRomancebass, waterdrop:genWaterdrop,
+  heartbeat:genHeartbeat, breath:genBreath,
+  bt_kick:genBt_kick, bt_snare:genBt_snare, bt_hihat:genBt_hihat, bt_bass:genBt_bass,
+  bt_scratch:genBt_scratch, bt_beatbox:genBt_beatbox, bt_inward:genBt_inward,
+  bt_liproll:genBt_liproll, bt_pf:genBt_pf, bt_synth:genBt_synth,
+};
+
+const TRACKS = {
+  kick:{label:'KICK',color:'#ff4d6d',mode:'drums',emoji:'🥁',desc:'Бочка 1 и 3'},
+  kick2:{label:'KICK2',color:'#e63050',mode:'drums',emoji:'🥁',desc:'Бочка 1, 3, 3.5'},
+  snare:{label:'SNARE',color:'#ffa94d',mode:'drums',emoji:'🥁',desc:'Малый 2 и 4'},
+  snare2:{label:'SNARE2',color:'#d97706',mode:'drums',emoji:'🥁',desc:'Снейр с гостом'},
+  hihat:{label:'HIHAT',color:'#ffd43b',mode:'drums',emoji:'🎩',desc:'Хэт 1/8'},
+  openhat:{label:'OPENHAT',color:'#ffd8a8',mode:'drums',emoji:'🎩',desc:'Открытый хэт'},
+  ride:{label:'RIDE',color:'#ffa8a8',mode:'drums',emoji:'🎩',desc:'Райд 1/8'},
+  crash:{label:'CRASH',color:'#fcc419',mode:'drums',emoji:'💥',desc:'Крэш'},
+  tom:{label:'TOM',color:'#ff922b',mode:'drums',emoji:'🥁',desc:'Том низкий 2 и 4'},
+  tom2:{label:'TOM2',color:'#c2410c',mode:'drums',emoji:'🥁',desc:'Том высокий'},
+  clap:{label:'CLAP',color:'#e8590c',mode:'drums',emoji:'👏',desc:'Хлопок'},
+  rim:{label:'RIM',color:'#fab005',mode:'drums',emoji:'🥁',desc:'Римшот 8-е'},
+  shaker:{label:'SHAKER',color:'#ffe066',mode:'drums',emoji:'🥚',desc:'Шейкер 1/16'},
+  shaker2:{label:'SHAKER2',color:'#d4b106',mode:'drums',emoji:'🥚',desc:'Шейкер 1/8'},
+  clave2:{label:'CLAVE2',color:'#ffec99',mode:'drums',emoji:'🥢',desc:'Клаве 3-2'},
+  perc:{label:'PERC',color:'#f783ac',mode:'perc',emoji:'🎛️',desc:'Перкуссия 4 удара'},
+  conga:{label:'CONGA',color:'#e64980',mode:'perc',emoji:'🪘',desc:'Конга'},
+  bongo:{label:'BONGO',color:'#cc5de8',mode:'perc',emoji:'🪘',desc:'Бонго L/R'},
+  cowbell:{label:'COWBELL',color:'#be4bdb',mode:'perc',emoji:'🔔',desc:'Колокольчик'},
+  woodblock:{label:'WOODBLK',color:'#c2255c',mode:'perc',emoji:'🪵',desc:'Деревянный блок'},
+  tamb:{label:'TAMB',color:'#f06595',mode:'perc',emoji:'🪘',desc:'Тамбурин'},
+  triangle:{label:'TRIANGLE',color:'#faa2c1',mode:'perc',emoji:'🔺',desc:'Треугольник'},
+  clave:{label:'CLAVE',color:'#e599f7',mode:'perc',emoji:'🥢',desc:'Клаве 3-2'},
+  agogo:{label:'AGOGO',color:'#da77f2',mode:'perc',emoji:'🔔',desc:'Двойной колокольчик'},
+  vibraslap:{label:'VIBRA',color:'#d0bfff',mode:'perc',emoji:'💫',desc:'Вибраслэп'},
+  guiro:{label:'GUIRO',color:'#fcc2d7',mode:'perc',emoji:'🎋',desc:'Скребок'},
+  cabasa:{label:'CABASA',color:'#f3d9fa',mode:'perc',emoji:'🥚',desc:'Погремушка'},
+  trumpet:{label:'TRUMPET',color:'#f59e0b',mode:'brass',emoji:'🎺',desc:'Труба — фанфары, скачки'},
+  sax:{label:'SAX',color:'#dc2626',mode:'brass',emoji:'🎷',desc:'Саксофон — тёплые длинные'},
+  oboe:{label:'OBOE',color:'#84cc16',mode:'brass',emoji:'🎺',desc:'Гобой — меланхолия с вибрато'},
+  panflute:{label:'PANFLUTE',color:'#eab308',mode:'brass',emoji:'🪈',desc:'Пан-флейта — воздушная быстрая'},
+  bass:{label:'BASS',color:'#51cf66',mode:'low',emoji:'🎸',desc:'Бас-пила'},
+  sub:{label:'SUB',color:'#2f9e44',mode:'low',emoji:'🎸',desc:'Саб A1/G1'},
+  pad:{label:'PAD',color:'#15aabf',mode:'low',emoji:'🎹',desc:'Пэд Am'},
+  choir:{label:'CHOIR',color:'#748ffc',mode:'low',emoji:'🎤',desc:'Хор Am7'},
+  vocal:{label:'VOCAL',color:'#5c7cfa',mode:'low',emoji:'🎤',desc:'Вокал «ааа» 2 и 4'},
+  deepbass:{label:'DEEPBASS',color:'#37b24d',mode:'low',emoji:'🎸',desc:'Глубокий саб'},
+  acidbass:{label:'ACID',color:'#69db7c',mode:'low',emoji:'🎛️',desc:'TB-303'},
+  warmpad:{label:'WARMPAD',color:'#0ca678',mode:'low',emoji:'🎹',desc:'Тёплый пэд'},
+  stringens:{label:'STRINGS',color:'#099268',mode:'low',emoji:'🎻',desc:'Струнные'},
+  drone:{label:'DRONE',color:'#087f5b',mode:'low',emoji:'🎹',desc:'Гул A'},
+  synth:{label:'SYNTH',color:'#22b8cf',mode:'synth',emoji:'🎹',desc:'Синт-пила'},
+  arp:{label:'ARP',color:'#3bc9db',mode:'synth',emoji:'🎹',desc:'Арпеджио 1/8'},
+  pluck:{label:'PLUCK',color:'#0c8599',mode:'synth',emoji:'🎸',desc:'Плак-щипок'},
+  bell:{label:'BELL',color:'#66d9e8',mode:'synth',emoji:'🔔',desc:'FM-колокол'},
+  stab:{label:'STAB',color:'#1098ad',mode:'synth',emoji:'⚡',desc:'Аккорд-стаб'},
+  chord:{label:'CHORD',color:'#22d3ee',mode:'synth',emoji:'🎹',desc:'Am7 весь такт'},
+  marimba:{label:'MARIMBA',color:'#67e8f9',mode:'synth',emoji:'🎵',desc:'Маримба 1/8'},
+  organ:{label:'ORGAN',color:'#06b6d4',mode:'synth',emoji:'🎹',desc:'Орган Am'},
+  musicbox:{label:'MUSICBOX',color:'#a5f3fc',mode:'synth',emoji:'🎁',desc:'Шкатулка'},
+  glass:{label:'GLASS',color:'#cffafe',mode:'synth',emoji:'🥂',desc:'FM-стекло'},
+  lead:{label:'LEAD',color:'#4dabf7',mode:'lead',emoji:'🎤',desc:'Лид-пульс'},
+  vocoder:{label:'VOCODER',color:'#845ef7',mode:'lead',emoji:'🎤',desc:'Вокодер'},
+  riser:{label:'RISER',color:'#cc5de8',mode:'lead',emoji:'📈',desc:'Нарастание'},
+  sweep:{label:'SWEEP',color:'#b197fc',mode:'lead',emoji:'🌀',desc:'Свип 5кГц→100'},
+  zap:{label:'ZAP',color:'#d0bfff',mode:'lead',emoji:'⚡',desc:'Зап-пиу'},
+  noise:{label:'NOISE',color:'#9775fa',mode:'lead',emoji:'📡',desc:'Шум-выброс'},
+  downlifter:{label:'DOWNLIFT',color:'#7048e8',mode:'lead',emoji:'⬇️',desc:'Падение'},
+  impact:{label:'IMPACT',color:'#5f3dc4',mode:'lead',emoji:'💥',desc:'Бум + реверб'},
+  alarm:{label:'ALARM',color:'#e599f7',mode:'lead',emoji:'🚨',desc:'Сирена'},
+  glitch:{label:'GLITCH',color:'#f783ac',mode:'lead',emoji:'📺',desc:'Bit-crush'},
+  cowbellphonk:{label:'COWBELL',color:'#a855f7',mode:'phonk',emoji:'🔔',desc:'Фонк-колокол 1/8'},
+  bass808:{label:'808 BASS',color:'#7c3aed',mode:'phonk',emoji:'🔊',desc:'808 A1/C2'},
+  memphiskick:{label:'MEMPHIS',color:'#6d28d9',mode:'phonk',emoji:'🥁',desc:'Мемфис-кик 1'},
+  phonksnare:{label:'PHONK SNR',color:'#8b5cf6',mode:'phonk',emoji:'🥁',desc:'Снейр 3'},
+  hatroll:{label:'HAT ROLL',color:'#c084fc',mode:'phonk',emoji:'🎩',desc:'1/16 хэт'},
+  darkpad:{label:'DARK PAD',color:'#5b21b6',mode:'phonk',emoji:'🌑',desc:'Dm пэд'},
+  tapenoise:{label:'TAPE',color:'#9333ea',mode:'phonk',emoji:'📼',desc:'Шум кассеты'},
+  vocalchop:{label:'VOX CHOP',color:'#d8b4fe',mode:'phonk',emoji:'🎤',desc:'«Hey!» 2 и 4.5'},
+  detunedlead:{label:'DETUNED',color:'#a78bfa',mode:'phonk',emoji:'🎹',desc:'3 пилы'},
+  phonkbell:{label:'BELL',color:'#7e22ce',mode:'phonk',emoji:'🔔',desc:'FM-колокол'},
+  memphisvox:{label:'MEM VOX',color:'#581c87',mode:'phonk',emoji:'🎤',desc:'Вокальный фон A1'},
+  phonkbrass:{label:'BRASS',color:'#c4b5fd',mode:'phonk',emoji:'🎺',desc:'Am аккорд'},
+  screw808:{label:'SCREW 808',color:'#b45309',mode:'memphis',emoji:'🔊',desc:'Замедленный 808'},
+  vintkick:{label:'VINT KICK',color:'#78350f',mode:'memphis',emoji:'🥁',desc:'Винтаж-кик'},
+  vinylsnare:{label:'VINYL SNR',color:'#92400e',mode:'memphis',emoji:'📼',desc:'Снейр + винил'},
+  huhsample:{label:'HUH!',color:'#d97706',mode:'memphis',emoji:'🎤',desc:'Чоп «huh!» 1 и 3.5'},
+  yeahsample:{label:'YEAH!',color:'#f59e0b',mode:'memphis',emoji:'🎤',desc:'Чоп «yeah!» 3'},
+  lofihat:{label:'LO-FI HAT',color:'#fbbf24',mode:'memphis',emoji:'🎩',desc:'Хэт wow'},
+  cassettepad:{label:'CASSETTE',color:'#a16207',mode:'memphis',emoji:'📼',desc:'Пэд через кассету'},
+  screwdark:{label:'SCREW PAD',color:'#854d0e',mode:'memphis',emoji:'🌑',desc:'Dm пэд'},
+  oldbell:{label:'OLD BELL',color:'#ca8a04',mode:'memphis',emoji:'🔔',desc:'FM-колокол'},
+  memphisbrass2:{label:'DIRTY BRS',color:'#eab308',mode:'memphis',emoji:'🎺',desc:'Am аккорд'},
+  surdo:{label:'SURDO',color:'#0ea5e9',mode:'samba',emoji:'🥁',desc:'Большой барабан'},
+  repinique:{label:'REPINIQ',color:'#0284c7',mode:'samba',emoji:'🥁',desc:'Ведущий барабан'},
+  pandeiro:{label:'PANDEIRO',color:'#0d9488',mode:'samba',emoji:'🪘',desc:'Бубен'},
+  cuica:{label:'CUICA',color:'#14b8a6',mode:'samba',emoji:'🎍',desc:'Говорящий барабан'},
+  apito:{label:'APITO',color:'#22d3ee',mode:'samba',emoji:'📢',desc:'Свисток'},
+  berimbau:{label:'BERIMBAU',color:'#06b6d4',mode:'samba',emoji:'🎵',desc:'Однострунный'},
+  shakerwave:{label:'WAVE',color:'#3b82f6',mode:'samba',emoji:'🌊',desc:'Шум океана'},
+  marimba2:{label:'MARIMBA2',color:'#60a5fa',mode:'samba',emoji:'🎵',desc:'Яркая маримба'},
+  flute:{label:'FLUTE',color:'#7dd3fc',mode:'samba',emoji:'🪈',desc:'Флейта'},
+  seagull:{label:'SEAGULL',color:'#a5f3fc',mode:'samba',emoji:'🕊️',desc:'Чайки'},
+  voxah:{label:'VOX AH',color:'#5c7cfa',mode:'voices',emoji:'🎤',desc:'Гласная «А»'},
+  voxooh:{label:'VOX OOH',color:'#748ffc',mode:'voices',emoji:'🎤',desc:'Гласная «У»'},
+  voxhey:{label:'VOX HEY',color:'#9775fa',mode:'voices',emoji:'🎤',desc:'«ХЭЙ»'},
+  voxhum:{label:'VOX HUM',color:'#845ef7',mode:'voices',emoji:'🎤',desc:'«Ммм»'},
+  whisper:{label:'WHISPER',color:'#a5b4fc',mode:'voices',emoji:'🤫',desc:'Шёпот'},
+  growl:{label:'GROWL',color:'#6366f1',mode:'voices',emoji:'😈',desc:'Рычание'},
+  synthvox:{label:'SYNTHVOX',color:'#818cf8',mode:'voices',emoji:'🎤',desc:'5 формант'},
+  robot:{label:'ROBOT',color:'#a78bfa',mode:'voices',emoji:'🤖',desc:'Ring + LFSR'},
+  angel:{label:'ANGEL',color:'#c4b5fd',mode:'voices',emoji:'😇',desc:'12 голосов + реверб'},
+  demon:{label:'DEMON',color:'#4c1d95',mode:'voices',emoji:'👹',desc:'Sub-octave'},
+  guzheng:{label:'GUZHENG',color:'#dc2626',mode:'china',emoji:'🎋',desc:'Цитра пентатоника'},
+  erhu:{label:'ERHU',color:'#b91c1c',mode:'china',emoji:'🎻',desc:'Китайская скрипка'},
+  dizi:{label:'DIZI',color:'#f59e0b',mode:'china',emoji:'🪈',desc:'Бамбуковая флейта'},
+  pipa:{label:'PIPA',color:'#a16207',mode:'china',emoji:'🎸',desc:'Лютня 1/8'},
+  gong:{label:'GONG',color:'#78350f',mode:'china',emoji:'🥏',desc:'Большой гонг'},
+  bells_cn:{label:'BELLS',color:'#fbbf24',mode:'china',emoji:'🔔',desc:'Колокольчики 1/8'},
+  temple:{label:'TEMPLE',color:'#92400e',mode:'china',emoji:'🪵',desc:'Храмовой блок'},
+  cricket:{label:'CRICKET',color:'#84cc16',mode:'china',emoji:'🦗',desc:'Сверчки'},
+  taiko:{label:'TAIKO',color:'#7c2d12',mode:'china',emoji:'🥁',desc:'Японский тайко 1 и 3'},
+  yangqin:{label:'YANGQIN',color:'#ca8a04',mode:'china',emoji:'🎼',desc:'Цимбалы 1/16'},
+  harp:{label:'HARP',color:'#f472b6',mode:'romance',emoji:'🎵',desc:'Арфа арпеджио'},
+  violin:{label:'VIOLIN',color:'#ec4899',mode:'romance',emoji:'🎻',desc:'Скрипка мелодия'},
+  cello:{label:'CELLO',color:'#db2777',mode:'romance',emoji:'🎻',desc:'Виолончель бас'},
+  musicbox2:{label:'MBOX2',color:'#fbcfe8',mode:'romance',emoji:'🎁',desc:'Шкатулка 1/8'},
+  glockenspiel:{label:'GLOCKEN',color:'#fda4af',mode:'romance',emoji:'🔔',desc:'Колокольчики акценты'},
+  romancepad:{label:'RPAD',color:'#f9a8d4',mode:'romance',emoji:'🎹',desc:'Мягкий пэд Am'},
+  romancebass:{label:'RBASS',color:'#be185d',mode:'romance',emoji:'🎸',desc:'Мягкий бас A/E/G'},
+  waterdrop:{label:'WATER',color:'#a5b4fc',mode:'romance',emoji:'💧',desc:'Капли'},
+  heartbeat:{label:'HEART',color:'#ef4444',mode:'romance',emoji:'❤️',desc:'Сердцебиение'},
+  breath:{label:'BREATH',color:'#fce7f3',mode:'romance',emoji:'💨',desc:'Дыхание'},
+  bt_kick:{label:'BT KICK',color:'#10b981',mode:'beatbox',emoji:'🎤',desc:'Битбокс-кик'},
+  bt_snare:{label:'BT SNARE',color:'#059669',mode:'beatbox',emoji:'🎤',desc:'«Пшшш»'},
+  bt_hihat:{label:'BT HIHAT',color:'#34d399',mode:'beatbox',emoji:'🎤',desc:'«Тсс»'},
+  bt_bass:{label:'BT BASS',color:'#047857',mode:'beatbox',emoji:'🎤',desc:'Горловой бас'},
+  bt_scratch:{label:'SCRATCH',color:'#facc15',mode:'beatbox',emoji:'💿',desc:'Винил-скретч'},
+  bt_beatbox:{label:'BOX',color:'#eab308',mode:'beatbox',emoji:'🎤',desc:'Б-т-к-т'},
+  bt_inward:{label:'INWARD',color:'#065f46',mode:'beatbox',emoji:'🎤',desc:'Inward bass'},
+  bt_liproll:{label:'LIP ROLL',color:'#6ee7b7',mode:'beatbox',emoji:'🎤',desc:'Губной тррр'},
+  bt_pf:{label:'P-FUNK',color:'#a3e635',mode:'beatbox',emoji:'🎤',desc:'«Пф!»'},
+  bt_synth:{label:'SYNTH VOX',color:'#84cc16',mode:'beatbox',emoji:'🎤',desc:'«Уии»'},
+};
+
+const MODES = [
+  { id:'all',name:'Все',icon:'🌈',color:'#fbbf24',isAll:true },
+  { id:'drums',name:'Барабаны',icon:'🥁',color:'#ff6b6b',count:15 },
+  { id:'perc',name:'Перкуссия',icon:'🎛️',color:'#f783ac',count:12 },
+  { id:'brass',name:'Духовые',icon:'🎺',color:'#f59e0b',count:4 },
+  { id:'low',name:'Басы и пэды',icon:'🎸',color:'#51cf66',count:10 },
+  { id:'synth',name:'Синты',icon:'🎹',color:'#22b8cf',count:10 },
+  { id:'lead',name:'Лиды и FX',icon:'⚡',color:'#9775fa',count:10 },
+  { id:'phonk',name:'Phonk',icon:'💀',color:'#a855f7',count:12 },
+  { id:'memphis',name:'Memphis',icon:'📼',color:'#d97706',count:10 },
+  { id:'samba',name:'Samba',icon:'🌊',color:'#0ea5e9',count:10 },
+  { id:'voices',name:'Голоса',icon:'🎤',color:'#5c7cfa',count:10 },
+  { id:'china',name:'Китай',icon:'🇨🇳',color:'#dc2626',count:10 },
+  { id:'romance',name:'Романтика',icon:'💕',color:'#f472b6',count:10 },
+  { id:'beatbox',name:'Битбокс',icon:'🎤',color:'#10b981',count:10 },
+];
+
+const BONUSES = [
+  { id:'b1',combo:['kick','snare','hihat'],emoji:'🥁',title:'Битмейкер',desc:'Ритм-секция'},
+  { id:'b2',combo:['kick','snare','hihat','clap'],emoji:'👏',title:'Трэп-бит',desc:'808-стиль'},
+  { id:'b3',combo:['bass','synth','kick'],emoji:'🎹',title:'Синти-вейв',desc:'80-е'},
+  { id:'b4',combo:['pad','arp','bell'],emoji:'🌌',title:'Эмбиент',desc:'Космос'},
+  { id:'b5',combo:['voxah','zap','perc'],emoji:'🎤',title:'Голос улиц',desc:'Трип-хоп'},
+  { id:'b6',combo:['choir','warmpad','bell','riser'],emoji:'⛪',title:'Хорал',desc:'Небесное пение'},
+  { id:'b7',combo:['lead','stab','pluck','arp'],emoji:'⚡',title:'Синти-шквал',desc:'Мелодия'},
+  { id:'b8',combo:['kick','sub','deepbass','snare','hihat'],emoji:'🔊',title:'БУМ-БАС',desc:'Оглушающий низ'},
+  { id:'b9',combo:['crash','rim','tom','shaker','clap'],emoji:'🥢',title:'ПЕРКУССИЯ',desc:'Живой грув'},
+  { id:'b10',combo:['robot','lead','synth','arp'],emoji:'🤖',title:'РОБОТ',desc:'Daft Punk'},
+  { id:'b11',combo:['kick','snare','hihat','bass','synth'],emoji:'🔥',title:'Фулл-трек',desc:'Почти хит'},
+  { id:'b12',combo:['voxah','voxooh','voxhey','voxhum','angel'],emoji:'👼',title:'АНГЕЛЬСКИЙ ХОР',desc:'5 голосов'},
+  { id:'b13',combo:['angel','demon','whisper','growl'],emoji:'😈',title:'СВЕТ И ТЬМА',desc:'Контраст'},
+  { id:'b14',combo:['acidbass','glitch','zap','robot'],emoji:'⚡',title:'ЭСИД-ГЛИТЧ',desc:'Кислота'},
+  { id:'b15',combo:['conga','bongo','agogo','clave','cowbell','woodblock'],emoji:'🌴',title:'ЛАТИНА',desc:'Куба'},
+  { id:'b16',combo:['organ','choir','pad','stringens'],emoji:'⛪',title:'ОРГАН',desc:'Торжество'},
+  { id:'b17',combo:['musicbox','marimba','bell','glass'],emoji:'✨',title:'ХРУСТАЛЬ',desc:'Стекло'},
+  { id:'b18',combo:['sweep','downlifter','riser','noise'],emoji:'🌀',title:'ПЕРЕХОД',desc:'Транзишн'},
+  { id:'b19',combo:['drone','demon','growl'],emoji:'🕳️',title:'БЕЗДНА',desc:'Тёмный эмбиент'},
+  { id:'b20',combo:['vibraslap','tamb','triangle','shaker'],emoji:'🎊',title:'ВЕЧЕРИНКА',desc:'Лёгкая перкуссия'},
+  { id:'b21',combo:['deepbass','impact','demon'],emoji:'💀',title:'ТЯЖЁЛЫЙ БИТ',desc:'Массивный низ'},
+  { id:'b22',combo:['kick2','snare2','hihat','ride'],emoji:'🥁',title:'ДВОЙНОЙ БИТ',desc:'Мощная ритм-секция'},
+  { id:'b23',combo:['guiro','cabasa','clave','triangle'],emoji:'🌶️',title:'SALSA',desc:'Острые ритмы'},
+  { id:'b24',combo:['cowbellphonk','bass808','memphiskick'],emoji:'🌙',title:'ФОНК-БИТ',desc:'Классика'},
+  { id:'b25',combo:['memphiskick','phonksnare','darkpad','tapenoise'],emoji:'💀',title:'ТЁМНАЯ НОЧЬ',desc:'Мрак'},
+  { id:'b26',combo:['bass808','memphiskick','cowbellphonk','vocalchop'],emoji:'🔥',title:'ХАРД-ФОНК',desc:'Жёсткий'},
+  { id:'b27',combo:['darkpad','tapenoise','phonkbell'],emoji:'🌫️',title:'ЭМБИЕНТ-ФОНК',desc:'Атмосфера'},
+  { id:'b28',combo:['cowbellphonk','bass808','memphiskick','phonksnare','hatroll','darkpad','tapenoise','vocalchop','detunedlead','phonkbell','memphisvox','phonkbrass'],emoji:'👹',title:'ПОЛНЫЙ ФОНК',desc:'Все 12'},
+  { id:'b29',combo:['memphisvox','tapenoise','phonkbrass','detunedlead'],emoji:'🎧',title:'КАССЕТА',desc:'Lo-fi'},
+  { id:'b30',combo:['screw808','vintkick','vinylsnare','huhsample'],emoji:'📼',title:'MEMPHIS CLASSIC',desc:'90-е'},
+  { id:'b31',combo:['screw808','screwdark','cassettepad','lofihat'],emoji:'🐌',title:'SCREWED',desc:'DJ Screw'},
+  { id:'b32',combo:['huhsample','yeahsample','memphisbrass2','vintkick'],emoji:'🎙️',title:'DIRTY SOUTH',desc:'Южный рэп'},
+  { id:'b33',combo:['memphisbrass2','oldbell','cassettepad','vintkick'],emoji:'🎷',title:'OLD SCHOOL',desc:'Винтаж'},
+  { id:'b34',combo:['screw808','vintkick','vinylsnare','huhsample','yeahsample','lofihat','cassettepad','screwdark','oldbell','memphisbrass2'],emoji:'👑',title:'MEMPHIS LEGEND',desc:'Все 10'},
+  { id:'b35',combo:['surdo','repinique','pandeiro','apito'],emoji:'🥁',title:'SAMBA',desc:'Бразилия'},
+  { id:'b36',combo:['shakerwave','seagull','flute','marimba2'],emoji:'🌊',title:'ОКЕАН',desc:'Море'},
+  { id:'b37',combo:['cuica','berimbau','pandeiro','agogo'],emoji:'🍹',title:'БРАЗИЛИЯ',desc:'Капоэйра'},
+  { id:'b38',combo:['surdo','repinique','pandeiro','cuica','apito','berimbau','shakerwave','marimba2','flute','seagull'],emoji:'🎉',title:'КАРНАВАЛ',desc:'Все 10'},
+  { id:'b39',combo:['shakerwave','pandeiro','flute','marimba2','seagull','apito'],emoji:'🏖️',title:'BEACH PARTY',desc:'Пляж'},
+  { id:'b40',combo:['trumpet','sax','oboe','panflute'],emoji:'🎺',title:'ДУХОВОЙ ОРКЕСТР',desc:'Медь + дерево'},
+  { id:'b41',combo:['guzheng','erhu','dizi','pipa','gong','bells_cn','temple','cricket','taiko','yangqin'],emoji:'🐉',title:'КИТАЙСКИЙ ОРКЕСТР',desc:'Все 10'},
+  { id:'b42',combo:['guzheng','erhu','dizi','pipa'],emoji:'🎎',title:'КИТАЙ',desc:'Ансамбль'},
+  { id:'b43',combo:['harp','violin','cello','romancepad'],emoji:'💕',title:'РОМАНТИКА',desc:'Любовь'},
+  { id:'b44',combo:['musicbox2','glockenspiel','waterdrop','breath'],emoji:'💗',title:'НЕЖНОСТЬ',desc:'Мягко'},
+  { id:'b45',combo:['bt_kick','bt_snare','bt_hihat'],emoji:'🎤',title:'БИТБОКС',desc:'Классика'},
+  { id:'b46',combo:['bt_bass','bt_inward','bt_beatbox'],emoji:'🔊',title:'БАС-БОКС',desc:'Горловой'},
+  { id:'b47',combo:['bt_kick','bt_snare','bt_hihat','bt_bass','bt_scratch','bt_beatbox','bt_inward','bt_liproll','bt_pf','bt_synth'],emoji:'👑',title:'БИТБОКС ЛЕГЕНДА',desc:'Все 10'},
+];
+
+function Tooltip({ track, position }) {
+  if (!track || !position) return null;
+  return html`<div class="tooltip visible" style=${{
+    left: position.x + 'px',
+    top: (position.y + 20) + 'px',
+    transform: position.x > window.innerWidth - 300 ? 'translateX(-100%)' : 'none'
+  }}>
+    <div class="tooltip__title">${track.label}</div>
+    <div class="tooltip__desc">${track.desc || 'Описание недоступно'}</div>
+  </div>`;
+}
+
+function Character({ id, label, color, emoji, active, previewing, pending, pendingProgress, previewProgress, isFav, isMuted, isSoloed, desc, onClick, onOpenSettings, onHover, onLeave, onTapInfo }) {
+  const clickTimeout = useRef(null);
+  const pressTimer = useRef(null);
+  const isTouch = useRef(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none)').matches);
+
+  const handleClick = (e) => {
+    try {
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+      ripple.style.position = 'absolute';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 650);
+    } catch(_) {}
+    if (!isTouch.current) { onClick(id); return; }
+    if (clickTimeout.current) {
+      clearTimeout(clickTimeout.current);
+      clickTimeout.current = null;
+      if (onTapInfo) onTapInfo(id, e);
+      return;
+    }
+    clickTimeout.current = setTimeout(() => {
+      clickTimeout.current = null;
+      onClick(id);
+    }, 220);
+  };
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    onOpenSettings(id, e);
+  };
+
+  const handleTouchStart = (e) => {
+    if (!isTouch.current) return;
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      onOpenSettings(id, e);
+    }, 600);
+  };
+  const handleTouchEnd = () => {
+    if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
+  };
+
+  const stateClass = (active ? ' character--active'
+    : previewing ? ' character--preview'
+    : pending ? ' character--pending' : '')
+    + (isMuted ? ' character--muted' : '')
+    + (isSoloed ? ' character--soloed' : '')
+    + (isFav ? ' character--fav' : '');
+
+  return html`<div class="character-wrap">
+    <button class=${'character' + stateClass}
+      style=${{ '--char-color': color }}
+      onClick=${handleClick}
+      onContextMenu=${handleContextMenu}
+      onTouchStart=${handleTouchStart}
+      onTouchEnd=${handleTouchEnd}
+      onTouchCancel=${handleTouchEnd}
+      onMouseEnter=${(e) => !isTouch.current && onHover && onHover(id, e.currentTarget)}
+      onMouseLeave=${() => !isTouch.current && onLeave && onLeave()}
+      aria-pressed=${active || previewing || pending}
+      aria-label=${`${label}: ${desc}. Правый клик — настройки`}>
+      <div class="circle">
+        <span style=${{fontSize:'22px'}}>${emoji || '●'}</span>
+        ${(isFav || isMuted || isSoloed) && html`<div class="badges">
+          ${isFav && html`<div class="badge-mini fav">★</div>`}
+          ${isSoloed && html`<div class="badge-mini solo">S</div>`}
+          ${isMuted && html`<div class="badge-mini mute">M</div>`}
+        </div>`}
+      </div>
+      <span class="character__label">${label}</span>
+      ${(pending || previewing) && html`<div class="pending-bar">
+        <div class="pending-bar__fill" style=${{
+          width: ((pending ? pendingProgress : previewProgress) * 100) + '%',
+          background: pending
+            ? 'linear-gradient(90deg,#22d3ee,#0891b2)'
+            : 'linear-gradient(90deg,#fbbf24,#f59e0b)',
+          color: pending ? '#22d3ee' : '#fbbf24'
+        }}></div>
+      </div>`}
+    </button>
+  </div>`;
+}
+
+function SettingsPopup({ track, position, volume, cutoff, pattern, isFav, isMuted, isSoloed, onClose, onVolumeChange, onCutoffChange, onPatternChange, onToggleFav, onToggleMute, onToggleSolo }) {
+  const ref = useRef(null);
+  const fmtHz = (hz) => hz >= 1000 ? (hz/1000).toFixed(hz >= 10000 ? 0 : 1) + 'k' : Math.round(hz) + '';
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    setTimeout(() => document.addEventListener('mousedown', handler), 50);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  const style = {
+    left: Math.max(10, Math.min(position.x, window.innerWidth - 250)) + 'px',
+    top: Math.max(10, Math.min(position.y, window.innerHeight - 400)) + 'px',
+    '--char-color': track.color
+  };
+
+  return html`<div ref=${ref} class="settings-popup" style=${style}>
+    <div class="settings-popup__title">${track.label}</div>
+
+    <div class="settings-popup__row">
+      <label>🔊 Звук</label>
+      <input type="range" min="0" max="100" value=${Math.round(volume*100)}
+        onChange=${(e) => onVolumeChange(track.id, Number(e.target.value)/100)} />
+      <span class="settings-popup__val">${Math.round(volume*100)}%</span>
+    </div>
+
+    <div class="settings-popup__row">
+      <label>🎚️ Частота</label>
+      <input type="range" min="200" max="20000" step="100" value=${cutoff}
+        onChange=${(e) => onCutoffChange(track.id, Number(e.target.value))} />
+      <span class="settings-popup__val">${fmtHz(cutoff)}</span>
+    </div>
+
+    <div class="settings-popup__section">Ритм</div>
+    <div class="settings-popup__pattern-row">
+      ${[
+        {v:'inf', l:'∞', t:'Играет всегда'},
+        {v:'2-2', l:'2·2', t:'2 лупа играет, 2 молчит'},
+        {v:'4-4', l:'4·4', t:'4 лупа играет, 4 молчит'},
+        {v:'1-1', l:'1·1', t:'1 луп играет, 1 молчит'},
+        {v:'1-3', l:'1·3', t:'1 луп играет, 3 молчит'},
+      ].map(p => html`<button key=${p.v}
+        class=${'settings-popup__pattern-btn' + ((pattern || 'inf') === p.v ? ' active' : '')}
+        onClick=${() => onPatternChange(track.id, p.v)}
+        title=${p.t}>${p.l}</button>`)}
+    </div>
+
+    <div class="settings-popup__section">Управление</div>
+    <div class="settings-popup__actions">
+      <button class=${'settings-popup__action' + (isSoloed ? ' solo-active' : '')}
+        onClick=${() => onToggleSolo(track.id)}
+        title="Solo — слышно только этот трек">🎯 Solo</button>
+      <button class=${'settings-popup__action' + (isMuted ? ' mute-active' : '')}
+        onClick=${() => onToggleMute(track.id)}
+        title="Mute — заглушить">🔇 Mute</button>
+    </div>
+    <div class="settings-popup__actions">
+      <button class=${'settings-popup__action' + (isFav ? ' fav-active' : '')}
+        onClick=${() => onToggleFav(track.id)}
+        style=${{width:'100%'}}
+        title="Избранное">${isFav ? '★ В избранном' : '☆ В избранное'}</button>
+    </div>
+  </div>`;
+}
+
+function GuideModal({ onClose }) {
+  const modeInfo = {
+    drums:'Ритм-основа — бочка, снейр, хэт', perc:'Перкуссия — конга, бонго, шейкеры',
+    brass:'Духовые — труба, сакс, гобой, пан-флейта', low:'Низ и гармония — бас, пэд, струнные',
+    synth:'Синтезаторы — пила, арпеджио, маримба', lead:'Мелодия и FX — лид, свип, глитч',
+    phonk:'Тёмный фонк — 808, cowbell, tape', memphis:'Старая школа — screw, cassette, lo-fi',
+    samba:'Бразилия — сурдо, пандейро, флейта', voices:'Голоса — хор, робот, демон',
+    china:'Китай — гуцинь, эрху, гонг', romance:'Романтика — арфа, скрипка, шкатулка',
+    beatbox:'Битбокс — губной бас, скретч',
+  };
+  const byMode = {};
+  Object.entries(TRACKS).forEach(([id, t]) => {
+    if (!byMode[t.mode]) byMode[t.mode] = [];
+    byMode[t.mode].push({ id, ...t });
+  });
+  const tips = [
+    'Не включай всё сразу — 3-5 треков дают чистое звучание, 8-10 — плотную стену.',
+    'Ритм-секция сначала: kick + snare + hihat. Это база любого трека.',
+    'Кнопки 1×/2×/4×/8× — длина лупа в тактах. 2× — стандарт, 4× — для длинных фраз.',
+    'Мелодию делай на 2·2 или 1·1 — она будет то вступать, то уходить.',
+    'Акценты (bell, crash, impact, gong) лучше на 1·3 или 4·4.',
+    'Бас оставляй на ∞ или 2·2 — если он замолчит, будет дыра в низах.',
+    'Секвенсор: шаблоны 🎬 Интро→Финал, 📈 Crescendo, 🌊 Волна — один клик.',
+    'Романтика: harp + violin + cello + romancepad — саундтрек к фильму.',
+    'Фонк-база: memphiskick + bass808 + phonksnare + cowbellphonk + vocalchop.',
+    'Китайский оркестр: guzheng + erhu + dizi + pipa + gong + bells_cn.',
+    'Битбокс-джем: bt_kick + bt_snare + bt_hihat + bt_bass + bt_scratch + bt_beatbox.',
+    'Эмбиент: pad + drone + bell + glass + angel.',
+    'Тёмная сторона: demon + growl + drone + impact.',
+    'Убирай лишнее: если не слышишь трек в миксе — не включай его вообще.',
+    'Master не крути на максимум — 55-70% даст чистое звучание.',
+    'Reverb = зал/пространство. Delay = эхо/повторы. Не включай оба на 100%.',
+    'Правый клик / долгий тап по кругу — откроет настройки трека.',
+    'Solo приглушает всех, кроме выбранных.',
+    'Mute заглушает трек, не выключая его.',
+    'Паттерны делают луп живым — попробуй разные комбинации.',
+    'Экспортируй микс в JSON — сохранение с громкостью, ритмом, секвенсором, длиной лупа.',
+    'Духовые: труба — фанфары, сакс — длинные, гобой — вибрато, пан-флейта — воздушная.',
+    'Не ставь два баса (sub + deepbass) одновременно — каша в низах.',
+    'Если звук грязный — уменьши Master или выключи Reverb.',
+    'Чтобы микс дышал — 6-8 инструментов одновременно.',
+  ];
+  return html`<div class="guide-modal show" onClick=${(e) => { if (e.target.classList.contains('guide-modal')) onClose(); }}>
+    <div class="guide-modal__content">
+      <button class="guide-modal__close" onClick=${onClose} aria-label="Закрыть">×</button>
+      <h2 class="guide-modal__title">🎓 Гид по Musibox Pro</h2>
+      <p class="guide-modal__subtitle">Все звуки в A minor pentatonic — любая комбинация звучит гармонично</p>
+
+      <div class="guide-modal__section">
+        <h3>🎛️ Управление</h3>
+        <div class="guide-modal__list">
+          <div class="guide-modal__item"><b>1 клик</b> по кругу — превью 4 сек</div>
+          <div class="guide-modal__item"><b>2 клик</b> — зациклить</div>
+          <div class="guide-modal__item"><b>3 клик</b> — выключить</div>
+          <div class="guide-modal__item"><b>Правый клик / долгий тап</b> — настройки трека</div>
+          <div class="guide-modal__item"><b>1×/2×/4×/8×</b> — длина лупа в тактах</div>
+          <div class="guide-modal__item"><b>🎬 Секвенсор</b> — таймлайн 16 тактов + шаблоны</div>
+        </div>
+      </div>
+
+      <div class="guide-modal__section">
+        <h3>🎛️ 14 режимов</h3>
+        <div class="guide-modal__list">
+          ${MODES.filter(m => !m.isAll).map(m => html`<div class="guide-modal__item" key=${m.id}>
+            <b>${m.icon} ${m.name}</b><br/>${modeInfo[m.id] || ''}
+          </div>`)}
+        </div>
+      </div>
+
+      <div class="guide-modal__tips">
+        <h4>💡 ${tips.length} советов</h4>
+        <ul>
+          ${tips.map((t, i) => html`<li key=${i}>${t}</li>`)}
+        </ul>
+      </div>
+
+      <div class="guide-modal__section" style=${{marginTop:'24px'}}>
+        <h3>🎵 Все треки с описанием</h3>
+        ${Object.entries(byMode).map(([mode, tracks]) => {
+          const m = MODES.find(x => x.id === mode);
+          if (!m) return null;
+          return html`<div style=${{marginBottom:'16px'}} key=${mode}>
+            <div style=${{fontWeight:'700',color:m.color,marginBottom:'6px',fontSize:'14px'}}>${m.icon} ${m.name}</div>
+            <div class="guide-modal__list">
+              ${tracks.map(t => html`<div class="guide-modal__item" key=${t.id}>
+                <b>${t.label}</b> — ${t.desc}
+              </div>`)}
+            </div>
+          </div>`;
+        })}
+      </div>
+    </div>
+  </div>`;
+}
+
+function SequencerModal({ grid, currentStep, onToggle, onClear, onBulkSet, onClose, trackModes }) {
+  const [selectedMode, setSelectedMode] = useState('active');
+
+  const rows = useMemo(() => {
+    if (selectedMode === 'active') {
+      return Object.keys(trackModes).filter(k => trackModes[k]);
+    }
+    if (selectedMode === 'all') {
+      return Object.keys(TRACKS);
+    }
+    return Object.keys(TRACKS).filter(k => TRACKS[k].mode === selectedMode);
+  }, [selectedMode, trackModes]);
+
+  const steps = Array.from({ length: SEQ_STEPS }, (_, i) => i);
+
+  const applyPattern = (type) => {
+    const newGrid = {};
+    const rowIds = rows.filter(id => TRACKS[id]);
+
+    const modeOrder = {
+      drums: 0, perc: 1, low: 2, brass: 3, synth: 4, lead: 5,
+      phonk: 2, memphis: 2, samba: 1, voices: 4, china: 3, romance: 4, beatbox: 1,
+    };
+    const sorted = [...rowIds].sort((a, b) => {
+      const oa = modeOrder[TRACKS[a].mode] ?? 5;
+      const ob = modeOrder[TRACKS[b].mode] ?? 5;
+      return oa - ob;
+    });
+
+    if (type === 'classic') {
+      sorted.forEach((id, i) => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        let start = 0;
+        if (i < 4) start = 0;
+        else if (i < 8) start = 2;
+        else if (i < 12) start = 5;
+        else start = 9;
+        for (let s = start; s < SEQ_STEPS; s++) row[s] = true;
+        newGrid[id] = row;
+      });
+    } else if (type === 'crescendo') {
+      sorted.forEach((id, i) => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        const step = Math.floor((i / Math.max(1, sorted.length - 1)) * (SEQ_STEPS - 1));
+        for (let s = step; s < SEQ_STEPS; s++) row[s] = true;
+        newGrid[id] = row;
+      });
+    } else if (type === 'decrescendo') {
+      sorted.forEach((id, i) => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        const stopAt = SEQ_STEPS - Math.floor((i / Math.max(1, sorted.length - 1)) * (SEQ_STEPS - 2));
+        for (let s = 0; s < stopAt; s++) row[s] = true;
+        newGrid[id] = row;
+      });
+    } else if (type === 'wave') {
+      sorted.forEach((id, i) => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        const period = 6 + (i % 4);
+        const phase = i * 0.7;
+        for (let s = 0; s < SEQ_STEPS; s++) {
+          const v = Math.sin((s / period) * TAU + phase);
+          if (v > 0) row[s] = true;
+        }
+        if (!row.some(Boolean)) row[0] = true;
+        newGrid[id] = row;
+      });
+    } else if (type === 'all1') {
+      sorted.forEach(id => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        row[0] = true;
+        newGrid[id] = row;
+      });
+    } else if (type === 'random') {
+      sorted.forEach(id => {
+        const row = new Array(SEQ_STEPS).fill(false);
+        const fill = 0.4 + rnd() * 0.4;
+        for (let s = 0; s < SEQ_STEPS; s++) {
+          if (rnd() < fill) row[s] = true;
+        }
+        row[0] = true;
+        newGrid[id] = row;
+      });
+    }
+
+    if (onBulkSet) onBulkSet(newGrid);
+  };
+
+  return html`<div class="seq-modal show" onClick=${(e) => { if (e.target.classList.contains('seq-modal')) onClose(); }}>
+    <div class="seq-modal__content">
+      <div class="seq-modal__header">
+        <div>
+          <h2 class="seq-modal__title">🎬 Секвенсор</h2>
+          <div style=${{fontSize:'12px',opacity:.6,marginTop:'4px'}}>
+            Клик по клетке — вкл/выкл трек на этом такте. Сейчас играет: <b style=${{color:'#fbbf24'}}>такт ${currentStep + 1}</b>
+          </div>
+        </div>
+        <div class="seq-controls">
+          <select value=${selectedMode} onChange=${(e) => setSelectedMode(e.target.value)}
+            style=${{padding:'8px 12px',borderRadius:'8px',background:'#ffffff11',border:'1px solid #ffffff22',color:'#fff',fontFamily:'inherit',fontSize:'13px',cursor:'pointer'}}>
+            <option value="active">Только активные (${Object.keys(trackModes).filter(k=>trackModes[k]).length})</option>
+            <option value="all">Все треки (${Object.keys(TRACKS).length})</option>
+            ${MODES.filter(m => !m.isAll).map(m => html`<option key=${m.id} value=${m.id}>${m.icon} ${m.name}</option>`)}
+          </select>
+          <button class="seq-modal__close" onClick=${onClose} aria-label="Закрыть">×</button>
+        </div>
+      </div>
+
+      <div class="seq-presets">
+        <span class="seq-presets__label">✨ Шаблоны:</span>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('classic')} title="Барабаны → мелодия → всё вместе → финал">🎬 Интро→Финал</button>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('crescendo')} title="Постепенно нарастает">📈 Crescendo</button>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('decrescendo')} title="Постепенно уходит">📉 Decrescendo</button>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('wave')} title="Волнами то вкл, то выкл">🌊 Волна</button>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('all1')} title="Все треки только на 1-м такте">🎯 Все на 1</button>
+        <button class="seq-preset-btn" onClick=${() => applyPattern('random')} title="Случайный рисунок">🎲 Случайно</button>
+        <span style=${{flex:1}}></span>
+        <button class="seq-preset-btn seq-preset-btn--danger" onClick=${onClear} title="Очистить всю сетку">🗑️ Очистить</button>
+      </div>
+
+      <div class="seq-legend">
+        <span><span class="dot on"></span> играет</span>
+        <span><span class="dot off"></span> молчит</span>
+        <span>🟡 = текущий такт</span>
+        <span>Голубые столбцы = начало фразы (1, 5, 9, 13)</span>
+      </div>
+
+      <div class="seq-grid-wrap">
+        ${rows.length === 0
+          ? html`<div style=${{padding:'30px',textAlign:'center',opacity:.6}}>
+              Нет активных треков. Включи хоть один в основном окне.
+            </div>`
+          : html`<table class="seq-grid">
+              <thead>
+                <tr>
+                  <th class="label-col">Трек</th>
+                  ${steps.map(s => html`<th key=${s}
+                    class=${(s % 4 === 0 ? 'beat-mark ' : '') + (s === currentStep ? 'now-mark' : '')}>
+                    ${s + 1}
+                  </th>`)}
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(id => {
+                  const tr = TRACKS[id];
+                  if (!tr) return null;
+                  const row = grid[id] || new Array(SEQ_STEPS).fill(false);
+                  return html`<tr key=${id}>
+                    <td class="label-col" style=${{color:tr.color}}>${tr.label}</td>
+                    ${steps.map(s => html`<td key=${s}>
+                      <div class=${'seq-cell' + (row[s] ? ' on' : '') + (s === currentStep ? ' now' : '') + (s % 4 === 0 ? ' beat' : '')}
+                        onClick=${() => onToggle(id, s)}
+                        title=${`${tr.label} — такт ${s + 1}`}></div>
+                    </td>`)}
+                  </tr>`;
+                })}
+              </tbody>
+            </table>`}
+      </div>
+
+      <div style=${{fontSize:'12px',opacity:.6,textAlign:'center',paddingTop:'4px'}}>
+        Секвенсор работает поверх паттернов. Шаблоны заполняют сетку по драматургии.
+      </div>
+    </div>
+  </div>`;
+}
+
+function useAudioManager(numBars) {
+  const ctxRef = useRef(null);
+  const buffersRef = useRef({});
+  const sourcesRef = useRef({});
+  const gainsRef = useRef({});
+  const filtersRef = useRef({});
+  const pannersRef = useRef({});
+  const masterRef = useRef(null);
+  const reverbRef = useRef(null);
+  const delayRef = useRef(null);
+  const recDestRef = useRef(null);
+  const trackModesRef = useRef({});
+  const volumesRef = useRef({});
+  const cutoffsRef = useRef({});
+  const loopStartTimeRef = useRef(0);
+  const pendingRef = useRef({});
+  const pendingStartRef = useRef({});
+  const previewTimersRef = useRef({});
+  const previewStartRef = useRef({});
+  const lastProgressRef = useRef({});
+  const lastPreviewRef = useRef({});
+  const mutedRef = useRef(new Set());
+  const soloedRef = useRef(new Set());
+  const patternsRef = useRef({});
+  const gridRef = useRef({});
+  const lastLoopIdxRef = useRef(-1);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [trackModes, setTrackModes] = useState({});
+  const [pendingTracks, setPendingTracks] = useState({});
+  const [pendingProgress, setPendingProgress] = useState({});
+  const [previewProgress, setPreviewProgress] = useState({});
+  const [volumes, setVolumes] = useState(() => Object.fromEntries(Object.keys(TRACKS).map(k => [k, DEFAULT_VOL])));
+  const [cutoffs, setCutoffs] = useState(() => Object.fromEntries(Object.keys(TRACKS).map(k => [k, DEFAULT_CUTOFF])));
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState(null);
+  const [reverbOn, setReverbOn] = useState(true);
+  const [delayOn, setDelayOn] = useState(true);
+  const [masterVol, setMasterVol] = useState(0.55);
+  const [mutedTracks, setMutedTracks] = useState(new Set());
+  const [soloedTracks, setSoloedTracks] = useState(new Set());
+  const [patterns, setPatterns] = useState({});
+  const [grid, setGrid] = useState({});
+  const [currentStep, setCurrentStep] = useState(0);
+  const mediaRecRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  useEffect(() => {
+    (async () => {
+      const v = await idbGet('musibox-volumes-v8');
+      if (v && typeof v === 'object') {
+        const merged = {}; Object.keys(TRACKS).forEach(k => { merged[k] = typeof v[k] === 'number' ? v[k] : DEFAULT_VOL; });
+        setVolumes(merged);
+      }
+      const c = await idbGet('musibox-cutoffs-v8');
+      if (c && typeof c === 'object') {
+        const merged = {}; Object.keys(TRACKS).forEach(k => { merged[k] = typeof c[k] === 'number' ? c[k] : DEFAULT_CUTOFF; });
+        setCutoffs(merged);
+      }
+      const mv = await idbGet('musibox-master-v8');
+      if (typeof mv === 'number') setMasterVol(mv);
+      const mt = await idbGet('musibox-muted-v8');
+      if (Array.isArray(mt)) setMutedTracks(new Set(mt));
+      const st = await idbGet('musibox-soloed-v8');
+      if (Array.isArray(st)) setSoloedTracks(new Set(st));
+      const pt = await idbGet('musibox-patterns-v8');
+      if (pt && typeof pt === 'object') setPatterns(pt);
+      const gr = await idbGet('musibox-grid-v8');
+      if (gr && typeof gr === 'object') setGrid(gr);
+    })();
+  }, []);
+
+  useEffect(() => { trackModesRef.current = trackModes; }, [trackModes]);
+  useEffect(() => { mutedRef.current = mutedTracks; }, [mutedTracks]);
+  useEffect(() => { soloedRef.current = soloedTracks; }, [soloedTracks]);
+  useEffect(() => {
+    patternsRef.current = patterns;
+    const t = setTimeout(() => idbSet('musibox-patterns-v8', patterns), 300);
+    return () => clearTimeout(t);
+  }, [patterns]);
+  useEffect(() => {
+    gridRef.current = grid;
+    const t = setTimeout(() => idbSet('musibox-grid-v8', grid), 300);
+    return () => clearTimeout(t);
+  }, [grid]);
+
+  useEffect(() => {
+    volumesRef.current = volumes;
+    const t = setTimeout(() => idbSet('musibox-volumes-v8', volumes), 300);
+    return () => clearTimeout(t);
+  }, [volumes]);
+  useEffect(() => {
+    cutoffsRef.current = cutoffs;
+    const t = setTimeout(() => idbSet('musibox-cutoffs-v8', cutoffs), 300);
+    return () => clearTimeout(t);
+  }, [cutoffs]);
+  useEffect(() => {
+    const t = setTimeout(() => idbSet('musibox-master-v8', masterVol), 300);
+    return () => clearTimeout(t);
+  }, [masterVol]);
+
+  const getBuffer = useCallback((key) => {
+    if (buffersRef.current[key]) return buffersRef.current[key];
+    const ctx = ctxRef.current; if (!ctx || !GENERATORS[key]) return null;
+    const len = Math.floor(ONE_BAR * numBars * ctx.sampleRate);
+    resetSeed(seedFromString(key + '|' + numBars));
+    try { buffersRef.current[key] = GENERATORS[key](ctx, len); }
+    catch(e) { console.warn('Gen failed:', key, e); return null; }
+    return buffersRef.current[key];
+  }, [numBars]);
+
+  const rebuildBuffers = useCallback(() => { buffersRef.current = {}; }, []);
+
+  const init = useCallback(async () => {
+    if (ctxRef.current) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    ctxRef.current = ctx;
+
+    const master = ctx.createGain(); master.gain.value = 0.55;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.knee.value = 22; comp.ratio.value = 4;
+    comp.attack.value = 0.005; comp.release.value = 0.25;
+    const shaper = ctx.createWaveShaper();
+    const N = 2048; const curve = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const x = (i / (N - 1)) * 2 - 1; curve[i] = Math.tanh(x * 1.15); }
+    shaper.curve = curve; shaper.oversample = '4x';
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass'; tone.frequency.value = 14000; tone.Q.value = 0.5;
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -1.5; limiter.knee.value = 0;
+    limiter.ratio.value = 20; limiter.attack.value = 0.002; limiter.release.value = 0.08;
+
+    const reverb = ctx.createConvolver();
+    resetSeed(seedFromString('reverb-ir-v1'));
+    reverb.buffer = makeReverbIR(ctx, 3.2, 2.2);
+    const reverbWet = ctx.createGain(); reverbWet.gain.value = 0.45;
+    const reverbPre = ctx.createBiquadFilter();
+    reverbPre.type = 'highpass'; reverbPre.frequency.value = 150;
+    const reverbPost = ctx.createBiquadFilter();
+    reverbPost.type = 'lowpass'; reverbPost.frequency.value = 11000;
+
+    const delay = makeDelay(ctx, 0.32, 0.42, 0.4);
+
+    master.connect(comp); comp.connect(shaper); shaper.connect(tone); tone.connect(limiter); limiter.connect(ctx.destination);
+    master.connect(reverbPre); reverbPre.connect(reverb); reverb.connect(reverbPost); reverbPost.connect(reverbWet); reverbWet.connect(comp);
+    master.connect(delay.input); delay.output.connect(comp);
+
+    const recDest = ctx.createMediaStreamDestination();
+    limiter.connect(recDest);
+
+    masterRef.current = master;
+    reverbRef.current = { node: reverb, wet: reverbWet };
+    delayRef.current = delay;
+    recDestRef.current = recDest;
+  }, []);
+
+  useEffect(() => {
+    if (!masterRef.current) return;
+    masterRef.current.gain.setTargetAtTime(masterVol, ctxRef.current.currentTime, 0.05);
+  }, [masterVol]);
+  useEffect(() => {
+    if (reverbRef.current) reverbRef.current.wet.gain.setTargetAtTime(reverbOn ? 0.45 : 0, ctxRef.current.currentTime, 0.1);
+  }, [reverbOn]);
+  useEffect(() => {
+    if (delayRef.current) delayRef.current.output.gain.setTargetAtTime(delayOn ? 0.4 : 0, ctxRef.current.currentTime, 0.1);
+  }, [delayOn]);
+
+  const clearPreviewState = useCallback((key) => {
+    if (previewTimersRef.current[key]) {
+      clearTimeout(previewTimersRef.current[key]);
+      delete previewTimersRef.current[key];
+    }
+    delete previewStartRef.current[key];
+    setPreviewProgress(prev => {
+      if (!(key in prev)) return prev;
+      const n = { ...prev }; delete n[key]; return n;
+    });
+  }, []);
+
+  const stopAllSources = useCallback(() => {
+    Object.values(sourcesRef.current).forEach(s => { try { s.stop(); } catch(e) {} try { s.disconnect(); } catch(e) {} });
+    Object.values(gainsRef.current).forEach(g => { try { g.disconnect(); } catch(e) {} });
+    Object.values(filtersRef.current).forEach(f => { try { f.disconnect(); } catch(e) {} });
+    Object.values(pannersRef.current).forEach(p => { try { p.disconnect(); } catch(e) {} });
+    Object.values(previewTimersRef.current).forEach(t => clearTimeout(t));
+    sourcesRef.current = {}; gainsRef.current = {}; filtersRef.current = {}; pannersRef.current = {};
+    pendingRef.current = {}; pendingStartRef.current = {};
+    previewTimersRef.current = {}; previewStartRef.current = {};
+    lastProgressRef.current = {}; lastPreviewRef.current = {};
+    lastLoopIdxRef.current = -1;
+    setPendingTracks({}); setPendingProgress({}); setPreviewProgress({});
+  }, []);
+
+  const stopTrack = useCallback((key) => {
+    clearPreviewState(key);
+    const src = sourcesRef.current[key]; const g = gainsRef.current[key];
+    const filt = filtersRef.current[key]; const panner = pannersRef.current[key];
+    if (src && g) {
+      try {
+        const now = ctxRef.current.currentTime;
+        g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.035);
+        setTimeout(() => {
+          try { src.stop(); } catch(e) {}
+          try { src.disconnect(); } catch(e) {}
+          try { g.disconnect(); } catch(e) {}
+          if (filt) { try { filt.disconnect(); } catch(e) {} }
+          if (panner) { try { panner.disconnect(); } catch(e) {} }
+        }, 50);
+      } catch(e) {}
+    }
+    delete sourcesRef.current[key]; delete gainsRef.current[key];
+    delete filtersRef.current[key]; delete pannersRef.current[key];
+    pendingRef.current[key] = false; pendingStartRef.current[key] = 0;
+    setPendingTracks(prev => { const n = { ...prev }; delete n[key]; return n; });
+  }, [clearPreviewState]);
+
+  const attachSource = useCallback((key, whenTime) => {
+    const ctx = ctxRef.current; if (!ctx) return;
+    const buf = getBuffer(key); if (!buf) return;
+    if (sourcesRef.current[key]) return;
+
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const filt = ctx.createBiquadFilter(); filt.type = 'lowpass';
+    filt.frequency.value = cutoffsRef.current[key] ?? DEFAULT_CUTOFF; filt.Q.value = 0.7;
+    const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    const g = ctx.createGain();
+    const baseVol = volumesRef.current[key] ?? DEFAULT_VOL;
+    const soloed = soloedRef.current;
+    const targetVol = soloed.size > 0
+      ? (soloed.has(key) ? baseVol : 0)
+      : (mutedRef.current.has(key) ? 0 : baseVol);
+    g.gain.value = 0; g.gain.linearRampToValueAtTime(targetVol, whenTime + 0.03);
+    if (panner) src.connect(filt).connect(panner).connect(g).connect(masterRef.current);
+    else src.connect(filt).connect(g).connect(masterRef.current);
+    src.start(whenTime);
+    sourcesRef.current[key] = src;
+    gainsRef.current[key] = g;
+    filtersRef.current[key] = filt;
+    if (panner) pannersRef.current[key] = panner;
+
+    if (trackModesRef.current[key] === 'preview') {
+      if (previewTimersRef.current[key]) clearTimeout(previewTimersRef.current[key]);
+      previewStartRef.current[key] = whenTime;
+      const delayMs = Math.max(0, (whenTime - ctx.currentTime) * 1000) + PREVIEW_SECONDS * 1000;
+      previewTimersRef.current[key] = setTimeout(() => {
+        if (trackModesRef.current[key] === 'preview') {
+          stopTrack(key);
+          setTrackModes(prev => {
+            if (!(key in prev)) return prev;
+            const n = { ...prev }; delete n[key]; return n;
+          });
+        }
+        delete previewTimersRef.current[key];
+        delete previewStartRef.current[key];
+        setPreviewProgress(prev => {
+          if (!(key in prev)) return prev;
+          const n = { ...prev }; delete n[key]; return n;
+        });
+      }, delayMs);
+    }
+  }, [getBuffer, stopTrack]);
+
+  const startTrackQuantized = useCallback((key) => {
+    const ctx = ctxRef.current;
+    const buf = getBuffer(key);
+    if (!ctx || !buf) return;
+    if (sourcesRef.current[key] || pendingRef.current[key]) return;
+
+    const loopSec = ONE_BAR * numBars;
+    const elapsed = ctx.currentTime - loopStartTimeRef.current;
+    const posInLoop = elapsed >= 0 ? (elapsed % loopSec) : 0;
+    const timeToNextLoop = loopSec - posInLoop;
+    const isAlmostNow = timeToNextLoop < 0.1;
+    const whenTime = isAlmostNow ? ctx.currentTime + 0.02 : ctx.currentTime + timeToNextLoop + 0.02;
+
+    pendingRef.current[key] = true; pendingStartRef.current[key] = whenTime;
+    setPendingTracks(prev => ({ ...prev, [key]: true }));
+
+    attachSource(key, whenTime);
+
+    const delayMs = Math.max(0, (whenTime - ctx.currentTime) * 1000);
+    setTimeout(() => {
+      if (pendingRef.current[key]) {
+        pendingRef.current[key] = false; pendingStartRef.current[key] = 0;
+        setPendingTracks(prev => { const n = { ...prev }; delete n[key]; return n; });
+        setPendingProgress(prev => { const n = { ...prev }; delete n[key]; return n; });
+      }
+    }, delayMs + 30);
+  }, [numBars, getBuffer, attachSource]);
+
+  const start = useCallback(async () => {
+    await init();
+    const ctx = ctxRef.current;
+    if (ctx.state === 'suspended') await ctx.resume();
+    setIsPlaying(true);
+    const t0 = ctx.currentTime + 0.05;
+    loopStartTimeRef.current = t0;
+    lastLoopIdxRef.current = -1;
+    Object.keys(trackModesRef.current).forEach(key => {
+      if (trackModesRef.current[key]) attachSource(key, t0);
+    });
+  }, [init, attachSource]);
+
+  const stop = useCallback(() => {
+    setIsPlaying(false);
+    setTrackModes(prev => {
+      const n = { ...prev };
+      Object.keys(n).forEach(k => { if (n[k] === 'preview') delete n[k]; });
+      return n;
+    });
+    stopAllSources();
+    setCurrentStep(0);
+  }, [stopAllSources]);
+
+  const cycleTrack = useCallback((key) => {
+    const cur = trackModesRef.current[key];
+    const next = !cur ? 'preview' : cur === 'preview' ? 'loop' : null;
+    if (next === null) delete trackModesRef.current[key];
+    else trackModesRef.current[key] = next;
+    setTrackModes(prev => {
+      const n = { ...prev };
+      if (next === null) delete n[key];
+      else n[key] = next;
+      return n;
+    });
+  }, []);
+
+  const setTrackSet = useCallback((tracksObj) => {
+    const normalized = {};
+    Object.keys(tracksObj).forEach(k => {
+      const v = tracksObj[k];
+      if (v === true) normalized[k] = 'loop';
+      else if (v === 'preview' || v === 'loop') normalized[k] = v;
+    });
+    trackModesRef.current = normalized;
+    setTrackModes(normalized);
+  }, []);
+
+  const reset = useCallback(() => {
+    stop();
+    setTrackModes({});
+    trackModesRef.current = {};
+    setPatterns({}); patternsRef.current = {};
+    setGrid({}); gridRef.current = {};
+    setMutedTracks(new Set()); mutedRef.current = new Set();
+    setSoloedTracks(new Set()); soloedRef.current = new Set();
+    lastLoopIdxRef.current = -1;
+    const dVol = Object.fromEntries(Object.keys(TRACKS).map(k => [k, DEFAULT_VOL]));
+    const dCut = Object.fromEntries(Object.keys(TRACKS).map(k => [k, DEFAULT_CUTOFF]));
+    setVolumes(dVol); setCutoffs(dCut);
+    idbSet('musibox-volumes-v8', dVol); idbSet('musibox-cutoffs-v8', dCut);
+    idbSet('musibox-patterns-v8', {}); idbSet('musibox-grid-v8', {});
+    idbSet('musibox-muted-v8', []); idbSet('musibox-soloed-v8', []);
+  }, [stop]);
+
+  const changeVolume = useCallback((key, val) => {
+    setVolumes(prev => ({ ...prev, [key]: val }));
+    const g = gainsRef.current[key]; const ctx = ctxRef.current;
+    if (g && ctx) {
+      const now = ctx.currentTime;
+      const soloed = soloedRef.current;
+      const target = soloed.size > 0 ? (soloed.has(key) ? val : 0) : (mutedRef.current.has(key) ? 0 : val);
+      g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(target, now + 0.08);
+    }
+  }, []);
+
+  const changeCutoff = useCallback((key, val) => {
+    setCutoffs(prev => ({ ...prev, [key]: val }));
+    const filt = filtersRef.current[key]; const ctx = ctxRef.current;
+    if (filt && ctx) {
+      const now = ctx.currentTime;
+      filt.frequency.cancelScheduledValues(now); filt.frequency.setValueAtTime(filt.frequency.value, now);
+      filt.frequency.linearRampToValueAtTime(val, now + 0.05);
+    }
+  }, []);
+
+  const setVolumesAll = useCallback((v) => {
+    setVolumes(prev => {
+      const merged = { ...prev, ...v };
+      volumesRef.current = merged;
+      const ctx = ctxRef.current;
+      if (ctx) {
+        const now = ctx.currentTime;
+        const soloed = soloedRef.current;
+        Object.keys(v).forEach(key => {
+          const g = gainsRef.current[key];
+          if (g) {
+            const baseVol = merged[key] ?? DEFAULT_VOL;
+            const target = soloed.size > 0
+              ? (soloed.has(key) ? baseVol : 0)
+              : (mutedRef.current.has(key) ? 0 : baseVol);
+            g.gain.cancelScheduledValues(now);
+            g.gain.setValueAtTime(g.gain.value, now);
+            g.gain.linearRampToValueAtTime(target, now + 0.08);
+          }
+        });
+      }
+      return merged;
+    });
+  }, []);
+
+  const setCutoffsAll = useCallback((c) => {
+    setCutoffs(prev => {
+      const merged = { ...prev, ...c };
+      cutoffsRef.current = merged;
+      const ctx = ctxRef.current;
+      if (ctx) {
+        const now = ctx.currentTime;
+        Object.keys(c).forEach(key => {
+          const filt = filtersRef.current[key];
+          if (filt) {
+            filt.frequency.cancelScheduledValues(now);
+            filt.frequency.setValueAtTime(filt.frequency.value, now);
+            filt.frequency.linearRampToValueAtTime(merged[key] ?? DEFAULT_CUTOFF, now + 0.05);
+          }
+        });
+      }
+      return merged;
+    });
+  }, []);
+
+  const setPatternsAll = useCallback((p) => {
+    const obj = (p && typeof p === 'object') ? p : {};
+    setPatterns(obj);
+    patternsRef.current = obj;
+    idbSet('musibox-patterns-v8', obj);
+  }, []);
+
+  const setGridAll = useCallback((g) => {
+    const obj = (g && typeof g === 'object') ? g : {};
+    setGrid(obj);
+    gridRef.current = obj;
+    idbSet('musibox-grid-v8', obj);
+  }, []);
+
+  const setMutedAll = useCallback((arr) => {
+    const s = new Set(Array.isArray(arr) ? arr : []);
+    setMutedTracks(s);
+    mutedRef.current = s;
+    idbSet('musibox-muted-v8', [...s]);
+  }, []);
+
+  const setSoloedAll = useCallback((arr) => {
+    const s = new Set(Array.isArray(arr) ? arr : []);
+    setSoloedTracks(s);
+    soloedRef.current = s;
+    idbSet('musibox-soloed-v8', [...s]);
+  }, []);
+
+  const toggleMute = useCallback((key) => {
+    setMutedTracks(prev => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      mutedRef.current = n;
+      idbSet('musibox-muted-v8', [...n]);
+      return n;
+    });
+  }, []);
+
+  const toggleSolo = useCallback((key) => {
+    setSoloedTracks(prev => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      soloedRef.current = n;
+      idbSet('musibox-soloed-v8', [...n]);
+      return n;
+    });
+  }, []);
+
+  const setPatternFor = useCallback((key, value) => {
+    setPatterns(prev => {
+      const n = { ...prev };
+      if (!value || value === 'inf') delete n[key];
+      else n[key] = value;
+      patternsRef.current = n;
+      return n;
+    });
+  }, []);
+
+  const toggleStep = useCallback((trackId, step) => {
+    setGrid(prev => {
+      const row = prev[trackId] ? [...prev[trackId]] : new Array(SEQ_STEPS).fill(false);
+      row[step] = !row[step];
+      const n = { ...prev, [trackId]: row };
+      if (!row.some(Boolean)) delete n[trackId];
+      gridRef.current = n;
+      return n;
+    });
+  }, []);
+
+  const setGridBulk = useCallback((newGrid) => {
+    setGrid(newGrid);
+    gridRef.current = newGrid;
+    idbSet('musibox-grid-v8', newGrid);
+  }, []);
+
+  const clearGrid = useCallback(() => { setGrid({}); gridRef.current = {}; idbSet('musibox-grid-v8', {}); }, []);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const ctx = ctxRef.current; if (!ctx) return;
+    const now = ctx.currentTime;
+    Object.keys(TRACKS).forEach(key => {
+      const g = gainsRef.current[key];
+      if (!g) return;
+      const baseVol = volumesRef.current[key] ?? DEFAULT_VOL;
+      const soloed = soloedRef.current;
+      const target = soloed.size > 0
+        ? (soloed.has(key) ? baseVol : 0)
+        : (mutedRef.current.has(key) ? 0 : baseVol);
+      g.gain.cancelScheduledValues(now);
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(target, now + 0.06);
+    });
+  }, [mutedTracks, soloedTracks, isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    Object.keys(TRACKS).forEach(key => {
+      const mode = trackModes[key];
+      const want = !!mode;
+      const existing = sourcesRef.current[key];
+      if (want && !existing && !pendingRef.current[key]) startTrackQuantized(key);
+      else if (!want && existing) stopTrack(key);
+    });
+  }, [trackModes, isPlaying, startTrackQuantized, stopTrack]);
+
+  useEffect(() => {
+    if (!ctxRef.current) return;
+    const wasPlaying = isPlaying;
+    stopAllSources();
+    rebuildBuffers();
+    if (wasPlaying) {
+      const ctx = ctxRef.current; const t0 = ctx.currentTime + 0.05;
+      loopStartTimeRef.current = t0;
+      Object.keys(trackModesRef.current).forEach(key => {
+        if (trackModesRef.current[key]) attachSource(key, t0);
+      });
+    }
+    // eslint-disable-next-line
+  }, [numBars]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const loopSec = ONE_BAR * numBars;
+    let raf;
+    const tick = () => {
+      const ctx = ctxRef.current;
+      if (!ctx) { raf = requestAnimationFrame(tick); return; }
+      const now = ctx.currentTime;
+
+      const hasPending = Object.keys(pendingRef.current).some(k => pendingRef.current[k]);
+      if (hasPending) {
+        const elapsed = now - loopStartTimeRef.current;
+        const posInLoop = elapsed >= 0 ? (elapsed % loopSec) : 0;
+        const remaining = 1 - (posInLoop / loopSec);
+        const p = {}; let changed = false;
+        Object.keys(pendingRef.current).forEach(k => {
+          if (pendingRef.current[k]) {
+            p[k] = remaining;
+            if (Math.abs((lastProgressRef.current[k] ?? -1) - remaining) > 0.01) changed = true;
+          }
+        });
+        if (changed) { lastProgressRef.current = p; setPendingProgress(p); }
+      }
+
+      const pKeys = Object.keys(previewStartRef.current);
+      if (pKeys.length > 0) {
+        const pp = {}; let changed = false;
+        pKeys.forEach(k => {
+          if (trackModesRef.current[k] === 'preview') {
+            const elapsed = now - previewStartRef.current[k];
+            if (elapsed > 0) {
+              const remaining = Math.max(0, 1 - elapsed / PREVIEW_SECONDS);
+              pp[k] = remaining;
+              if (Math.abs((lastPreviewRef.current[k] ?? -1) - remaining) > 0.01) changed = true;
+            }
+          }
+        });
+        if (changed || Object.keys(pp).length !== Object.keys(lastPreviewRef.current).length) {
+          lastPreviewRef.current = pp;
+          setPreviewProgress(pp);
+        }
+      }
+
+      const curLoopFloat = (now - loopStartTimeRef.current) / loopSec;
+      if (curLoopFloat >= 0) {
+        const curLoopIdx = Math.floor(curLoopFloat);
+        const curStep = ((curLoopIdx % SEQ_STEPS) + SEQ_STEPS) % SEQ_STEPS;
+
+        if (curLoopIdx !== lastLoopIdxRef.current) {
+          lastLoopIdxRef.current = curLoopIdx;
+          setCurrentStep(curStep);
+
+          const grid = gridRef.current;
+          const patterns = patternsRef.current;
+          const cycles = { '2-2': [2,2], '4-4': [4,4], '1-1': [1,1], '1-3': [1,3] };
+          const hasAnyGrid = Object.keys(grid).length > 0;
+
+          Object.keys(sourcesRef.current).forEach(key => {
+            const g = gainsRef.current[key];
+            if (!g) return;
+
+            let shouldPlay = true;
+
+            const pat = patterns[key];
+            if (pat && pat !== 'inf') {
+              const cyc = cycles[pat] || [1, 0];
+              const [on, off] = cyc;
+              if (off > 0) {
+                const total = on + off;
+                const p = ((curLoopIdx % total) + total) % total;
+                shouldPlay = p < on;
+              }
+            }
+
+            if (hasAnyGrid) {
+              const row = grid[key];
+              if (row) {
+                shouldPlay = shouldPlay && !!row[curStep];
+              }
+            }
+
+            const baseVol = volumesRef.current[key] ?? DEFAULT_VOL;
+            const soloed = soloedRef.current;
+            const target = soloed.size > 0
+              ? (soloed.has(key) ? (shouldPlay ? baseVol : 0) : 0)
+              : (mutedRef.current.has(key) ? 0 : (shouldPlay ? baseVol : 0));
+
+            g.gain.cancelScheduledValues(now);
+            g.gain.setValueAtTime(g.gain.value, now);
+            g.gain.linearRampToValueAtTime(target, now + 0.06);
+          });
+        }
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isPlaying, numBars]);
+
+  const startRecording = useCallback(async () => {
+    await init();
+    if (!isPlaying) await start();
+    if (ctxRef.current.state === 'suspended') await ctxRef.current.resume();
+    await new Promise(r => setTimeout(r, 150));
+    const stream = recDestRef.current.stream;
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+               : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+    const rec = new MediaRecorder(stream, { mimeType: mime });
+    chunksRef.current = [];
+    rec.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: mime });
+      const newUrl = URL.createObjectURL(blob);
+      setRecordedUrl(prev => { if (prev) { try { URL.revokeObjectURL(prev); } catch(e) {} } return newUrl; });
+    };
+    rec.start(); mediaRecRef.current = rec; setIsRecording(true);
+  }, [init, isPlaying, start]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecRef.current && mediaRecRef.current.state !== 'inactive') mediaRecRef.current.stop();
+    setIsRecording(false);
+  }, []);
+
+  useEffect(() => () => {
+    stop();
+    if (ctxRef.current) { try { ctxRef.current.close(); } catch(e) {} }
+  }, [stop]);
+
+  return {
+    isPlaying, trackModes, volumes, cutoffs, pendingTracks, pendingProgress, previewProgress,
+    start, stop, cycleTrack, reset, changeVolume, changeCutoff, setTrackSet,
+    setVolumesAll, setCutoffsAll,
+    mutedTracks, soloedTracks, toggleMute, toggleSolo,
+    setMutedAll, setSoloedAll,
+    patterns, setPatternFor, setPatternsAll,
+    grid, currentStep, toggleStep, clearGrid, setGridBulk, setGridAll,
+    isRecording, recordedUrl, startRecording, stopRecording,
+    reverbOn, setReverbOn, delayOn, setDelayOn, masterVol, setMasterVol,
+    rebuildBuffers,
+  };
+}
+
+function useFavorites() {
+  const [favorites, setFavorites] = useState(new Set());
+  useEffect(() => {
+    (async () => {
+      const stored = await idbGet('musibox-favorites-v8');
+      if (stored && Array.isArray(stored)) setFavorites(new Set(stored));
+    })();
+  }, []);
+  const toggleFav = useCallback((id) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      idbSet('musibox-favorites-v8', [...next]);
+      return next;
+    });
+  }, []);
+  return { favorites, toggleFav };
+}
+
+function useDeviceType() {
+  const calc = () => {
+    if (typeof window === 'undefined') return 'desktop';
+    const w = window.innerWidth;
+    if (w >= 1400) return 'tv';
+    if (w <= 640) return 'phone';
+    if (w <= 1024) return 'tablet';
+    return 'desktop';
+  };
+  const [type, setType] = useState(calc);
+  useEffect(() => {
+    const handler = () => setType(calc());
+    window.addEventListener('resize', handler);
+    window.addEventListener('orientationchange', handler);
+    return () => {
+      window.removeEventListener('resize', handler);
+      window.removeEventListener('orientationchange', handler);
+    };
+  }, []);
+  return type;
+}
+
+function ModeSelector({ selectedModes, onToggleMode, multiMode, setMultiMode, favoriteCounts }) {
+  return html`<div class="modes" role="toolbar" aria-label="Режимы">
+    ${MODES.map(m => {
+      const active = selectedModes.has(m.id);
+      const favCount = favoriteCounts[m.id] || 0;
+      const totalCount = m.isAll ? Object.keys(TRACKS).length : (m.count || 10);
+      const badgeText = favCount > 0 ? `★${favCount}/${totalCount}` : `${totalCount}`;
+      return html`<button key=${m.id}
+        class=${'mode-btn' + (active ? ' active' : '')}
+        style=${active ? { background:`linear-gradient(180deg, ${m.color}, ${m.color}cc)`, borderColor:m.color, boxShadow:`0 0 18px ${m.color}80` } : {}}
+        onClick=${() => onToggleMode(m.id, multiMode ? 'multi' : 'single')}
+        aria-pressed=${active}>
+        <span>${m.icon}</span><span>${m.name}</span>
+        <span class="badge">${badgeText}</span>
+      </button>`;
+    })}
+    <button class=${'mode-btn multi' + (multiMode ? ' active' : '')} onClick=${() => setMultiMode(v => !v)}>
+      ${multiMode ? '✓ ' : ''}🔗 Выбрать несколько
+    </button>
+  </div>`;
+}
+
+function ControlBar({ isPlaying, onPlay, onStop, onReset, count, total, numBars, setNumBars, isRecording, onRecToggle, recordedUrl, onExportJSON, onImportJSON, onOpenSeq, hasGrid }) {
+  return html`<div class="control-bar">
+    <button class=${'btn' + (isPlaying ? ' btn--stop' : '')} onClick=${isPlaying ? onStop : onPlay}>
+      ${isPlaying ? '⏸ Стоп' : '▶ Играть'}
+    </button>
+    <button class="btn btn--ghost" onClick=${onReset}>🔄 Сброс</button>
+    <div class="bars-selector" role="group" aria-label="Длина лупа">
+      ${[1,2,4,8].map(n => html`<button key=${n} class=${numBars === n ? 'active' : ''}
+        onClick=${() => setNumBars(n)}
+        title=${`${n} бар${n > 1 ? 'а' : ''} в лупе`}
+        aria-pressed=${numBars === n}>${n}×</button>`)}
+    </div>
+    <button class=${'btn btn--rec' + (isRecording ? ' active' : '')} onClick=${onRecToggle}>
+      ${isRecording ? '⏹ СТОП REC' : '🔴 Запись'}
+    </button>
+    ${recordedUrl && html`<a class="btn btn--ghost" href=${recordedUrl}
+      download=${'musibox-' + Date.now() + '.webm'} style=${{textDecoration:'none'}}>💾 Скачать</a>`}
+    <button class="btn btn--green" onClick=${onExportJSON} title="Скачать микс в JSON">📤 JSON</button>
+    <button class="btn btn--blue" onClick=${onImportJSON} title="Загрузить микс из JSON">📥 JSON</button>
+    <button class="btn" onClick=${onOpenSeq} title="Мастер-секвенсор 16 тактов"
+      style=${hasGrid ? {background:'linear-gradient(180deg,#fbbf24,#f59e0b)',boxShadow:'0 4px 12px #fbbf2480'} : {}}>
+      🎬 Секвенсор${hasGrid ? ' ●' : ''}
+    </button>
+    <span class="counter">Активно: <b>${count}</b> / ${total}</span>
+  </div>`;
+}
+
+function BonusPopup({ bonus }) {
+  if (!bonus) return null;
+  return html`<div class="bonus-popup" key=${bonus.id}>
+    <div class="bonus-popup__inner">
+      <div class="bonus-popup__emoji">${bonus.emoji}</div>
+      <div class="bonus-popup__title">${bonus.title}</div>
+      <div class="bonus-popup__desc">${bonus.desc}</div>
+    </div>
+  </div>`;
+}
+
+function Presets({ trackModes, applyTracks, showToast, volumes, cutoffs, patterns, grid, muted, soloed, numBars, masterVol, reverbOn, delayOn, onLoadVolumes, onLoadCutoffs, onLoadPatterns, onLoadGrid, onLoadMuted, onLoadSoloed, onLoadNumBars, onLoadMasterVol, onLoadReverbOn, onLoadDelayOn, onBeforeLoad, onAfterLoad }) {
+  const [presets, setPresets] = useState([]);
+  const nameRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      const stored = await idbGet('musibox-presets-v8');
+      if (stored && Array.isArray(stored)) setPresets(stored);
+    })();
+  }, []);
+
+  const save = async () => {
+    const nameVal = nameRef.current ? nameRef.current.value.trim() : '';
+    const n = (nameVal || ('Микс ' + (presets.length + 1)));
+    const next = [...presets, {
+      name: n,
+      tracks: { ...trackModes },
+      volumes: { ...volumes },
+      cutoffs: { ...cutoffs },
+      patterns: { ...patterns },
+      grid: { ...grid },
+      muted: [...muted],
+      soloed: [...soloed],
+      numBars,
+      masterVol,
+      reverbOn,
+      delayOn,
+      date: Date.now()
+    }];
+    setPresets(next);
+    await idbSet('musibox-presets-v8', next);
+    if (nameRef.current) nameRef.current.value = '';
+    if (showToast) showToast('💾 Микс «' + n + '» сохранён!');
+  };
+  const load = (p) => {
+    if (onBeforeLoad) onBeforeLoad();
+    if (typeof p.numBars === 'number' && [1,2,4,8].includes(p.numBars) && onLoadNumBars) {
+      onLoadNumBars(p.numBars);
+    }
+    if (p.tracks) applyTracks(p.tracks);
+    if (p.volumes && onLoadVolumes) onLoadVolumes(p.volumes);
+    if (p.cutoffs && onLoadCutoffs) onLoadCutoffs(p.cutoffs);
+    if (p.patterns && onLoadPatterns) onLoadPatterns(p.patterns);
+    if (p.grid && onLoadGrid) onLoadGrid(p.grid);
+    if (Array.isArray(p.muted) && onLoadMuted) onLoadMuted(p.muted);
+    if (Array.isArray(p.soloed) && onLoadSoloed) onLoadSoloed(p.soloed);
+    if (typeof p.masterVol === 'number' && onLoadMasterVol) onLoadMasterVol(p.masterVol);
+    if (typeof p.reverbOn === 'boolean' && onLoadReverbOn) onLoadReverbOn(p.reverbOn);
+    if (typeof p.delayOn === 'boolean' && onLoadDelayOn) onLoadDelayOn(p.delayOn);
+    if (onAfterLoad) setTimeout(onAfterLoad, 100);
+  };
+  const del = async (i) => {
+    const next = presets.filter((_, idx) => idx !== i);
+    setPresets(next);
+    await idbSet('musibox-presets-v8', next);
+    if (showToast) showToast('🗑️ Микс удалён');
+  };
+
+  return html`<div class="presets-wrap">
+    <div class="presets-row">
+      <input class="preset-input" placeholder="Название микса…" ref=${nameRef} defaultValue="" />
+      <button class="btn btn--ghost" onClick=${save}>💾 Сохранить микс</button>
+    </div>
+    ${presets.length > 0 && html`<div class="presets-list">
+      ${presets.map((p, i) => html`<div key=${i} class="preset">
+        <button class="btn btn--ghost" onClick=${() => load(p)}>▶ ${p.name}</button>
+        <button class="btn btn--ghost" style=${{padding:'12px 14px'}} onClick=${() => del(i)} aria-label="Удалить">✕</button>
+      </div>`)}
+    </div>`}
+  </div>`;
+}
+
+function Welcome({ onStart }) {
+  return html`<div class="welcome">
+    <h2>🎧 Добро пожаловать в Musibox Pro</h2>
+    <p>
+      <b>133 трека</b> · 14 режимов · ★ избранное · 🔍 поиск.<br/>
+      Все звуки в <b>A minor pentatonic</b> — любая комбинация звучит гармонично.<br/>
+      <b>1 клик</b> — превью <b>4 сек</b>. <b>2 клика</b> — зациклить. <b>3 клика</b> — выключить.<br/>
+      <b>Правый клик / долгий тап</b> — настройки трека.
+    </p>
+    <button class="btn" onClick=${onStart} autoFocus>▶ Начать</button>
+  </div>`;
+}
+
+function MasterBar({ masterVol, setMasterVol, reverbOn, setReverbOn, delayOn, setDelayOn }) {
+  return html`<div class="master-bar">
+    <label>🔊 Master
+      <input type="range" min="0" max="100" value=${Math.round(masterVol*100)}
+        onChange=${(e) => setMasterVol(Number(e.target.value)/100)} />
+      <span style=${{fontSize:'11px',opacity:.6,minWidth:'34px',display:'inline-block'}}>${Math.round(masterVol*100)}%</span>
+    </label>
+    <button class=${'fx-toggle' + (reverbOn ? ' active' : '')}
+      onClick=${() => setReverbOn(v => !v)}
+      title="Reverb-шина">🌫️ Reverb</button>
+    <button class=${'fx-toggle' + (delayOn ? ' active' : '')}
+      onClick=${() => setDelayOn(v => !v)}
+      title="Delay-шина">↩️ Delay</button>
+  </div>`;
+}
+
+function App() {
+  const [started, setStarted] = useState(false);
+  const [numBars, setNumBars] = useState(2);
+  const [bonus, setBonus] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [showSeq, setShowSeq] = useState(false);
+  const [tooltip, setTooltip] = useState(null);
+  const [settingsTrack, setSettingsTrack] = useState(null);
+  const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 });
+  const bonusTimerRef = useRef(null);
+  const toastTimerRef = useRef(null);
+  const importFileRef = useRef(null);
+  const shownBonusesRef = useRef(new Set());
+  const [selectedModes, setSelectedModes] = useState(new Set(['all']));
+  const [multiMode, setMultiMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favOnly, setFavOnly] = useState(false);
+
+  const { favorites, toggleFav } = useFavorites();
+  const deviceType = useDeviceType();
+  const audio = useAudioManager(numBars);
+  const {
+    isPlaying, trackModes, volumes, cutoffs, pendingTracks, pendingProgress, previewProgress,
+    start, stop, cycleTrack, reset, changeVolume, changeCutoff, setTrackSet,
+    setVolumesAll, setCutoffsAll,
+    mutedTracks, soloedTracks, toggleMute, toggleSolo,
+    setMutedAll, setSoloedAll,
+    patterns, setPatternFor, setPatternsAll,
+    grid, currentStep, toggleStep, clearGrid, setGridBulk, setGridAll,
+    isRecording, recordedUrl, startRecording, stopRecording,
+    reverbOn, setReverbOn, delayOn, setDelayOn, masterVol, setMasterVol,
+    rebuildBuffers,
+  } = audio;
+
+  const showToast = useCallback((text) => {
+    setToast(text);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const totalTracks = Object.keys(TRACKS).length;
+  const activeCount = useMemo(() => Object.keys(trackModes).length, [trackModes]);
+  const hasGrid = useMemo(() => Object.keys(grid).length > 0, [grid]);
+
+  const favoriteCounts = useMemo(() => {
+    const counts = {};
+    favorites.forEach(id => {
+      const mode = TRACKS[id]?.mode;
+      if (mode) counts[mode] = (counts[mode] || 0) + 1;
+      counts.all = (counts.all || 0) + 1;
+    });
+    return counts;
+  }, [favorites]);
+
+  const visibleTracks = useMemo(() => {
+    let ids;
+    if (favOnly) ids = [...favorites];
+    else if (selectedModes.has('all')) ids = Object.keys(TRACKS);
+    else {
+      const set = new Set();
+      selectedModes.forEach(id => {
+        Object.keys(TRACKS).forEach(tid => { if (TRACKS[tid].mode === id) set.add(tid); });
+      });
+      ids = Object.keys(TRACKS).filter(k => set.has(k));
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      ids = ids.filter(id => {
+        const t = TRACKS[id];
+        return t && (t.label.toLowerCase().includes(q) || (t.desc || '').toLowerCase().includes(q));
+      });
+    }
+    const favArr = [], nonFavArr = [];
+    ids.forEach(id => { if (favorites.has(id)) favArr.push(id); else nonFavArr.push(id); });
+    return [...favArr, ...nonFavArr];
+  }, [selectedModes, favOnly, favorites, searchQuery]);
+
+  const groupedTracks = useMemo(() => {
+    if (favOnly || searchQuery.trim() || !selectedModes.has('all')) return null;
+    const groups = {};
+    visibleTracks.forEach(id => {
+      const m = TRACKS[id].mode;
+      if (!groups[m]) groups[m] = [];
+      groups[m].push(id);
+    });
+    return groups;
+  }, [visibleTracks, favOnly, searchQuery, selectedModes]);
+
+  const handleToggleMode = useCallback((modeId, kind) => {
+    if (favOnly) setFavOnly(false);
+    setSelectedModes(prev => {
+      const next = new Set(prev);
+      if (kind === 'single') {
+        if (next.has(modeId) && next.size === 1) return next;
+        return new Set([modeId]);
+      } else {
+        if (next.has(modeId)) {
+          if (next.size === 1) return next;
+          next.delete(modeId);
+        } else next.add(modeId);
+        return next;
+      }
+    });
+  }, [favOnly]);
+
+  useEffect(() => {
+    if (!multiMode && selectedModes.size > 1) {
+      const first = [...selectedModes][0];
+      setSelectedModes(new Set([first]));
+    }
+  }, [multiMode, selectedModes]);
+
+  useEffect(() => {
+    for (const b of BONUSES) {
+      const match = b.combo.every(k => trackModes[k]);
+      if (match && !shownBonusesRef.current.has(b.id)) {
+        shownBonusesRef.current.add(b.id);
+        setBonus(b);
+        if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
+        bonusTimerRef.current = setTimeout(() => setBonus(null), 3200);
+        break;
+      }
+    }
+  }, [trackModes]);
+
+  useEffect(() => {
+    if (activeCount === 0) shownBonusesRef.current = new Set();
+  }, [activeCount]);
+
+  const handleCharacterClick = async (id) => {
+    if (!isPlaying) await start();
+    cycleTrack(id);
+  };
+
+  const handleOpenSettings = useCallback((id, e) => {
+    const rect = e.currentTarget ? e.currentTarget.getBoundingClientRect() : { left: e.clientX, top: e.clientY };
+    setSettingsTrack(id);
+    setSettingsPos({
+      x: rect.left + (rect.width || 0) + 10,
+      y: rect.top,
+    });
+  }, []);
+
+  const handleCloseSettings = useCallback(() => setSettingsTrack(null), []);
+
+  const handleRecToggle = () => { if (isRecording) stopRecording(); else startRecording(); };
+
+  const handleHover = useCallback((id, el) => {
+    const rect = el.getBoundingClientRect();
+    setTooltip({ track: { ...TRACKS[id], id }, position: { x: rect.left + rect.width/2 - 100, y: rect.bottom } });
+  }, []);
+
+  const handleLeave = useCallback(() => setTooltip(null), []);
+  const handleTapInfo = useCallback((id, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ track: { ...TRACKS[id], id }, position: { x: Math.max(10, rect.left + rect.width/2 - 100), y: rect.bottom } });
+    setTimeout(() => setTooltip(null), 3000);
+  }, []);
+
+  const exportJSON = () => {
+    const data = {
+      format: 'musibox-mix', version: 11, date: new Date().toISOString(),
+      numBars,
+      trackModes: { ...trackModes },
+      volumes: { ...volumes }, cutoffs: { ...cutoffs },
+      masterVol, reverbOn, delayOn,
+      muted: [...mutedTracks], soloed: [...soloedTracks],
+      patterns: { ...patterns }, grid: { ...grid },
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'musibox-mix-' + Date.now() + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📤 Микс экспортирован в JSON');
+  };
+
+  const importJSON = () => { if (importFileRef.current) importFileRef.current.click(); };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.format !== 'musibox-mix') throw new Error('Не формат Musibox');
+
+      stop();
+      if (typeof data.numBars === 'number' && [1,2,4,8].includes(data.numBars)) {
+        setNumBars(data.numBars);
+      }
+      const modes = data.trackModes || data.activeTracks;
+      if (modes && typeof modes === 'object') setTrackSet(modes);
+      if (data.volumes) setVolumesAll(data.volumes);
+      if (data.cutoffs) setCutoffsAll(data.cutoffs);
+      if (typeof data.masterVol === 'number') setMasterVol(data.masterVol);
+      if (typeof data.reverbOn === 'boolean') setReverbOn(data.reverbOn);
+      if (typeof data.delayOn === 'boolean') setDelayOn(data.delayOn);
+      if (data.patterns && typeof data.patterns === 'object') setPatternsAll(data.patterns);
+      if (data.grid && typeof data.grid === 'object') setGridAll(data.grid);
+      if (Array.isArray(data.muted)) setMutedAll(data.muted);
+      if (Array.isArray(data.soloed)) setSoloedAll(data.soloed);
+      if (rebuildBuffers) rebuildBuffers();
+
+      setTimeout(async () => { await start(); }, 120);
+      showToast('📥 Микс загружен!');
+    } catch(err) { showToast('❌ Ошибка: ' + err.message); }
+    e.target.value = '';
+  };
+
+  useEffect(() => {
+    if (!started) document.body.classList.add('no-scroll');
+    else document.body.classList.remove('no-scroll');
+    return () => document.body.classList.remove('no-scroll');
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+    const handler = (e) => {
+      if (e.key === ' ' && !e.target.closest('input')) {
+        e.preventDefault();
+        if (isPlaying) stop(); else start();
+      }
+      if ((e.key === 'r' || e.key === 'R') && !e.target.closest('input')) handleRecToggle();
+      if (e.key === 'Escape') {
+        if (settingsTrack) setSettingsTrack(null);
+        else if (searchQuery) setSearchQuery('');
+        else if (showGuide) setShowGuide(false);
+        else if (showSeq) setShowSeq(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [started, isPlaying, searchQuery, showGuide, showSeq, settingsTrack]);
+
+  const renderCharacters = (ids) => ids.map(id => html`<${Character} key=${id} id=${id}
+      label=${TRACKS[id].label} color=${TRACKS[id].color} emoji=${TRACKS[id].emoji} mode=${TRACKS[id].mode} desc=${TRACKS[id].desc}
+      active=${trackModes[id] === 'loop'}
+      previewing=${trackModes[id] === 'preview'}
+      pending=${!!pendingTracks[id]} pendingProgress=${pendingProgress[id] || 0}
+      previewProgress=${previewProgress[id] || 0}
+      isFav=${favorites.has(id)}
+      isMuted=${mutedTracks.has(id)}
+      isSoloed=${soloedTracks.has(id)}
+      onClick=${handleCharacterClick}
+      onOpenSettings=${handleOpenSettings}
+      onHover=${handleHover} onLeave=${handleLeave} onTapInfo=${handleTapInfo} />`);
+
+  return html`<div class="app" data-device=${deviceType}>
+    <header class="app__header">
+      <h1 class="app__title">🎧 Musibox Pro</h1>
+      <p class="app__subtitle">${totalTracks} треков · 14 режимов · ★ избранное · 🔍 поиск · 🎓 гид · 🎬 секвенсор</p>
+    </header>
+    <div class="topbar">
+      <div class="search-wrap">
+        <input class="search-input" type="text" placeholder="Поиск звука или описания..." value=${searchQuery}
+          onChange=${(e) => setSearchQuery(e.target.value)} aria-label="Поиск" />
+        ${searchQuery && html`<button class="search-clear" onClick=${() => setSearchQuery('')} aria-label="Очистить">×</button>`}
+      </div>
+      <button class=${'fav-filter-btn' + (favOnly ? ' active' : '')} onClick=${() => setFavOnly(v => !v)}>
+        ★ Только избранные <span class="count">${favorites.size}</span>
+      </button>
+      <button class="guide-btn" onClick=${() => setShowGuide(true)}>🎓 Гид</button>
+    </div>
+    ${!favOnly && html`<${ModeSelector} selectedModes=${selectedModes} onToggleMode=${handleToggleMode}
+      multiMode=${multiMode} setMultiMode=${setMultiMode} favoriteCounts=${favoriteCounts} />`}
+    <${MasterBar} masterVol=${masterVol} setMasterVol=${setMasterVol}
+      reverbOn=${reverbOn} setReverbOn=${setReverbOn}
+      delayOn=${delayOn} setDelayOn=${setDelayOn} />
+    <main class="app__stage">
+      ${visibleTracks.length === 0
+        ? html`<div class="no-results">
+            ${favOnly ? 'У тебя пока нет избранных треков.' : searchQuery ? `Ничего не найдено по запросу "${searchQuery}"` : 'Нет треков'}
+          </div>`
+        : groupedTracks
+          ? html`${MODES.filter(m => !m.isAll && groupedTracks[m.id]).map(m => html`
+              <section class="mode-section" key=${m.id}>
+                <h3 class="mode-section__title" style=${{color:m.color}}>
+                  <span>${m.icon} ${m.name}</span>
+                  <span class="line"></span>
+                </h3>
+                <div class="app__characters">${renderCharacters(groupedTracks[m.id])}</div>
+              </section>`)}`
+          : html`<div class="app__characters">${renderCharacters(visibleTracks)}</div>`
+      }
+      <${Presets}
+        trackModes=${trackModes} applyTracks=${setTrackSet} showToast=${showToast}
+        volumes=${volumes} cutoffs=${cutoffs}
+        patterns=${patterns} grid=${grid}
+        muted=${mutedTracks} soloed=${soloedTracks}
+        numBars=${numBars} masterVol=${masterVol} reverbOn=${reverbOn} delayOn=${delayOn}
+        onLoadVolumes=${setVolumesAll} onLoadCutoffs=${setCutoffsAll}
+        onLoadPatterns=${setPatternsAll} onLoadGrid=${setGridAll}
+        onLoadMuted=${setMutedAll} onLoadSoloed=${setSoloedAll}
+        onLoadNumBars=${setNumBars} onLoadMasterVol=${setMasterVol}
+        onLoadReverbOn=${setReverbOn} onLoadDelayOn=${setDelayOn}
+        onBeforeLoad=${stop}
+        onAfterLoad=${start} />
+    </main>
+    <footer style=${{display:'flex', justifyContent:'center'}}>
+      <${ControlBar} isPlaying=${isPlaying} onPlay=${start} onStop=${stop}
+        onReset=${() => { reset(); shownBonusesRef.current = new Set(); }}
+        count=${activeCount} total=${totalTracks}
+        numBars=${numBars} setNumBars=${setNumBars}
+        isRecording=${isRecording} onRecToggle=${handleRecToggle}
+        recordedUrl=${recordedUrl} onExportJSON=${exportJSON} onImportJSON=${importJSON}
+        onOpenSeq=${() => setShowSeq(true)}
+        hasGrid=${hasGrid} />
+    </footer>
+    <input ref=${importFileRef} type="file" accept="application/json,.json" style=${{display:'none'}} onChange=${handleImportFile} />
+    ${bonus && html`<${BonusPopup} bonus=${bonus} />`}
+    ${toast && html`<div class="save-toast">${toast}</div>`}
+    ${tooltip && html`<${Tooltip} track=${tooltip.track} position=${tooltip.position} />`}
+    ${settingsTrack && html`<${SettingsPopup}
+      track=${{...TRACKS[settingsTrack], id: settingsTrack}}
+      position=${settingsPos}
+      volume=${volumes[settingsTrack] ?? DEFAULT_VOL}
+      cutoff=${cutoffs[settingsTrack] ?? DEFAULT_CUTOFF}
+      pattern=${patterns[settingsTrack] || 'inf'}
+      isFav=${favorites.has(settingsTrack)}
+      isMuted=${mutedTracks.has(settingsTrack)}
+      isSoloed=${soloedTracks.has(settingsTrack)}
+      onClose=${handleCloseSettings}
+      onVolumeChange=${changeVolume}
+      onCutoffChange=${changeCutoff}
+      onPatternChange=${setPatternFor}
+      onToggleFav=${toggleFav}
+      onToggleMute=${toggleMute}
+      onToggleSolo=${toggleSolo} />`}
+    ${showGuide && html`<${GuideModal} onClose=${() => setShowGuide(false)} />`}
+    ${showSeq && html`<${SequencerModal}
+      grid=${grid}
+      currentStep=${currentStep}
+      onToggle=${toggleStep}
+      onClear=${clearGrid}
+      onBulkSet=${setGridBulk}
+      onClose=${() => setShowSeq(false)}
+      trackModes=${trackModes} />`}
+    ${!started && html`<${Welcome} onStart=${async () => { setStarted(true); await start(); }} />`}
+  </div>`;
+}
+
+/* Запуск с миграцией старых данных */
+migrateOldData().finally(() => {
+  render(html`<${App} />`, document.getElementById('root'));
+});
+</script>
+</body>
+</html>

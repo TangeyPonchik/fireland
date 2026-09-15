@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДОМ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Creepster&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; width: 100%; }
+body {
+    background: #03060a;
+    color: #b8cce0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+    padding: 2vh 2vw;
+    overflow: hidden;
+    position: relative;
+}
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%);
+    z-index: 100;
+}
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    z-index: 99;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: noiseShift 0.3s infinite;
+}
+@keyframes noiseShift {
+    0% { transform: translate(0,0); }
+    25% { transform: translate(-2%,1%); }
+    50% { transform: translate(1%,-2%); }
+    75% { transform: translate(-1%,2%); }
+    100% { transform: translate(2%,-1%); }
+}
+.game-container {
+    background: #060b12;
+    padding: 4vh 4vw;
+    border-radius: 24px;
+    border: 2px solid #1a0a0a;
+    box-shadow: 0 0 120px rgba(80, 0, 0, 0.25), inset 0 0 100px rgba(0,0,0,0.85);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.5s;
+}
+.game-container.danger {
+    box-shadow: 0 0 140px rgba(180, 0, 0, 0.45), inset 0 0 120px rgba(0,0,0,0.9);
+    animation: dangerPulse 1.5s infinite;
+}
+@keyframes dangerPulse {
+    0%,100% { border-color: #1a0a0a; }
+    50% { border-color: #6a0a0a; }
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2vh;
+    border-bottom: 1px solid #1a0a0a;
+    padding-bottom: 2vh;
+    flex-shrink: 0;
+}
+.title {
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 700;
+    color: #cc8888;
+    letter-spacing: 12px;
+    font-family: 'Creepster', cursive;
+    text-shadow: 0 0 40px rgba(200, 50, 50, 0.4);
+    animation: flicker 4s infinite;
+}
+@keyframes flicker {
+    0%,100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.4; }
+    94% { opacity: 1; }
+    96% { opacity: 0.6; }
+    97% { opacity: 1; }
+}
+.location-badge {
+    font-size: clamp(14px, 1.4vw, 22px);
+    color: #886666;
+    background: #0a0608;
+    padding: 10px 28px;
+    border-radius: 30px;
+    border: 1px solid #2a1010;
+    letter-spacing: 2px;
+}
+.sanity-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 2vh;
+    font-size: clamp(13px, 1.2vw, 18px);
+    color: #665555;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+}
+.sanity-track {
+    flex: 1;
+    height: 12px;
+    background: #0a0608;
+    border-radius: 6px;
+    border: 1px solid #1a0a0a;
+    overflow: hidden;
+}
+.sanity-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #4a1a1a, #aa3333, #dd6666);
+    border-radius: 6px;
+    transition: width 0.6s ease, background 0.6s;
+}
+.sanity-fill.low { background: linear-gradient(90deg, #2a0a0a, #661111, #aa2222); }
+.sanity-fill.critical {
+    background: linear-gradient(90deg, #1a0000, #440000, #880000);
+    animation: sanityPulse 0.8s infinite;
+}
+@keyframes sanityPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.scene {
+    background: #08040a;
+    padding: clamp(24px, 3vw, 50px);
+    border-radius: 18px;
+    border: 1px solid #1a0a0a;
+    margin-bottom: 2vh;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.85);
+    position: relative;
+    transition: transform 0.1s;
+    flex: 1;
+    overflow-y: auto;
+}
+.scene.shake { animation: sceneShake 0.4s; }
+@keyframes sceneShake {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-6px,3px); }
+    40% { transform: translate(6px,-3px); }
+    60% { transform: translate(-5px,-5px); }
+    80% { transform: translate(5px,5px); }
+}
+.scene p {
+    font-size: clamp(16px, 1.5vw, 24px);
+    line-height: 1.8;
+    color: #b0c0d0;
+    margin-bottom: 16px;
+}
+.scene .note {
+    background: #0a0408;
+    padding: 18px 24px;
+    border-radius: 12px;
+    border-left: 4px solid #662222;
+    font-style: italic;
+    color: #aa8888;
+    margin: 18px 0;
+    font-size: clamp(15px, 1.4vw, 22px);
+}
+.scene .whisper {
+    color: #664444;
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 20px);
+    text-align: center;
+    margin: 12px 0;
+    opacity: 0;
+    animation: whisperFade 3s forwards;
+}
+@keyframes whisperFade {
+    0% { opacity: 0; }
+    30% { opacity: 0.8; }
+    100% { opacity: 0.2; }
+}
+.scene .warning {
+    color: #dd6666;
+    background: #1a0606;
+    border: 1px solid #662222;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin: 14px 0;
+    text-align: center;
+    letter-spacing: 1px;
+}
+.scene .death-text {
+    color: #cc2222;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 56px);
+    text-align: center;
+    letter-spacing: 10px;
+    text-shadow: 0 0 50px rgba(200, 0, 0, 0.6);
+    animation: deathGlow 2s infinite;
+    margin: 20px 0;
+}
+@keyframes deathGlow {
+    0%,100% { text-shadow: 0 0 50px rgba(200, 0, 0, 0.6); }
+    50% { text-shadow: 0 0 100px rgba(255, 0, 0, 0.9); }
+}
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 1.5vh;
+    flex-shrink: 0;
+}
+.choice-btn {
+    background: transparent;
+    border: 1px solid #2a1010;
+    color: #aa9999;
+    padding: clamp(14px, 1.5vh, 22px) clamp(20px, 2vw, 36px);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: clamp(15px, 1.3vw, 20px);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: left;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+}
+.choice-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: rgba(180, 40, 40, 0.1);
+    transition: width 0.3s;
+}
+.choice-btn:hover::before { width: 100%; }
+.choice-btn:hover {
+    background: #1a0a0a;
+    border-color: #662222;
+    color: #ddcccc;
+    padding-left: clamp(28px, 3vw, 50px);
+    box-shadow: 0 0 40px rgba(180, 40, 40, 0.12);
+}
+.choice-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.choice-btn.danger-choice {
+    border-color: #662222;
+    color: #dd8888;
+    background: rgba(80, 0, 0, 0.15);
+}
+.inventory-bar {
+    margin-top: 1vh;
+    padding-top: 1.5vh;
+    border-top: 1px solid #1a0a0a;
+    font-size: clamp(12px, 1.1vw, 17px);
+    color: #664444;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex-shrink: 0;
+}
+.inventory-item {
+    background: #0a0408;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid #2a1010;
+    color: #aa8888;
+}
+.log-box {
+    margin-top: 1vh;
+    font-size: clamp(12px, 1.1vw, 16px);
+    color: #553333;
+    min-height: 20px;
+    font-style: italic;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+}
+.step-counter {
+    position: absolute;
+    top: 2vh;
+    right: 3vw;
+    font-size: clamp(10px, 1vw, 14px);
+    color: #331111;
+    letter-spacing: 3px;
+    z-index: 20;
+}
+.glitch-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    background: rgba(150, 0, 0, 0.15);
+    transition: opacity 0.2s;
+}
+.glitch-overlay.active { opacity: 1; animation: glitchFlash 0.3s; }
+@keyframes glitchFlash {
+    0% { opacity: 0; transform: translate(0); }
+    25% { opacity: 1; transform: translate(-8px, 5px); }
+    50% { opacity: 0.5; transform: translate(8px, -5px); }
+    75% { opacity: 1; transform: translate(-5px, -8px); }
+    100% { opacity: 0; transform: translate(0); }
+}
+@media (max-width: 768px) {
+    body { padding: 1vh 1vw; }
+    .game-container { padding: 3vh 4vw; border-radius: 16px; }
+    .title { letter-spacing: 6px; }
+    .sanity-track { height: 8px; }
+    .choice-btn { padding: 12px 16px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="glitch-overlay" id="glitchOverlay"></div>
+<div class="game-container" id="gameContainer">
+    <div class="step-counter" id="stepCounter">ШАГ 0</div>
+    <div class="header">
+        <div class="title">ДОМ</div>
+        <div class="location-badge" id="locationBadge">Вход</div>
+    </div>
+    <div class="sanity-bar">
+        <span>РАССУДОК</span>
+        <div class="sanity-track"><div class="sanity-fill" id="sanityFill"></div></div>
+        <span id="sanityValue">100</span>
+    </div>
+    <div class="scene" id="sceneBox">
+        <p id="sceneText">Ты стоишь перед старым домом. Дверь приоткрыта. Внутри — тишина.</p>
+    </div>
+    <div class="choices" id="choicesBox"></div>
+    <div class="inventory-bar" id="inventoryBar">
+        <span>📦</span>
+        <span id="inventoryList">пусто</span>
+    </div>
+    <div class="log-box" id="logBox"></div>
+</div>
+
+<script>
+// ============ СОСТОЯНИЕ ============
+const state = {
+    location: "entrance",
+    inventory: [],
+    visited: {},
+    flags: {},
+    step: 0,
+    sanity: 100,
+    ending: null,
+    deathReason: null,
+    history: [] // для аналитики концовок
+};
+
+// ============ УТИЛИТЫ ============
+const $ = (id) => document.getElementById(id);
+
+const log = (msg) => {
+    $('logBox').textContent = '› ' + msg;
+};
+
+const updateInventory = () => {
+    const list = $('inventoryList');
+    list.textContent = state.inventory.length === 0 ? 'пусто' : state.inventory.join(' • ');
+};
+
+const hasItem = (item) => state.inventory.includes(item);
+
+const addItem = (item) => {
+    if (!hasItem(item)) {
+        state.inventory.push(item);
+        updateInventory();
+        log('📦 Найдено: ' + item);
+    }
+};
+
+const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// ============ РАССУДОК (исправлено) ============
+// Теперь рассудок тратится ТОЛЬКО на реально страшные события.
+// Обычные осмотры и повторные действия НЕ тратят рассудок.
+const changeSanity = (delta, reason) => {
+    if (delta === 0) return;
+    const old = state.sanity;
+    state.sanity = Math.max(0, Math.min(100, state.sanity + delta));
+    const actualDelta = state.sanity - old;
+
+    $('sanityFill').style.width = state.sanity + '%';
+    $('sanityValue').textContent = state.sanity;
+    $('sanityFill').className = 'sanity-fill';
+    if (state.sanity <= 20) $('sanityFill').classList.add('critical');
+    else if (state.sanity <= 50) $('sanityFill').classList.add('low');
+
+    if (actualDelta < 0) {
+        triggerGlitch();
+        shakeScene();
+        if (reason) log(`🌀 Рассудок ${actualDelta} (${reason})`);
+    }
+
+    // Проверка конца игры — только если ещё не в концовке
+    if (state.sanity <= 0 && !state.flags.gameOver) {
+        state.flags.gameOver = true;
+        state.deathReason = reason || 'безумие';
+        setTimeout(() => goTo('madness'), 400);
+    }
+};
+
+const triggerGlitch = () => {
+    const overlay = $('glitchOverlay');
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 300);
+};
+
+const shakeScene = () => {
+    const scene = $('sceneBox');
+    scene.classList.add('shake');
+    setTimeout(() => scene.classList.remove('shake'), 400);
+};
+
+// ============ ПЕРЕХОДЫ ============
+const goTo = (locationId) => {
+    if (state.flags.gameOver && !['madness','death','ending_good','ending_secret','ending_stay','ending_coward','ending_fire','ending_priest','ending_scientist','ending_cat','ending_double','ending_suicide','ending_escape_window'].includes(locationId)) return;
+    state.location = locationId;
+    state.step++;
+    state.history.push(locationId);
+    $('stepCounter').textContent = 'ШАГ ' + state.step;
+    renderScene(locationId);
+};
+
+// ============ СЛУЧАЙНЫЕ СОБЫТИЯ ============
+// Теперь события НЕ убавляют рассудок автоматически. Они только текст.
+// Рассудок тратится на конкретные выборы игрока.
+const randomEvent = () => {
+    if (Math.random() > 0.4) return null;
+    const events = [
+        'Где-то в глубине дома что-то упало.',
+        'Ты слышишь шаги за спиной. Но там никого нет.',
+        'Шёпот. Он зовёт тебя по имени.',
+        'Стены будто дышат.',
+        'На секунду свет гаснет. Когда он возвращается, всё на месте.',
+        'Ты чувствуешь чей-то взгляд.',
+        'Дверь за тобой медленно закрывается.',
+        'Твоё отражение в тёмном стекле улыбается. Ты — нет.'
+    ];
+    return randomFrom(events);
+};
+
+// ============ СЦЕНЫ ============
+
+const scenes = {
+
+    // ============ ВХОД ============
+    entrance: {
+        render: () => {
+            $('locationBadge').textContent = '🚪 Вход';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Ты стоишь перед старым домом. Дверь приоткрыта. Внутри — тишина, которая кажется слишком плотной.</p>
+                <p>На стене висит старая табличка: <em>«Не входи, если не готов»</em>.</p>
+                <p>Под табличкой — выцарапанные ногтями слова: <em>«Я не был готов»</em>.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '🚪 Войти в дом', action: () => goTo('hallway') },
+                { text: '🔍 Осмотреть табличку', action: () => {
+                    if (!hasItem('📜 Старая записка')) {
+                        addItem('📜 Старая записка');
+                        log('На обратной стороне — детский рисунок. Дом. Три фигуры внутри.');
+                    } else {
+                        log('Ты уже видел это. Рисунок не изменился.');
+                    }
+                    renderScene('entrance');
+                } },
+                { text: '🚶 Уйти прочь', action: () => {
+                    if (state.step === 0) goTo('ending_coward');
+                    else {
+                        log('Слишком поздно. Дом не отпускает.');
+                        changeSanity(-5, 'дом не отпускает');
+                        renderScene('entrance');
+                    }
+                } }
+            ]);
+        }
+    },
+
+    // ============ КОРИДОР ============
+    hallway: {
+        render: () => {
+            $('locationBadge').textContent = '🕯️ Коридор';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Ты входишь в дом. Воздух холодный и сухой, пахнет пылью и чем-то сладковатым. Пол скрипит под ногами.</p>
+                <p>Перед тобой три двери. За одной из них — слабый свет. Две другие — тёмные.</p>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '🚪 Левая дверь', action: () => goTo('room_left') },
+                { text: '🚪 Правая дверь', action: () => goTo('room_right') },
+                { text: '🚪 Дверь в конце коридора', action: () => {
+                    if (hasItem('🗝️ Ржавый ключ')) goTo('room_end');
+                    else {
+                        log('Дверь заперта. Нужен ключ.');
+                        renderScene('hallway');
+                    }
+                } },
+                { text: '👂 Прислушаться', action: () => {
+                    if (!state.flags.listened) {
+                        state.flags.listened = true;
+                        changeSanity(-4, 'шёпот за дверью');
+                        log('Ты слышишь, как за левой дверью кто-то плачет. Или это ветер?');
+                    } else {
+                        log('Ты уже слушал. Больше не хочешь.');
+                    }
+                    renderScene('hallway');
+                } }
+            ];
+            // Если игрок уже был в комнатах — добавить опцию уйти
+            if (state.flags.visited_left && state.flags.visited_right) {
+                choices.push({ text: '🚶 Попробовать выйти из дома', action: () => {
+                    if (hasItem('🗝️ Ржавый ключ') && hasItem('🕯️ Свеча') && hasItem('🖼️ Фотография семьи')) {
+                        log('Ты собрал всё, что нужно. Пора уходить.');
+                        goTo('exit');
+                    } else {
+                        log('Дверь не открывается. Ты ещё не готов.');
+                        changeSanity(-3, 'дверь не поддаётся');
+                        renderScene('hallway');
+                    }
+                }});
+            }
+            renderChoices(choices);
+        }
+    },
+
+    // ============ ЛЕВАЯ КОМНАТА ============
+    room_left: {
+        render: () => {
+            state.flags.visited_left = true;
+            $('locationBadge').textContent = '📖 Левая комната';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>На полу лежит раскрытая книга. Страницы пожелтели, некоторые вырваны.</p>
+                <div class="note">«Если ты читаешь это, значит, ты уже внутри. Не ищи выход. Ищи ответ.»</div>
+                <p>В углу стоит старый шкаф. Дверца приоткрыта. На стене — мутное зеркало.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '📖 Прочитать книгу до конца', action: () => {
+                    if (!hasItem('📖 Книга теней')) {
+                        addItem('📖 Книга теней');
+                        changeSanity(-10, 'запретные знания');
+                        log('Последняя страница написана кровью: «Он уже здесь».');
+                    } else {
+                        log('Ты уже читал это. Перечитывать — плохая идея.');
+                    }
+                    renderScene('room_left');
+                } },
+                { text: '🔍 Открыть шкаф', action: () => {
+                    if (!hasItem('🗝️ Ржавый ключ')) {
+                        addItem('🗝️ Ржавый ключ');
+                        log('На дне шкафа лежит старый ключ. Он холодный как лёд.');
+                    } else {
+                        log('В шкафу больше ничего нет. Только твоё дыхание.');
+                    }
+                    renderScene('room_left');
+                } },
+                { text: '🪞 Посмотреть в зеркало', action: () => {
+                    if (!state.flags.mirror) {
+                        state.flags.mirror = true;
+                        changeSanity(-12, 'отражение моргает');
+                        log('В зеркале ты видишь себя. Но отражение моргает не тогда, когда ты.');
+                    } else {
+                        log('Ты не хочешь снова смотреть в зеркало.');
+                    }
+                    renderScene('room_left');
+                } },
+                { text: '↩️ Вернуться в коридор', action: () => goTo('hallway') }
+            ]);
+        }
+    },
+
+    // ============ ПРАВАЯ КОМНАТА ============
+    room_right: {
+        render: () => {
+            state.flags.visited_right = true;
+            $('locationBadge').textContent = '🖼️ Правая комната';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>На стене висит старая фотография. На ней — семья. Трое детей. Они улыбаются, но глаза у них пустые.</p>
+                <p>Сзади — надпись карандашом: <em>«Мы не вернулись»</em>.</p>
+                <p>Под фотографией — маленькая детская игрушка. Медвежонок с оторванной лапой.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '🔍 Осмотреть фотографию', action: () => {
+                    if (!hasItem('🖼️ Фотография семьи')) {
+                        addItem('🖼️ Фотография семьи');
+                        changeSanity(-5, 'дата на обороте');
+                        log('На обороте — дата. Сегодняшняя.');
+                    } else {
+                        log('Ты уже видел это. Ничего не изменилось.');
+                    }
+                    renderScene('room_right');
+                } },
+                { text: '🧸 Взять медвежонка', action: () => {
+                    if (!hasItem('🧸 Медвежонок')) {
+                        addItem('🧸 Медвежонок');
+                        changeSanity(-3, 'игрушка тёплая');
+                        log('Медвежонок тёплый. Слишком тёплый для игрушки.');
+                    } else {
+                        log('Ты уже взял его. Он смотрит на тебя.');
+                    }
+                    renderScene('room_right');
+                } },
+                { text: '↩️ Вернуться в коридор', action: () => goTo('hallway') }
+            ]);
+        }
+    },
+
+    // ============ КОМНАТА В КОНЦЕ ============
+    room_end: {
+        render: () => {
+            $('locationBadge').textContent = '🪑 Комната в конце';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Ты открываешь дверь. В комнате — пустой стул, стол и свеча. Свеча горит, хотя её никто не зажигал.</p>
+                <p>На столе лежит записка.</p>
+                <div class="note">«Ты прошёл слишком далеко. Но теперь ты знаешь, что искать.»</div>
+                <p>На стене — карта. На ней отмечен подвал. И три символа: ключ, свеча, фотография.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '🗺️ Изучить карту', action: () => {
+                    if (!hasItem('🗺️ Карта подвала')) {
+                        addItem('🗺️ Карта подвала');
+                        log('Подвал — под лестницей, за дверью в полу.');
+                    } else log('Ты уже изучил карту.');
+                    renderScene('room_end');
+                } },
+                { text: '🕯️ Взять свечу', action: () => {
+                    if (!hasItem('🕯️ Свеча')) {
+                        addItem('🕯️ Свеча');
+                        log('Свеча холодная, но пламя не гаснет.');
+                    } else log('У тебя уже есть свеча.');
+                    renderScene('room_end');
+                } },
+                { text: '🔑 Открыть дверь в полу', action: () => {
+                    if (hasItem('🗝️ Ржавый ключ')) {
+                        log('Ключ подходит. За дверью — темнота.');
+                        goTo('basement');
+                    } else {
+                        log('Дверь в полу заперта. Нужен ключ.');
+                        renderScene('room_end');
+                    }
+                } },
+                { text: '↩️ Вернуться в коридор', action: () => goTo('hallway') }
+            ]);
+        }
+    },
+
+    // ============ ПОДВАЛ ============
+    basement: {
+        render: () => {
+            $('locationBadge').textContent = '🕳️ Подвал';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Ты спускаешься в подвал. Внизу темно. ${hasItem('🕯️ Свеча') ? 'Свеча освещает лишь небольшой круг.' : 'Ты видишь только силуэты.'}</p>
+                <p>На полу лежит старый дневник. Рядом — детские рисунки, приколотые к стене.</p>
+                <div class="note">«Если ты читаешь это — значит, ты нашёл путь. Дом не отпускает тех, кто входит. Но если ты сможешь найти три вещи, ты сможешь выйти.»</div>
+                <p>На стене написано кровью: <em>«КЛЮЧ. СВЕЧА. ФОТОГРАФИЯ.»</em></p>
+                <p>В дальнем углу — что-то очень тёмное. Оттуда не доносится ни звука.</p>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '📖 Открыть дневник', action: () => {
+                    if (!hasItem('📖 Дневник')) {
+                        addItem('📖 Дневник');
+                        changeSanity(-8, 'семейная история');
+                        log('Последняя запись: «Оно уже не снаружи. Оно внутри нас».');
+                    } else log('Ты уже читал дневник.');
+                    renderScene('basement');
+                } },
+                { text: '🕯️ Найти свечу', action: () => {
+                    if (!hasItem('🕯️ Свеча')) {
+                        addItem('🕯️ Свеча');
+                        log('В углу подвала ты находишь старую свечу. Она загорается сама.');
+                    } else log('У тебя уже есть свеча.');
+                    renderScene('basement');
+                } },
+                { text: '🔍 Проверить, всё ли у тебя есть', action: () => {
+                    const hasKey = hasItem('🗝️ Ржавый ключ');
+                    const hasCandle = hasItem('🕯️ Свеча');
+                    const hasPhoto = hasItem('🖼️ Фотография семьи');
+                    if (hasKey && hasCandle && hasPhoto) {
+                        log('У тебя есть всё. Выход открыт.');
+                        goTo('exit');
+                    } else {
+                        const missing = [];
+                        if (!hasKey) missing.push('ключ');
+                        if (!hasCandle) missing.push('свеча');
+                        if (!hasPhoto) missing.push('фотография');
+                        log('Не хватает: ' + missing.join(', ') + '.');
+                        renderScene('basement');
+                    }
+                } },
+                { text: '💀 Осмотреть тёмный угол', action: () => {
+                    // ПРЕДУПРЕЖДЕНИЕ если рассудок низкий
+                    if (state.sanity <= 40 && !state.flags.warned_corner) {
+                        state.flags.warned_corner = true;
+                        $('sceneText').innerHTML = `
+                            <p>Ты делаешь шаг к углу. Что-то подсказывает тебе — не надо.</p>
+                            <div class="warning">⚠️ Ты чувствуешь, что оттуда тянет холодом. Осмотр угла может стоить тебе рассудка.</div>
+                        `;
+                        renderChoices([
+                            { text: '💀 Всё равно посмотреть', action: () => {
+                                changeSanity(-20, 'то, что в углу');
+                                log('В темноте что-то движется. Ты видишь глаза. Много глаз.');
+                                // Умереть, если рассудок уже был низким
+                                if (state.sanity <= 15) goTo('death');
+                                else renderScene('basement');
+                            }, danger: true },
+                            { text: '↩️ Отойти', action: () => {
+                                log('Ты отходишь. Угол остаётся тёмным. Пока что.');
+                                renderScene('basement');
+                            } }
+                        ]);
+                        return;
+                    }
+                    // Обычный осмотр
+                    changeSanity(-20, 'то, что в углу');
+                    log('В темноте что-то движется. Ты видишь глаза. Много глаз.');
+                    if (state.sanity <= 15) goTo('death');
+                    else renderScene('basement');
+                } }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    // ============ ВЫХОД ============
+    exit: {
+        render: () => {
+            $('locationBadge').textContent = '🚪 Выход';
+            $('sceneText').innerHTML = `
+                <p>Ты собрал всё, что нужно. Три вещи лежат перед тобой: ключ, свеча, фотография.</p>
+                <p>Ты стоишь у двери, ведущей наружу. Дом позади. Внутри — прошлое. Снаружи — жизнь.</p>
+                <p>Но дверь не открывается просто так. Нужен выбор.</p>
+            `;
+            const choices = [
+                { text: '🕯️ Зажечь свечу и открыть дверь', action: () => goTo('ending_good') },
+                { text: '🔒 Закрыть дверь и остаться', action: () => goTo('ending_stay') },
+                { text: '🔥 Поджечь дом', action: () => goTo('ending_fire') },
+                { text: '🚪 Попробовать выбить дверь', action: () => {
+                    changeSanity(-5, 'отчаянная попытка');
+                    log('Дверь не поддаётся. Она слишком крепкая.');
+                    renderScene('exit');
+                } }
+            ];
+            if (hasItem('📖 Книга теней')) {
+                choices.push({ text: '📖 Прочитать книгу теней вслух', action: () => goTo('ending_secret') });
+            }
+            if (hasItem('📖 Дневник') && hasItem('🧸 Медвежонок')) {
+                choices.push({ text: '🧸 Отдать медвежонка дому', action: () => goTo('ending_double') });
+            }
+            renderChoices(choices);
+        }
+    },
+
+    // ============ КОНЦОВКИ ============
+
+    ending_good: {
+        render: () => {
+            state.ending = 'good'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🌅 Свобода';
+            $('sceneText').innerHTML = `
+                <p>Ты зажигаешь свечу. Пламя дрожит, но не гаснет. Дверь медленно открывается, и в лицо ударяет свежий воздух.</p>
+                <p>Ты выходишь. Дом позади. Ты не оборачиваешься.</p>
+                <p>Но где-то в глубине сознания ты всё ещё слышишь этот шёпот. И знаешь, что однажды вернёшься.</p>
+                <p style="color:#88dd88;font-weight:600;text-align:center;font-size:22px;">🌅 КОНЦОВКА: СВОБОДА</p>
+                <p style="color:#446644;font-size:15px;text-align:center;">Ты выбрался. Но дом не отпустил тебя до конца.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    ending_secret: {
+        render: () => {
+            state.ending = 'secret'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '📖 Тайна';
+            $('sceneText').innerHTML = `
+                <p>Ты открываешь книгу теней на последней странице. Слова написаны кровью, но ты читаешь их вслух.</p>
+                <p>Дом содрогается. Стены трескаются. Свет свечи становится ослепительным.</p>
+                <p>Ты понимаешь: дом — это не место. Это существо. И ты только что назвал его по имени.</p>
+                <p>Оно отпускает тебя. Но ты уносишь его с собой.</p>
+                <p style="color:#cc88ff;font-weight:600;text-align:center;font-size:22px;">📖 КОНЦОВКА: ТАЙНОЕ ИМЯ</p>
+                <p style="color:#664488;font-size:15px;text-align:center;">Ты узнал правду. Но правда узнала тебя.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    ending_stay: {
+        render: () => {
+            state.ending = 'stay'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🏚️ Пленник';
+            $('sceneText').innerHTML = `
+                <p>Ты закрываешь дверь. Свеча гаснет. Темнота обнимает тебя.</p>
+                <p>Ты слышишь, как дом вздыхает с облегчением. Ты — его теперь.</p>
+                <p>На стене появляется новая фотография. На ней — ты. И ты улыбаешься.</p>
+                <p style="color:#cc4444;font-weight:600;text-align:center;font-size:22px;">🏚️ КОНЦОВКА: НОВЫЙ ЖИТЕЛЬ</p>
+                <p style="color:#664444;font-size:15px;text-align:center;">Дом не отпускает. Дом принимает.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    ending_coward: {
+        render: () => {
+            state.ending = 'coward'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🚶 Трус';
+            $('sceneText').innerHTML = `
+                <p>Ты разворачиваешься и уходишь. Дом остаётся позади. Ты слышишь, как дверь за твоей спиной закрывается сама.</p>
+                <p>Ты жив. Но каждую ночь тебе снится этот дом. И ты знаешь, что однажды вернёшься.</p>
+                <p>Потому что дом уже видел тебя. И запомнил.</p>
+                <p style="color:#888888;font-weight:600;text-align:center;font-size:22px;">🚶 КОНЦОВКА: ТРУС</p>
+                <p style="color:#555555;font-size:15px;text-align:center;">Ты ушёл. Но не сбежал.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    ending_fire: {
+        render: () => {
+            state.ending = 'fire'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🔥 Пепел';
+            $('sceneText').innerHTML = `
+                <p>Ты поджигаешь свечу и бросаешь её на сухие доски. Огонь вспыхивает мгновенно — слишком быстро для старого дома.</p>
+                <p>Дом кричит. Ты слышишь его — низкий, протяжный стон, от которого дрожат стены.</p>
+                <p>Ты выбегаешь на улицу. За спиной — пламя до неба. Дом горит. Дом умирает.</p>
+                <p>Но когда ты оборачиваешься, в окне второго этажа стоит фигура. Она смотрит на тебя. И улыбается.</p>
+                <p style="color:#ff8833;font-weight:600;text-align:center;font-size:22px;">🔥 КОНЦОВКА: ОЧИЩЕНИЕ ОГНЁМ</p>
+                <p style="color:#885522;font-size:15px;text-align:center;">Ты убил дом. Но что-то выжило.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    ending_double: {
+        render: () => {
+            state.ending = 'double'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🧸 Обмен';
+            $('sceneText').innerHTML = `
+                <p>Ты протягиваешь медвежонка в темноту. Что-то тёплое касается твоей руки — и забирает игрушку.</p>
+                <p>Свеча гаснет. Дверь открывается сама.</p>
+                <p>Ты выходишь. На пороге оборачиваешься: в окне — детский силуэт. Медвежонок снова с лапой. Ребёнок машет тебе рукой.</p>
+                <p>Ты спасся. Но ты отдал им то, что они хотели.</p>
+                <p style="color:#88ddff;font-weight:600;text-align:center;font-size:22px;">🧸 КОНЦОВКА: ОБМЕН</p>
+                <p style="color:#446688;font-size:15px;text-align:center;">Иногда достаточно вернуть украденное.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    death: {
+        render: () => {
+            state.ending = 'death'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '💀 Смерть';
+            $('sceneText').innerHTML = `
+                <p>Темнота смыкается. Ты чувствуешь холодные пальцы на своей коже.</p>
+                <p>Ты хотел бы закричать, но голоса больше нет.</p>
+                <p>Дом получает то, что хотел.</p>
+                <p class="death-text">ТЫ МЁРТВ</p>
+                <p style="color:#664444;font-size:15px;text-align:center;">Тебя больше нет. Но дом помнит.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    madness: {
+        render: () => {
+            state.ending = 'madness'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🌀 Безумие';
+            $('sceneText').innerHTML = `
+                <p>Ты больше не понимаешь, где реальность, а где дом. Стены шепчут твоё имя. Тени танцуют.</p>
+                <p>Ты смеёшься. Или плачешь. Ты уже не знаешь.</p>
+                <p>Дом поглотил твой разум. Ты остаёшься здесь навсегда. Но теперь ты — часть его.</p>
+                <p style="color:#aa44aa;font-weight:600;text-align:center;font-size:22px;">🌀 КОНЦОВКА: БЕЗУМИЕ</p>
+                <p style="color:#664466;font-size:15px;text-align:center;">Ты не умер. Хуже.</p>
+            `;
+            endScreen();
+        }
+    }
+};
+
+// ============ ФИНАЛЬНЫЙ ЭКРАН ============
+const endScreen = () => {
+    $('choicesBox').innerHTML = `
+        <div style="text-align:center;padding:20px;">
+            <button class="choice-btn" style="text-align:center;" onclick="location.reload()">🔄 Начать заново</button>
+        </div>
+    `;
+    const endings = {
+        good: '🌅 Свобода', secret: '📖 Тайное имя', stay: '🏚️ Новый житель',
+        coward: '🚶 Трус', fire: '🔥 Очищение огнём', double: '🧸 Обмен',
+        death: '💀 Смерть', madness: '🌀 Безумие'
+    };
+    log(`Концовка: ${endings[state.ending] || '?'} • Шагов: ${state.step} • Рассудок: ${state.sanity}`);
+};
+
+// ============ ОТРИСОВКА ============
+const renderChoices = (choicesArray) => {
+    const box = $('choicesBox');
+    box.innerHTML = '';
+    choicesArray.forEach((choice) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn' + (choice.danger ? ' danger-choice' : '');
+        btn.innerHTML = choice.text;
+        btn.onclick = () => { if (choice.action) choice.action(); };
+        box.appendChild(btn);
+    });
+};
+
+const renderScene = (locationId) => {
+    const scene = scenes[locationId];
+    if (scene) scene.render();
+    else {
+        $('sceneText').textContent = 'Ты попал в неизвестное место...';
+        renderChoices([{ text: '↩️ Вернуться', action: () => goTo('entrance') }]);
+    }
+    updateInventory();
+    const container = $('gameContainer');
+    if (state.sanity <= 30) container.classList.add('danger');
+    else container.classList.remove('danger');
+};
+
+// ============ ЗАПУСК ============
+renderScene('entrance');
+</script>
+</body>
+</html>

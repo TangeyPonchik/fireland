@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Последний рубеж v6.5</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+    background: #0a0f0a;
+    color: #c8e6c9;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    min-height: 100vh;
+}
+.game {
+    width: 100%;
+    max-width: 1000px;
+    background: linear-gradient(145deg, #0d1a0d, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 90vh;
+    max-height: 95vh;
+}
+.header {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #2e4a2e;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.title { font-size: 16px; font-weight: 900; color: #66ff66; letter-spacing: 1px; }
+.stats { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.stat {
+    background: rgba(255,255,255,0.05);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.stat.money { color: #ffd700; }
+.stat.gems { color: #00e5ff; }
+.stat.reserve { color: #ffaa00; }
+.tabs { display: flex; gap: 2px; padding: 6px 8px 0; overflow-x: auto; flex-shrink: 0; }
+.tab {
+    padding: 7px 12px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: #8a9a8a;
+    border-radius: 10px 10px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tab.active { background: #1a2e1a; color: #66ff66; border-top: 2px solid #66ff66; }
+.content { padding: 10px; flex: 1; overflow-y: auto; }
+.page { display: none; }
+.page.active { display: block; }
+.campaign-progress {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #1a2e1a;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #66ff66, #00cc00);
+    transition: width 0.4s;
+}
+.level-list { display: flex; flex-direction: column; gap: 5px; }
+.level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.level:hover:not(.locked) { border-color: #66ff66; transform: translateX(3px); }
+.level.locked { opacity: 0.4; cursor: not-allowed; }
+.level.done { border-color: #66ff66; }
+.level.boss { border-color: #ff4444; }
+.level.boss.done { border-color: #ffaa00; }
+.level.current { box-shadow: 0 0 12px rgba(255,170,0,0.3); border-color: #ffaa00; }
+.level-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #0a0f0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #66ff66;
+    border: 2px solid #2e4a2e;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+.level.boss .level-num { color: #ff4444; border-color: #ff4444; }
+.level.done .level-num { color: #ffd700; border-color: #ffd700; }
+.level-info { flex: 1; min-width: 0; }
+.level-name { font-size: 13px; font-weight: 800; color: #fff; }
+.level-desc { font-size: 10px; color: #8a9a8a; }
+.level-reward { font-size: 10px; color: #ffd700; font-weight: 700; }
+.deck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+.deck-title { font-size: 13px; font-weight: 800; color: #66ff66; }
+.deck-btn {
+    padding: 5px 10px;
+    border: 1px solid #66ff66;
+    background: rgba(102,255,102,0.1);
+    color: #66ff66;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.slots { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+.slot {
+    width: 62px; height: 84px;
+    border: 2px dashed #2e4a2e;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.3);
+    cursor: pointer;
+    padding: 2px;
+    text-align: center;
+}
+.slot.filled { border-style: solid; background: #1a2e1a; }
+.slot.filled:hover { border-color: #ff6666; }
+.slot-icon { font-size: 20px; }
+.slot-name { font-size: 7px; font-weight: 700; color: #fff; line-height: 1.1; }
+.slot-lvl { font-size: 7px; color: #ffd700; }
+.pool {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+    gap: 5px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 5px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+}
+.pcard {
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 7px;
+    padding: 3px;
+    cursor: pointer;
+    text-align: center;
+    position: relative;
+    min-height: 78px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.pcard:hover { border-color: #66ff66; }
+.pcard.selected { border-color: #ffaa00; background: #2a1a0d; }
+.pcard.reserved { border-color: #3b82f6; }
+.pcard-icon { font-size: 18px; }
+.pcard-name { font-size: 7px; font-weight: 700; color: #fff; line-height: 1.1; }
+.pcard-lvl {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: #ffd700;
+    color: #1a1a1a;
+    font-size: 7px;
+    font-weight: 900;
+    padding: 1px 4px;
+    border-radius: 5px;
+}
+.rarity {
+    font-size: 6px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 1px 3px;
+    border-radius: 3px;
+    margin-top: 2px;
+}
+.r-common { background: #8a9a8a; color: #fff; }
+.r-rare { background: #3b82f6; color: #fff; }
+.r-epic { background: #a855f7; color: #fff; }
+.r-legendary { background: #ffaa00; color: #1a1a1a; }
+.r-mythic { background: #ff4444; color: #fff; }
+.r-exclusive { background: #ff00ff; color: #fff; }
+.r-boss { background: #ff0000; color: #fff; }
+.big-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #66ff66, #00cc00);
+    color: #0a0f0a;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.big-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.big-btn.orange { background: linear-gradient(135deg, #ffaa00, #ff8800); }
+.big-btn.blue { background: linear-gradient(135deg, #3b82f6, #1e40af); color: #fff; }
+.big-btn.red { background: linear-gradient(135deg, #ff6666, #cc0000); color: #fff; }
+.battle-view { padding: 5px; }
+.battle-controls {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.speed-btn {
+    padding: 6px 12px;
+    border: 1px solid #2e4a2e;
+    background: rgba(0,0,0,0.3);
+    color: #8a9a8a;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.speed-btn:hover { border-color: #66ff66; color: #66ff66; }
+.speed-btn.active {
+    background: linear-gradient(135deg, #66ff66, #00cc00);
+    color: #0a0f0a;
+    border-color: #66ff66;
+}
+.skip-btn {
+    padding: 6px 14px;
+    border: 1px solid #ff8800;
+    background: rgba(255,136,0,0.15);
+    color: #ffaa00;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.skip-btn:hover {
+    background: linear-gradient(135deg, #ffaa00, #ff8800);
+    color: #1a1a00;
+}
+.battle-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #8a9a8a;
+    text-transform: uppercase;
+    margin: 6px 0 4px;
+    text-align: center;
+}
+.battle-line { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; min-height: 10px; }
+.bcard {
+    width: 92px;
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 8px;
+    padding: 5px;
+    text-align: center;
+    transition: all 0.15s;
+    position: relative;
+    min-height: 130px;
+}
+.bcard.enemy { background: linear-gradient(145deg, #2e1a1a, #1a0d0d); border-color: #5a2e2e; }
+.bcard.dead { opacity: 0.15; filter: grayscale(80%); }
+.bcard.hit { animation: shake 0.25s; }
+.bcard.attack { transform: translateY(-4px); }
+@keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+.bcard-icon { font-size: 20px; }
+.bcard-name { font-size: 8px; font-weight: 800; color: #fff; }
+.bcard-stats { font-size: 8px; color: #8a9a8a; display: flex; justify-content: center; gap: 3px; }
+.hp-bar { height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.hp-fill { height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.2s; }
+.bcard.enemy .hp-fill { background: linear-gradient(90deg, #f44336, #ff6b6b); }
+.hp-text { font-size: 7px; font-weight: 800; color: #fff; }
+.battle-status {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 6px;
+    margin: 6px 0;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.4);
+}
+.battle-log {
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 10px;
+    color: #8a9a8a;
+    max-height: 70px;
+    overflow-y: auto;
+    margin-bottom: 6px;
+}
+.battle-log div { padding: 1px 0; }
+.float {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 900;
+    pointer-events: none;
+    left: 50%;
+    top: 30%;
+    transform: translateX(-50%);
+    animation: float-up 0.7s forwards;
+}
+.float.dmg { color: #ff4757; }
+.float.heal { color: #7bed9f; }
+@keyframes float-up { 0%{opacity:1;transform:translate(-50%,0);} 100%{opacity:0;transform:translate(-50%,-25px);} }
+.replace-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 4px;
+    margin: 10px 0;
+}
+.shop-tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.shop-tab {
+    padding: 6px 12px;
+    border: 1px solid #2e4a2e;
+    background: rgba(0,0,0,0.3);
+    color: #8a9a8a;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.shop-tab.active { background: #1a2e1a; color: #66ff66; border-color: #66ff66; }
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+    max-height: 450px;
+    overflow-y: auto;
+    padding: 4px;
+}
+.scard {
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+}
+.scard:hover:not(.owned) { border-color: #66ff66; transform: translateY(-2px); }
+.scard.owned { opacity: 0.4; cursor: default; }
+.scard-icon { font-size: 24px; }
+.scard-name { font-size: 9px; font-weight: 800; color: #fff; }
+.scard-stats { font-size: 8px; color: #8a9a8a; }
+.scard-price { font-size: 11px; font-weight: 800; color: #00e5ff; margin-top: 3px; }
+.scard-price.money { color: #ffd700; }
+.collection-controls { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.sort-btn {
+    padding: 4px 8px;
+    border: 1px solid #2e4a2e;
+    background: rgba(0,0,0,0.3);
+    color: #8a9a8a;
+    border-radius: 7px;
+    font-size: 10px;
+    cursor: pointer;
+}
+.sort-btn.active { background: #1a2e1a; color: #66ff66; border-color: #66ff66; }
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+    max-height: 450px;
+    overflow-y: auto;
+    padding: 4px;
+}
+.ccard {
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #2e4a2e;
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.ccard:hover { border-color: #66ff66; }
+.ccard.locked { opacity: 0.3; cursor: default; }
+.ccard-icon { font-size: 22px; }
+.ccard-name { font-size: 9px; font-weight: 700; color: #fff; }
+.ccard-stats { font-size: 8px; color: #8a9a8a; }
+.ccard-lvl {
+    position: absolute;
+    top: 3px; right: 3px;
+    background: #ffd700;
+    color: #1a1a1a;
+    font-size: 8px;
+    font-weight: 900;
+    padding: 1px 4px;
+    border-radius: 5px;
+}
+.up-btn {
+    margin-top: 4px;
+    padding: 3px 8px;
+    background: #2a4a2a;
+    border: 1px solid #66ff66;
+    color: #66ff66;
+    border-radius: 6px;
+    font-size: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.up-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 10px;
+}
+.modal.show { display: flex; }
+.modal-box {
+    background: linear-gradient(145deg, #1a2e1a, #0d1a0d);
+    border: 2px solid #66ff66;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-box h2 { color: #66ff66; margin-bottom: 8px; font-size: 16px; }
+.modal-box p { font-size: 12px; line-height: 1.5; margin: 5px 0; }
+.modal-box button {
+    margin: 3px;
+    padding: 9px 16px;
+    border: none;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    background: linear-gradient(135deg, #66ff66, #00cc00);
+    color: #0a0f0a;
+}
+.toast {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,30,20,0.95);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 2000;
+    border: 2px solid #66ff66;
+    max-width: 90vw;
+    text-align: center;
+}
+.toast.hide { opacity: 0; transition: opacity 0.3s; }
+.result { text-align: center; padding: 20px 10px; }
+.result-icon { font-size: 50px; }
+.result-title { font-size: 22px; font-weight: 900; margin: 8px 0; }
+.result-title.win { color: #66ff66; }
+.result-title.lose { color: #ff4757; }
+.result-rewards { font-size: 14px; color: #ffd700; margin: 8px 0; }
+.result-buttons { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.reserve-upgrade {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    text-align: center;
+}
+.reserve-upgrade h3 { color: #ffaa00; font-size: 14px; margin-bottom: 6px; }
+.reserve-upgrade .cost { color: #ffd700; font-size: 12px; margin: 4px 0; }
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #66ff66;
+    font-size: 14px;
+    font-weight: 700;
+}
+@media (max-width: 600px) {
+    body { padding: 3px; }
+    .title { font-size: 13px; }
+    .stat { font-size: 9px; padding: 2px 6px; }
+    .tab { padding: 6px 8px; font-size: 10px; }
+    .content { padding: 6px; }
+    .bcard { width: 76px; padding: 3px; min-height: 110px; }
+    .bcard-icon { font-size: 16px; }
+    .bcard-name { font-size: 7px; }
+    .slot { width: 52px; height: 72px; }
+    .pool { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
+    .shop-grid, .collection-grid { grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); }
+    .game { min-height: 95vh; max-height: 98vh; }
+    .speed-btn, .skip-btn { padding: 5px 9px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="game">
+    <div class="header">
+        <div class="title">🧟 ПОСЛЕДНИЙ РУБЕЖ v6.5</div>
+        <div class="stats">
+            <div class="stat money">💰 <span id="uiMoney">0</span></div>
+            <div class="stat gems">💎 <span id="uiGems">0</span></div>
+            <div class="stat reserve">🎒 Резерв ур.<span id="uiReserve">0</span></div>
+            <button class="tab" style="padding:3px 7px;border-radius:50%;" onclick="openSettings()">⚙️</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-page="campaign">🗺️ Кампания</button>
+        <button class="tab" data-page="battle">⚔️ Битва</button>
+        <button class="tab" data-page="shop">💎 Магазин</button>
+        <button class="tab" data-page="collection">📖 Коллекция</button>
+    </div>
+
+    <div class="content" id="content">
+        <div class="loading">⏳ Загрузка сохранения...</div>
+    </div>
+</div>
+
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   0. ХРАНИЛИЩЕ — localStorage с НЕИЗМЕННЫМ ключом
+   ============================================================ */
+
+const SAVE_KEY = 'lastStand_v61';
+const SPEED_KEY = 'lastStand_battleSpeed';
+
+/* ============================================================
+   1. ДАННЫЕ
+   ============================================================ */
+
+const ABILITIES = {
+    poison:  { name: 'Яд',         icon: '☠️' },
+    shield:  { name: 'Щит',        icon: '🛡️' },
+    berserk: { name: 'Берсерк',    icon: '🔥' },
+    double:  { name: 'Двойной',    icon: '⚡' },
+    splash:  { name: 'Сплеш',      icon: '💥' },
+    summon:  { name: 'Призыв',     icon: '👻' },
+    reflect: { name: 'Отражение',  icon: '🪞' },
+    rage:    { name: 'Ярость',     icon: '😡' }
+};
+
+/* === КАРТЫ (БЕЗ heal/regen/vampire/revive) === */
+const CARDS = [
+    /* === Common (8) === */
+    { id:'worker',    name:'Работяга',      icon:'🧟', r:'common',    atk:3,  def:2,  hp:10, spd:1, price:50,   ab:null },
+    { id:'scientist', name:'Учёный',        icon:'🧠', r:'common',    atk:4,  def:1,  hp:8,  spd:2, price:60,   ab:null },
+    { id:'runner',    name:'Бегун',         icon:'🏃', r:'common',    atk:3,  def:1,  hp:6,  spd:3, price:80,   ab:'double' },
+    { id:'mechanic',  name:'Механик',       icon:'🛠️', r:'common',    atk:3,  def:3,  hp:9,  spd:1, price:90,   ab:'shield' },
+    { id:'tank',      name:'Танк',          icon:'🛡️', r:'common',    atk:2,  def:6,  hp:16, spd:1, price:100,  ab:null },
+    { id:'scout',     name:'Разведчик',     icon:'🔭', r:'common',    atk:4,  def:2,  hp:8,  spd:3, price:110,  ab:null },
+    { id:'guard',     name:'Стражник',      icon:'⚔️', r:'common',    atk:3,  def:4,  hp:11, spd:1, price:115,  ab:'shield' },
+    { id:'archer',    name:'Лучник',        icon:'🏹', r:'common',    atk:5,  def:1,  hp:7,  spd:2, price:120,  ab:null },
+
+    /* === Rare (12) === */
+    { id:'fire',      name:'Огненный',      icon:'🔥', r:'rare',      atk:6,  def:2,  hp:12, spd:2, price:200,  ab:'splash' },
+    { id:'ice',       name:'Ледяной',       icon:'❄️', r:'rare',      atk:5,  def:4,  hp:11, spd:1, price:220,  ab:'shield' },
+    { id:'skeleton',  name:'Скелет',        icon:'💀', r:'rare',      atk:5,  def:3,  hp:10, spd:2, price:240,  ab:'summon' },
+    { id:'electric',  name:'Электро',       icon:'⚡', r:'rare',      atk:7,  def:1,  hp:9,  spd:3, price:250,  ab:'double' },
+    { id:'berserker', name:'Берсерк',       icon:'😡', r:'rare',      atk:8,  def:1,  hp:12, spd:2, price:260,  ab:'berserk' },
+    { id:'mirror',    name:'Зеркало',       icon:'🪞', r:'rare',      atk:4,  def:4,  hp:11, spd:2, price:270,  ab:'reflect' },
+    { id:'knight',    name:'Рыцарь',        icon:'🛡️', r:'rare',      atk:6,  def:5,  hp:14, spd:2, price:290,  ab:'shield' },
+    { id:'warlock',   name:'Чернокнижник',  icon:'🔮', r:'rare',      atk:6,  def:3,  hp:10, spd:2, price:310,  ab:'poison' },
+    { id:'ninja',     name:'Ниндзя',        icon:'🥷', r:'rare',      atk:7,  def:2,  hp:8,  spd:5, price:320,  ab:'double' },
+    { id:'monk',      name:'Монах',         icon:'🧘', r:'rare',      atk:5,  def:6,  hp:15, spd:1, price:330,  ab:'reflect' },
+    { id:'gladiator', name:'Гладиатор',     icon:'🏛️', r:'rare',      atk:7,  def:4,  hp:13, spd:2, price:335,  ab:'berserk' },
+    { id:'samurai',   name:'Самурай',       icon:'🗡️', r:'rare',      atk:9,  def:3,  hp:11, spd:3, price:340,  ab:'double' },
+
+    /* === Epic (10) === */
+    { id:'dragon',    name:'Дракон',        icon:'🐉', r:'epic',      atk:10, def:5,  hp:18, spd:3, price:500,  ab:'splash' },
+    { id:'king',      name:'Король',        icon:'👑', r:'epic',      atk:8,  def:7,  hp:20, spd:2, price:550,  ab:'shield' },
+    { id:'storm',     name:'Буря',          icon:'🌪️', r:'epic',      atk:12, def:3,  hp:15, spd:4, price:600,  ab:'double' },
+    { id:'wizard',    name:'Маг',           icon:'🧙', r:'epic',      atk:13, def:3,  hp:13, spd:3, price:720,  ab:'splash' },
+    { id:'werewolf',  name:'Оборотень',     icon:'🐺', r:'epic',      atk:14, def:4,  hp:14, spd:4, price:750,  ab:'berserk' },
+    { id:'golem',     name:'Голем',         icon:'🪨', r:'epic',      atk:9,  def:12, hp:22, spd:1, price:800,  ab:'shield' },
+    { id:'hydra',     name:'Гидра',         icon:'🐲', r:'epic',      atk:13, def:6,  hp:20, spd:2, price:820,  ab:'splash' },
+    { id:'necromancer', name:'Некромант',   icon:'⚰️', r:'epic',      atk:10, def:5,  hp:15, spd:2, price:850,  ab:'summon' },
+    { id:'minotaur',  name:'Минотавр',      icon:'🐂', r:'epic',      atk:15, def:5,  hp:17, spd:3, price:860,  ab:'rage' },
+    { id:'serpent',   name:'Змей',          icon:'🐍', r:'epic',      atk:11, def:6,  hp:16, spd:3, price:880,  ab:'poison' },
+
+    /* === Legendary (7) === */
+    { id:'titan',     name:'Титан',         icon:'🗿', r:'legendary', atk:20, def:15, hp:30, spd:2, price:1200, ab:'shield' },
+    { id:'leviathan', name:'Левиафан',      icon:'🐋', r:'legendary', atk:22, def:16, hp:35, spd:3, price:1400, ab:'splash' },
+    { id:'void',      name:'Пустота',       icon:'🕳️', r:'legendary', atk:18, def:12, hp:22, spd:5, price:1500, ab:'poison' },
+    { id:'kraken',    name:'Кракен',        icon:'🦑', r:'legendary', atk:20, def:14, hp:30, spd:4, price:1600, ab:'poison' },
+    { id:'colossus',  name:'Колосс',        icon:'🏔️', r:'legendary', atk:21, def:18, hp:38, spd:2, price:1750, ab:'reflect' },
+    { id:'archon',    name:'Архонт',        icon:'👁️', r:'legendary', atk:16, def:14, hp:26, spd:4, price:1800, ab:'rage' },
+    { id:'behemoth',  name:'Бегемот',       icon:'🦏', r:'legendary', atk:24, def:20, hp:40, spd:2, price:1900, ab:'rage' },
+
+    /* === Mythic (5) === */
+    { id:'chronos',   name:'Хронос',        icon:'⏳', r:'mythic',    atk:25, def:20, hp:35, spd:6, price:2000, ab:'double' },
+    { id:'galaxy',    name:'Галактика',     icon:'🌌', r:'mythic',    atk:30, def:25, hp:40, spd:5, price:2500, ab:'splash' },
+    { id:'infinity',  name:'Бесконечность', icon:'♾️', r:'mythic',    atk:32, def:28, hp:45, spd:7, price:2800, ab:'double' },
+    { id:'nebula',    name:'Небула',        icon:'✨', r:'mythic',    atk:34, def:26, hp:48, spd:5, price:3200, ab:'splash' },
+    { id:'singularity', name:'Сингулярность', icon:'🌑', r:'mythic',  atk:38, def:22, hp:42, spd:6, price:3600, ab:'poison' },
+
+    /* === Bosses (8) === */
+    { id:'boss1',     name:'Повелитель',    icon:'👹', r:'boss',      atk:12, def:8,  hp:40,  spd:3, price:0, ab:'berserk' },
+    { id:'boss2',     name:'Кровавый',      icon:'🩸', r:'boss',      atk:18, def:12, hp:60,  spd:4, price:0, ab:'poison' },
+    { id:'boss3',     name:'Древний',       icon:'🐲', r:'boss',      atk:25, def:18, hp:90,  spd:4, price:0, ab:'splash' },
+    { id:'boss4',     name:'Апокалипсис',   icon:'💀', r:'boss',      atk:35, def:25, hp:130, spd:5, price:0, ab:'reflect' },
+    { id:'boss5',     name:'Разрушитель',   icon:'🌋', r:'boss',      atk:45, def:30, hp:160, spd:6, price:0, ab:'rage' },
+    { id:'boss6',     name:'Пожиратель',    icon:'👾', r:'boss',      atk:55, def:35, hp:200, spd:6, price:0, ab:'poison' },
+    { id:'boss7',     name:'Владыка Бездны',icon:'🐙', r:'boss',      atk:65, def:40, hp:250, spd:7, price:0, ab:'summon' },
+    { id:'boss8',     name:'Хаос',          icon:'🌑', r:'boss',      atk:80, def:50, hp:320, spd:8, price:0, ab:'berserk' },
+
+    /* === Exclusive (1) === */
+    { id:'fireland',  name:'FireLand',      icon:'🔥', r:'exclusive', atk:50, def:40, hp:100, spd:10,price:5000, ab:'double' }
+];
+
+/* ★★★ ПРИОРИТЕТЫ КАРТ (1 = слабейший, 200 = сильнейший) ★★★ */
+const CARD_PRIORITY = {
+    /* Common: 1-50 */
+    scientist: 8,
+    worker:    12,
+    runner:    15,
+    scout:     20,
+    archer:    25,
+    mechanic:  30,
+    guard:     38,
+    tank:      42,
+
+    /* Rare: 51-100 */
+    skeleton:  52,
+    monk:      55,
+    ice:       58,
+    mirror:    60,
+    warlock:   62,
+    knight:    65,
+    fire:      68,
+    gladiator: 70,
+    berserker: 72,
+    electric:  75,
+    ninja:     78,
+    samurai:   82,
+
+    /* Epic: 101-150 */
+    necromancer: 102,
+    king:        105,
+    golem:       108,
+    serpent:     110,
+    dragon:      115,
+    werewolf:    118,
+    storm:       120,
+    wizard:      125,
+    hydra:       128,
+    minotaur:    130,
+
+    /* Legendary: 151-180 */
+    archon:    152,
+    titan:     155,
+    leviathan: 158,
+    colossus:  162,
+    kraken:    165,
+    void:      168,
+    behemoth:  172,
+
+    /* Mythic: 181-199 */
+    chronos:     182,
+    galaxy:      188,
+    nebula:      192,
+    infinity:    195,
+    singularity: 198,
+
+    /* Exclusive: 200 */
+    fireland: 200
+};
+
+const ARTIFACTS = [
+    { id:'art_atk',  name:'Клык',      icon:'🦷', price:500,  desc:'+15% атаки',    effect:{atk:0.15} },
+    { id:'art_def',  name:'Панцирь',   icon:'🐢', price:500,  desc:'+20% защиты',   effect:{def:0.20} },
+    { id:'art_hp',   name:'Сердце',    icon:'❤️', price:700,  desc:'+20% HP',       effect:{hp:0.20} },
+    { id:'art_spd',  name:'Крылья',    icon:'🪽', price:800,  desc:'+1 скорость',   effect:{spd:1} },
+    { id:'art_luck', name:'Клевер',    icon:'🍀', price:1000, desc:'+10% удачи',    effect:{luck:0.10} },
+    { id:'art_gold', name:'Монета',    icon:'🪙', price:1200, desc:'+25% монет',    effect:{gold:0.25} },
+    { id:'art_gem',  name:'Кристалл',  icon:'💎', price:2000, desc:'+50% гемов',    effect:{gem:0.50} },
+    { id:'art_crit', name:'Коготь',    icon:'🗡️', price:1500, desc:'+10% крита',    effect:{crit:0.10} }
+];
+
+const LEVEL_NAMES = [
+    'Рассвет','Эхо','Тень','Бездна','Фантом',
+    'Кошмар','Пустота','Отчаяние','Инферно','Вечность',
+    'Пепел','Хаос','Разлом','Проклятие','Забвение',
+    'Мрак','Гроза','Ледник','Огонь','Апокалипсис',
+    'Погибель','Руины','Судный день','Цитадель','Пекло',
+    'Тьма','Смерть','Возмездие','Разрушение','Рок',
+    'Конец времён','Ничто','Абсолют','Сингулярность','Омега',
+    'Альфа','Рождение','Смерть звёзд','Коллапс','Финал'
+];
+
+function enemyCountForLevel(i) { return Math.min(30, 3 + Math.floor(i * 0.6)); }
+function enemyReserveForLevel(i) {
+    if (i < 10) return 0;
+    return Math.min(6, Math.floor((i - 10) / 5));
+}
+
+const CAMPAIGN = [];
+for (let i = 1; i <= 40; i++) {
+    const isBoss = i % 5 === 0;
+    CAMPAIGN.push({
+        id: i,
+        name: LEVEL_NAMES[i-1],
+        isBoss,
+        enemyCount: enemyCountForLevel(i),
+        enemyReserve: enemyReserveForLevel(i),
+        enemyLevel: Math.max(1, Math.floor(i * 0.7)),
+        bossId: isBoss ? 'boss' + (i/5) : null,
+        rewardMoney: 50 + i * 20,
+        rewardGems: isBoss ? 30 + i : 5 + Math.floor(i/2)
+    });
+}
+
+const UPGRADE_COSTS = {2:100,3:250,4:500,5:1000,6:2000,7:4000,8:8000,9:16000,10:32000};
+const RESERVE_COSTS = {
+    1: { gems: 50,   money: 200 },
+    2: { gems: 150,  money: 500 },
+    3: { gems: 400,  money: 1200 },
+    4: { gems: 1000, money: 3000 },
+    5: { gems: 2500, money: 8000 },
+    6: { gems: 5000, money: 20000 }
+};
+
+const VALID_CARD_IDS = CARDS.map(c => c.id);
+const VALID_ARTIFACT_IDS = ARTIFACTS.map(a => a.id);
+
+/* ============================================================
+   2. СОСТОЯНИЕ
+   ============================================================ */
+
+function freshState() {
+    return {
+        money: 200,
+        gems: 100,
+        ownedCards: ['worker','scientist','mechanic','runner'],
+        cardLevels: {},
+        ownedArtifacts: [],
+        deck: ['worker','scientist','mechanic','runner',''],
+        reserve: [],
+        reserveLevel: 0,
+        campaignProgress: 0,
+        totalBattles: 0,
+        totalWins: 0,
+        lastDaily: 0,
+        sound: true
+    };
+}
+
+let state = freshState();
+let deck = [...state.deck];
+let reserve = [...state.reserve];
+let gameReady = false;
+let battle = null;
+let battleSpeed = 1;
+try {
+    const savedSpeed = Number(localStorage.getItem(SPEED_KEY));
+    if ([1, 2, 4].includes(savedSpeed)) battleSpeed = savedSpeed;
+} catch(e) {}
+
+function validateState(s) {
+    if (!s || typeof s !== 'object') return freshState();
+    const d = freshState();
+
+    s.money = Math.max(0, Math.floor(Number(s.money) || 0));
+    s.gems = Math.max(0, Math.floor(Number(s.gems) || 0));
+    s.reserveLevel = Math.max(0, Math.min(6, Math.floor(Number(s.reserveLevel) || 0)));
+    s.campaignProgress = Math.max(0, Math.min(CAMPAIGN.length, Math.floor(Number(s.campaignProgress) || 0)));
+    s.totalBattles = Math.max(0, Math.floor(Number(s.totalBattles) || 0));
+    s.totalWins = Math.max(0, Math.floor(Number(s.totalWins) || 0));
+    s.lastDaily = Math.max(0, Number(s.lastDaily) || 0);
+    s.sound = s.sound !== false;
+
+    if (!Array.isArray(s.ownedCards)) s.ownedCards = [];
+    s.ownedCards = [...new Set(s.ownedCards)].filter(id => VALID_CARD_IDS.includes(id));
+    d.ownedCards.forEach(id => { if (!s.ownedCards.includes(id)) s.ownedCards.push(id); });
+
+    if (!s.cardLevels || typeof s.cardLevels !== 'object') s.cardLevels = {};
+    const cleanLevels = {};
+    for (const id of s.ownedCards) {
+        const lvl = Math.max(1, Math.min(10, Math.floor(Number(s.cardLevels[id]) || 1)));
+        if (lvl > 1) cleanLevels[id] = lvl;
+    }
+    s.cardLevels = cleanLevels;
+
+    if (!Array.isArray(s.ownedArtifacts)) s.ownedArtifacts = [];
+    s.ownedArtifacts = [...new Set(s.ownedArtifacts)].filter(id => VALID_ARTIFACT_IDS.includes(id));
+
+    if (!Array.isArray(s.deck)) s.deck = ['','','','',''];
+    s.deck = s.deck.slice(0, 5).map(id => (id && s.ownedCards.includes(id)) ? id : '');
+    while (s.deck.length < 5) s.deck.push('');
+    const seen = new Set();
+    s.deck = s.deck.map(id => {
+        if (!id) return '';
+        if (seen.has(id)) return '';
+        seen.add(id);
+        return id;
+    });
+    const nonEmpty = s.deck.filter(id => id);
+    while (nonEmpty.length < 5) nonEmpty.push('');
+    s.deck = nonEmpty;
+
+    if (!Array.isArray(s.reserve)) s.reserve = [];
+    s.reserve = [...new Set(s.reserve.filter(id => s.ownedCards.includes(id)))];
+    if (s.reserve.length > s.reserveLevel) s.reserve = s.reserve.slice(0, s.reserveLevel);
+
+    return s;
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return freshState();
+        const parsed = JSON.parse(raw);
+        return validateState(parsed);
+    } catch(e) {
+        console.warn('Load error:', e);
+        return freshState();
+    }
+}
+
+function save() {
+    if (!gameReady) return;
+    try {
+        state.deck = [...deck];
+        state.reserve = [...reserve];
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    } catch(e) {
+        console.warn('Save error:', e);
+    }
+}
+
+function resetGame() {
+    if (!confirm('⚠️ СБРОСИТЬ ВЕСЬ ПРОГРЕСС?\n\nЭто удалит ВСЁ — карты, уровни, артефакты, кампанию.')) return;
+    if (!confirm('⚠️ ТОЧНО СБРОСИТЬ?\n\nЭто действие НЕЛЬЗЯ отменить!')) return;
+
+    try {
+        gameReady = false;
+        if (battle) { if (battle.timer) clearInterval(battle.timer); battle = null; }
+        localStorage.removeItem(SAVE_KEY);
+        try { sessionStorage.clear(); } catch(e) {}
+
+        state = freshState();
+        deck = [...state.deck];
+        reserve = [...state.reserve];
+        gameReady = true;
+        save();
+
+        closeModal();
+        renderHeader();
+        switchPage('campaign');
+        renderAll();
+        toast('🗑️ Всё сброшено!');
+    } catch(e) {
+        console.error('Reset error:', e);
+        toast('❌ Ошибка сброса');
+        gameReady = true;
+    }
+}
+
+/* ============================================================
+   3. ЗВУК
+   ============================================================ */
+
+const Sound = {
+    ctx: null,
+    lastPlay: 0,
+    play(type) {
+        if (!state.sound) return;
+        const now = Date.now();
+        if (now - this.lastPlay < 30) return;
+        this.lastPlay = now;
+        try {
+            if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (this.ctx.state === 'suspended') this.ctx.resume();
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            const t = this.ctx.currentTime;
+            const map = {
+                hit:    [220, 80, 0.08, 'sawtooth'],
+                crit:   [440, 110, 0.12, 'square'],
+                heal:   [600, 900, 0.15, 'sine'],
+                win:    [523, 1046, 0.35, 'sine'],
+                lose:   [300, 100, 0.4, 'sawtooth'],
+                click:  [700, 700, 0.04, 'sine'],
+                coin:   [1000, 1600, 0.12, 'sine'],
+                upgrade:[400, 800, 0.25, 'sine'],
+                spawn:  [300, 600, 0.15, 'triangle']
+            };
+            const [f1, f2, dur, wave] = map[type] || map.click;
+            osc.type = wave;
+            osc.frequency.setValueAtTime(f1, t);
+            osc.frequency.exponentialRampToValueAtTime(f2, t + dur);
+            gain.gain.setValueAtTime(0.07, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            osc.start(t); osc.stop(t + dur);
+        } catch(e) {}
+    }
+};
+
+/* ============================================================
+   4. ЯДРО
+   ============================================================ */
+
+function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+function makeCard(card, side, level, isBossLevel, bossHpMul) {
+    if (!card || !card.id) return null;
+    const lvlBonus = Math.max(0, (num(level) - 1) * 2);
+    const atkMul = 1 + getArtifactsBonus('atk');
+    const defMul = 1 + getArtifactsBonus('def');
+    const hpMul  = 1 + getArtifactsBonus('hp');
+    const spdAdd = getArtifactsBonus('spd');
+
+    let atk = num(card.atk) + Math.floor(lvlBonus / 2);
+    let def = num(card.def) + Math.floor(lvlBonus / 2);
+    let hp  = num(card.hp) + lvlBonus;
+    let spd = num(card.spd);
+
+    if (side === 'A') {
+       atk = Math.floor(atk * atkMul);
+if (atkMul > 1 && atk === Math.floor(num(card.atk) + Math.floor(lvlBonus / 2))) {
+    atk += 1;  // гарантированный +1 если артефакт есть, но округление не дало прибавки
+}
+        def = Math.floor(def * defMul);
+        hp  = Math.floor(hp  * hpMul);
+        spd = spd + spdAdd;
+    }
+    if (isBossLevel) hp = Math.floor(hp * num(bossHpMul || 1));
+
+    atk = Math.max(1, atk);
+    def = Math.max(0, def);
+    hp  = Math.max(1, hp);
+    spd = Math.max(1, spd);
+
+    return {
+        uid: card.id + '_' + side + '_' + Math.random().toString(36).slice(2,10),
+        id: card.id, name: card.name, icon: card.icon, r: card.r,
+        atk, def, hp, maxHp: hp, spd,
+        ability: card.ab || null,
+        side,
+        poison: 0, shield: card.ab === 'shield', rageBonus: 0,
+        alive: true
+    };
+}
+
+function getArtifactsBonus(key) {
+    let sum = 0;
+    state.ownedArtifacts.forEach(aid => {
+        const a = ARTIFACTS.find(x => x.id === aid);
+        if (a && a.effect[key]) sum += num(a.effect[key]);
+    });
+    return sum;
+}
+
+/* ============================================================
+   5. СИМУЛЯЦИЯ
+   ============================================================ */
+
+const MAX_SLOTS = 5;
+const MAX_TURNS = 500;
+
+function simulateBattle(teamA, teamB, reserveA, reserveB) {
+    const a = teamA.map(c => ({...c}));
+    const b = teamB.map(c => ({...c}));
+    const rA = (reserveA || []).map(c => ({...c}));
+    const rB = (reserveB || []).map(c => ({...c}));
+
+    const events = [];
+    let turn = 0;
+    let noDeathTurns = 0;
+    const isAlive = c => c.alive && c.hp > 0;
+
+    while (turn < MAX_TURNS) {
+        turn++;
+        const aliveA = a.filter(isAlive);
+        const aliveB = b.filter(isAlive);
+        if (!aliveA.length || !aliveB.length) break;
+
+        events.push({ type: 'turn', n: turn });
+        let anyDeath = false;
+
+        for (const c of [...a, ...b]) {
+            if (!isAlive(c)) continue;
+            if (num(c.poison) > 0) {
+                c.hp = num(c.hp) - num(c.poison);
+                events.push({ type: 'poison', target: c.uid, dmg: c.poison });
+                if (c.hp <= 0) {
+                    c.hp = 0;
+                    c.alive = false;
+                    events.push({ type: 'death', target: c.uid, side: c.side });
+                    const own = c.side === 'A' ? a : b;
+                    const ownRes = c.side === 'A' ? rA : rB;
+                    handleDeathAndReplace(c, own, ownRes, c.side, events);
+                    anyDeath = true;
+                }
+            }
+        }
+
+        const order = [...a.filter(isAlive), ...b.filter(isAlive)]
+            .sort((x, y) => (y.spd - x.spd) || (Math.random() - 0.5));
+
+        for (const attacker of order) {
+            if (!isAlive(attacker)) continue;
+            const enemyTeam = attacker.side === 'A' ? b : a;
+            const enemies = enemyTeam.filter(isAlive);
+            if (!enemies.length) break;
+
+            const target = enemies.reduce((m, e) => e.hp < m.hp ? e : m, enemies[0]);
+            performAttack(attacker, target, events, a, b, rA, rB);
+            if (!target.alive) anyDeath = true;
+
+            if (isAlive(attacker) && attacker.ability) {
+                const allies = (attacker.side === 'A' ? a : b).filter(isAlive);
+                applyAbility(attacker, allies, enemies, events);
+            }
+            if (!a.some(isAlive) || !b.some(isAlive)) break;
+        }
+
+        if (anyDeath) noDeathTurns = 0;
+        else noDeathTurns++;
+        if (noDeathTurns >= 40) {
+            events.push({ type: 'stalemate' });
+            break;
+        }
+    }
+
+    return { winner: a.some(isAlive) ? 'A' : 'B', events, turns: turn };
+}
+
+function handleDeathAndReplace(deadCard, ownTeam, ownReserve, side, events) {
+    if (ownReserve.length > 0) {
+        let bestIdx = 0, bestPower = -1;
+        ownReserve.forEach((c, i) => {
+            const p = num(c.atk) * 2 + num(c.def) + num(c.hp) / 2;
+            if (p > bestPower) { bestPower = p; bestIdx = i; }
+        });
+        const replacement = ownReserve.splice(bestIdx, 1)[0];
+        ownTeam.push(replacement);
+        events.push({ type: 'replace', target: replacement.uid, side, dead: deadCard.uid });
+    }
+}
+
+function performAttack(attacker, target, events, a, b, rA, rB) {
+    if (!target.alive || target.hp <= 0) return;
+    const critChance = getArtifactsBonus('crit');
+    const isCrit = Math.random() < critChance;
+
+    let dmg = num(attacker.atk) + Math.floor(Math.random() * 3);
+    if (num(attacker.rageBonus) > 0) dmg += num(attacker.rageBonus);
+    if (attacker.ability === 'berserk' && attacker.hp < attacker.maxHp * 0.3) {
+        dmg = Math.floor(dmg * 1.5);
+    }
+    if (isCrit) dmg = Math.floor(dmg * 2);
+
+    if (target.shield) {
+        target.shield = false;
+        events.push({ type: 'block', attacker: attacker.uid, target: target.uid });
+        return;
+    }
+
+    const finalDmg = Math.max(1, num(dmg) - Math.floor(num(target.def) / 2));
+    target.hp = num(target.hp) - finalDmg;
+    events.push({ type: 'attack', attacker: attacker.uid, target: target.uid, dmg: finalDmg, crit: isCrit });
+
+    if (target.ability === 'reflect' && target.hp > 0) {
+        const ref = Math.floor(finalDmg * 0.3);
+        attacker.hp = num(attacker.hp) - ref;
+        events.push({ type: 'reflect', attacker: target.uid, target: attacker.uid, dmg: ref });
+        if (attacker.hp <= 0 && attacker.alive) {
+            attacker.hp = 0;
+            attacker.alive = false;
+            events.push({ type: 'death', target: attacker.uid, side: attacker.side });
+            const own = attacker.side === 'A' ? a : b;
+            const ownRes = attacker.side === 'A' ? rA : rB;
+            handleDeathAndReplace(attacker, own, ownRes, attacker.side, events);
+        }
+    }
+
+    if (attacker.ability === 'double' && target.hp > 0) {
+        const d2 = Math.max(1, Math.floor(dmg * 0.6) - Math.floor(num(target.def) / 2));
+        target.hp = num(target.hp) - d2;
+        events.push({ type: 'attack', attacker: attacker.uid, target: target.uid, dmg: d2 });
+    }
+
+    if (target.hp <= 0 && target.alive) {
+        target.hp = 0;
+        target.alive = false;
+        events.push({ type: 'death', target: target.uid, side: target.side });
+        const own = target.side === 'A' ? a : b;
+        const ownRes = target.side === 'A' ? rA : rB;
+        handleDeathAndReplace(target, own, ownRes, target.side, events);
+    }
+}
+
+function applyAbility(card, allies, enemies, events) {
+    if (!card.alive || card.hp <= 0) return;
+    switch (card.ability) {
+        case 'poison': {
+            const t = enemies[Math.floor(Math.random() * enemies.length)];
+            if (t) { t.poison = num(t.poison) + 2; events.push({ type: 'poison_apply', target: t.uid }); }
+            break;
+        }
+        case 'rage': {
+            card.rageBonus = num(card.rageBonus) + 2;
+            card.atk = num(card.atk) + 2;
+            events.push({ type: 'rage', target: card.uid });
+            break;
+        }
+        case 'summon': {
+            const t = enemies[Math.floor(Math.random() * enemies.length)];
+            if (t) {
+                t.hp = num(t.hp) - 2;
+                events.push({ type: 'poison', target: t.uid, dmg: 2 });
+            }
+            break;
+        }
+    }
+}
+
+/* ============================================================
+   6. КОМАНДЫ
+   ============================================================ */
+
+function playerTeam() {
+    return deck.filter(id => id && id !== '').map(id => {
+        const c = CARDS.find(x => x.id === id);
+        if (!c) return null;
+        const lvl = state.cardLevels[id] || 1;
+        return makeCard(c, 'A', lvl, false, 1);
+    }).filter(Boolean);
+}
+
+function playerReserve() {
+    return reserve.map(id => {
+        const c = CARDS.find(x => x.id === id);
+        if (!c) return null;
+        const lvl = state.cardLevels[id] || 1;
+        return makeCard(c, 'A', lvl, false, 1);
+    }).filter(Boolean);
+}
+
+function getEnemyPool(levelIdx) {
+    const base = CARDS.filter(c => c.r !== 'boss' && c.r !== 'exclusive');
+    if (levelIdx < 8)  return base.filter(c => c.r === 'common');
+    if (levelIdx < 16) return base.filter(c => ['common','rare'].includes(c.r));
+    if (levelIdx < 26) return base.filter(c => ['common','rare','epic'].includes(c.r));
+    return base.filter(c => ['common','rare','epic','legendary'].includes(c.r));
+}
+
+function enemyTeamForLevel(levelIdx) {
+    const idx = Number.isFinite(levelIdx) ? levelIdx : 0;
+    const safeIdx = Math.max(0, Math.min(Math.floor(idx), CAMPAIGN.length - 1));
+    const lvl = CAMPAIGN[safeIdx];
+    if (!lvl) return [];
+
+    const team = [];
+    if (lvl.isBoss) {
+        const boss = CARDS.find(c => c.id === lvl.bossId);
+        if (boss) {
+            team.push(makeCard(boss, 'B', 1, true, 1.5 + safeIdx / 15));
+            const pool = getEnemyPool(safeIdx);
+            const guards = Math.min(2 + Math.floor(safeIdx / 5), 4);
+            for (let i = 0; i < guards; i++) {
+                const c = pool[Math.floor(Math.random() * pool.length)];
+                if (c) team.push(makeCard(c, 'B', lvl.enemyLevel, false, 1));
+            }
+        }
+    } else {
+        const pool = getEnemyPool(safeIdx);
+        if (!pool.length) return [];
+        const count = Math.min(num(lvl.enemyCount), 30);
+        for (let i = 0; i < count; i++) {
+            const c = pool[Math.floor(Math.random() * pool.length)];
+            team.push(makeCard(c, 'B', lvl.enemyLevel, false, 1));
+        }
+    }
+    return team.filter(Boolean);
+}
+
+function enemyReserveForLevel(levelIdx) {
+    const idx = Number.isFinite(levelIdx) ? levelIdx : 0;
+    const safeIdx = Math.max(0, Math.min(Math.floor(idx), CAMPAIGN.length - 1));
+    const lvl = CAMPAIGN[safeIdx];
+    if (!lvl) return [];
+    const count = Math.min(num(lvl.enemyReserve), 6);
+    if (count === 0) return [];
+    const pool = getEnemyPool(safeIdx);
+    if (!pool.length) return [];
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+        const c = pool[Math.floor(Math.random() * pool.length)];
+        arr.push(makeCard(c, 'B', lvl.enemyLevel, false, 1));
+    }
+    return arr.filter(Boolean);
+}
+
+/* ============================================================
+   7. БОЙ
+   ============================================================ */
+
+function startBattle(enemyTeam, enemyReserve, mode, levelIdx) {
+    const pTeam = playerTeam();
+    const pReserve = playerReserve();
+    if (!pTeam.length) { toast('❌ Нет карт в колоде!'); return; }
+
+    const eTeam = enemyTeam.slice(0, MAX_SLOTS);
+    const eRes = [...enemyTeam.slice(MAX_SLOTS), ...enemyReserve];
+
+    const simA = pTeam.map(c => ({...c}));
+    const simB = eTeam.map(c => ({...c}));
+    const simRA = pReserve.map(c => ({...c}));
+    const simRB = eRes.map(c => ({...c}));
+    const result = simulateBattle(simA, simB, simRA, simRB);
+
+    const uiTeamA = pTeam.map(c => ({
+        uid: c.uid, id: c.id, name: c.name, icon: c.icon, r: c.r,
+        atk: c.atk, def: c.def, hp: c.maxHp, maxHp: c.maxHp, spd: c.spd,
+        ability: c.ability, side: 'A',
+        poison: 0, shield: c.ability === 'shield', rageBonus: 0, alive: true
+    }));
+    const uiTeamB = eTeam.map(c => ({
+        uid: c.uid, id: c.id, name: c.name, icon: c.icon, r: c.r,
+        atk: c.atk, def: c.def, hp: c.maxHp, maxHp: c.maxHp, spd: c.spd,
+        ability: c.ability, side: 'B',
+        poison: 0, shield: c.ability === 'shield', rageBonus: 0, alive: true
+    }));
+
+    battle = {
+        mode,
+        levelIdx: Number.isFinite(levelIdx) ? levelIdx : 0,
+        playerTeam: pTeam,
+        playerReserve: pReserve.map(c => ({
+            uid: c.uid, id: c.id, name: c.name, icon: c.icon, r: c.r,
+            atk: c.atk, def: c.def, hp: c.hp, maxHp: c.maxHp, spd: c.spd,
+            ability: c.ability, side: 'A',
+            poison: 0, shield: c.ability === 'shield', rageBonus: 0, alive: true
+        })),
+        enemyTeam: eTeam,
+        enemyReserve: eRes.map(c => ({
+            uid: c.uid, id: c.id, name: c.name, icon: c.icon, r: c.r,
+            atk: c.atk, def: c.def, hp: c.hp, maxHp: c.maxHp, spd: c.spd,
+            ability: c.ability, side: 'B',
+            poison: 0, shield: c.ability === 'shield', rageBonus: 0, alive: true
+        })),
+        result, uiTeamA, uiTeamB, eventIndex: 0, paused: false, timer: null, log: []
+    };
+
+    renderBattleUI();
+    battle.timer = setInterval(playNextEvent, 400);
+}
+
+function playNextEvent() {
+    if (!battle) return;
+    if (battle.paused) return;
+    if (battle.eventIndex >= battle.result.events.length) {
+        clearInterval(battle.timer);
+        battle.timer = null;
+        finishBattle();
+        return;
+    }
+    /* ★ За один тик проигрываем N событий (N = battleSpeed) ★ */
+    for (let i = 0; i < battleSpeed; i++) {
+        if (battle.eventIndex >= battle.result.events.length) break;
+        const e = battle.result.events[battle.eventIndex++];
+        playEvent(e);
+        if (e.type === 'death' && e.side === 'A') {
+            const uiCard = battle.uiTeamA.find(c => c.uid === e.target);
+            if (uiCard && battle.playerReserve.length > 0) {
+                battle.paused = true;
+                showReplaceModal(uiCard);
+                return;
+            }
+        }
+    }
+}
+
+function setBattleSpeed(speed) {
+    if (![1, 2, 4].includes(speed)) return;
+    battleSpeed = speed;
+    try { localStorage.setItem(SPEED_KEY, speed); } catch(e) {}
+    Sound.play('click');
+    document.querySelectorAll('.speed-btn').forEach(b => {
+        const s = Number(b.textContent.replace('×','').trim());
+        b.classList.toggle('active', s === battleSpeed);
+    });
+}
+
+function renderBattleUI() {
+    const page = document.getElementById('page-battle');
+    if (!page) return;
+    if (!battle) { page.innerHTML = ''; return; }
+    const aliveA = battle.uiTeamA.filter(c => c.alive && c.hp > 0).length;
+    const aliveB = battle.uiTeamB.filter(c => c.alive && c.hp > 0).length;
+
+    page.innerHTML = `
+        <div class="battle-view">
+            <div class="battle-controls">
+                <button class="speed-btn ${battleSpeed===1?'active':''}" onclick="setBattleSpeed(1)">×1</button>
+                <button class="speed-btn ${battleSpeed===2?'active':''}" onclick="setBattleSpeed(2)">×2</button>
+                <button class="speed-btn ${battleSpeed===4?'active':''}" onclick="setBattleSpeed(4)">×4</button>
+            </div>
+            <div class="battle-section-title">👹 Враги (${aliveB} живых, резерв ${battle.enemyReserve.length})</div>
+            <div class="battle-line" id="battleEnemy"></div>
+            <div class="battle-status" id="battleStatus">Бой идёт...</div>
+            <div class="battle-section-title">🧟 Твоя команда (${aliveA} живых, резерв ${battle.playerReserve.length})</div>
+            <div class="battle-line" id="battlePlayer"></div>
+            <div class="battle-log" id="battleLog"></div>
+        </div>
+    `;
+    const eBox = document.getElementById('battleEnemy');
+    const pBox = document.getElementById('battlePlayer');
+    battle.uiTeamB.forEach(c => eBox.appendChild(makeBattleCard(c)));
+    battle.uiTeamA.forEach(c => pBox.appendChild(makeBattleCard(c)));
+}
+
+function makeBattleCard(card) {
+    const div = document.createElement('div');
+    div.className = 'bcard' + (card.side === 'B' ? ' enemy' : '');
+    div.id = 'bc-' + card.uid;
+    updateCardEl(div, card);
+    return div;
+}
+
+function updateCardEl(div, card) {
+    if (!div) return;
+    const hpPct = Math.max(0, (num(card.hp) / num(card.maxHp)) * 100);
+    const ab = card.ability ? ABILITIES[card.ability] : null;
+    div.innerHTML = `
+        <div class="bcard-icon">${card.icon}</div>
+        <div class="bcard-name">${card.name}</div>
+        <div class="bcard-stats">⚔️${num(card.atk)} 🛡️${num(card.def)}</div>
+        ${ab ? `<div style="font-size:8px;color:#ffaa00;">${ab.icon}</div>` : ''}
+        <div class="hp-bar"><div class="hp-fill" style="width:${hpPct}%"></div></div>
+        <div class="hp-text">${Math.max(0, Math.floor(num(card.hp)))}/${card.maxHp}</div>
+    `;
+    if (card.hp <= 0) div.classList.add('dead');
+    else div.classList.remove('dead');
+}
+
+function findUICard(uid) {
+    if (!battle) return null;
+    return battle.uiTeamA.find(c => c.uid === uid) || battle.uiTeamB.find(c => c.uid === uid);
+}
+
+function playEvent(e) {
+    if (!battle) return;
+    const log = battle.log;
+
+    if (e.type === 'turn') log.push(`— Ход ${e.n} —`);
+    else if (e.type === 'attack') {
+        const a = findUICard(e.attacker), t = findUICard(e.target);
+        if (!a || !t) return;
+        log.push(`${a.name} → ${t.name}: ${e.dmg}${e.crit ? ' КРИТ!' : ''}`);
+        Sound.play(e.crit ? 'crit' : 'hit');
+        t.hp = Math.max(0, t.hp - e.dmg);
+        animateHit(a.uid, t.uid, e.dmg, false);
+        updateCardEl(document.getElementById('bc-' + t.uid), t);
+    }
+    else if (e.type === 'poison') {
+        const t = findUICard(e.target);
+        if (!t) return;
+        log.push(`${t.name}: -${e.dmg} яд`);
+        t.hp = Math.max(0, t.hp - e.dmg);
+        animateHit(null, t.uid, e.dmg, false);
+        updateCardEl(document.getElementById('bc-' + t.uid), t);
+    }
+    else if (e.type === 'poison_apply') {
+        const t = findUICard(e.target);
+        if (t) { t.poison = (t.poison || 0) + 2; log.push(`${t.name} отравлен`); }
+    }
+    else if (e.type === 'block') {
+        const t = findUICard(e.target);
+        if (t) { t.shield = false; log.push(`${t.name}: блок`); }
+    }
+    else if (e.type === 'reflect') {
+        const a = findUICard(e.attacker), t = findUICard(e.target);
+        if (a && t) {
+            log.push(`${a.name} отражает ${e.dmg} в ${t.name}`);
+            t.hp = Math.max(0, t.hp - e.dmg);
+            updateCardEl(document.getElementById('bc-' + t.uid), t);
+        }
+    }
+    else if (e.type === 'death') {
+        const t = findUICard(e.target);
+        if (t) {
+            t.hp = 0; t.alive = false;
+            log.push(`💀 ${t.name} погиб`);
+            updateCardEl(document.getElementById('bc-' + t.uid), t);
+        }
+    }
+    else if (e.type === 'replace') {
+        const dead = findUICard(e.dead);
+        if (dead) { dead.hp = 0; dead.alive = false; updateCardEl(document.getElementById('bc-' + dead.uid), dead); }
+        const side = e.side;
+        const pool = side === 'A' ? battle.playerReserve : battle.enemyReserve;
+        const baseCard = pool.find(c => c.uid === e.target);
+        if (baseCard) {
+            const newUI = { ...baseCard, hp: baseCard.maxHp, alive: true, poison: 0, shield: baseCard.ability === 'shield', rageBonus: 0 };
+            if (side === 'A') {
+                battle.uiTeamA.push(newUI);
+                battle.playerReserve = battle.playerReserve.filter(c => c.uid !== e.target);
+            } else {
+                battle.uiTeamB.push(newUI);
+                battle.enemyReserve = battle.enemyReserve.filter(c => c.uid !== e.target);
+            }
+            log.push(`➕ ${newUI.name} вступает!`);
+            Sound.play('spawn');
+            const box = document.getElementById(side === 'A' ? 'battlePlayer' : 'battleEnemy');
+            const deadEl = document.getElementById('bc-' + e.dead);
+            if (deadEl) deadEl.remove();
+            if (box) box.appendChild(makeBattleCard(newUI));
+        }
+    }
+    else if (e.type === 'rage') {
+        const t = findUICard(e.target);
+        if (t) { t.atk += 2; t.rageBonus = (t.rageBonus || 0) + 2; log.push(`${t.name}: ярость`); updateCardEl(document.getElementById('bc-' + t.uid), t); }
+    }
+    else if (e.type === 'stalemate') log.push('⚖️ Ничья');
+
+    const logBox = document.getElementById('battleLog');
+    if (logBox) {
+        logBox.innerHTML = log.slice(-8).map(l => `<div>${l}</div>`).join('');
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+    const status = document.getElementById('battleStatus');
+    if (status) {
+        const aliveA = battle.uiTeamA.filter(c => c.alive && c.hp > 0).length;
+        const aliveB = battle.uiTeamB.filter(c => c.alive && c.hp > 0).length;
+        status.textContent = `Ты: ${aliveA} | Враг: ${aliveB} | Резерв: ${battle.playerReserve.length}`;
+    }
+}
+
+function animateHit(attackerUid, targetUid, amount, heal) {
+    const t = document.getElementById('bc-' + targetUid);
+    if (t) {
+        t.classList.add('hit');
+        setTimeout(() => t.classList.remove('hit'), 250);
+        const f = document.createElement('div');
+        f.className = 'float ' + (heal ? 'heal' : 'dmg');
+        f.textContent = (heal ? '+' : '-') + amount;
+        t.style.position = 'relative';
+        t.appendChild(f);
+        setTimeout(() => f.remove(), 700);
+    }
+    if (attackerUid) {
+        const a = document.getElementById('bc-' + attackerUid);
+        if (a) { a.classList.add('attack'); setTimeout(() => a.classList.remove('attack'), 250); }
+    }
+}
+
+/* ============================================================
+   8. ЗАМЕНА — ТОЛЬКО ИЗ РЕЗЕРВА
+   ============================================================ */
+
+function showReplaceModal(deadCard) {
+    const onFieldIds = new Set(battle.uiTeamA.filter(c => c.alive && c.hp > 0).map(c => c.id));
+    const availableFromReserve = battle.playerReserve.filter(c => !onFieldIds.has(c.id));
+
+    if (!availableFromReserve.length) {
+        battle.paused = false;
+        toast('⚠️ Резерв пуст');
+        return;
+    }
+
+    let html = `<h2>💀 ${deadCard.name} погиб</h2><p>Выбери замену из резерва:</p><div class="replace-box">`;
+    availableFromReserve.forEach(c => {
+        const lvl = state.cardLevels[c.id] || 1;
+        html += `
+            <div class="pcard reserved" onclick="replaceCard('${c.id}', true, '${c.uid}')">
+                <div class="pcard-lvl">${lvl}</div>
+                <div class="pcard-icon">${c.icon}</div>
+                <div class="pcard-name">${c.name}</div>
+                <div class="rarity r-${c.r}">резерв</div>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    html += `<button onclick="replaceCard(null, false, null)" style="background:linear-gradient(135deg,#666,#333);color:#fff;">⏭️ Пропустить</button>`;
+    openModal(html);
+}
+
+function replaceCard(cardId, fromReserve, uid) {
+    closeModal();
+    if (!battle) return;
+    battle.uiTeamA = battle.uiTeamA.filter(c => c.alive && c.hp > 0);
+
+    if (cardId) {
+        const c = CARDS.find(x => x.id === cardId);
+        if (c) {
+            const lvl = state.cardLevels[cardId] || 1;
+            const baseCard = makeCard(c, 'A', lvl, false, 1);
+            if (baseCard) {
+                const newUI = {
+                    uid: baseCard.uid, id: baseCard.id, name: baseCard.name, icon: baseCard.icon, r: baseCard.r,
+                    atk: baseCard.atk, def: baseCard.def, hp: baseCard.maxHp, maxHp: baseCard.maxHp, spd: baseCard.spd,
+                    ability: baseCard.ability, side: 'A',
+                    poison: 0, shield: baseCard.ability === 'shield', rageBonus: 0, alive: true
+                };
+                battle.uiTeamA.push(newUI);
+                if (fromReserve && uid) {
+                    battle.playerReserve = battle.playerReserve.filter(c => c.uid !== uid);
+                }
+                battle.log.push(`➕ ${c.name} в бой!`);
+                Sound.play('spawn');
+            }
+        }
+    } else {
+        battle.log.push(`⏭️ Пропуск`);
+    }
+
+    const pBox = document.getElementById('battlePlayer');
+    if (pBox) {
+        pBox.innerHTML = '';
+        battle.uiTeamA.forEach(card => pBox.appendChild(makeBattleCard(card)));
+    }
+    battle.paused = false;
+}
+
+/* ============================================================
+   9. ДРОП — по уровням
+   ============================================================ */
+
+function rollDropRarity(levelIdx, isBoss) {
+    const idx = isBoss ? Math.min(levelIdx + 8, 39) : levelIdx;
+    const roll = Math.random() * 100;
+
+    if (idx < 4) {
+        if (roll < 92) return 'common';
+        return 'rare';
+    }
+    if (idx < 9) {
+        if (roll < 75) return 'common';
+        if (roll < 97) return 'rare';
+        return 'epic';
+    }
+    if (idx < 14) {
+        if (roll < 60) return 'common';
+        if (roll < 93) return 'rare';
+        return 'epic';
+    }
+    if (idx < 19) {
+        if (roll < 45) return 'common';
+        if (roll < 85) return 'rare';
+        return 'epic';
+    }
+    if (idx < 24) {
+        if (roll < 35) return 'common';
+        if (roll < 77) return 'rare';
+        if (roll < 97) return 'epic';
+        return 'legendary';
+    }
+    if (idx < 29) {
+        if (roll < 25) return 'common';
+        if (roll < 67) return 'rare';
+        if (roll < 95) return 'epic';
+        return 'legendary';
+    }
+    if (idx < 34) {
+        if (roll < 18) return 'common';
+        if (roll < 58) return 'rare';
+        if (roll < 93) return 'epic';
+        return 'legendary';
+    }
+    if (roll < 12) return 'common';
+    if (roll < 47) return 'rare';
+    if (roll < 89) return 'epic';
+    return 'legendary';
+}
+
+/* ============================================================
+   10. КОНЕЦ БОЯ
+   ============================================================ */
+
+function finishBattle() {
+    if (!battle) return;
+    if (battle.timer) clearInterval(battle.timer);
+
+    const playerWon = battle.result.winner === 'A';
+    const mode = battle.mode;
+    const levelIdx = battle.levelIdx;
+
+let money = 0, gems = 0, nextLevel = false;
+if (mode === 'campaign' && Number.isFinite(levelIdx) && levelIdx < CAMPAIGN.length) {
+    const lvl = CAMPAIGN[levelIdx];
+    if (lvl) {
+        const isFirstClear = playerWon && levelIdx === state.campaignProgress;
+
+        if (isFirstClear) {
+            /* ★ Первое прохождение — полная награда ★ */
+            money = lvl.rewardMoney;
+            gems = lvl.rewardGems;
+            state.campaignProgress = Math.min(state.campaignProgress + 1, CAMPAIGN.length);
+            nextLevel = true;
+        } else if (playerWon) {
+            /* ★ Повтор пройденного — 45% награды ★ */
+            money = Math.floor(lvl.rewardMoney * 0.45);
+            gems  = Math.floor(lvl.rewardGems * 0.45);
+        }
+    }
+}
+
+    money = Math.floor(money * (1 + getArtifactsBonus('gold')));
+    gems  = Math.floor(gems  * (1 + getArtifactsBonus('gem')));
+
+    if (playerWon) {
+        state.money += money;
+        state.gems += gems;
+        state.totalWins++;
+        Sound.play('win');
+    } else {
+        state.money += 10;
+        money = 10; gems = 0;
+        Sound.play('lose');
+    }
+    state.totalBattles++;
+
+    let dropped = null;
+    if (playerWon && mode === 'campaign' && levelIdx < CAMPAIGN.length) {
+        const lvl = CAMPAIGN[levelIdx];
+        const r = rollDropRarity(levelIdx, lvl && lvl.isBoss);
+        const pool = CARDS.filter(c =>
+            c.r === r &&
+            !state.ownedCards.includes(c.id) &&
+            c.r !== 'boss' &&
+            c.r !== 'exclusive'
+        );
+        if (pool.length) {
+            dropped = pool[Math.floor(Math.random() * pool.length)];
+            state.ownedCards.push(dropped.id);
+        }
+    }
+
+    save();
+    renderHeader();
+
+    const page = document.getElementById('page-battle');
+    page.innerHTML = `
+        <div class="result">
+            <div class="result-icon">${playerWon ? '🏆' : '💀'}</div>
+            <div class="result-title ${playerWon ? 'win' : 'lose'}">${playerWon ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ'}</div>
+            <div class="result-rewards">${playerWon ? `+${money}💰 +${gems}💎` : `+10💰`}</div>
+            ${dropped ? `<div style="color:#ffd700;margin:6px 0;">🎁 ${dropped.icon} ${dropped.name} (${dropped.r})!</div>` : ''}
+            <div class="result-buttons">
+                ${playerWon && nextLevel ? `<button class="big-btn" onclick="continueCampaign()">➡️ Дальше</button>` : ''}
+                <button class="big-btn blue" onclick="switchPage('campaign')">🗺️ Кампания</button>
+                <button class="big-btn orange" onclick="renderBattle()">🔄 Ещё бой</button>
+            </div>
+        </div>
+    `;
+    battle = null;
+}
+
+function continueCampaign() {
+    const next = state.campaignProgress;
+    if (next >= CAMPAIGN.length) {
+        toast('🏆 Кампания пройдена!');
+        switchPage('campaign');
+        return;
+    }
+    startCampaign(next);
+}
+
+/* ============================================================
+   11. СТРАНИЦЫ
+   ============================================================ */
+
+function switchPage(name) {
+    if (!gameReady) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const btn = document.querySelector(`.tab[data-page="${name}"]`);
+    const page = document.getElementById('page-' + name);
+    if (btn) btn.classList.add('active');
+    if (page) page.classList.add('active');
+
+    if (name === 'campaign') renderCampaign();
+    if (name === 'battle' && !battle) renderBattle();
+    if (name === 'shop') renderShop();
+    if (name === 'collection') renderCollection();
+}
+
+function renderAll() {
+    if (!gameReady) return;
+    renderHeader();
+    renderCampaign();
+    if (!battle) renderBattle();
+    renderShop();
+    renderCollection();
+}
+
+function renderHeader() {
+    document.getElementById('uiMoney').textContent = state.money;
+    document.getElementById('uiGems').textContent = state.gems;
+    document.getElementById('uiReserve').textContent = state.reserveLevel;
+}
+
+/* ============================================================
+   12. КАМПАНИЯ
+   ============================================================ */
+
+function renderCampaign() {
+    const page = document.getElementById('page-campaign');
+    if (!page) return;
+    const progress = Math.round((state.campaignProgress / CAMPAIGN.length) * 100);
+
+    let html = `
+        <div class="campaign-progress">
+            <span>🗺️</span>
+            <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+            <span>${state.campaignProgress}/${CAMPAIGN.length}</span>
+        </div>
+        <div class="level-list">
+    `;
+
+    CAMPAIGN.forEach((lvl, idx) => {
+        const done = idx < state.campaignProgress;
+        const unlocked = idx <= state.campaignProgress;
+        const current = idx === state.campaignProgress;
+        const cls = ['level'];
+        if (done) cls.push('done');
+        if (!unlocked) cls.push('locked');
+        if (lvl.isBoss) cls.push('boss');
+        if (current) cls.push('current');
+
+        const canStart = unlocked && idx <= state.campaignProgress;
+        const clickAction = canStart ? `startCampaign(${idx})` : `toast('🔒 Закрыт')`;
+
+        html += `
+            <div class="${cls.join(' ')}" onclick="${clickAction}">
+                <div class="level-num">${done ? '✓' : (lvl.isBoss ? '👹' : idx + 1)}</div>
+                <div class="level-info">
+                    <div class="level-name">${lvl.isBoss ? '👹 БОСС: ' : ''}${lvl.name}</div>
+                    <div class="level-desc">Врагов: ${lvl.enemyCount} | Резерв: ${lvl.enemyReserve} | Ур.: ${lvl.enemyLevel}</div>
+                    <div class="level-reward">+${lvl.rewardMoney}💰 +${lvl.rewardGems}💎</div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    page.innerHTML = html;
+}
+
+function startCampaign(idx) {
+    if (!gameReady) return;
+    Sound.play('click');
+    if (!Number.isFinite(idx) || idx < 0 || idx >= CAMPAIGN.length) {
+        toast('🏆 Кампания пройдена!');
+        return;
+    }
+    if (idx > state.campaignProgress) { toast('🔒 Уровень закрыт'); return; }
+    const enemy = enemyTeamForLevel(idx);
+    const eReserve = enemyReserveForLevel(idx);
+    if (!enemy.length) { toast('❌ Ошибка генерации'); return; }
+    startBattle(enemy, eReserve, 'campaign', idx);
+    switchPage('battle');
+}
+
+/* ============================================================
+   13. КОЛОДА + АВТО
+   ============================================================ */
+
+function renderBattle() {
+    const page = document.getElementById('page-battle');
+    if (!page) return;
+    if (battle) return;
+
+    const filled = deck.filter(x => x).length;
+    let html = `
+        <div class="deck-header">
+            <div class="deck-title">⚔️ БОЕВАЯ КОЛОДА (${filled}/5)</div>
+            <button class="deck-btn" onclick="autoDeck()">🎲 Авто</button>
+        </div>
+        <div class="slots" id="deckSlots"></div>
+
+        <div class="deck-header">
+            <div class="deck-title">🎒 РЕЗЕРВ (${reserve.length}/${state.reserveLevel})</div>
+            ${state.reserveLevel < 6 ? `<button class="deck-btn" onclick="openReserveUpgrade()">⬆️ Улучшить</button>` : ''}
+        </div>
+        <div class="slots" id="reserveSlots"></div>
+
+        <div class="deck-header">
+            <div class="deck-title">📖 Коллекция</div>
+        </div>
+        <div class="pool" id="cardPool"></div>
+
+        <button class="big-btn" id="startBtn" ${filled < 1 ? 'disabled' : ''} onclick="battleFromMenu()">⚔️ В БОЙ!</button>
+    `;
+    page.innerHTML = html;
+
+    const slots = document.getElementById('deckSlots');
+    for (let i = 0; i < 5; i++) {
+        const s = document.createElement('div');
+        s.className = 'slot' + (deck[i] ? ' filled' : '');
+        if (deck[i]) {
+            const c = CARDS.find(x => x.id === deck[i]);
+            if (c) {
+                s.innerHTML = `
+                    <div class="slot-icon">${c.icon}</div>
+                    <div class="slot-name">${c.name}</div>
+                    <div class="slot-lvl">Ур.${state.cardLevels[c.id] || 1}</div>
+                `;
+                s.onclick = () => { deck[i] = ''; save(); Sound.play('click'); renderBattle(); };
+            }
+        } else {
+            s.innerHTML = `<div style="font-size:14px;color:#8a9a8a;">+</div>`;
+        }
+        slots.appendChild(s);
+    }
+
+    const rSlots = document.getElementById('reserveSlots');
+    for (let i = 0; i < state.reserveLevel; i++) {
+        const s = document.createElement('div');
+        s.className = 'slot' + (reserve[i] ? ' filled' : '');
+        if (reserve[i]) {
+            const c = CARDS.find(x => x.id === reserve[i]);
+            if (c) {
+                s.innerHTML = `
+                    <div class="slot-icon">${c.icon}</div>
+                    <div class="slot-name">${c.name}</div>
+                    <div class="slot-lvl">Ур.${state.cardLevels[c.id] || 1}</div>
+                `;
+                s.onclick = () => { reserve.splice(i, 1); save(); Sound.play('click'); renderBattle(); };
+            }
+        } else {
+            s.innerHTML = `<div style="font-size:14px;color:#8a9a8a;">+</div>`;
+        }
+        rSlots.appendChild(s);
+    }
+    if (state.reserveLevel === 0) {
+        rSlots.innerHTML = '<div style="color:#8a9a8a;font-size:11px;padding:10px;">Резерв не открыт. Улучши →</div>';
+    }
+
+    const pool = document.getElementById('cardPool');
+    const owned = CARDS.filter(c => state.ownedCards.includes(c.id) && c.r !== 'boss');
+    owned.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'pcard';
+        const inDeck = deck.includes(c.id);
+        const inReserve = reserve.includes(c.id);
+        if (inDeck) el.classList.add('selected');
+        if (inReserve) el.classList.add('reserved');
+
+        el.innerHTML = `
+            <div class="pcard-lvl">${state.cardLevels[c.id] || 1}</div>
+            <div class="pcard-icon">${c.icon}</div>
+            <div class="pcard-name">${c.name}</div>
+            <div class="rarity r-${c.r}">${c.r}</div>
+        `;
+        el.onclick = () => toggleCardForDeck(c.id);
+        pool.appendChild(el);
+    });
+}
+
+function toggleCardForDeck(id) {
+    if (deck.includes(id)) {
+        const idx = deck.indexOf(id);
+        deck[idx] = '';
+        save(); Sound.play('click'); renderBattle();
+        return;
+    }
+    if (reserve.includes(id)) {
+        reserve.splice(reserve.indexOf(id), 1);
+        save(); Sound.play('click'); renderBattle();
+        return;
+    }
+    const c = CARDS.find(x => x.id === id);
+    if (!c) return;
+
+    const emptySlot = deck.indexOf('');
+    if (emptySlot !== -1) {
+        if (c.r === 'mythic' || c.r === 'exclusive') {
+            const has = deck.some(d => { if (!d) return false; const x = CARDS.find(y => y.id === d); return x && (x.r === 'mythic' || x.r === 'exclusive'); });
+            if (has) { toast('⚠️ Макс 1 мифическая'); return; }
+        }
+        if (c.r === 'legendary') {
+            const has = deck.some(d => { if (!d) return false; const x = CARDS.find(y => y.id === d); return x && x.r === 'legendary'; });
+            if (has) { toast('⚠️ Макс 1 легендарная'); return; }
+        }
+        deck[emptySlot] = id;
+    } else if (reserve.length < state.reserveLevel) {
+        reserve.push(id);
+    } else {
+        toast('⚠️ Все слоты заняты');
+        return;
+    }
+    save(); Sound.play('click'); renderBattle();
+}
+
+/* ★★★ АВТО: приоритет + бонус за уровень ★★★ */
+function autoDeck() {
+    const owned = CARDS.filter(c => state.ownedCards.includes(c.id) && c.r !== 'boss');
+
+    const scored = owned.map(c => {
+        const lvl = state.cardLevels[c.id] || 1;
+        const basePriority = CARD_PRIORITY[c.id] || 1;
+        /* +8 к приоритету за каждый уровень прокачки */
+        const effectivePriority = basePriority + (lvl - 1) * 8;
+        return { card: c, priority: effectivePriority, lvl };
+    }).sort((a, b) => b.priority - a.priority);
+
+    deck = ['','','','',''];
+    reserve = [];
+    let hasM = false, hasL = false;
+    let slot = 0;
+
+    for (const s of scored) {
+        const c = s.card;
+        if (slot < 5) {
+            if ((c.r === 'mythic' || c.r === 'exclusive') && hasM) continue;
+            if (c.r === 'legendary' && hasL) continue;
+            deck[slot] = c.id;
+            slot++;
+            if (c.r === 'mythic' || c.r === 'exclusive') hasM = true;
+            if (c.r === 'legendary') hasL = true;
+        } else if (reserve.length < state.reserveLevel) {
+            reserve.push(c.id);
+        }
+    }
+    save();
+    Sound.play('upgrade');
+    renderBattle();
+    toast('🎲 Собрано по приоритетам');
+}
+
+function battleFromMenu() {
+    const filled = deck.filter(x => x).length;
+    if (filled < 1) { toast('❌ Нужна хотя бы 1 карта'); return; }
+    save();
+    const idx = state.campaignProgress;
+    if (idx >= CAMPAIGN.length) {
+        toast('🏆 Кампания пройдена!');
+        switchPage('campaign');
+        return;
+    }
+    startCampaign(idx);
+}
+
+/* ============================================================
+   14. РЕЗЕРВ
+   ============================================================ */
+
+function openReserveUpgrade() {
+    const next = state.reserveLevel + 1;
+    if (next > 6) { toast('⚠️ Максимум'); return; }
+    const cost = RESERVE_COSTS[next];
+    if (!cost) { toast('⚠️ Максимум'); return; }
+
+    const canBuy = state.gems >= cost.gems && state.money >= cost.money;
+    openModal(`
+        <h2>🎒 Улучшение резерва</h2>
+        <p>Уровень ${state.reserveLevel} → ${next}</p>
+        <div class="reserve-upgrade">
+            <h3>Стоимость</h3>
+            <div class="cost">💎 ${cost.gems} гемов</div>
+            <div class="cost">💰 ${cost.money} монет</div>
+        </div>
+        <p style="font-size:11px;color:#8a9a8a;">У тебя: 💎${state.gems} 💰${state.money}</p>
+        <button ${canBuy ? '' : 'disabled'} onclick="upgradeReserve(${next})">⬆️ Купить</button>
+        <button onclick="closeModal()" style="background:linear-gradient(135deg,#666,#333);color:#fff;">Отмена</button>
+    `);
+}
+
+function upgradeReserve(next) {
+    const cost = RESERVE_COSTS[next];
+    if (!cost) return;
+    if (state.gems < cost.gems || state.money < cost.money) { toast('❌ Не хватает'); return; }
+    state.gems -= cost.gems;
+    state.money -= cost.money;
+    state.reserveLevel = next;
+    save();
+    Sound.play('upgrade');
+    closeModal();
+    renderAll();
+    toast(`✅ Резерв → ур. ${next}`);
+}
+
+/* ============================================================
+   15. МАГАЗИН
+   ============================================================ */
+
+let shopTab = 'gems';
+
+function renderShop() {
+    const page = document.getElementById('page-shop');
+    if (!page) return;
+    page.innerHTML = `
+        <div class="shop-tabs">
+            <button class="shop-tab ${shopTab==='gems'?'active':''}" onclick="setShopTab('gems')">💎 Гемы</button>
+            <button class="shop-tab ${shopTab==='money'?'active':''}" onclick="setShopTab('money')">💰 Монеты</button>
+            <button class="shop-tab ${shopTab==='artifacts'?'active':''}" onclick="setShopTab('artifacts')">🏆 Артефакты</button>
+        </div>
+        <div class="shop-grid" id="shopGrid"></div>
+    `;
+    const grid = document.getElementById('shopGrid');
+
+    if (shopTab === 'artifacts') {
+        ARTIFACTS.forEach(a => {
+            const owned = state.ownedArtifacts.includes(a.id);
+            const el = document.createElement('div');
+            el.className = 'scard' + (owned ? ' owned' : '');
+            el.innerHTML = `
+                <div class="scard-icon">${a.icon}</div>
+                <div class="scard-name">${a.name}</div>
+                <div class="scard-stats">${a.desc}</div>
+                <div class="scard-price money">${owned ? '✅' : '💰 ' + a.price}</div>
+            `;
+            if (!owned && state.money >= a.price) {
+                el.onclick = () => {
+                    state.money -= a.price;
+                    state.ownedArtifacts.push(a.id);
+                    Sound.play('coin');
+                    save(); renderAll(); toast('✅ ' + a.name);
+                };
+            } else if (!owned) el.style.opacity = '0.5';
+            grid.appendChild(el);
+        });
+        return;
+    }
+
+    const cards = shopTab === 'gems'
+        ? CARDS.filter(c => ['legendary','mythic','exclusive'].includes(c.r))
+        : CARDS.filter(c => ['common','rare','epic'].includes(c.r));
+
+    cards.forEach(c => {
+        const owned = state.ownedCards.includes(c.id);
+        const price = shopTab === 'gems' ? c.price : Math.floor(c.price * 3);
+        const cur = shopTab === 'gems' ? state.gems : state.money;
+        const canBuy = !owned && cur >= price;
+        const ab = c.ab ? ABILITIES[c.ab] : null;
+
+        const el = document.createElement('div');
+        el.className = 'scard' + (owned ? ' owned' : '');
+        el.innerHTML = `
+            <div class="scard-icon">${c.icon}</div>
+            <div class="scard-name">${c.name}</div>
+            <div class="scard-stats">⚔️${c.atk} 🛡️${c.def} ❤️${c.hp}</div>
+            ${ab ? `<div style="font-size:9px;color:#ffaa00;">${ab.icon}</div>` : ''}
+            <div class="scard-price ${shopTab==='money'?'money':''}">${owned ? '✅' : (shopTab==='gems'?'💎':'💰') + ' ' + price}</div>
+        `;
+        if (canBuy) {
+            el.onclick = () => {
+                if (shopTab === 'gems') state.gems -= price;
+                else state.money -= price;
+                state.ownedCards.push(c.id);
+                Sound.play('coin');
+                save(); renderAll(); toast('✅ ' + c.name);
+            };
+        } else if (!owned) el.style.opacity = '0.5';
+        grid.appendChild(el);
+    });
+}
+
+function setShopTab(t) { shopTab = t; renderShop(); }
+
+/* ============================================================
+   16. КОЛЛЕКЦИЯ
+   ============================================================ */
+
+let sortMode = 'rarity';
+
+function renderCollection() {
+    const page = document.getElementById('page-collection');
+    if (!page) return;
+    page.innerHTML = `
+        <div class="collection-controls">
+            <button class="sort-btn ${sortMode==='rarity'?'active':''}" onclick="setSort('rarity')">По редкости</button>
+            <button class="sort-btn ${sortMode==='level'?'active':''}" onclick="setSort('level')">По уровню</button>
+            <button class="sort-btn ${sortMode==='name'?'active':''}" onclick="setSort('name')">По имени</button>
+        </div>
+        <div class="collection-grid" id="colGrid"></div>
+    `;
+    const rank = { common:0, rare:1, epic:2, legendary:3, mythic:4, exclusive:5, boss:6 };
+    let cards = CARDS.filter(c => c.r !== 'boss');
+    if (sortMode === 'rarity') cards.sort((a,b) => rank[a.r] - rank[b.r]);
+    else if (sortMode === 'level') cards.sort((a,b) => (state.cardLevels[b.id]||1) - (state.cardLevels[a.id]||1));
+    else cards.sort((a,b) => a.name.localeCompare(b.name));
+
+    const grid = document.getElementById('colGrid');
+    cards.forEach(c => {
+        const owned = state.ownedCards.includes(c.id);
+        const lvl = state.cardLevels[c.id] || 1;
+        const lvlBonus = (lvl - 1) * 2;
+        const realAtk = c.atk + Math.floor(lvlBonus / 2);
+        const realDef = c.def + Math.floor(lvlBonus / 2);
+        const realHp = c.hp + lvlBonus;
+        const cost = UPGRADE_COSTS[lvl + 1];
+        const canUp = owned && lvl < 10 && state.money >= cost;
+        const ab = c.ab ? ABILITIES[c.ab] : null;
+        const el = document.createElement('div');
+        el.className = 'ccard' + (owned ? '' : ' locked');
+        el.innerHTML = `
+            ${owned ? `<div class="ccard-lvl">${lvl}</div>` : ''}
+            <div class="ccard-icon">${c.icon}</div>
+            <div class="ccard-name">${c.name}</div>
+            <div class="ccard-stats">⚔️${realAtk} 🛡️${realDef} ❤️${realHp}</div>
+            ${ab ? `<div style="font-size:9px;color:#ffaa00;">${ab.icon}</div>` : ''}
+            <div style="font-size:8px;color:#8a9a8a;">${owned ? '✅' : '🔒'} ${c.r}</div>
+            ${owned && lvl < 10 ? `<button class="up-btn" ${canUp?'':'disabled'} onclick="event.stopPropagation();upgradeCard('${c.id}')">⬆️ ${cost}💰</button>` : ''}
+            ${owned && lvl >= 10 ? '<div style="font-size:8px;color:#ffd700;">⭐ МАКС</div>' : ''}
+        `;
+        if (owned) el.onclick = () => openLore(c);
+        grid.appendChild(el);
+    });
+}
+
+function setSort(m) { sortMode = m; renderCollection(); }
+
+function upgradeCard(id) {
+    const lvl = state.cardLevels[id] || 1;
+    if (lvl >= 10) { toast('⚠️ Максимум'); return; }
+    const cost = UPGRADE_COSTS[lvl + 1];
+    if (state.money < cost) { toast(`❌ Нужно ${cost}💰`); return; }
+    state.money -= cost;
+    state.cardLevels[id] = lvl + 1;
+    Sound.play('upgrade');
+    save(); renderAll();
+    toast(`✅ ${CARDS.find(c=>c.id===id).name} → ур. ${lvl + 1}`);
+}
+
+/* ============================================================
+   17. ЛОР / МОДАЛКА
+   ============================================================ */
+
+function openLore(c) {
+    const lvl = state.cardLevels[c.id] || 1;
+    const ab = c.ab ? ABILITIES[c.ab] : null;
+    const lvlBonus = (lvl - 1) * 2;
+    const baseP = CARD_PRIORITY[c.id] || 0;
+    const effP = baseP + (lvl - 1) * 8;
+    openModal(`
+        <h2>${c.icon} ${c.name}</h2>
+        <div style="margin:6px 0;">
+            <span class="rarity r-${c.r}" style="font-size:10px;padding:2px 8px;border-radius:6px;">${c.r}</span>
+            <span style="background:#ffd700;color:#1a1a1a;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px;margin-left:6px;">Ур. ${lvl}</span>
+            <span style="background:#3b82f6;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px;margin-left:6px;">Приоритет: ${baseP} → ${effP}</span>
+        </div>
+        ${ab ? `<p>${ab.icon} <strong>${ab.name}</strong></p>` : ''}
+        <div style="display:flex;justify-content:center;gap:6px;margin:10px 0;flex-wrap:wrap;">
+            <div style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;">⚔️ ${c.atk + Math.floor(lvlBonus/2)}</div>
+            <div style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;">🛡️ ${c.def + Math.floor(lvlBonus/2)}</div>
+            <div style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;">❤️ ${c.hp + lvlBonus}</div>
+            <div style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;">⚡ ${c.spd}</div>
+        </div>
+        <button onclick="closeModal()">✅ Закрыть</button>
+    `);
+}
+
+function openModal(html) {
+    document.getElementById('modalBox').innerHTML = html;
+    document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+}
+
+let toastTimer = null;
+function toast(msg) {
+    const old = document.querySelector('.toast');
+    if (old) old.remove();
+    if (toastTimer) clearTimeout(toastTimer);
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    toastTimer = setTimeout(() => {
+        t.classList.add('hide');
+        setTimeout(() => t.remove(), 300);
+    }, 2000);
+}
+
+function openSettings() {
+    const winrate = state.totalBattles > 0 ? Math.round((state.totalWins / state.totalBattles) * 100) : 0;
+    openModal(`
+        <h2>⚙️ Настройки</h2>
+        <div style="text-align:left;font-size:12px;background:rgba(0,0,0,0.3);border-radius:8px;padding:10px;margin:8px 0;">
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Ключ:</span><span style="color:#66ff66;">${SAVE_KEY}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Боёв:</span><span style="color:#66ff66;">${state.totalBattles}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Побед:</span><span style="color:#66ff66;">${state.totalWins}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Winrate:</span><span style="color:#66ff66;">${winrate}%</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Кампания:</span><span style="color:#66ff66;">${state.campaignProgress}/${CAMPAIGN.length}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Карт:</span><span style="color:#66ff66;">${state.ownedCards.length}/${CARDS.length}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Артефактов:</span><span style="color:#66ff66;">${state.ownedArtifacts.length}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Скорость боя:</span><span style="color:#66ff66;">×${battleSpeed}</span></div>
+        </div>
+        <p style="font-size:11px;color:#8a9a8a;">Звук: ${state.sound ? 'ВКЛ' : 'ВЫКЛ'}</p>
+        <p style="font-size:10px;color:#8a9a8a;margin-top:6px;">⌨️ 1/2/4 — скорость боя</p>
+        <button onclick="toggleSound()">🔊 Звук</button>
+        <button onclick="exportSave()" style="background:linear-gradient(135deg,#3b82f6,#1e40af);color:#fff;">📤 Экспорт</button>
+        <button onclick="importSave()" style="background:linear-gradient(135deg,#3b82f6,#1e40af);color:#fff;">📥 Импорт</button>
+        <button onclick="resetGame()" style="background:linear-gradient(135deg,#ff6666,#cc0000);color:#fff;">🗑️ Сброс</button>
+        <button onclick="closeModal()">✅ Закрыть</button>
+    `);
+}
+
+function toggleSound() {
+    state.sound = !state.sound;
+    save();
+    toast(state.sound ? '🔊 Вкл' : '🔇 Выкл');
+    openSettings();
+}
+
+function exportSave() {
+    try {
+        const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(data).then(
+                () => toast('📤 Скопировано'),
+                () => prompt('Скопируй код:', data)
+            );
+        } else {
+            prompt('Скопируй код:', data);
+        }
+    } catch(e) { toast('❌ Ошибка'); }
+}
+
+function importSave() {
+    const data = prompt('Вставь код:');
+    if (!data) return;
+    try {
+        const parsed = JSON.parse(decodeURIComponent(escape(atob(data))));
+        state = validateState(parsed);
+        deck = [...state.deck];
+        reserve = [...state.reserve];
+        save(); renderAll(); toast('✅ Импортировано');
+        closeModal();
+    } catch(e) { toast('❌ Неверный код'); }
+}
+
+function checkDaily() {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    if (now - (state.lastDaily || 0) > day) {
+        state.gems += 25;
+        state.money += 100;
+        state.lastDaily = now;
+        save();
+        setTimeout(() => toast('🎁 Ежедневно: +25💎 +100💰'), 800);
+    }
+}
+
+/* ============================================================
+   18. ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+
+document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+        const p = t.dataset.page;
+        if (p && gameReady) { Sound.play('click'); switchPage(p); }
+    });
+});
+
+document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') {
+        if (battle && battle.paused) return;
+        closeModal();
+    }
+});
+
+document.addEventListener('keydown', e => {
+    if (e.target.closest('input') || e.target.closest('textarea')) return;
+    if (e.key === 'Escape') {
+        if (battle && battle.paused) return;
+        closeModal();
+    }
+    /* ★ Горячие клавиши боя ★ */
+    if (battle && !battle.paused) {
+        if (e.key === '1') { setBattleSpeed(1); return; }
+        if (e.key === '2') { setBattleSpeed(2); return; }
+        if (e.key === '4') { setBattleSpeed(4); return; }
+    }
+});
+
+window.addEventListener('beforeunload', () => { save(); });
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) save();
+});
+setInterval(() => { if (gameReady) save(); }, 10000);
+
+function init() {
+    state = loadState();
+    state = validateState(state);
+    deck = [...state.deck];
+    reserve = [...state.reserve];
+    gameReady = true;
+
+    const content = document.getElementById('content');
+    content.innerHTML = `
+        <div id="page-campaign" class="page active"></div>
+        <div id="page-battle" class="page"></div>
+        <div id="page-shop" class="page"></div>
+        <div id="page-collection" class="page"></div>
+    `;
+
+    checkDaily();
+    renderAll();
+    switchPage('campaign');
+
+    console.log('🧟 Последний рубеж v6.5 запущен');
+    console.log('💰 Повтор уровня = 45% награды');
+    console.log('📊 Карт:', CARDS.length, '| Уровней:', CAMPAIGN.length);
+    console.log('💾 Ключ:', SAVE_KEY, '(неизменный)');
+    console.log('⚡ Скорость боя:', '×' + battleSpeed);
+    console.log('🎯 Приоритеты + уровень, дроп по уровням');
+}
+
+init();
+</script>
+</body>
+</html>

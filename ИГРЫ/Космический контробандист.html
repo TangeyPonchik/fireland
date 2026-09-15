@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🚀 Космический контрабандист</title>
+<style>
+    :root {
+        --bg-deep: #03060d;
+        --panel: rgba(12, 22, 42, 0.8);
+        --panel-2: rgba(18, 32, 58, 0.9);
+        --border: rgba(80, 140, 200, 0.2);
+        --border-hi: rgba(0, 212, 255, 0.55);
+        --text: #e2eeff;
+        --text-dim: #8aa6c8;
+        --accent: #00d4ff;
+        --accent-2: #7c5cff;
+        --gold: #ffc857;
+        --green: #4ade80;
+        --red: #ff5470;
+        --pink: #ff88cc;
+        --shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+        --glow: 0 0 24px rgba(0, 212, 255, 0.4);
+        --r: 20px;
+        --r-sm: 14px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: var(--bg-deep); color: var(--text);
+        -webkit-font-smoothing: antialiased; }
+    body { user-select: none; }
+
+    /* ===== КОСМОС ===== */
+    #space { position: fixed; inset: 0; z-index: 0; overflow: hidden;
+        background: radial-gradient(ellipse at 30% 20%, #0f1e3d 0%, #060b1a 45%, #02030a 100%); }
+    .stars, .stars2 { position: absolute; inset: -50%; background-repeat: repeat; }
+    .stars { background-image:
+        radial-gradient(1.2px 1.2px at 20px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 120px 80px, #aaddff, transparent),
+        radial-gradient(1.5px 1.5px at 250px 160px, #fff, transparent),
+        radial-gradient(1px 1px at 330px 60px, #88bbff, transparent),
+        radial-gradient(2px 2px at 400px 220px, #fff, transparent);
+        background-size: 500px 300px; animation: drift 240s linear infinite; opacity: .9; }
+    .stars2 { background-image:
+        radial-gradient(1px 1px at 80px 40px, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 200px 140px, #99ccff, transparent),
+        radial-gradient(2px 2px at 300px 200px, #fff, transparent);
+        background-size: 600px 400px; animation: drift 160s linear infinite; opacity: .5; }
+    @keyframes drift { to { transform: translate3d(-500px, -300px, 0); } }
+    .nebula { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .25;
+        animation: pulse 20s ease-in-out infinite alternate; }
+    .nebula.n1 { width: 65vw; height: 65vw; left: -18vw; top: -15vh;
+        background: radial-gradient(circle, #7c3aed, transparent 70%); }
+    .nebula.n2 { width: 55vw; height: 55vw; right: -15vw; bottom: -18vh;
+        background: radial-gradient(circle, #0ea5e9, transparent 70%); animation-delay: -7s; }
+    @keyframes pulse { to { transform: scale(1.18); opacity: .38; } }
+
+    /* ===== КАРКАС ===== */
+    .app {
+        position: relative; z-index: 5;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 14px;
+        width: 100vw; height: 100vh;
+        padding: 14px;
+        max-width: 1400px; margin: 0 auto;
+    }
+
+    /* ===== ВЕРХНЯЯ ПАНЕЛЬ ===== */
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 10px 16px;
+        backdrop-filter: blur(14px); box-shadow: var(--shadow);
+        gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand-logo { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: flex; align-items: center; justify-content: center; font-size: 19px;
+        box-shadow: var(--glow); }
+    .brand-title { font-size: 15px; font-weight: 800;
+        background: linear-gradient(90deg, #fff, #7dd3fc);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; flex: 1; }
+    .chip { display: flex; align-items: center; gap: 6px;
+        background: rgba(15,30,55,.7); border: 1px solid var(--border);
+        border-radius: 11px; padding: 7px 12px; font-size: 13px;
+        transition: .2s; }
+    .chip:hover { border-color: var(--border-hi); }
+    .chip .ico { font-size: 14px; }
+    .chip .val { font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+    .chip.cargo .val { color: #c084fc; }
+    .chip.fuel .val { color: var(--accent); }
+    .chip.rep .val { color: var(--green); }
+    .chip.crew .val { color: var(--pink); }
+    .chip.day .val { color: #7dd3fc; }
+
+    .top-actions { display: flex; gap: 7px; }
+    .icon-btn { width: 42px; height: 42px; border-radius: 12px;
+        background: rgba(15,30,55,.7); border: 1px solid var(--border);
+        color: var(--text); cursor: pointer; font-size: 18px;
+        display: flex; align-items: center; justify-content: center;
+        transition: .2s; }
+    .icon-btn:hover { border-color: var(--border-hi); background: rgba(20,40,70,.95); transform: translateY(-2px); }
+    .icon-btn:active { transform: scale(.94); }
+
+    /* ===== ПОДСКАЗКА ===== */
+    .hint-banner {
+        display: flex; align-items: center; gap: 12px;
+        background: linear-gradient(135deg, rgba(255,200,87,.16), rgba(255,200,87,.04));
+        border: 1px solid rgba(255,200,87,.45); border-radius: var(--r-sm);
+        padding: 12px 18px; font-size: 14px; color: #ffddaa;
+        animation: hintGlow 3s ease-in-out infinite; min-height: 0;
+    }
+    .hint-banner:empty { display: none; }
+    .hint-banner .hint-ico { font-size: 22px; flex-shrink: 0; }
+    @keyframes hintGlow {
+        0%,100% { border-color: rgba(255,200,87,.45); }
+        50% { border-color: rgba(255,200,87,.9); }
+    }
+
+    /* ===== ГЛАВНАЯ ЗОНА ===== */
+    .main { display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; min-height: 0; }
+
+    /* Карточка планеты */
+    .planet-card {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 24px;
+        backdrop-filter: blur(14px); box-shadow: var(--shadow);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; position: relative; overflow: hidden;
+        transition: .3s;
+    }
+    .planet-card::before {
+        content: ''; position: absolute; inset: 0;
+        background: radial-gradient(circle at 50% 30%, rgba(0,212,255,.15), transparent 60%);
+        opacity: .6; pointer-events: none;
+    }
+    .planet-card .p-icon { font-size: 88px; line-height: 1;
+        filter: drop-shadow(0 0 30px rgba(0,212,255,.5));
+        animation: float 5s ease-in-out infinite alternate; position: relative; z-index: 1; }
+    @keyframes float { to { transform: translateY(-8px); } }
+    .planet-card .p-name {
+        font-size: 26px; font-weight: 800; margin-top: 14px;
+        background: linear-gradient(90deg, #fff, #7dd3fc);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        position: relative; z-index: 1;
+    }
+    .planet-card .p-desc {
+        font-size: 13px; color: var(--text-dim); margin-top: 8px;
+        max-width: 320px; line-height: 1.5; position: relative; z-index: 1;
+    }
+    .planet-card .p-stats {
+        display: flex; gap: 14px; margin-top: 18px;
+        font-size: 13px; position: relative; z-index: 1;
+    }
+    .planet-card .p-stats span {
+        background: rgba(15,30,55,.7); border: 1px solid var(--border);
+        padding: 6px 14px; border-radius: 10px; font-weight: 700;
+    }
+    .planet-card .p-stats .risk { color: var(--red); }
+    .planet-card .p-stats .fuel { color: var(--accent); }
+
+    /* Плитки действий */
+    .action-tiles {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .tile {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 22px 16px;
+        backdrop-filter: blur(14px); box-shadow: var(--shadow);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 12px; cursor: pointer; transition: .22s; font-family: inherit;
+        color: var(--text); position: relative; overflow: hidden;
+    }
+    .tile::before {
+        content: ''; position: absolute; inset: 0;
+        background: radial-gradient(circle at 50% 0%, rgba(0,212,255,.2), transparent 70%);
+        opacity: 0; transition: .3s;
+    }
+    .tile:hover { border-color: var(--border-hi); transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,212,255,.2), var(--shadow); }
+    .tile:hover::before { opacity: 1; }
+    .tile:active { transform: translateY(-1px) scale(.98); }
+    .tile .tile-ico { font-size: 44px; line-height: 1; position: relative; z-index: 1;
+        filter: drop-shadow(0 0 12px rgba(0,212,255,.35)); }
+    .tile .tile-name { font-size: 15px; font-weight: 700; position: relative; z-index: 1;
+        letter-spacing: .3px; }
+    .tile .tile-badge {
+        position: absolute; top: 10px; right: 10px;
+        background: var(--gold); color: #05080f;
+        font-size: 10px; font-weight: 900; padding: 2px 8px;
+        border-radius: 8px; box-shadow: 0 0 12px var(--gold);
+        animation: badgePulse 1.6s ease-in-out infinite;
+    }
+    @keyframes badgePulse { 50% { transform: scale(1.12); } }
+    .tile.story-active { border-color: rgba(255,200,87,.6);
+        background: linear-gradient(135deg, rgba(255,200,87,.12), var(--panel)); }
+    .tile.story-active .tile-ico { filter: drop-shadow(0 0 14px var(--gold)); }
+
+    /* ===== КАРТА ===== */
+    .map-bar {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 12px 14px;
+        backdrop-filter: blur(14px); box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+    .map-head { display: flex; align-items: center; gap: 8px;
+        font-size: 11px; font-weight: 800; letter-spacing: .8px;
+        text-transform: uppercase; color: #bfe0ff;
+        margin-bottom: 10px; }
+    .map-head .ico { font-size: 15px; }
+    .map-head .sub { color: var(--text-dim); font-weight: 500;
+        text-transform: none; letter-spacing: 0; font-size: 11px; margin-left: 6px; }
+    .map-scroll {
+        display: flex; gap: 10px; overflow-x: auto;
+        padding-bottom: 6px; scroll-behavior: smooth;
+    }
+    .map-scroll::-webkit-scrollbar { height: 6px; }
+    .map-scroll::-webkit-scrollbar-thumb { background: rgba(80,140,200,.3); border-radius: 3px; }
+    .map-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,.5); }
+
+    .planet-mini {
+        flex: 0 0 130px; background: rgba(15,30,55,.6);
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 12px 8px; cursor: pointer; text-align: center;
+        transition: .22s; position: relative; overflow: hidden;
+    }
+    .planet-mini:hover { border-color: var(--border-hi); transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,212,255,.25); }
+    .planet-mini.current { border-color: var(--green);
+        background: linear-gradient(135deg, rgba(74,222,128,.14), rgba(15,30,55,.6)); }
+    .planet-mini.current::after {
+        content: 'ВЫ ЗДЕСЬ'; position: absolute; top: 3px; left: 50%;
+        transform: translateX(-50%); font-size: 7.5px; letter-spacing: .8px;
+        color: var(--green); font-weight: 900;
+    }
+    .planet-mini.locked { opacity: .4; cursor: not-allowed; }
+    .planet-mini.locked:hover { transform: none; border-color: var(--border); box-shadow: none; }
+    .planet-mini .pm-icon { font-size: 28px; line-height: 1; display: block;
+        filter: drop-shadow(0 0 6px rgba(0,212,255,.35)); }
+    .planet-mini .pm-name { font-size: 12px; font-weight: 700; color: #cfe8ff; margin-top: 6px; }
+    .planet-mini .pm-info { display: flex; justify-content: center; gap: 6px;
+        margin-top: 4px; font-size: 10px; font-weight: 700; }
+    .planet-mini .pm-fuel { color: var(--accent); }
+    .planet-mini .pm-risk { color: var(--red); }
+    .planet-mini .pm-visit { position: absolute; top: 5px; right: 6px;
+        font-size: 10px; color: var(--gold); }
+
+    /* ===== МОДАЛКА ===== */
+    .modal-overlay {
+        position: fixed; inset: 0; z-index: 100;
+        background: rgba(2,6,15,.88); backdrop-filter: blur(10px);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: .28s; padding: 16px;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal {
+        background: linear-gradient(160deg, #0e1c36, #081020);
+        border: 1px solid var(--border-hi); border-radius: 24px;
+        padding: 24px; max-width: 560px; width: 100%;
+        box-shadow: 0 0 80px rgba(0,180,255,.3), var(--shadow);
+        transform: translateY(24px) scale(.95);
+        transition: .35s cubic-bezier(.34,1.56,.64,1);
+        max-height: 90vh; display: flex; flex-direction: column;
+    }
+    .modal-overlay.show .modal { transform: translateY(0) scale(1); }
+    .modal.wide { max-width: 720px; }
+
+    .modal-head {
+        display: flex; align-items: center; gap: 14px;
+        margin-bottom: 18px; flex-shrink: 0;
+    }
+    .modal-ico {
+        width: 52px; height: 52px; border-radius: 15px; font-size: 26px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        background: linear-gradient(135deg, rgba(0,212,255,.2), rgba(124,92,255,.2));
+        border: 1px solid var(--border-hi); box-shadow: var(--glow);
+    }
+    .modal-title { font-size: 20px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .modal-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+    .modal-body { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; }
+    .modal-body::-webkit-scrollbar { width: 7px; }
+    .modal-body::-webkit-scrollbar-thumb { background: rgba(80,140,200,.3); border-radius: 4px; }
+
+    .modal-close {
+        margin-left: auto; width: 36px; height: 36px; border-radius: 10px;
+        background: rgba(15,30,55,.7); border: 1px solid var(--border);
+        color: var(--text-dim); cursor: pointer; font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+        transition: .2s; flex-shrink: 0;
+    }
+    .modal-close:hover { background: rgba(255,84,112,.2); border-color: var(--red); color: var(--red); }
+
+    /* ===== КНОПКИ ===== */
+    .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        background: rgba(15,30,55,.7); border: 1px solid var(--border);
+        color: var(--text); padding: 11px 16px; border-radius: 12px;
+        cursor: pointer; font-size: 14px; font-weight: 700; transition: .18s;
+        font-family: inherit; white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--border-hi); background: rgba(20,40,70,.95);
+        transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+    .btn:active { transform: translateY(0) scale(.97); }
+    .btn:disabled { opacity: .3; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+    .btn .cost { color: var(--gold); font-weight: 800; font-size: 12.5px; }
+    .btn-buy { border-color: rgba(74,222,128,.45); }
+    .btn-buy:hover { background: rgba(74,222,128,.18); border-color: var(--green); }
+    .btn-sell { border-color: rgba(255,200,87,.45); }
+    .btn-sell:hover { background: rgba(255,200,87,.18); border-color: var(--gold); }
+    .btn-fly { border-color: rgba(124,92,255,.5); }
+    .btn-fly:hover { background: rgba(124,92,255,.2); border-color: var(--accent-2); }
+    .btn-warn { border-color: rgba(255,84,112,.5); }
+    .btn-warn:hover { background: rgba(255,84,112,.18); border-color: var(--red); }
+    .btn-ok { border-color: rgba(74,222,128,.5); }
+    .btn-ok:hover { background: rgba(74,222,128,.18); border-color: var(--green); }
+    .btn-gold { border-color: rgba(255,200,87,.6); background: rgba(255,200,87,.1); }
+    .btn-gold:hover { background: rgba(255,200,87,.24); border-color: var(--gold); }
+    .btn-pulse { animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow {
+        0%,100% { box-shadow: 0 0 0 0 rgba(255,200,87,.5); }
+        50% { box-shadow: 0 0 0 12px rgba(255,200,87,0); }
+    }
+    .btn-block { width: 100%; padding: 15px 20px; font-size: 15px; }
+
+    /* ===== СПИСКИ В МОДАЛКАХ ===== */
+    .trade-list { display: flex; flex-direction: column; gap: 8px; }
+    .trade-row {
+        display: grid; grid-template-columns: auto 1fr auto auto;
+        align-items: center; gap: 10px;
+        background: rgba(15,30,55,.5); border: 1px solid var(--border);
+        border-radius: 14px; padding: 10px 12px; transition: .18s;
+    }
+    .trade-row:hover { border-color: var(--border-hi); background: rgba(20,40,70,.7); }
+    .trade-row.illegal { border-left: 3px solid var(--red); }
+    .trade-row .tr-ico { font-size: 22px; }
+    .trade-row .tr-info { min-width: 0; }
+    .trade-row .tr-name { font-size: 14px; font-weight: 700; color: #cfe8ff; }
+    .trade-row .tr-price { font-size: 12px; color: var(--gold); font-weight: 800; }
+    .trade-row .tr-price .badge { font-size: 10px; color: var(--red); margin-left: 6px; }
+    .trade-row .tr-have { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .trade-row .tr-btns { display: flex; gap: 6px; }
+    .trade-row .tr-btns .btn { padding: 8px 12px; font-size: 12.5px; }
+
+    .card-list { display: flex; flex-direction: column; gap: 10px; }
+    .upgrade-card, .crew-card {
+        display: flex; align-items: center; gap: 14px;
+        background: rgba(15,30,55,.5); border: 1px solid var(--border);
+        border-radius: 14px; padding: 14px 16px; transition: .18s;
+    }
+    .upgrade-card:hover, .crew-card:hover { border-color: var(--border-hi); }
+    .upgrade-card .uc-ico, .crew-card .cc-ico {
+        font-size: 28px; width: 44px; height: 44px;
+        background: rgba(0,212,255,.1); border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .upgrade-card .uc-info, .crew-card .cc-info { flex: 1; min-width: 0; }
+    .upgrade-card .uc-name, .crew-card .cc-name { font-size: 14px; font-weight: 700; }
+    .upgrade-card .uc-desc, .crew-card .cc-desc { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+    .upgrade-card .uc-pips { display: flex; gap: 3px; margin-top: 6px; }
+    .upgrade-card .pip { width: 11px; height: 11px; border-radius: 3px;
+        background: rgba(80,140,200,.2); }
+    .upgrade-card .pip.on { background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 0 6px rgba(0,212,255,.6); }
+    .crew-card.hired { background: linear-gradient(135deg, rgba(74,222,128,.08), rgba(15,30,55,.5));
+        border-color: rgba(74,222,128,.35); }
+    .crew-card.hired .cc-action { color: var(--green); font-weight: 700; font-size: 13px; }
+
+    .stat-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .stat-item { background: rgba(15,30,55,.5); border: 1px solid var(--border);
+        border-radius: 12px; padding: 11px 14px;
+        display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .stat-item .si-ico { font-size: 18px; }
+    .stat-item .si-lbl { color: var(--text-dim); font-size: 11px; }
+    .stat-item .si-val { font-weight: 800; color: var(--gold); font-size: 14px; margin-left: auto; }
+
+    .faction-card {
+        display: flex; flex-direction: column; gap: 6px;
+        padding: 11px 14px; border-radius: 12px;
+        background: rgba(15,30,55,.5); border: 1px solid var(--border);
+        margin-bottom: 8px;
+    }
+    .faction-card .fc-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+    .faction-card .fc-bar { height: 8px; border-radius: 5px; background: rgba(5,12,25,.9); overflow: hidden; }
+    .faction-card .fc-bar i { display: block; height: 100%; transition: width .5s; }
+    .f-merch i { background: linear-gradient(90deg, #14b8a6, #5eead4); }
+    .f-pirate i { background: linear-gradient(90deg, #be123c, #fb7185); }
+    .f-explorer i { background: linear-gradient(90deg, #7c3aed, #c084fc); }
+
+    .modal-choices { display: flex; flex-direction: column; gap: 10px; }
+    .modal-choices .btn { width: 100%; padding: 15px 18px; text-align: left;
+        font-size: 14px; justify-content: flex-start; }
+
+    .empty-state { font-size: 13px; color: var(--text-dim); text-align: center; padding: 26px 16px; }
+
+    /* ===== НАСТРОЙКИ ===== */
+    .setting-row { display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-row .s-lbl { font-size: 14px; font-weight: 700; }
+    .setting-row .s-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .switch { width: 52px; height: 28px; border-radius: 14px; background: rgba(5,12,25,.9);
+        border: 1px solid var(--border); cursor: pointer; position: relative;
+        transition: .25s; flex-shrink: 0; }
+    .switch.on { background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border-color: var(--accent); }
+    .switch::after { content: ''; position: absolute; top: 2px; left: 2px;
+        width: 22px; height: 22px; border-radius: 50%; background: #fff;
+        transition: .25s; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    .switch.on::after { transform: translateX(24px); }
+
+    /* ===== ФИНАЛ ===== */
+    .end-screen { position: fixed; inset: 0; z-index: 200;
+        background: radial-gradient(ellipse at center, #0a1830, #02040a);
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 40px; }
+    .end-screen.show { display: flex; animation: fadeIn .7s; }
+    .end-screen .end-ico { font-size: 82px; margin-bottom: 20px;
+        animation: float 3s ease-in-out infinite alternate; }
+    .end-screen h1 { font-size: 42px; margin-bottom: 16px; font-weight: 900;
+        background: linear-gradient(90deg, #fff, #7dd3fc, #c084fc);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .end-screen p { font-size: 17px; max-width: 620px; line-height: 1.7;
+        color: #b8d4ee; margin-bottom: 34px; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ===== ТОСТЫ ===== */
+    .toast-wrap { position: fixed; top: 84px; right: 20px; z-index: 150;
+        display: flex; flex-direction: column; gap: 9px; pointer-events: none;
+        max-width: 320px; }
+    .toast { background: rgba(10,22,42,.96); border: 1px solid var(--border-hi);
+        border-left: 4px solid var(--accent); border-radius: 12px;
+        padding: 12px 18px; font-size: 13.5px; color: #cfe8ff; font-weight: 600;
+        box-shadow: 0 10px 32px rgba(0,0,0,.6); backdrop-filter: blur(10px);
+        animation: slideIn .35s cubic-bezier(.34,1.56,.64,1), fadeOut .4s 2.6s forwards; }
+    .toast.success { border-left-color: var(--green); }
+    .toast.danger { border-left-color: var(--red); }
+    .toast.gold { border-left-color: var(--gold); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
+
+    /* ===== ЛОГ ===== */
+    .log-list { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+    .log-list .log-entry { padding: 6px 0; border-bottom: 1px solid rgba(80,140,200,.1); }
+    .log-list .log-entry:last-child { border-bottom: none; }
+    .event { color: var(--gold); }
+    .success { color: var(--green); }
+    .danger { color: var(--red); }
+    .story { color: #c084fc; font-style: italic; }
+
+    /* ===== АДАПТИВ ===== */
+    @media (max-width: 900px) {
+        .main { grid-template-columns: 1fr; }
+        .planet-card { padding: 18px; }
+        .planet-card .p-icon { font-size: 64px; }
+        .planet-card .p-name { font-size: 22px; }
+        .tile { padding: 18px 12px; }
+        .tile .tile-ico { font-size: 36px; }
+        .brand-title { display: none; }
+    }
+    @media (max-width: 600px) {
+        .app { padding: 8px; gap: 8px; }
+        .chips { gap: 5px; }
+        .chip { font-size: 11px; padding: 5px 9px; }
+        .chip .ico { font-size: 12px; }
+        .icon-btn { width: 38px; height: 38px; font-size: 16px; }
+        .topbar { padding: 8px 10px; }
+        .planet-mini { flex: 0 0 110px; }
+        .modal { padding: 18px; border-radius: 18px; }
+        .modal-ico { width: 44px; height: 44px; font-size: 22px; }
+        .modal-title { font-size: 17px; }
+    }
+</style>
+</head>
+<body>
+
+<div id="space">
+    <div class="stars"></div><div class="stars2"></div>
+    <div class="nebula n1"></div><div class="nebula n2"></div>
+</div>
+
+<div class="app">
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-logo">🚀</div>
+            <div class="brand-title">Космический контрабандист</div>
+        </div>
+        <div class="chips">
+            <div class="chip money"><span class="ico">💰</span><span class="val" id="moneyDisplay">300</span></div>
+            <div class="chip cargo"><span class="ico">📦</span><span class="val" id="cargoDisplay">0/50</span></div>
+            <div class="chip fuel"><span class="ico">⛽</span><span class="val" id="fuelDisplay">100</span></div>
+            <div class="chip rep"><span class="ico">⭐</span><span class="val" id="repDisplay">0</span></div>
+            <div class="chip crew"><span class="ico">👥</span><span class="val" id="crewDisplay">0</span></div>
+            <div class="chip day"><span class="ico">📅</span><span class="val" id="dayDisplay">1</span></div>
+        </div>
+        <div class="top-actions">
+            <button class="icon-btn" id="shipBtn" title="Корабль">🚢</button>
+            <button class="icon-btn" id="logBtn" title="Хроника">📜</button>
+            <button class="icon-btn" id="soundBtn" title="Звук">🔊</button>
+            <button class="icon-btn" id="settingsBtn" title="Настройки">⚙️</button>
+        </div>
+    </div>
+
+    <!-- ПОДСКАЗКА -->
+    <div class="hint-banner" id="nextStepHint"></div>
+
+    <!-- ГЛАВНАЯ ЗОНА -->
+    <div class="main">
+        <div class="planet-card">
+            <div class="p-icon" id="planetIconBig">🌊</div>
+            <div class="p-name" id="planetNameBig">Коралл</div>
+            <div class="p-desc" id="planetDescBig">Торговый рай. Плавающие города и легальные рынки.</div>
+            <div class="p-stats">
+                <span class="fuel">⛽ <span id="planetFuelCost">—</span></span>
+                <span class="risk">⚠ Риск <span id="planetRisk">—</span></span>
+            </div>
+        </div>
+
+        <div class="action-tiles">
+            <button class="tile" id="tileTrade">
+                <div class="tile-ico">🛒</div>
+                <div class="tile-name">Торговля</div>
+            </button>
+            <button class="tile" id="tileUpgrade">
+                <div class="tile-ico">⚙️</div>
+                <div class="tile-name">Улучшения</div>
+            </button>
+            <button class="tile" id="tileCrew">
+                <div class="tile-ico">👥</div>
+                <div class="tile-name">Экипаж</div>
+            </button>
+            <button class="tile" id="tileStory">
+                <div class="tile-ico">📖</div>
+                <div class="tile-name">История</div>
+                <span class="tile-badge" id="storyBadge" style="display:none">!</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- КАРТА -->
+    <div class="map-bar">
+        <div class="map-head">
+            <span class="ico">🗺️</span>
+            <span>Карта галактики</span>
+            <span class="sub">— нажми на планету, чтобы лететь</span>
+        </div>
+        <div class="map-scroll" id="mapDisplay"></div>
+    </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- УНИВЕРСАЛЬНАЯ МОДАЛКА КОНТЕНТА -->
+<div class="modal-overlay" id="contentModal">
+    <div class="modal" id="contentModalBox">
+        <div class="modal-head">
+            <div class="modal-ico" id="contentIco">📦</div>
+            <div>
+                <div class="modal-title" id="contentTitle">Заголовок</div>
+                <div class="modal-sub" id="contentSub"></div>
+            </div>
+            <button class="modal-close" id="contentClose">✕</button>
+        </div>
+        <div class="modal-body" id="contentBody"></div>
+    </div>
+</div>
+
+<!-- МОДАЛКА ВЫБОРА (события, полёт) -->
+<div class="modal-overlay" id="choiceModal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-ico" id="choiceIco">❓</div>
+            <div>
+                <div class="modal-title" id="choiceTitle">Событие</div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <p id="choiceText" style="font-size:14px;color:#b8d4ee;line-height:1.65;margin-bottom:18px"></p>
+            <div class="modal-choices" id="choiceButtons"></div>
+        </div>
+    </div>
+</div>
+
+<!-- НАСТРОЙКИ -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-ico">⚙️</div>
+            <div><div class="modal-title">Настройки</div></div>
+            <button class="modal-close" id="settingsClose">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="setting-row">
+                <div><div class="s-lbl">🔊 Звуки</div><div class="s-desc">Уведомления и клики</div></div>
+                <div class="switch on" id="setSound"></div>
+            </div>
+            <div class="setting-row">
+                <div><div class="s-lbl">💾 Автосохранение</div><div class="s-desc">Сохранять прогресс автоматически</div></div>
+                <div class="switch on" id="setAutosave"></div>
+            </div>
+            <div class="setting-row">
+                <div><div class="s-lbl">🎬 Анимации</div><div class="s-desc">Космический фон</div></div>
+                <div class="switch on" id="setAnim"></div>
+            </div>
+            <div style="margin-top:20px;display:flex;flex-direction:column;gap:9px">
+                <button class="btn btn-fly" id="saveBtn">💾 Сохранить сейчас</button>
+                <button class="btn btn-warn" id="resetBtn">🗑️ Сбросить прогресс</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ФИНАЛ -->
+<div class="end-screen" id="endScreen">
+    <div class="end-ico" id="endIco">🏆</div>
+    <h1 id="endTitle">Финал</h1>
+    <p id="endText"></p>
+    <button class="btn btn-fly" style="padding:15px 38px;font-size:16px" id="restartBtn">🔄 Начать заново</button>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   ДАННЫЕ
+============================================================ */
+const PLANETS = [
+    { id:0, name:"Коралл", icon:"🌊", faction:"merch",
+      desc:"Торговый рай. Плавающие города и легальные рынки.",
+      goods:{spice:80, tech:120, food:40, metal:90, meds:110, fuel:60, jewels:200, bio:150},
+      risk:0.15, fuelCost:10 },
+    { id:1, name:"Ферро", icon:"⚙️", faction:"pirate",
+      desc:"Пиратская база. Здесь не задают вопросов.",
+      goods:{spice:120, tech:60, food:90, metal:40, meds:140, fuel:30, weapons:180, slaves:250},
+      risk:0.45, fuelCost:15 },
+    { id:2, name:"Эдем", icon:"🌿", faction:"explorer",
+      desc:"Исследовательский форпост. Наука превыше всего.",
+      goods:{spice:50, tech:150, food:30, metal:110, meds:70, fuel:80, bio:90, jewels:180},
+      risk:0.1, fuelCost:12 },
+    { id:3, name:"Нексус", icon:"🔮", faction:"merch",
+      desc:"Чёрный рынок. Всё, что запрещено — здесь разрешено.",
+      goods:{spice:150, tech:40, food:110, metal:60, meds:160, weapons:120, slaves:200, jewels:90},
+      risk:0.55, fuelCost:18 },
+    { id:4, name:"Вулкан", icon:"🌋", faction:"pirate",
+      desc:"Опасная добыча. Рудники кипят, а воздух жжёт лёгкие.",
+      goods:{metal:25, fuel:50, tech:100, food:130, weapons:90, slaves:220, meds:150, bio:170},
+      risk:0.4, fuelCost:20 },
+    { id:5, name:"Ледяная", icon:"❄️", faction:"merch",
+      desc:"Контрабанда на льду. Холод хранит секреты.",
+      goods:{food:150, fuel:40, tech:110, metal:80, meds:90, spice:100, jewels:140, bio:120},
+      risk:0.3, fuelCost:14 },
+    { id:6, name:"Пустошь", icon:"🏜️", faction:"pirate",
+      desc:"Анархия. Никаких законов, только выживание.",
+      goods:{metal:35, fuel:45, food:160, tech:130, weapons:80, slaves:180, meds:170, spice:140},
+      risk:0.6, fuelCost:16 },
+    { id:7, name:"Аномалия", icon:"🌌", faction:"explorer",
+      desc:"Неизвестность. Здесь пропадают корабли и рождаются легенды.",
+      goods:{jewels:60, bio:50, tech:140, spice:170, fuel:100, meds:180, weapons:150, slaves:280},
+      risk:0.75, fuelCost:25 },
+    { id:8, name:"Цитадель", icon:"🏛️", faction:"merch",
+      desc:"Столица торговли. Центр власти и интриг.",
+      goods:{spice:90, tech:80, food:70, metal:100, meds:60, fuel:70, jewels:110, bio:100},
+      risk:0.2, fuelCost:12 },
+    { id:9, name:"Реликт", icon:"🗿", faction:"explorer",
+      desc:"Руины древней цивилизации. Артефакты и проклятия.",
+      goods:{jewels:40, bio:30, tech:160, spice:180, fuel:110, meds:190, weapons:170, slaves:300},
+      risk:0.7, fuelCost:22 }
+];
+
+const GOODS = [
+    {id:"spice", name:"Пряности", icon:"🌶️", illegal:false},
+    {id:"tech", name:"Техника", icon:"🖥️", illegal:false},
+    {id:"food", name:"Пища", icon:"🍲", illegal:false},
+    {id:"metal", name:"Металл", icon:"🔩", illegal:false},
+    {id:"meds", name:"Медикаменты", icon:"💊", illegal:false},
+    {id:"fuel", name:"Топливо", icon:"⛽", illegal:false},
+    {id:"weapons", name:"Оружие", icon:"🔫", illegal:true},
+    {id:"slaves", name:"Рабы", icon:"👥", illegal:true},
+    {id:"jewels", name:"Драгоценности", icon:"💎", illegal:false},
+    {id:"bio", name:"Биоматериалы", icon:"🧬", illegal:true}
+];
+
+const CREW_MEMBERS = [
+    {id:"mechanic", name:"Механик", icon:"🔧", desc:"Чинит корабль", cost:150},
+    {id:"trader", name:"Торговый агент", icon:"💼", desc:"+15% к продажам", cost:200},
+    {id:"scanner", name:"Сканерщик", icon:"📡", desc:"Находит аномалии", cost:250},
+    {id:"cook", name:"Повар", icon:"🍳", desc:"Баффы к морали", cost:120},
+    {id:"doctor", name:"Врач", icon:"⚕️", desc:"Лечит экипаж", cost:220},
+    {id:"gunner", name:"Стрелок", icon:"🔫", desc:"+защита в бою", cost:280},
+    {id:"hacker", name:"Хакер", icon:"💻", desc:"Взлом систем", cost:300},
+    {id:"navigator", name:"Штурман", icon:"🧭", desc:"+скорость", cost:180},
+    {id:"psychologist", name:"Психолог", icon:"🧠", desc:"+мораль", cost:160},
+    {id:"scout", name:"Разведчик", icon:"🔭", desc:"Информация", cost:240}
+];
+
+const EVENTS = [
+    {id:"storm", icon:"🌀", title:"Космический шторм", text:"Твой корабль попал в шторм. Груз может пострадать.", choices:[
+        {text:"🌀 Прорваться сквозь", effect:()=>{ if(Math.random()<0.5){cargo=Math.max(0,cargo-3); log("🌀 Потеряно 3 т груза.","danger");} else log("🌀 Шторм пройден!","success"); }},
+        {text:"↩️ Обойти (топливо -10)", effect:()=>{ fuel=Math.max(0,fuel-10); log("🌀 Обогнул шторм. Топливо -10.","event"); }}
+    ]},
+    {id:"aliens", icon:"👽", title:"Встреча с инопланетянами", text:"Неизвестный корабль выходит на связь. Они предлагают обмен.", choices:[
+        {text:"🤝 Обменять 5 т груза на 100 кр", effect:()=>{ if(cargo>=5){cargo-=5;money+=100;log("👽 Обмен совершён! +100 кр.","success");} else log("👽 Недостаточно груза.","danger"); }},
+        {text:"🚫 Отказаться", effect:()=>{ log("👽 Инопланетяне улетели.","event"); }}
+    ]},
+    {id:"distress", icon:"📡", title:"Сигнал бедствия", text:"Корабль терпит крушение. Они просят помощи.", choices:[
+        {text:"🆘 Помочь (+репутация)", effect:()=>{ reputation+=2; factionExplorer+=1; log("📡 Ты спас экипаж! +2 репутации.","success"); }},
+        {text:"➡️ Пролететь мимо", effect:()=>{ factionPirate+=1; log("📡 Ты прошёл мимо. Пираты запомнили.","event"); }}
+    ]},
+    {id:"derelict", icon:"💀", title:"Заброшенный корабль", text:"Дрейфующий корабль. Внутри может быть груз.", choices:[
+        {text:"🔍 Обыскать", effect:()=>{ if(Math.random()<0.6){let g=GOODS[rand(0,GOODS.length-1)]; cargo=Math.min(maxCargo,cargo+2); log("💀 Найдено 2 т "+g.name+"!","success");} else {armor=Math.max(1,armor-1); log("💀 Ловушка! Броня -1.","danger");} }},
+        {text:"↩️ Улететь", effect:()=>{ log("💀 Ты не стал рисковать.","event"); }}
+    ]},
+    {id:"anomaly", icon:"🌟", title:"Аномалия", text:"Перед тобой светящаяся сфера. Она манит.", choices:[
+        {text:"🔬 Исследовать", effect:()=>{ if(Math.random()<0.5){money+=150;log("🌟 Найдены кристаллы! +150 кр.","success");} else {fuel=Math.max(0,fuel-20);log("🌟 Аномалия вытянула топливо. -20.","danger");} }},
+        {text:"↩️ Обойти", effect:()=>{ log("🌟 Ты обошёл аномалию.","event"); }}
+    ]},
+    {id:"ambush", icon:"🏴‍☠️", title:"Пиратская засада", text:"Пираты требуют плату за проход.", choices:[
+        {text:"💰 Откупиться (50 кр)", effect:()=>{ if(money>=50){money-=50;log("🏴‍☠️ Откупился. -50 кр.","event");} else {money=Math.max(0,money-30);log("🏴‍☠️ Нет денег! Пираты ограбили на 30 кр.","danger");} }},
+        {text:"⚔️ Сражаться", effect:()=>{ if(weapon>=2){log("🏴‍☠️ Ты отбился!","success");factionPirate-=1;} else {money=Math.max(0,money-80);log("🏴‍☠️ Пираты ограбили тебя! -80 кр.","danger");} }},
+        {text:"💨 Убежать", effect:()=>{ if(engine>=2){log("🏴‍☠️ Ты сбежал!","success");} else {cargo=Math.max(0,cargo-5);log("🏴‍☠️ Побег удался, но потеряно 5 т груза.","danger");} }}
+    ]},
+    {id:"supply", icon:"🎁", title:"Контейнер с припасами", text:"Дрейфующий контейнер. Внутри что-то есть.", choices:[
+        {text:"📦 Открыть", effect:()=>{ let r=rand(1,3); if(r===1){money+=80;log("🎁 +80 кр.","success");} else if(r===2){fuel=Math.min(maxFuel,fuel+30);log("🎁 +30 топлива.","success");} else {cargo=Math.min(maxCargo,cargo+3);log("🎁 +3 т груза.","success");} }},
+        {text:"↩️ Оставить", effect:()=>{ log("🎁 Контейнер остался дрейфовать.","event"); }}
+    ]},
+    {id:"epidemic", icon:"🦠", title:"Эпидемия на корабле", text:"Экипаж заболел. Нужно срочно решить проблему.", choices:[
+        {text:"💊 Купить лекарства (100 кр)", effect:()=>{ if(money>=100){money-=100;log("🦠 Эпидемия остановлена.","success");} else {if(crew.length>0) crew.pop();log("🦠 Нет денег! Один член экипажа потерян.","danger");} }},
+        {text:"🚪 Изолировать больных", effect:()=>{ if(crew.length>0){crew.pop(); log("🦠 Один член экипажа потерян.","danger");} else log("🦠 Некого изолировать.","event"); }}
+    ]},
+    {id:"smuggler", icon:"🕶️", title:"Тайная сделка", text:"Контрабандист предлагает нелегальный груз.", choices:[
+        {text:"💸 Купить (200 кр)", effect:()=>{ if(money>=200 && cargo+5<=maxCargo){money-=200;cargo+=5;factionPirate+=2;log("🕶️ Куплено 5 т нелегального груза.","success");} else if(cargo+5>maxCargo){log("🕶️ Не хватает места!","danger");} else log("🕶️ Недостаточно кредитов.","danger"); }},
+        {text:"🚫 Отказаться", effect:()=>{ factionMerch+=1; log("🕶️ Ты отказался. Торговцы довольны.","event"); }}
+    ]},
+    {id:"patrol", icon:"🚨", title:"Патруль торговцев", text:"Корабль торговцев проверяет груз.", choices:[
+        {text:"💵 Заплатить пошлину (30 кр)", effect:()=>{ if(money>=30){money-=30;log("🚨 Пошлина уплачена.","event");} else {cargo=Math.max(0,cargo-2);log("🚨 Нет денег! Конфисковано 2 т груза.","danger");} }},
+        {text:"💨 Бежать", effect:()=>{ if(engine>=2){log("🚨 Ты ушёл от патруля!","success");factionMerch-=1;} else {cargo=Math.max(0,cargo-5);log("🚨 Патруль конфисковал 5 т груза.","danger");} }}
+    ]},
+    {id:"wormhole", icon:"🕳️", title:"Червоточина", text:"Перед тобой червоточина. Она может сократить путь.", choices:[
+        {text:"🌀 Войти", effect:()=>{ if(Math.random()<0.5){day+=2;log("🕳️ Червоточина перенесла тебя вперёд!","success");} else {fuel=Math.max(0,fuel-30);log("🕳️ Выбросило в пустоте. Топливо -30.","danger");} }},
+        {text:"↩️ Обойти", effect:()=>{ log("🕳️ Ты обошёл червоточину.","event"); }}
+    ]},
+    {id:"artifact", icon:"🗝️", title:"Древний артефакт", text:"Ты нашёл странный предмет. Он шепчет.", choices:[
+        {text:"✋ Взять", effect:()=>{ inventory.push({name:"🗝️ Древний ключ", desc:"Открывает путь к сокровищам"}); log("🗝️ Артефакт получен!","success"); }},
+        {text:"↩️ Оставить", effect:()=>{ log("🗝️ Ты оставил артефакт.","event"); }}
+    ]},
+    {id:"mutiny", icon:"⚔️", title:"Бунт на корабле", text:"Экипаж недоволен. Они требуют повышения.", choices:[
+        {text:"💸 Заплатить (100 кр)", effect:()=>{ if(money>=100){money-=100;log("⚔️ Бунт подавлен.","success");} else {if(crew.length>0) crew.pop();log("⚔️ Один член экипажа ушёл.","danger");} }},
+        {text:"🔫 Угрожать", effect:()=>{ if(weapon>=3){log("⚔️ Экипаж подчинился.","success");} else {if(crew.length>0) crew.pop();log("⚔️ Экипаж покинул корабль.","danger");} }}
+    ]},
+    {id:"treasure", icon:"🏴‍☠️", title:"Карта сокровищ", text:"Ты нашёл карту с отметкой сокровищ.", choices:[
+        {text:"🗺️ Отправиться на поиски", effect:()=>{ if(Math.random()<0.6){money+=200;log("🏴‍☠️ Сокровище найдено! +200 кр.","success");} else {fuel=Math.max(0,fuel-20);log("🏴‍☠️ Сокровищ нет. Топливо -20.","danger");} }},
+        {text:"💸 Продать карту (80 кр)", effect:()=>{ money+=80; log("🏴‍☠️ Карта продана. +80 кр.","event"); }}
+    ]},
+    {id:"love", icon:"💖", title:"Романтическая встреча", text:"Ты встретил кого-то особенного на станции.", choices:[
+        {text:"💕 Провести время", effect:()=>{ if(crew.length<10){crew.push({id:"companion", name:"Компаньон", icon:"💖", desc:"+мораль"}); log("💖 Компаньон присоединился!","success");} else log("💖 Экипаж полон.","event"); }},
+        {text:"🚀 Улететь", effect:()=>{ log("💖 Ты продолжил путь.","event"); }}
+    ]},
+    {id:"virus", icon:"🖥️", title:"Компьютерный вирус", text:"Системы корабля заражены вирусом.", choices:[
+        {text:"💻 Взломать (нужен хакер)", effect:()=>{ if(crew.some(c=>c.id==="hacker")){log("🖥️ Вирус удалён!","success");} else {money=Math.max(0,money-50);log("🖥️ Вирус украл 50 кр.","danger");} }},
+        {text:"🔄 Перезагрузить", effect:()=>{ if(Math.random()<0.5){log("🖥️ Перезагрузка помогла.","success");} else {fuel=Math.max(0,fuel-10);log("🖥️ Сбой систем. Топливо -10.","danger");} }}
+    ]},
+    {id:"refugee", icon:"🆘", title:"Беженцы", text:"Корабль с беженцами просит убежища.", choices:[
+        {text:"🤝 Взять на борт", effect:()=>{ factionExplorer+=2; reputation+=1; log("🆘 Беженцы спасены! +репутация.","success"); }},
+        {text:"🚫 Отказать", effect:()=>{ factionPirate+=1; log("🆘 Ты отказал. Пираты одобряют.","event"); }}
+    ]},
+    {id:"blackmarket", icon:"🕳️", title:"Чёрный рынок", text:"Тебе предлагают купить редкий товар.", choices:[
+        {text:"💎 Купить (150 кр)", effect:()=>{ if(money>=150){money-=150;inventory.push({name:"💎 Кристалл вечности",desc:"+10 груза"});maxCargo+=10;log("💎 Кристалл получен!","success");} else log("🕳️ Недостаточно кредитов.","danger"); }},
+        {text:"🚫 Отказаться", effect:()=>{ log("🕳️ Ты ушёл.","event"); }}
+    ]},
+    {id:"signal", icon:"📶", title:"Загадочный сигнал", text:"Сигнал ведёт к неизвестной планете.", choices:[
+        {text:"📡 Следовать", effect:()=>{ currentPlanet=rand(0,PLANETS.length-1); day++; visitedPlanets[currentPlanet]=true; log("📶 Ты прибыл на "+PLANETS[currentPlanet].name+"!","event"); }},
+        {text:"🚫 Игнорировать", effect:()=>{ log("📶 Сигнал затих.","event"); }}
+    ]}
+];
+
+/* ============================================================
+   СОСТОЯНИЕ
+============================================================ */
+const SAVE_KEY = 'space_smuggler_save_v8';
+const SETTINGS_KEY = 'space_smuggler_settings_v8';
+
+let money = 300, cargo = 0, maxCargo = 50, reputation = 0;
+let armor = 1, engine = 1, weapon = 1, scanner = 1;
+let fuel = 100, maxFuel = 100;
+let day = 1;
+let crew = [], inventory = [];
+let factionMerch = 0, factionPirate = 0, factionExplorer = 0;
+let currentPlanet = 0;
+let visitedPlanets = {0:true};
+let marketPrices = {};
+let storyStep = 0;
+let storyFlags = { metBroker:false, foundClue:false, choseSide:null };
+let gameOver = false;
+let settings = { sound:true, autosave:true, anim:true };
+let logHistory = [];
+
+/* ============================================================
+   УТИЛИТЫ
+============================================================ */
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function $(id){ return document.getElementById(id); }
+function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function log(msg, type=''){
+    logHistory.unshift({msg, type, t:Date.now()});
+    if(logHistory.length > 60) logHistory.pop();
+}
+
+/* ============================================================
+   ЗВУК
+============================================================ */
+let audioCtx = null;
+function beep(freq, dur, type){
+    if(!settings.sound) return;
+    try {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch(e){}
+}
+function sndClick(){ beep(600, 0.06, 'square'); }
+function sndGood(){ beep(880, 0.12); setTimeout(()=>beep(1100, 0.1), 70); }
+function sndBad(){ beep(220, 0.18, 'sawtooth'); }
+function sndGold(){ beep(660, 0.1); setTimeout(()=>beep(990, 0.15), 90); }
+
+/* ============================================================
+   ТОСТЫ
+============================================================ */
+function toast(msg, type=''){
+    const wrap = $('toastWrap');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    wrap.appendChild(t);
+    if(type === 'success') sndGood();
+    else if(type === 'danger') sndBad();
+    else if(type === 'gold') sndGold();
+    setTimeout(()=>{ if(t.parentNode) t.remove(); }, 3200);
+}
+
+/* ============================================================
+   МОДАЛКИ
+============================================================ */
+function openContentModal(icon, title, sub, bodyHTML, wide){
+    $('contentIco').textContent = icon;
+    $('contentTitle').textContent = title;
+    $('contentSub').textContent = sub || '';
+    $('contentBody').innerHTML = bodyHTML;
+    $('contentModalBox').classList.toggle('wide', !!wide);
+    $('contentModal').classList.add('show');
+}
+function closeContentModal(){ $('contentModal').classList.remove('show'); }
+
+function openChoiceModal(icon, title, text, choices){
+    $('choiceIco').textContent = icon;
+    $('choiceTitle').textContent = title;
+    $('choiceText').textContent = text;
+    const box = $('choiceButtons');
+    box.innerHTML = '';
+    choices.forEach(c=>{
+        const btn = document.createElement('button');
+        btn.className = 'btn ' + (c.cls || 'btn-fly');
+        btn.textContent = c.text;
+        btn.onclick = ()=>{
+            sndClick();
+            closeChoiceModal();
+            try { c.effect(); } catch(e){ console.error(e); }
+            saveGame();
+            updateUI();
+        };
+        box.appendChild(btn);
+    });
+    $('choiceModal').classList.add('show');
+}
+function closeChoiceModal(){ $('choiceModal').classList.remove('show'); }
+
+/* ============================================================
+   СОХРАНЕНИЕ
+============================================================ */
+function saveGame(){
+    if(!settings.autosave && !window.__forceSave) return;
+    try {
+        const data = {
+            money, cargo, maxCargo, reputation,
+            armor, engine, weapon, scanner,
+            fuel, maxFuel, day,
+            crew: crew.map(c=>({id:c.id,name:c.name,icon:c.icon,desc:c.desc})),
+            inventory, factionMerch, factionPirate, factionExplorer,
+            currentPlanet, visitedPlanets, storyStep, storyFlags, gameOver,
+            logHistory: logHistory.slice(0,20),
+            savedAt: Date.now()
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch(e){ console.warn('Save failed', e); }
+}
+
+function loadGame(){
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if(!raw) return false;
+        const d = JSON.parse(raw);
+        if(typeof d.money !== 'number') return false;
+        money = d.money; cargo = d.cargo||0; maxCargo = d.maxCargo||50;
+        reputation = d.reputation||0;
+        armor = d.armor||1; engine = d.engine||1; weapon = d.weapon||1; scanner = d.scanner||1;
+        fuel = d.fuel||100; maxFuel = d.maxFuel||100;
+        day = d.day||1;
+        crew = Array.isArray(d.crew) ? d.crew : [];
+        inventory = Array.isArray(d.inventory) ? d.inventory : [];
+        factionMerch = d.factionMerch||0; factionPirate = d.factionPirate||0; factionExplorer = d.factionExplorer||0;
+        currentPlanet = clamp(d.currentPlanet||0, 0, PLANETS.length-1);
+        visitedPlanets = d.visitedPlanets || {0:true};
+        storyStep = clamp(d.storyStep||0, 0, 2);
+        storyFlags = Object.assign({metBroker:false, foundClue:false, choseSide:null}, d.storyFlags||{});
+        gameOver = !!d.gameOver;
+        if(Array.isArray(d.logHistory)) logHistory = d.logHistory;
+        return true;
+    } catch(e){ console.warn('Load failed', e); return false; }
+}
+
+function resetGame(){
+    try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+    location.reload();
+}
+
+function loadSettings(){
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if(raw){
+            const s = JSON.parse(raw);
+            settings.sound = s.sound !== false;
+            settings.autosave = s.autosave !== false;
+            settings.anim = s.anim !== false;
+        }
+    } catch(e){}
+}
+function saveSettings(){
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){}
+    applySettings();
+}
+function applySettings(){
+    $('setSound').classList.toggle('on', settings.sound);
+    $('setAutosave').classList.toggle('on', settings.autosave);
+    $('setAnim').classList.toggle('on', settings.anim);
+    $('soundBtn').textContent = settings.sound ? '🔊' : '🔇';
+    const bg = $('space');
+    if(bg) bg.style.display = settings.anim ? '' : 'none';
+}
+
+/* ============================================================
+   ЦЕНЫ
+============================================================ */
+function generatePrices(){
+    const p = PLANETS[currentPlanet];
+    const prices = {};
+    GOODS.forEach(g=>{
+        let base = p.goods[g.id] || 100;
+        let fluct = rand(-20, 20);
+        if(factionMerch > 3) fluct -= 10;
+        if(factionPirate > 3 && g.illegal) fluct -= 15;
+        if(factionExplorer > 3) fluct += 5;
+        prices[g.id] = Math.max(10, base + fluct);
+    });
+    return prices;
+}
+
+/* ============================================================
+   ГЛАВНЫЙ UI
+============================================================ */
+function updateUI(){
+    if(gameOver) return;
+
+    // Чипы
+    $('moneyDisplay').textContent = money;
+    $('cargoDisplay').textContent = cargo + '/' + maxCargo;
+    $('fuelDisplay').textContent = fuel;
+    $('repDisplay').textContent = reputation;
+    $('crewDisplay').textContent = crew.length;
+    $('dayDisplay').textContent = day;
+
+    // Карточка планеты
+    const p = PLANETS[currentPlanet];
+    $('planetIconBig').textContent = p.icon;
+    $('planetNameBig').textContent = p.name;
+    $('planetDescBig').textContent = p.desc;
+    $('planetFuelCost').textContent = p.fuelCost;
+    $('planetRisk').textContent = Math.round(p.risk*100) + '%';
+
+    // Подсказка
+    renderHint();
+    // Бейдж на плитке «История»
+    const hasStory = canDoStoryAction();
+    $('storyBadge').style.display = hasStory ? '' : 'none';
+    $('tileStory').classList.toggle('story-active', hasStory);
+
+    // Карта
+    renderMap();
+
+    // Цены
+    marketPrices = generatePrices();
+}
+
+function renderHint(){
+    const hint = $('nextStepHint');
+    let text = '', ico = '💡';
+    if(storyStep === 0 && !storyFlags.metBroker){
+        if(money < 100){ text = 'Заработай ещё ' + (100-money) + ' кредитов — торгуй на рынке'; ico = '💰'; }
+        else { text = 'Загляни в «📖 История» — пора найти информатора'; ico = '🕵️'; }
+    } else if(storyStep === 1 && !storyFlags.foundClue){
+        const need = 3 - Object.keys(visitedPlanets).length;
+        if(need > 0){ text = 'Посети ещё ' + need + ' планеты — нажми на них на карте'; ico = '🗺️'; }
+        else { text = 'Открой «📖 История» и найди след брата'; ico = '🔍'; }
+    } else if(storyStep === 2 && !storyFlags.choseSide){
+        if(currentPlanet !== 7){ text = 'Лети на планету 🌌 Аномалия'; ico = '🌌'; }
+        else { text = 'Открой «📖 История» и войди в Аномалию'; ico = '🚪'; }
+    }
+    if(text){
+        hint.innerHTML = '<span class="hint-ico">'+ico+'</span><span><b>Подсказка:</b> '+text+'</span>';
+    } else {
+        hint.innerHTML = '';
+    }
+}
+
+function renderMap(){
+    const mapDiv = $('mapDisplay');
+    mapDiv.innerHTML = '';
+    PLANETS.forEach(p=>{
+        const isCurrent = p.id === currentPlanet;
+        const canFly = !isCurrent && fuel >= p.fuelCost;
+        const div = document.createElement('div');
+        div.className = 'planet-mini' + (isCurrent ? ' current' : '') + (!canFly && !isCurrent ? ' locked' : '');
+        div.title = p.desc;
+        div.innerHTML = `
+            ${visitedPlanets[p.id] && !isCurrent ? '<span class="pm-visit">✓</span>' : ''}
+            <span class="pm-icon">${p.icon}</span>
+            <span class="pm-name">${p.name}</span>
+            <div class="pm-info">
+                <span class="pm-fuel">⛽${p.fuelCost}</span>
+                <span class="pm-risk">⚠${Math.round(p.risk*100)}%</span>
+            </div>
+        `;
+        div.onclick = ()=>tryFly(p);
+        mapDiv.appendChild(div);
+    });
+}
+
+/* ============================================================
+   ПОЛЁТ
+============================================================ */
+function tryFly(p){
+    if(gameOver) return;
+    if(p.id === currentPlanet){ toast('📍 Ты уже здесь', 'gold'); return; }
+    if(fuel < p.fuelCost){ toast('❌ Нужно ' + p.fuelCost + ' топлива. Есть: ' + fuel, 'danger'); return; }
+
+    openChoiceModal(
+        p.icon,
+        'Летим на ' + p.name + '?',
+        p.desc + '\n\n' +
+        '⛽ Топливо: −' + p.fuelCost + '\n' +
+        '⚠ Риск события: ' + Math.round(p.risk*100) + '%\n' +
+        '📅 Пройдёт 1 день',
+        [
+            {text: '🚀 Лететь!', cls: 'btn-fly', effect: ()=>doFly(p)},
+            {text: '↩️ Остаться', cls: 'btn', effect: ()=>{}}
+        ]
+    );
+}
+
+function doFly(p){
+    fuel = Math.max(0, fuel - p.fuelCost);
+    currentPlanet = p.id;
+    day++;
+    visitedPlanets[p.id] = true;
+    log('🛸 Прибыл на ' + p.icon + ' ' + p.name, 'event');
+    toast('🛸 ' + p.icon + ' ' + p.name, 'success');
+    updateUI();
+    saveGame();
+    if(Math.random() < p.risk + 0.15){
+        setTimeout(()=>randomEvent(), 450);
+    }
+}
+
+/* ============================================================
+   ПЛИТКА: ТОРГОВЛЯ
+============================================================ */
+function openTradeModal(){
+    sndClick();
+    marketPrices = generatePrices();
+    let html = '<div class="trade-list">';
+    GOODS.forEach(g=>{
+        const price = marketPrices[g.id];
+        const have = cargo > 0 ? '' : '';
+        html += `<div class="trade-row${g.illegal?' illegal':''}">
+            <div class="tr-ico">${g.icon}</div>
+            <div class="tr-info">
+                <div class="tr-name">${g.name}${g.illegal?' <span class="badge">⚠ нелегально</span>':''}</div>
+                <div class="tr-price">${price} кр</div>
+            </div>
+            <div class="tr-btns">
+                <button class="btn btn-buy" data-buy="${g.id}">🛒 Купить</button>
+                <button class="btn btn-sell" data-sell="${g.id}">💰 Продать</button>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    openContentModal('🛒', 'Торговля', 'Планета: ' + PLANETS[currentPlanet].icon + ' ' + PLANETS[currentPlanet].name, html, true);
+
+    // Навешиваем обработчики
+    $('contentBody').querySelectorAll('[data-buy]').forEach(btn=>{
+        btn.onclick = ()=>{ trade(btn.dataset.buy, marketPrices[btn.dataset.buy], 'buy'); refreshTradeModal(); };
+    });
+    $('contentBody').querySelectorAll('[data-sell]').forEach(btn=>{
+        btn.onclick = ()=>{ trade(btn.dataset.sell, marketPrices[btn.dataset.sell], 'sell'); refreshTradeModal(); };
+    });
+}
+
+function refreshTradeModal(){
+    if($('contentModal').classList.contains('show') && $('contentTitle').textContent === 'Торговля'){
+        openTradeModal();
+    }
+}
+
+/* ============================================================
+   ПЛИТКА: УЛУЧШЕНИЯ
+============================================================ */
+function openUpgradeModal(){
+    sndClick();
+    const upgrades = [
+        {key:'engine', ico:'⚡', name:'Двигатель', val:engine, max:5, base:100, step:30, desc:'Шанс сбежать от пиратов', apply:()=>engine++},
+        {key:'armor', ico:'🛡️', name:'Броня', val:armor, max:5, base:150, step:30, desc:'Защита в бою', apply:()=>armor++},
+        {key:'weapon', ico:'🔫', name:'Оружие', val:weapon, max:5, base:200, step:30, desc:'Сила в бою с пиратами', apply:()=>weapon++},
+        {key:'scanner', ico:'📡', name:'Сканер', val:scanner, max:5, base:120, step:30, desc:'Поиск аномалий', apply:()=>scanner++}
+    ];
+
+    let html = '<div class="card-list">';
+    upgrades.forEach(u=>{
+        if(u.val >= u.max){
+            html += `<div class="upgrade-card">
+                <div class="uc-ico">${u.ico}</div>
+                <div class="uc-info">
+                    <div class="uc-name">${u.name}</div>
+                    <div class="uc-desc">Максимальный уровень</div>
+                    <div class="uc-pips">${Array.from({length:u.max},()=>'<span class="pip on"></span>').join('')}</div>
+                </div>
+                <div style="color:var(--green);font-weight:800">MAX</div>
+            </div>`;
+            return;
+        }
+        const c = u.base + u.val*u.step;
+        const canBuy = money >= c;
+        const pips = Array.from({length:u.max}, (_,i)=>
+            '<span class="pip'+(i<u.val?' on':'')+'"></span>').join('');
+        html += `<div class="upgrade-card">
+            <div class="uc-ico">${u.ico}</div>
+            <div class="uc-info">
+                <div class="uc-name">${u.name} <span style="color:var(--text-dim);font-weight:500">ур. ${u.val}/${u.max}</span></div>
+                <div class="uc-desc">${u.desc}</div>
+                <div class="uc-pips">${pips}</div>
+            </div>
+            <button class="btn btn-fly" data-upg="${u.key}" ${canBuy?'':'disabled'}>
+                Улучшить <span class="cost">${c} кр</span>
+            </button>
+        </div>`;
+    });
+
+    // Груз
+    if(maxCargo < 150){
+        const c = 150 + maxCargo;
+        const canBuy = money >= c;
+        html += `<div class="upgrade-card">
+            <div class="uc-ico">📦</div>
+            <div class="uc-info">
+                <div class="uc-name">Грузовой отсек</div>
+                <div class="uc-desc">Текущий: ${maxCargo} т</div>
+            </div>
+            <button class="btn btn-fly" data-upg="cargo" ${canBuy?'':'disabled'}>
+                +20 т <span class="cost">${c} кр</span>
+            </button>
+        </div>`;
+    }
+
+    // Заправка
+    if(fuel < maxFuel){
+        const canBuy = money >= 30;
+        html += `<div class="upgrade-card">
+            <div class="uc-ico">⛽</div>
+            <div class="uc-info">
+                <div class="uc-name">Заправка</div>
+                <div class="uc-desc">Топливо: ${fuel}/${maxFuel}</div>
+            </div>
+            <button class="btn btn-warn" data-upg="fuel" ${canBuy?'':'disabled'}>
+                +30 <span class="cost">30 кр</span>
+            </button>
+        </div>`;
+    }
+
+    html += '</div>';
+    openContentModal('⚙️', 'Улучшения', 'Деньги: ' + money + ' кр', html);
+
+    $('contentBody').querySelectorAll('[data-upg]').forEach(btn=>{
+        btn.onclick = ()=>{
+            const key = btn.dataset.upg;
+            if(key === 'cargo'){
+                const c = 150 + maxCargo;
+                if(money < c) return;
+                money -= c; maxCargo += 20;
+                log('📦 Грузовой отсек увеличен!','success');
+                toast('📦 Груз +20 т','success');
+            } else if(key === 'fuel'){
+                if(money < 30) return;
+                money -= 30; fuel = Math.min(maxFuel, fuel + 30);
+                log('⛽ Топливо +30.','success');
+                toast('⛽ Топливо +30','success');
+            } else {
+                const u = upgrades.find(x=>x.key === key);
+                if(!u || u.val >= u.max) return;
+                const c = u.base + u.val*u.step;
+                if(money < c) return;
+                money -= c; u.apply();
+                log(u.ico + ' ' + u.name + ' улучшен!','success');
+                toast(u.ico + ' ' + u.name + ' +1','success');
+            }
+            updateUI();
+            saveGame();
+            openUpgradeModal();
+        };
+    });
+}
+
+/* ============================================================
+   ПЛИТКА: ЭКИПАЖ
+============================================================ */
+function openCrewModal(){
+    sndClick();
+    let html = '';
+    if(crew.length > 0){
+        html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">В команде (' + crew.length + ')</div>';
+        html += '<div class="card-list" style="margin-bottom:18px">';
+        crew.forEach(c=>{
+            html += `<div class="crew-card hired">
+                <div class="cc-ico">${c.icon}</div>
+                <div class="cc-info">
+                    <div class="cc-name">${escapeHtml(c.name)}</div>
+                    <div class="cc-desc">${escapeHtml(c.desc||'')}</div>
+                </div>
+                <div class="cc-action">✓</div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    if(crew.length < CREW_MEMBERS.length){
+        html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Доступны для найма</div>';
+        html += '<div class="card-list">';
+        CREW_MEMBERS.forEach(m=>{
+            const hired = crew.some(c=>c.id === m.id);
+            if(hired) return;
+            const canBuy = money >= m.cost;
+            html += `<div class="crew-card">
+                <div class="cc-ico">${m.icon}</div>
+                <div class="cc-info">
+                    <div class="cc-name">${m.name}</div>
+                    <div class="cc-desc">${m.desc}</div>
+                </div>
+                <button class="btn btn-buy" data-hire="${m.id}" ${canBuy?'':'disabled'}>
+                    Нанять <span class="cost">${m.cost}</span>
+                </button>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    if(!html){
+        html = '<div class="empty-state">Экипаж полностью укомплектован!</div>';
+    }
+    openContentModal('👥', 'Экипаж', crew.length + '/10 человек · Деньги: ' + money + ' кр', html);
+
+    $('contentBody').querySelectorAll('[data-hire]').forEach(btn=>{
+        btn.onclick = ()=>{
+            const m = CREW_MEMBERS.find(x=>x.id === btn.dataset.hire);
+            if(!m || money < m.cost || crew.length >= 10) return;
+            money -= m.cost;
+            crew.push({id:m.id, name:m.name, icon:m.icon, desc:m.desc});
+            log('👤 ' + m.name + ' присоединился! (' + m.desc + ')','success');
+            toast('👤 ' + m.name + ' в экипаже','success');
+            updateUI();
+            saveGame();
+            openCrewModal();
+        };
+    });
+}
+
+/* ============================================================
+   ПЛИТКА: ИСТОРИЯ
+============================================================ */
+function openStoryModal(){
+    sndClick();
+    let html = '';
+    // Описание текущего этапа
+    if(storyStep === 0){
+        html += '<div style="font-size:13px;color:#b8d4ee;line-height:1.6;margin-bottom:16px">Ты — контрабандист, потерявший брата в глубинах космоса. Его след ведёт к легендарной аномалии. Но путь лежит через враждующие фракции, опасные планеты и тёмные сделки.</div>';
+    } else if(storyStep === 1){
+        html += '<div style="font-size:13px;color:#b8d4ee;line-height:1.6;margin-bottom:16px">Информатор сказал: твой брат жив и ищет Аномалию. Но за ним охотятся все фракции. Нужно найти обломки его корабля — они подскажут координаты.</div>';
+    } else if(storyStep === 2){
+        html += '<div style="font-size:13px;color:#b8d4ee;line-height:1.6;margin-bottom:16px">Ты нашёл обломки корабля брата. Координаты ведут к планете Аномалия. Пора отправляться туда и войти в неё.</div>';
+    }
+
+    let hasAction = false;
+    html += '<div class="card-list">';
+
+    if(storyStep === 0 && money >= 100 && !storyFlags.metBroker){
+        html += `<div class="crew-card" style="border-color:rgba(255,200,87,.5);background:linear-gradient(135deg,rgba(255,200,87,.1),rgba(15,30,55,.5))">
+            <div class="cc-ico">🕵️</div>
+            <div class="cc-info">
+                <div class="cc-name">Найти информатора</div>
+                <div class="cc-desc">Заплатить 100 кредитов за сведения о брате</div>
+            </div>
+            <button class="btn btn-gold btn-pulse" data-story="broker">Найти</button>
+        </div>`;
+        hasAction = true;
+    }
+    if(storyStep === 0 && money < 100 && !storyFlags.metBroker){
+        html += `<div class="crew-card" style="opacity:.6">
+            <div class="cc-ico">🕵️</div>
+            <div class="cc-info">
+                <div class="cc-name">Найти информатора</div>
+                <div class="cc-desc">Нужно 100 кредитов. У тебя: ${money}</div>
+            </div>
+            <div style="color:var(--red);font-weight:700">Мало денег</div>
+        </div>`;
+        hasAction = true;
+    }
+    if(storyStep === 1 && Object.keys(visitedPlanets).length >= 3 && !storyFlags.foundClue){
+        html += `<div class="crew-card" style="border-color:rgba(255,200,87,.5);background:linear-gradient(135deg,rgba(255,200,87,.1),rgba(15,30,55,.5))">
+            <div class="cc-ico">🔍</div>
+            <div class="cc-info">
+                <div class="cc-name">Искать след брата</div>
+                <div class="cc-desc">Ты уже посетил 3 планеты. Пора найти обломки</div>
+            </div>
+            <button class="btn btn-gold btn-pulse" data-story="clue">Искать</button>
+        </div>`;
+        hasAction = true;
+    }
+    if(storyStep === 1 && Object.keys(visitedPlanets).length < 3 && !storyFlags.foundClue){
+        html += `<div class="crew-card" style="opacity:.6">
+            <div class="cc-ico">🔍</div>
+            <div class="cc-info">
+                <div class="cc-name">Искать след брата</div>
+                <div class="cc-desc">Нужно посетить 3 планеты (${Object.keys(visitedPlanets).length}/3)</div>
+            </div>
+            <div style="color:var(--text-dim);font-weight:700">Ищи</div>
+        </div>`;
+        hasAction = true;
+    }
+    if(storyStep === 2 && currentPlanet === 7 && !storyFlags.choseSide){
+        html += `<div class="crew-card" style="border-color:rgba(255,200,87,.5);background:linear-gradient(135deg,rgba(255,200,87,.1),rgba(15,30,55,.5))">
+            <div class="cc-ico">🌌</div>
+            <div class="cc-info">
+                <div class="cc-name">Войти в Аномалию</div>
+                <div class="cc-desc">Ты на планете Аномалия. Пора сделать выбор</div>
+            </div>
+            <button class="btn btn-gold btn-pulse" data-story="anomaly">Войти</button>
+        </div>`;
+        hasAction = true;
+    }
+    if(storyStep === 2 && currentPlanet !== 7 && !storyFlags.choseSide){
+        html += `<div class="crew-card" style="opacity:.6">
+            <div class="cc-ico">🌌</div>
+            <div class="cc-info">
+                <div class="cc-name">Войти в Аномалию</div>
+                <div class="cc-desc">Сначала прилети на планету 🌌 Аномалия</div>
+            </div>
+            <div style="color:var(--text-dim);font-weight:700">Лети</div>
+        </div>`;
+        hasAction = true;
+    }
+    if(!hasAction){
+        html += '<div class="empty-state">История завершена. Ты прожил свою легенду.</div>';
+    }
+    html += '</div>';
+    openContentModal('📖', 'История', 'Путь к брату', html);
+
+    $('contentBody').querySelectorAll('[data-story]').forEach(btn=>{
+        btn.onclick = ()=>{
+            const key = btn.dataset.story;
+            if(key === 'broker'){
+                if(money < 100) return;
+                money -= 100; storyFlags.metBroker = true; storyStep = 1;
+                log('🕵️ Информатор: "Твой брат жив. Он ищет аномалию."','story');
+                toast('🕵️ Новая информация!','gold');
+                closeContentModal();
+                updateUI(); saveGame();
+            } else if(key === 'clue'){
+                storyFlags.foundClue = true; storyStep = 2;
+                log('🔍 Ты нашёл обломки корабля брата. Координаты ведут к Аномалии.','story');
+                inventory.push({name:'🧭 Карта аномалий', desc:'Путь к брату'});
+                toast('🔍 Найден след!','gold');
+                closeContentModal();
+                updateUI(); saveGame();
+            } else if(key === 'anomaly'){
+                storyFlags.choseSide = true;
+                closeContentModal();
+                openChoiceModal('🌌', 'Аномалия', 'Ты входишь в аномалию. Брат ждёт тебя. Но перед тобой три пути.', [
+                    {text:'💰 Богатство — продать данные торговцам', cls:'btn-gold', effect:()=>{ money+=2000; factionMerch+=5; showEnd('💰','Богатство','Ты продал тайну брата торговцам. Ты богат, но одинок. Брат исчез навсегда.'); }},
+                    {text:'⚔️ Месть — уничтожить пиратов', cls:'btn-warn', effect:()=>{ factionPirate-=10; weapon+=5; showEnd('⚔️','Месть','Ты уничтожил пиратский флот. Брат отомщён. Но галактика в огне.'); }},
+                    {text:'🕊️ Свобода — уйти вместе с братом', cls:'btn-ok', effect:()=>{ factionExplorer+=10; showEnd('🕊️','Свобода','Ты нашёл брата. Вы улетели к неизведанным звёздам. Свобода дороже всего.'); }}
+                ]);
+            }
+        };
+    });
+}
+
+function canDoStoryAction(){
+    if(storyStep === 0 && money >= 100 && !storyFlags.metBroker) return true;
+    if(storyStep === 1 && Object.keys(visitedPlanets).length >= 3 && !storyFlags.foundClue) return true;
+    if(storyStep === 2 && currentPlanet === 7 && !storyFlags.choseSide) return true;
+    return false;
+}
+
+/* ============================================================
+   ПЛИТКА: КОРАБЛЬ (отдельная кнопка в топбаре)
+============================================================ */
+function openShipModal(){
+    sndClick();
+    const totalCrew = crew.length;
+    let html = '';
+
+    html += '<div class="stat-block">';
+    html += statItem('🛡️', 'Броня', armor + '/5');
+    html += statItem('⚡', 'Двигатель', engine + '/5');
+    html += statItem('🔫', 'Оружие', weapon + '/5');
+    html += statItem('📡', 'Сканер', scanner + '/5');
+    html += '</div>';
+
+    html += '<div class="bar-block" style="margin-bottom:16px">';
+    html += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;font-weight:700"><span>⛽ ТОПЛИВО</span><span>${fuel}/${maxFuel}</span></div>`;
+    html += `<div style="height:10px;border-radius:6px;background:rgba(5,12,25,.9);overflow:hidden"><i style="display:block;height:100%;width:${(fuel/maxFuel*100)}%;background:linear-gradient(90deg,#0284c7,#22d3ee);box-shadow:0 0 10px rgba(34,211,238,.6);transition:width .5s"></i></div>`;
+    html += '</div>';
+
+    html += '<div class="bar-block" style="margin-bottom:16px">';
+    html += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;font-weight:700"><span>📦 ГРУЗ</span><span>${cargo}/${maxCargo}</span></div>`;
+    html += `<div style="height:10px;border-radius:6px;background:rgba(5,12,25,.9);overflow:hidden"><i style="display:block;height:100%;width:${(cargo/maxCargo*100)}%;background:linear-gradient(90deg,#7c3aed,#c084fc);box-shadow:0 0 10px rgba(192,132,252,.6);transition:width .5s"></i></div>`;
+    html += '</div>';
+
+    html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:18px 0 8px">Фракции</div>';
+    html += factionCard('🛒 Торговцы', 'merch', factionMerch);
+    html += factionCard('🏴‍☠️ Пираты', 'pirate', factionPirate);
+    html += factionCard('🔭 Исследователи', 'explorer', factionExplorer);
+
+    html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:18px 0 8px">Инвентарь</div>';
+    if(inventory.length === 0){
+        html += '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:14px">Пусто</div>';
+    } else {
+        inventory.forEach(i=>{
+            html += `<div style="padding:8px 12px;background:rgba(15,30,55,.5);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:12px"><b>${escapeHtml(i.name)}</b><br><span style="color:var(--text-dim);font-size:11px">${escapeHtml(i.desc||'')}</span></div>`;
+        });
+    }
+
+    openContentModal('🚢', 'Корабль', 'Брат ждёт · День ' + day, html);
+}
+
+function statItem(ico, lbl, val){
+    return `<div class="stat-item"><span class="si-ico">${ico}</span><span class="si-lbl">${lbl}</span><span class="si-val">${val}</span></div>`;
+}
+function factionCard(name, key, val){
+    const w = clamp(50 + val*5, 0, 100);
+    return `<div class="faction-card">
+        <div class="fc-top"><span>${name}</span><span style="color:var(--gold)">${val}</span></div>
+        <div class="fc-bar f-${key}"><i style="width:${w}%"></i></div>
+    </div>`;
+}
+
+/* ============================================================
+   ЛОГ
+============================================================ */
+function openLogModal(){
+    sndClick();
+    let html = '<div class="log-list">';
+    if(logHistory.length === 0){
+        html += '<div class="empty-state">Пока ничего не произошло</div>';
+    } else {
+        logHistory.slice(0, 40).forEach(e=>{
+            html += `<div class="log-entry ${e.type}">${escapeHtml(e.msg)}</div>`;
+        });
+    }
+    html += '</div>';
+    openContentModal('📜', 'Хроника', 'Последние события', html);
+}
+
+/* ============================================================
+   ТОРГОВЛЯ (логика)
+============================================================ */
+function trade(goodId, price, action){
+    if(gameOver) return;
+    const good = GOODS.find(g=>g.id===goodId);
+    if(!good) return;
+    if(action === 'buy'){
+        if(money < price){ toast('❌ Недостаточно кредитов','danger'); return; }
+        if(cargo + 1 > maxCargo){ toast('❌ Перегруз!','danger'); return; }
+        money -= price; cargo += 1;
+        log('🛒 Куплено 1 т ' + good.icon + ' ' + good.name + ' за ' + price + ' кр.','success');
+        if(good.illegal) factionPirate += 1;
+    } else {
+        if(cargo < 1){ toast('❌ Нет ' + good.name,'danger'); return; }
+        const bonus = crew.some(c=>c.id === 'trader') ? Math.floor(price*0.15) : 0;
+        money += price + bonus; cargo -= 1;
+        log('💰 Продано 1 т ' + good.icon + ' ' + good.name + ' за ' + (price+bonus) + ' кр.','success');
+        if(good.illegal) factionPirate += 1; else factionMerch += 1;
+    }
+    if(cargo === 0 && Math.random() < 0.15){ reputation += 1; toast('⭐ +1 репутация','gold'); }
+    updateUI();
+    saveGame();
+}
+
+/* ============================================================
+   СОБЫТИЯ
+============================================================ */
+function randomEvent(){
+    if(gameOver) return;
+    const ev = EVENTS[rand(0, EVENTS.length-1)];
+    openChoiceModal(ev.icon, ev.title, ev.text, ev.choices);
+}
+
+/* ============================================================
+   ФИНАЛ
+============================================================ */
+function showEnd(icon, title, text){
+    $('endIco').textContent = icon;
+    $('endTitle').textContent = title;
+    $('endText').textContent = text;
+    $('endScreen').classList.add('show');
+    gameOver = true;
+    try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+}
+
+/* ============================================================
+   НАСТРОЙКИ
+============================================================ */
+function openSettings(){ $('settingsModal').classList.add('show'); }
+function closeSettings(){ $('settingsModal').classList.remove('show'); }
+
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+============================================================ */
+function init(){
+    loadSettings();
+    applySettings();
+
+    if(!loadGame()){
+        log('🛸 Ты начинаешь путь. 300 кредитов. Брат ждёт.','story');
+    } else if(logHistory.length === 0){
+        log('🛸 Продолжаем путь. День ' + day + '.','story');
+    }
+
+    if(gameOver){
+        showEnd('🏆','Финал','Ты завершил историю. Начни заново, чтобы пройти другим путём.');
+    }
+
+    // Кнопки в топбаре
+    $('shipBtn').onclick = openShipModal;
+    $('logBtn').onclick = openLogModal;
+    $('soundBtn').onclick = ()=>{ settings.sound = !settings.sound; saveSettings(); sndClick(); };
+    $('settingsBtn').onclick = ()=>{ sndClick(); openSettings(); };
+
+    // Плитки
+    $('tileTrade').onclick = openTradeModal;
+    $('tileUpgrade').onclick = openUpgradeModal;
+    $('tileCrew').onclick = openCrewModal;
+    $('tileStory').onclick = openStoryModal;
+
+    // Кнопки в модалках
+    $('contentClose').onclick = ()=>{ sndClick(); closeContentModal(); };
+    $('settingsClose').onclick = ()=>{ sndClick(); closeSettings(); };
+    $('saveBtn').onclick = ()=>{ window.__forceSave = true; saveGame(); window.__forceSave = false; toast('💾 Сохранено!','success'); };
+    $('resetBtn').onclick = ()=>{
+        if(confirm('Точно сбросить весь прогресс? Это нельзя отменить.')) resetGame();
+    };
+    $('setSound').onclick = ()=>{ settings.sound = !settings.sound; saveSettings(); if(settings.sound) sndClick(); };
+    $('setAutosave').onclick = ()=>{ settings.autosave = !settings.autosave; saveSettings(); toast(settings.autosave?'💾 Автосохранение вкл':'💾 Автосохранение выкл','gold'); };
+    $('setAnim').onclick = ()=>{ settings.anim = !settings.anim; saveSettings(); };
+    $('restartBtn').onclick = ()=>{ resetGame(); };
+
+    // Клик вне модалки
+    $('contentModal').addEventListener('click', e=>{ if(e.target.id === 'contentModal') closeContentModal(); });
+    $('choiceModal').addEventListener('click', e=>{ if(e.target.id === 'choiceModal') closeChoiceModal(); });
+    $('settingsModal').addEventListener('click', e=>{ if(e.target.id === 'settingsModal') closeSettings(); });
+
+    // Escape
+    document.addEventListener('keydown', e=>{
+        if(e.key === 'Escape'){ closeContentModal(); closeChoiceModal(); closeSettings(); }
+    });
+
+    // Автосохранение
+    setInterval(()=>{ if(!gameOver) saveGame(); }, 30000);
+    window.addEventListener('beforeunload', ()=>{ if(!gameOver) saveGame(); });
+
+    updateUI();
+    setTimeout(()=>toast('👋 Добро пожаловать!','gold'), 500);
+}
+
+if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+</script>
+</body>
+</html>

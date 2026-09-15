@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Великая кулинария</title>
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-0: #100a06;
+    --bg-1: #1a120b;
+    --bg-2: #2b1e16;
+    --bg-3: #3d2b20;
+    --bg-4: #4d3628;
+    --line: #5a4231;
+    --accent: #a67b5b;
+    --accent-light: #d4a080;
+    --gold: #f0d5b0;
+    --text: #d4c0a8;
+    --text-dim: #b2957a;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    --info: #5b9bd5;
+    --purple: #9b59b6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 40px),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0 1px, transparent 1px 40px),
+        radial-gradient(ellipse at top, var(--bg-2) 0%, var(--bg-0) 100%);
+    color: var(--text);
+    font-family: 'Luckiest Guy', cursive;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    user-select: none;
+    touch-action: manipulation;
+}
+.app {
+    width: 100%; max-width: 540px; height: 100%; max-height: 880px;
+    display: flex; flex-direction: column; position: relative;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.7));
+}
+.app-frame {
+    background: linear-gradient(180deg, rgba(240,213,176,0.06) 0%, transparent 30%),
+        linear-gradient(180deg, #4a3628 0%, #2b1e16 100%);
+    border: 3px solid var(--accent); border-bottom-width: 7px; border-radius: 18px;
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    box-shadow: 0 0 60px rgba(166,123,91,0.5), inset 0 0 80px rgba(0,0,0,0.4),
+        inset 0 2px 0 rgba(240,213,176,0.15);
+    overflow: hidden; position: relative;
+}
+.header { padding: 10px 14px 8px; border-bottom: 2px solid rgba(90,66,49,0.5); position: relative; }
+.header-title {
+    font-size: 20px; color: var(--gold); text-align: center;
+    text-shadow: 2px 2px 0 var(--bg-1), 0 0 20px rgba(240,213,176,0.5);
+    letter-spacing: 1.5px; padding-right: 44px;
+}
+.header-sub {
+    text-align: center; font-size: 9px; color: var(--text-dim);
+    letter-spacing: 2px; text-transform: uppercase; padding-right: 44px; margin-top: 1px;
+}
+.icon-btn {
+    position: absolute; top: 10px; right: 12px;
+    background: linear-gradient(180deg, var(--bg-4), var(--bg-2));
+    border: 2px solid var(--accent); border-radius: 50%;
+    width: 34px; height: 34px; color: var(--gold); font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.icon-btn:hover { transform: rotate(45deg) scale(1.1); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 14px 4px; }
+.stat {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 2px solid var(--line); border-radius: 8px;
+    padding: 4px 10px; font-size: 11px; color: var(--text-dim);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+.stat b { color: var(--gold); font-weight: normal; }
+.sub-tabs {
+    display: flex; gap: 4px; margin: 6px 14px 4px;
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    padding: 3px; border-radius: 10px; border: 2px solid var(--line);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.sub-tab {
+    flex: 1; padding: 6px 4px; border-radius: 7px; border: none;
+    background: transparent; color: var(--text-dim); cursor: pointer;
+    font-size: 11px; font-family: inherit; transition: 0.2s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sub-tab:hover { color: var(--text); }
+.sub-tab.active {
+    background: linear-gradient(180deg, var(--bg-4), var(--bg-3));
+    color: var(--gold);
+    box-shadow: 0 0 12px rgba(240,213,176,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.content {
+    flex: 1; overflow: hidden; padding: 0 10px 8px;
+    position: relative; display: flex; flex-direction: column;
+}
+.panel { display: none; flex: 1; overflow: hidden; position: relative; }
+.panel.active { display: flex; flex-direction: column; animation: panelIn 0.25s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.scroll-area {
+    flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 6px;
+    scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
+}
+.scroll-area::-webkit-scrollbar { width: 6px; }
+.scroll-area::-webkit-scrollbar-track { background: transparent; }
+.scroll-area::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+.scroll-area::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
+.btn {
+    display: block; width: 100%; padding: 10px 12px; margin: 5px 0;
+    border-radius: 10px; border: 2px solid var(--accent); border-bottom-width: 4px;
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    color: var(--gold); cursor: pointer; font-size: 13px;
+    font-family: inherit; text-align: center; transition: 0.15s;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.4); letter-spacing: 0.3px;
+}
+.btn:hover:not(:disabled) { background: linear-gradient(180deg, var(--bg-4), var(--bg-3)); transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(3px); border-bottom-width: 2px; box-shadow: none; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary { border-color: var(--gold); background: linear-gradient(180deg, var(--bg-4), var(--bg-3)); text-shadow: 0 0 8px rgba(240,213,176,0.4); }
+.btn-secondary { border-color: var(--accent); color: var(--accent); }
+.btn-gold { border-color: var(--gold); background: linear-gradient(180deg, #7a5a40, #5a4231); text-shadow: 0 0 8px rgba(240,213,176,0.6); }
+.kitchen {
+    position: relative; height: 90px; margin: 6px 0;
+    display: flex; justify-content: center; align-items: flex-end;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.3));
+    border-radius: 12px; overflow: hidden;
+}
+.pot {
+    width: 80px; height: 50px;
+    background: linear-gradient(180deg, #8a8a8a, #3d3d3d);
+    border-radius: 0 0 40px 40px; border: 3px solid #1a1a1a; border-top: none;
+    position: relative; box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+}
+.pot::before {
+    content: ''; position: absolute; top: -5px; left: -8px; right: -8px; height: 10px;
+    background: linear-gradient(180deg, #a0a0a0, #6a6a6a);
+    border-radius: 50%; border: 2px solid #1a1a1a;
+}
+.pot::after {
+    content: ''; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 14px; border: 3px solid #1a1a1a; border-bottom: none;
+    border-radius: 13px 13px 0 0; background: linear-gradient(180deg, #8a8a8a, #5a5a5a);
+}
+.steam {
+    position: absolute; bottom: 55px; width: 7px; height: 7px;
+    background: rgba(255,255,255,0.4); border-radius: 50%;
+    animation: steam 2.5s infinite; filter: blur(1.5px);
+}
+.steam:nth-child(1) { left: 30%; }
+.steam:nth-child(2) { left: 45%; animation-delay: 0.6s; }
+.steam:nth-child(3) { left: 60%; animation-delay: 1.2s; }
+.steam:nth-child(4) { left: 70%; animation-delay: 1.8s; }
+@keyframes steam {
+    0% { transform: translateY(0) scale(1); opacity: 0.6; }
+    100% { transform: translateY(-55px) scale(2.5); opacity: 0; }
+}
+.ingredient-category {
+    color: var(--gold); margin: 10px 0 5px 0; font-size: 11px;
+    padding-left: 8px; border-left: 3px solid var(--accent); letter-spacing: 0.5px;
+}
+.ingredient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+.ing-btn {
+    padding: 8px 4px; border-radius: 8px; border: 2px solid var(--line);
+    border-bottom-width: 4px; background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    color: var(--text); font-size: 10px; cursor: pointer; font-family: inherit;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: 0.15s; box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+}
+.ing-btn:hover { background: linear-gradient(180deg, var(--bg-4), var(--bg-3)); transform: translateY(-1px); }
+.ing-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+.ing-btn.selected {
+    border-color: var(--gold); color: var(--bg-2);
+    background: linear-gradient(180deg, var(--gold), #d4b59a);
+    box-shadow: 0 0 16px rgba(240,213,176,0.5), 0 2px 0 #8a6a4a;
+    font-weight: bold;
+}
+.selected-row {
+    text-align: center; font-size: 12px; color: var(--text-dim);
+    margin: 6px 0; padding: 6px; background: rgba(0,0,0,0.2);
+    border-radius: 8px; min-height: 26px;
+}
+.selected-row b { color: var(--gold); }
+.result-box {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    padding: 14px; border-radius: 12px; border: 2px solid var(--gold);
+    margin: 6px 0; text-align: center; color: var(--gold);
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 30px rgba(240,213,176,0.4);
+}
+@keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.result-name { font-size: 17px; margin-bottom: 4px; }
+.result-stars { font-size: 26px; letter-spacing: 4px; margin: 6px 0; text-shadow: 0 0 12px rgba(240,213,176,0.6); }
+.result-info { font-size: 13px; }
+.result-rewards { font-size: 12px; color: var(--accent); margin-top: 4px; }
+.result-feedback { font-size: 12px; color: var(--text-dim); font-style: italic; margin-top: 4px; }
+.customer {
+    display: flex; align-items: center; gap: 10px; padding: 10px;
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border-radius: 12px; border: 2px solid var(--line); border-left-width: 4px;
+    margin-bottom: 6px; animation: customerIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+.customer.no-anim { animation: none; }
+@keyframes customerIn {
+    from { transform: translateX(-30px) scale(0.95); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
+}
+.customer.type-regular { border-left-color: var(--accent); }
+.customer.type-gourmet { border-left-color: var(--purple); }
+.customer.type-rich { border-left-color: #f1c40f; }
+.customer.type-hurried { border-left-color: var(--danger); }
+.customer.type-child { border-left-color: #3498db; }
+.customer.type-elder { border-left-color: #95a5a6; }
+.customer.type-critic { border-left-color: #c0392b; }
+.customer.type-tourist { border-left-color: #1abc9c; }
+.customer.type-vegan { border-left-color: var(--success); }
+.customer.type-blogger { border-left-color: #e91e63; }
+.cust-avatar { font-size: 32px; flex-shrink: 0; }
+.cust-info { flex: 1; min-width: 0; }
+.cust-name {
+    color: var(--gold); font-size: 13px; display: flex;
+    align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.cust-type {
+    font-size: 9px; padding: 1px 6px; border-radius: 8px;
+    background: rgba(166,123,91,0.3); color: var(--gold);
+    border: 1px solid rgba(240,213,176,0.3);
+}
+.cust-special {
+    font-size: 9px; padding: 1px 6px; border-radius: 8px;
+    background: linear-gradient(180deg, #ff6b6b, #c0392b);
+    color: #fff; animation: specialPulse 0.8s infinite;
+    box-shadow: 0 0 8px rgba(255,107,107,0.6);
+}
+@keyframes specialPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+.cust-time { font-size: 11px; margin-left: auto; }
+.cust-order {
+    color: var(--text-dim); font-size: 11px; margin-top: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.patience-bar {
+    height: 6px; background: var(--bg-1); border-radius: 3px;
+    overflow: hidden; margin-top: 5px; border: 1px solid var(--bg-3);
+}
+.patience-fill { height: 100%; border-radius: 3px; transition: width 1s linear, background 0.3s; }
+.cust-right { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+.cust-reward { color: var(--gold); font-size: 13px; font-weight: bold; }
+.serve-btn {
+    background: linear-gradient(180deg, #c49070, var(--accent));
+    border: none; border-bottom: 3px solid #7a5a40;
+    padding: 5px 12px; border-radius: 9px; color: var(--bg-2);
+    font-size: 10px; cursor: pointer; font-family: inherit; font-weight: bold;
+    white-space: nowrap; transition: 0.15s; box-shadow: 0 2px 0 #4a3628;
+}
+.serve-btn:hover { background: linear-gradient(180deg, var(--accent-light), #b88a6a); }
+.serve-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+.serve-btn.disabled {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    color: var(--text-dim); border-bottom-color: var(--line);
+    cursor: not-allowed; pointer-events: none; font-weight: normal;
+}
+.empty-state {
+    text-align: center; color: var(--text-dim);
+    font-size: 12px; padding: 30px 20px;
+}
+.empty-icon { font-size: 40px; display: block; margin-bottom: 8px; opacity: 0.5; }
+.shop-header {
+    color: var(--gold); font-size: 12px; padding: 6px 8px;
+    border-left: 3px solid var(--accent); margin-bottom: 5px;
+    background: rgba(0,0,0,0.2); border-radius: 0 6px 6px 0;
+}
+.shop-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 2px solid var(--line); border-bottom-width: 3px;
+    border-radius: 9px; margin-bottom: 4px; font-size: 11px; transition: 0.15s;
+}
+.shop-item:hover { border-color: var(--accent); }
+.shop-item.owned { opacity: 0.6; }
+.buy-btn {
+    background: linear-gradient(180deg, var(--accent-light), var(--accent));
+    border: none; border-bottom: 3px solid #7a5a40;
+    padding: 5px 14px; border-radius: 8px; color: var(--bg-2);
+    font-size: 10px; cursor: pointer; font-family: inherit; font-weight: bold;
+    transition: 0.15s;
+}
+.buy-btn:hover:not(:disabled) { background: linear-gradient(180deg, var(--accent-light), #b88a6a); }
+.buy-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+.buy-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.book-item {
+    padding: 7px 10px; border-radius: 8px; margin-bottom: 4px;
+    font-size: 11px; color: var(--text);
+    background: linear-gradient(90deg, var(--bg-3), var(--bg-2));
+    border-left: 4px solid var(--accent); cursor: pointer;
+    transition: 0.15s; display: flex; justify-content: space-between; align-items: center;
+}
+.book-item:hover { background: linear-gradient(90deg, var(--bg-4), var(--bg-3)); transform: translateX(3px); }
+.book-item.rarity-rare { border-left-color: var(--info); }
+.book-item.rarity-epic { border-left-color: var(--purple); }
+.book-item.rarity-legendary {
+    border-left-color: var(--gold);
+    background: linear-gradient(90deg, rgba(240,213,176,0.15), var(--bg-2));
+    box-shadow: 0 0 10px rgba(240,213,176,0.15);
+}
+.rename-btn {
+    color: var(--text-dim); font-size: 10px; padding: 2px 6px;
+    cursor: pointer; border-radius: 6px; transition: 0.15s;
+}
+.rename-btn:hover { color: var(--gold); background: rgba(240,213,176,0.1); }
+.detail-box {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 2px solid rgba(166,123,91,0.3); border-radius: 10px;
+    padding: 10px; font-size: 11px; color: var(--text-dim); margin-top: 6px;
+}
+.card {
+    padding: 10px; background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 2px solid var(--line); border-radius: 10px; margin-bottom: 6px;
+    display: flex; gap: 10px; align-items: center; transition: 0.15s;
+}
+.card.unlocked {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+}
+.card-icon { font-size: 24px; flex-shrink: 0; }
+.card-body { flex: 1; min-width: 0; }
+.card-title { color: var(--gold); font-size: 12px; }
+.card-title.locked { color: var(--text-dim); }
+.card-desc { color: var(--text-dim); font-size: 10px; margin-top: 1px; }
+.card-action {
+    background: linear-gradient(180deg, var(--accent-light), var(--accent));
+    border: none; border-bottom: 3px solid #7a5a40;
+    padding: 5px 12px; border-radius: 8px; color: var(--bg-2);
+    font-size: 10px; cursor: pointer; font-family: inherit;
+    font-weight: bold; flex-shrink: 0;
+}
+.card-action:active { transform: translateY(2px); border-bottom-width: 1px; }
+.card-action:disabled { opacity: 0.3; cursor: not-allowed; }
+.restaurant-scene {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 2px solid var(--accent); border-radius: 12px;
+    padding: 12px; margin-bottom: 8px; min-height: 80px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    align-items: center; justify-content: center;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+.table-item {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 2px solid var(--accent); border-radius: 10px;
+    padding: 6px 10px; font-size: 20px;
+    box-shadow: 0 0 12px rgba(240,213,176,0.2);
+}
+.restaurant-info {
+    text-align: center; color: var(--text-dim);
+    font-size: 11px; margin-bottom: 8px;
+}
+.restaurant-info b { color: var(--gold); }
+.event-card {
+    background: linear-gradient(135deg, var(--bg-3), var(--bg-2));
+    border: 2px solid var(--accent); border-radius: 14px;
+    padding: 14px; margin-bottom: 8px; text-align: center;
+}
+.event-icon { font-size: 48px; animation: float 3s ease-in-out infinite; }
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+.event-title { color: var(--gold); font-size: 17px; margin: 6px 0; }
+.event-desc { color: var(--text-dim); font-size: 11px; }
+.event-timer { color: var(--danger); font-size: 13px; margin-top: 6px; font-weight: bold; }
+.task-card {
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 2px solid var(--accent); border-radius: 12px;
+    padding: 12px; margin-bottom: 8px;
+}
+.task-title { color: var(--gold); font-size: 13px; margin-bottom: 6px; }
+.task-progress {
+    height: 12px; background: var(--bg-1); border-radius: 6px;
+    overflow: hidden; border: 1px solid var(--line); margin: 6px 0;
+}
+.task-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold));
+    transition: width 0.4s; border-radius: 6px;
+}
+.task-row { display: flex; justify-content: space-between; align-items: center; }
+.task-row span { color: var(--text-dim); font-size: 11px; }
+.contest-card {
+    background: linear-gradient(135deg, var(--bg-4), var(--bg-3));
+    border: 3px solid var(--gold); border-radius: 14px;
+    padding: 14px; margin-bottom: 8px; text-align: center;
+    box-shadow: 0 0 30px rgba(240,213,176,0.2);
+}
+.contest-title { color: var(--gold); font-size: 17px; text-shadow: 2px 2px 0 var(--bg-1); }
+.contest-prize { color: var(--gold); font-size: 15px; margin: 8px 0; }
+.bottom-nav {
+    display: flex; gap: 4px; padding: 8px 10px 10px;
+    border-top: 2px solid rgba(90,66,49,0.6);
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.2));
+}
+.nav-btn {
+    flex: 1; padding: 8px 2px; border-radius: 10px;
+    border: 2px solid var(--line); border-bottom-width: 4px;
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    color: var(--text-dim); cursor: pointer; font-family: inherit;
+    font-size: 9px; display: flex; flex-direction: column; align-items: center;
+    gap: 1px; transition: 0.2s; box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+}
+.nav-btn-icon { font-size: 20px; transition: 0.2s; }
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active {
+    border-color: var(--gold); color: var(--gold);
+    background: linear-gradient(180deg, #6d5040, var(--bg-4));
+    transform: translateY(-3px);
+    box-shadow: 0 6px 0 var(--bg-2), 0 0 20px rgba(240,213,176,0.4);
+}
+.nav-btn.active .nav-btn-icon { transform: scale(1.15); }
+.nav-btn:active { transform: translateY(1px); }
+.nav-btn.active:active { transform: translateY(-1px); }
+.modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+    justify-content: center; align-items: center;
+    z-index: 100; padding: 20px;
+}
+.modal.active { display: flex; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-panel {
+    background: linear-gradient(180deg, #4a3628, var(--bg-2));
+    border: 3px solid var(--accent); border-bottom-width: 6px;
+    border-radius: 16px; padding: 20px; max-width: 440px;
+    width: 100%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 0 80px rgba(166,123,91,0.6);
+}
+.modal-panel::-webkit-scrollbar { width: 6px; }
+.modal-panel::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+.modal-title {
+    color: var(--gold); text-align: center;
+    font-size: 20px; margin-bottom: 16px;
+    text-shadow: 2px 2px 0 var(--bg-1);
+}
+.setting-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+    font-size: 13px; color: var(--text);
+}
+.setting-row:last-child { border-bottom: none; }
+.toggle {
+    position: relative; width: 48px; height: 26px;
+    background: var(--bg-1); border-radius: 13px;
+    cursor: pointer; border: 2px solid var(--bg-3);
+    transition: 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+}
+.toggle.on {
+    background: linear-gradient(180deg, var(--accent-light), var(--accent));
+    box-shadow: 0 0 12px rgba(240,213,176,0.4), inset 0 2px 4px rgba(0,0,0,0.3);
+}
+.toggle::after {
+    content: ''; position: absolute; top: 1px; left: 1px;
+    width: 20px; height: 20px;
+    background: linear-gradient(180deg, var(--gold), #d4b59a);
+    border-radius: 50%; transition: 0.3s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.toggle.on::after { left: 23px; }
+.save-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.save-slot {
+    padding: 10px; background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 2px solid var(--line); border-bottom-width: 4px;
+    border-radius: 10px; text-align: center;
+    font-size: 11px; color: var(--text-dim);
+    cursor: pointer; transition: 0.15s; position: relative;
+}
+.save-slot:hover { border-color: var(--gold); }
+.save-slot.current {
+    border-color: var(--success);
+    box-shadow: 0 0 15px rgba(39,174,96,0.3);
+}
+.save-slot.current::before {
+    content: '●'; position: absolute; top: 4px; right: 6px;
+    color: var(--success); font-size: 10px;
+    animation: dotPulse 1.5s infinite;
+}
+@keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.save-slot-title { color: var(--gold); font-size: 12px; }
+.save-slot-time { font-size: 9px; margin-top: 3px; }
+.save-actions { display: flex; gap: 4px; justify-content: center; margin-top: 6px; }
+.save-actions button {
+    padding: 3px 10px; border-radius: 6px;
+    border: 1px solid rgba(166,123,91,0.4);
+    background: transparent; color: var(--text-dim);
+    cursor: pointer; font-size: 10px; font-family: inherit;
+}
+.save-actions button:hover { color: var(--gold); border-color: var(--gold); }
+.toasts {
+    position: fixed; top: 20px; right: 20px;
+    z-index: 300; display: flex; flex-direction: column;
+    gap: 8px; pointer-events: none; max-width: 320px;
+}
+.toast {
+    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    border: 2px solid var(--accent); border-left-width: 5px;
+    border-radius: 10px; padding: 10px 14px;
+    color: var(--text); font-size: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: auto;
+}
+.toast.info { border-left-color: var(--info); }
+.toast.success { border-left-color: var(--success); }
+.toast.warning { border-left-color: var(--warning); }
+.toast.danger { border-left-color: var(--danger); }
+.toast.gold { border-left-color: var(--gold); }
+@keyframes toastIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.toast.out { animation: toastOut 0.3s forwards; }
+@keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+.cook-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 150;
+}
+.cook-overlay.active { display: flex; }
+.cook-content { text-align: center; }
+.cook-pot {
+    font-size: 90px; display: inline-block;
+    animation: potShake 0.6s infinite; position: relative;
+}
+.cook-flame {
+    position: absolute; bottom: -10px; left: 50%;
+    transform: translateX(-50%); font-size: 40px;
+    animation: flamePulse 0.3s infinite alternate;
+}
+@keyframes potShake {
+    0%, 100% { transform: rotate(-6deg) translateY(0); }
+    50% { transform: rotate(6deg) translateY(-4px); }
+}
+@keyframes flamePulse {
+    from { transform: translateX(-50%) scale(0.9); opacity: 0.8; }
+    to { transform: translateX(-50%) scale(1.1); opacity: 1; }
+}
+.cook-text {
+    color: var(--gold); font-size: 22px; margin-top: 30px;
+    text-shadow: 0 0 20px rgba(240,213,176,0.6); letter-spacing: 2px;
+}
+.cook-timer {
+    color: #ffd700; font-size: 30px;
+    display: inline-block; min-width: 40px;
+    animation: countPulse 1s infinite;
+}
+@keyframes countPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+.confetti {
+    position: fixed; width: 10px; height: 10px;
+    pointer-events: none; z-index: 200;
+    animation: confettiFall 2s linear forwards;
+}
+@keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <div class="app-frame">
+        <div class="header">
+            <div class="header-title">📖 Великая кулинария</div>
+            <div class="header-sub">Мастер-шеф ресторана</div>
+            <button class="icon-btn" onclick="openSettings()">⚙️</button>
+        </div>
+        <div class="stats">
+            <div class="stat">🧑‍🍳 Ур. <b id="s-level">1</b></div>
+            <div class="stat">🪙 <b id="s-coins">0</b></div>
+            <div class="stat">⭐ Репа <b id="s-rep">50</b></div>
+            <div class="stat">📈 <b id="s-xp">5</b> до ур.</div>
+        </div>
+        <div class="sub-tabs" id="subTabs"></div>
+        <div class="content" id="content"></div>
+        <div class="bottom-nav">
+            <button class="nav-btn active" data-tab="cook" onclick="switchMain('cook')">
+                <span class="nav-btn-icon">🍳</span><span>Готовка</span>
+            </button>
+            <button class="nav-btn" data-tab="restaurant" onclick="switchMain('restaurant')">
+                <span class="nav-btn-icon">🏙️</span><span>Ресторан</span>
+            </button>
+            <button class="nav-btn" data-tab="shop" onclick="switchMain('shop')">
+                <span class="nav-btn-icon">🛒</span><span>Магазин</span>
+            </button>
+            <button class="nav-btn" data-tab="progress" onclick="switchMain('progress')">
+                <span class="nav-btn-icon">📈</span><span>Прогресс</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="settingsModal">
+    <div class="modal-panel">
+        <div class="modal-title">⚙️ Настройки</div>
+        <div class="setting-row">
+            <span>🔊 Звук</span>
+            <div class="toggle" id="toggleSound" onclick="toggleSetting('sound')"></div>
+        </div>
+        <div class="setting-row">
+            <span>💾 Автосохранение (10 сек)</span>
+            <div class="toggle" id="toggleAutosave" onclick="toggleSetting('autosave')"></div>
+        </div>
+        <div style="margin-top:14px;border-top:2px solid var(--line);padding-top:14px;">
+            <div style="color:var(--gold);text-align:center;font-size:15px;margin-bottom:8px;">💾 Сохранения</div>
+            <div class="save-slots" id="saveSlots"></div>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="saveToNewSlot()">💾 Сохранить в новый слот</button>
+        </div>
+        <button class="btn btn-gold" style="margin-top:16px;" onclick="closeSettings()">Готово</button>
+    </div>
+</div>
+
+<div class="cook-overlay" id="cookOverlay">
+    <div class="cook-content">
+        <div class="cook-pot">🍲<div class="cook-flame">🔥</div></div>
+        <div class="cook-text">ВАРИТСЯ... <span class="cook-timer" id="cookTimer">2.5</span></div>
+    </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ============================================================
+// ИНГРЕДИЕНТЫ
+// ============================================================
+var INGREDIENTS = [
+    { id:'tomato', name:'🍅 Помидор', cat:'veggie', price:0, start:true },
+    { id:'onion', name:'🧅 Лук', cat:'veggie', price:0, start:true },
+    { id:'garlic', name:'🧄 Чеснок', cat:'veggie', price:0, start:true },
+    { id:'salt', name:'🧂 Соль', cat:'spice', price:0, start:true },
+    { id:'sugar', name:'🍬 Сахар', cat:'spice', price:0, start:true },
+    { id:'milk', name:'🥛 Молоко', cat:'dairy', price:0, start:true },
+    { id:'bread', name:'🍞 Хлеб', cat:'grain', price:0, start:true },
+    { id:'cheese', name:'🧀 Сыр', cat:'dairy', price:0, start:true },
+    { id:'butter', name:'🧈 Масло', cat:'dairy', price:0, start:true },
+    { id:'egg', name:'🥚 Яйцо', cat:'dairy', price:0, start:true },
+    { id:'meat', name:'🥩 Мясо', cat:'meat', price:40 },
+    { id:'chicken', name:'🍗 Курица', cat:'meat', price:50 },
+    { id:'pork', name:'🐖 Свинина', cat:'meat', price:50 },
+    { id:'beef', name:'🐄 Говядина', cat:'meat', price:60 },
+    { id:'lamb', name:'🐑 Баранина', cat:'meat', price:75 },
+    { id:'turkey', name:'🦃 Индейка', cat:'meat', price:75 },
+    { id:'sausage', name:'🌭 Колбаса', cat:'meat', price:40 },
+    { id:'bacon', name:'🥓 Бекон', cat:'meat', price:50 },
+    { id:'ham', name:'🍖 Ветчина', cat:'meat', price:60 },
+    { id:'chorizo', name:'🌶️ Чоризо', cat:'meat', price:75 },
+    { id:'duck', name:'🦆 Утка', cat:'meat', price:90 },
+    { id:'rabbit', name:'🐇 Кролик', cat:'meat', price:100 },
+    { id:'venison', name:'🦌 Оленина', cat:'meat', price:125 },
+    { id:'carrot', name:'🥕 Морковь', cat:'veggie', price:15 },
+    { id:'mushroom', name:'🍄 Гриб', cat:'veggie', price:20 },
+    { id:'cabbage', name:'🥬 Капуста', cat:'veggie', price:15 },
+    { id:'potato', name:'🥔 Картофель', cat:'veggie', price:15 },
+    { id:'cucumber', name:'🥒 Огурец', cat:'veggie', price:15 },
+    { id:'beet', name:'🍠 Свекла', cat:'veggie', price:20 },
+    { id:'pumpkin', name:'🎃 Тыква', cat:'veggie', price:25 },
+    { id:'pepper', name:'🌶️ Перец', cat:'veggie', price:20 },
+    { id:'basil', name:'🌿 Базилик', cat:'veggie', price:20 },
+    { id:'broccoli', name:'🥦 Брокколи', cat:'veggie', price:25 },
+    { id:'spinach', name:'🥬 Шпинат', cat:'veggie', price:20 },
+    { id:'zucchini', name:'🥒 Кабачок', cat:'veggie', price:20 },
+    { id:'eggplant', name:'🍆 Баклажан', cat:'veggie', price:25 },
+    { id:'corn', name:'🌽 Кукуруза', cat:'veggie', price:20 },
+    { id:'peas', name:'🫛 Горох', cat:'veggie', price:15 },
+    { id:'asparagus', name:'🌱 Спаржа', cat:'veggie', price:35 },
+    { id:'artichoke', name:'🌵 Артишок', cat:'veggie', price:40 },
+    { id:'celery', name:'🥬 Сельдерей', cat:'veggie', price:20 },
+    { id:'leek', name:'🧅 Лук-порей', cat:'veggie', price:20 },
+    { id:'apple', name:'🍎 Яблоко', cat:'fruit', price:20 },
+    { id:'orange', name:'🍊 Апельсин', cat:'fruit', price:25 },
+    { id:'berry', name:'🍓 Ягода', cat:'fruit', price:35 },
+    { id:'lemon', name:'🍋 Лимон', cat:'fruit', price:20 },
+    { id:'fig', name:'🫐 Инжир', cat:'fruit', price:50 },
+    { id:'pomegranate', name:'🟥 Гранат', cat:'fruit', price:60 },
+    { id:'banana', name:'🍌 Банан', cat:'fruit', price:20 },
+    { id:'peach', name:'🍑 Персик', cat:'fruit', price:30 },
+    { id:'pear', name:'🍐 Груша', cat:'fruit', price:25 },
+    { id:'grape', name:'🍇 Виноград', cat:'fruit', price:35 },
+    { id:'watermelon', name:'🍉 Арбуз', cat:'fruit', price:40 },
+    { id:'melon', name:'🍈 Дыня', cat:'fruit', price:40 },
+    { id:'kiwi', name:'🥝 Киви', cat:'fruit', price:30 },
+    { id:'mango', name:'🥭 Манго', cat:'fruit', price:50 },
+    { id:'pineapple', name:'🍍 Ананас', cat:'fruit', price:60 },
+    { id:'coconut', name:'🥥 Кокос', cat:'fruit', price:40 },
+    { id:'cherry', name:'🍒 Вишня', cat:'fruit', price:40 },
+    { id:'blueberry', name:'🫐 Голубика', cat:'fruit', price:45 },
+    { id:'raspberry', name:'🍇 Малина', cat:'fruit', price:40 },
+    { id:'avocado', name:'🥑 Авокадо', cat:'fruit', price:50 },
+    { id:'lime', name:'🍋 Лайм', cat:'fruit', price:20 },
+    { id:'apricot', name:'🍑 Абрикос', cat:'fruit', price:25 },
+    { id:'plum', name:'🍑 Слива', cat:'fruit', price:20 },
+    { id:'cream', name:'🥛 Сливки', cat:'dairy', price:25 },
+    { id:'yogurt', name:'🥛 Йогурт', cat:'dairy', price:25 },
+    { id:'quail_egg', name:'🥚 Перепелиное яйцо', cat:'dairy', price:80 },
+    { id:'sour_cream', name:'🥛 Сметана', cat:'dairy', price:20 },
+    { id:'cottage', name:'🧀 Творог', cat:'dairy', price:30 },
+    { id:'mozzarella', name:'🧀 Моцарелла', cat:'dairy', price:45 },
+    { id:'parmesan', name:'🧀 Пармезан', cat:'dairy', price:65 },
+    { id:'feta', name:'🧀 Фета', cat:'dairy', price:50 },
+    { id:'blue_cheese', name:'🧀 Голубой сыр', cat:'dairy', price:75 },
+    { id:'brie', name:'🧀 Бри', cat:'dairy', price:70 },
+    { id:'flour', name:'🌾 Мука', cat:'grain', price:15 },
+    { id:'rice', name:'🍚 Рис', cat:'grain', price:20 },
+    { id:'noodles', name:'🍜 Лапша', cat:'grain', price:25 },
+    { id:'pasta', name:'🍝 Паста', cat:'grain', price:25 },
+    { id:'buckwheat', name:'🌾 Гречка', cat:'grain', price:15 },
+    { id:'oats', name:'🌾 Овсянка', cat:'grain', price:15 },
+    { id:'quinoa', name:'🌾 Киноа', cat:'grain', price:40 },
+    { id:'couscous', name:'🌾 Кускус', cat:'grain', price:30 },
+    { id:'honey', name:'🍯 Мёд', cat:'spice', price:35 },
+    { id:'ginger', name:'🫚 Имбирь', cat:'spice', price:25 },
+    { id:'mint', name:'🌿 Мята', cat:'spice', price:15 },
+    { id:'sauce', name:'🥫 Соус', cat:'spice', price:25 },
+    { id:'soy_sauce', name:'🥫 Соевый соус', cat:'spice', price:30 },
+    { id:'vinegar', name:'🥫 Уксус', cat:'spice', price:15 },
+    { id:'mayo', name:'🥫 Майонез', cat:'spice', price:20 },
+    { id:'ketchup', name:'🥫 Кетчуп', cat:'spice', price:20 },
+    { id:'mustard', name:'🥫 Горчица', cat:'spice', price:15 },
+    { id:'cinnamon', name:'🌿 Корица', cat:'spice', price:25 },
+    { id:'vanilla', name:'🌿 Ваниль', cat:'spice', price:35 },
+    { id:'nutmeg', name:'🌿 Мускат', cat:'spice', price:30 },
+    { id:'oregano', name:'🌿 Орегано', cat:'spice', price:20 },
+    { id:'thyme', name:'🌿 Тимьян', cat:'spice', price:20 },
+    { id:'rosemary', name:'🌿 Розмарин', cat:'spice', price:20 },
+    { id:'curry', name:'🌿 Карри', cat:'spice', price:40 },
+    { id:'paprika', name:'🌿 Паприка', cat:'spice', price:25 },
+    { id:'turmeric', name:'🌿 Куркума', cat:'spice', price:25 },
+    { id:'chili', name:'🌶️ Чили', cat:'spice', price:30 },
+    { id:'wasabi', name:'🌿 Васаби', cat:'spice', price:50 },
+    { id:'chocolate', name:'🍫 Шоколад', cat:'spice', price:45 },
+    { id:'cocoa', name:'🍫 Какао', cat:'spice', price:35 },
+    { id:'fish', name:'🐟 Рыба', cat:'seafood', price:50 },
+    { id:'salmon', name:'🐟 Лосось', cat:'seafood', price:75 },
+    { id:'tuna', name:'🐟 Тунец', cat:'seafood', price:85 },
+    { id:'cod', name:'🐟 Треска', cat:'seafood', price:60 },
+    { id:'shrimp', name:'🦐 Креветка', cat:'seafood', price:65 },
+    { id:'lobster', name:'🦞 Лобстер', cat:'seafood', price:150 },
+    { id:'oyster', name:'🦪 Устрица', cat:'seafood', price:120 },
+    { id:'mussels', name:'🦪 Мидии', cat:'seafood', price:70 },
+    { id:'squid', name:'🦑 Кальмар', cat:'seafood', price:60 },
+    { id:'octopus', name:'🐙 Осьминог', cat:'seafood', price:100 },
+    { id:'crab', name:'🦀 Краб', cat:'seafood', price:130 },
+    { id:'scallop', name:'🐚 Гребешок', cat:'seafood', price:90 },
+    { id:'eel', name:'🐟 Угорь', cat:'seafood', price:100 },
+    { id:'caviar', name:'🟠 Икра', cat:'luxury', price:250 },
+    { id:'truffle', name:'🍄 Трюфель', cat:'luxury', price:200 },
+    { id:'foie_gras', name:'🦆 Фуа-гра', cat:'luxury', price:220 },
+    { id:'saffron', name:'🌿 Шафран', cat:'luxury', price:300 },
+    { id:'gold_leaf', name:'✨ Золото', cat:'luxury', price:500 },
+    { id:'wagyu', name:'🥩 Вагю', cat:'luxury', price:400 },
+    { id:'kobe', name:'🥩 Кобе', cat:'luxury', price:600 }
+];
+
+var START_INGREDIENTS = ['tomato','onion','garlic','salt','sugar','milk','bread','cheese','butter','egg'];
+
+var CATEGORY_NAMES = {
+    veggie: '🥬 Овощи', fruit: '🍎 Фрукты', meat: '🥩 Мясо', seafood: '🦐 Морепродукты',
+    dairy: '🧀 Молочка', grain: '🌾 Крупы', spice: '🧂 Специи', luxury: '🟠 Деликатесы'
+};
+
+var RECIPES = {
+    'basil,cheese,tomato': ['🍕 Пицца Маргарита', '🥫 Томатный соус с базиликом', '🍝 Паста с томатами и базиликом'],
+    'meat,onion,tomato': ['🥩 Мясной соус к пасте', '🥘 Томатное рагу с мясом', '🍝 Болоньезе'],
+    'cheese,meat,tomato': ['🍕 Мясная пицца', '🥘 Мясо в томатно-сырном соусе', '🍝 Паста с мясом и сыром'],
+    'garlic,onion,tomato': ['🥫 Томатно-чесночный соус', '🍅 Помидоры с чесноком и луком', '🍝 Маринара'],
+    'cucumber,onion,tomato': ['🥗 Помидорно-огуречный салат', '🥒 Огуречно-томатный микс', '🥗 Греческий салат'],
+    'carrot,onion,tomato': ['🥣 Томатный суп с морковью', '🥕 Помидоры с морковью и луком', '🍲 Минестроне'],
+    'carrot,potato,tomato': ['🥣 Томатный суп с картофелем', '🍅 Помидоры с картофелем', '🍲 Овощное рагу'],
+    'cabbage,carrot,tomato': ['🥣 Томатные щи', '🥗 Салат с помидорами и капустой', '🍲 Борщ'],
+    'cheese,egg,tomato': ['🍳 Яичница с помидорами', '🥚 Омлет с помидорами', '🍳 Шакшука'],
+    'cheese,meat,onion': ['🧀 Сырный соус с мясом', '🥘 Мясо с сыром и луком', '🍔 Чизбургер'],
+    'cheese,egg,milk': ['🧀 Сырный омлет', '🥚 Яйцо с сыром', '🧀 Сырная запеканка'],
+    'butter,cheese,flour': ['🧀 Сырный соус', '🥫 Сливочно-сырный соус', '🧀 Сырные палочки'],
+    'bread,butter,cheese': ['🥪 Сырный тост', '🧀 Сырные гренки', '🥪 Горячий сэндвич'],
+    'cheese,garlic,mushroom': ['🧄 Грибной соус с сыром', '🍄 Грибы с сыром', '🍕 Грибная пицца'],
+    'carrot,meat,onion': ['🥘 Мясное рагу с морковью', '🥣 Мясной бульон', '🍲 Тушёное мясо'],
+    'carrot,meat,potato': ['🥩 Мясо с картофелем', '🥘 Гуляш', '🍲 Солянка'],
+    'garlic,meat,onion': ['🧄 Мясо с чесноком', '🥘 Мясной соус', '🥩 Стейк с чесноком'],
+    'meat,onion,rice': ['🥘 Плов с мясом', '🍚 Мясной рис', '🍛 Плов узбекский'],
+    'meat,noodles,sauce': ['🍜 Лапша с мясом', '🍝 Паста с мясом', '🍜 Рамен'],
+    'fish,meat,onion': ['🥘 Мясо-рыбное рагу', '🐟 Рыба с мясом', '🍲 Солянка рыбная'],
+    'carrot,garlic,onion': ['🥕 Морковь с луком', '🧅 Лук с морковью', '🥗 Овощная зажарка'],
+    'carrot,onion,potato': ['🥣 Овощной суп', '🥕 Картофель с морковью', '🍲 Деревенский суп'],
+    'cabbage,carrot,onion': ['🥗 Салат с капустой', '🥣 Овощные щи', '🥗 Коул-слоу'],
+    'garlic,mushroom,onion': ['🍄 Грибной соус', '🧅 Грибы с луком', '🍄 Жареные грибы'],
+    'mushroom,onion,potato': ['🥣 Грибной суп', '🍄 Грибное рагу', '🥘 Картофель с грибами'],
+    'garlic,honey,lemon': ['🍋 Лимонад с мёдом', '🧄 Чесночно-медовый соус', '🍯 Медовый напиток'],
+    'honey,lemon,water': ['🍋 Лимонад с мёдом', '🍯 Медово-лимонный напиток', '🍹 Освежающий лимонад'],
+    'ginger,honey,lemon': ['🍋 Имбирный лимонад', '🧄 Имбирный чай', '🍵 Чай с имбирём'],
+    'apple,berry,honey': ['🍯 Яблочно-ягодный десерт', '🍎 Яблоки с мёдом', '🍎 Печёные яблоки'],
+    'honey,lemon,orange': ['🍊 Цитрусовый десерт', '🍋 Медово-цитрусовый напиток', '🍹 Сангрия'],
+    'berry,sugar,water': ['🍓 Ягодный напиток', '🍓 Компот', '🍓 Морс'],
+    'lemon,sugar,water': ['🍋 Лимонный напиток', '🍋 Компот', '🍋 Лимонад'],
+    'berry,milk,sugar': ['🍓 Молочный коктейль', '🥛 Молоко с ягодой', '🍓 Смузи'],
+    'egg,milk,sugar': ['🥛 Молочный коктейль', '🥚 Яйцо с молоком', '🍮 Заварной крем'],
+    'egg,flour,milk': ['🥞 Блины на молоке', '🧁 Тесто для кексов', '🥞 Оладьи'],
+    'butter,egg,flour': ['🍪 Печенье', '🧁 Тесто для выпечки', '🍰 Бисквит'],
+    'bread,butter,egg': ['🍳 Гренки с яйцом', '🥪 Яйцо с маслом', '🍞 Французский тост'],
+    'butter,potato,salt': ['🥔 Картофельное пюре', '🧈 Картофель с маслом', '🥔 Пюре'],
+    'basil,butter,garlic': ['🧄 Чесночное масло', '🧈 Базиликовое масло', '🥖 Чесночный хлеб'],
+    'bread,cheese,egg': ['🥪 Сырный сэндвич', '🧀 Сырный тост', '🥪 Кростини'],
+    'cheese,egg,rice': ['🍚 Рис с яйцом', '🧀 Сырный пудинг', '🍚 Рисовый омлет'],
+    'cheese,egg,noodles': ['🍜 Лапша с яйцом', '🧀 Сырная лапша', '🍝 Карбонара'],
+    'bread,butter,salt': ['🥖 Хлеб с солью', '🧈 Хлеб с маслом', '🥖 Крутоны'],
+    'bread,egg,milk': ['🥞 Французские тосты', '🥪 Хлеб с молоком', '🍞 Гренки сладкие'],
+    'butter,flour,milk': ['🥞 Блины', '🧁 Сливочное тесто', '🥞 Панкейки'],
+    'egg,flour,sugar': ['🧁 Кекс', '🍪 Печенье', '🍰 Кекс с изюмом'],
+    'onion,potato,salt': ['🥔 Жареный картофель', '🧂 Картофель с луком', '🍟 Картофель фри'],
+    'butter,garlic,potato': ['🥔 Картофель с чесноком', '🧄 Пюре с чесноком', '🥔 Запечённый картофель'],
+    'cabbage,carrot,potato': ['🥬 Тушеная капуста', '🥣 Овощной суп', '🍲 Щи'],
+    'cabbage,meat,onion': ['🥬 Тушеная капуста с мясом', '🥘 Капустное рагу', '🥘 Бигус'],
+    'meat,onion,pepper': ['🌶️ Острое мясо', '🥘 Мясо с перцем', '🌶️ Чили кон карне'],
+    'meat,pepper,salt': ['🥩 Перчёное мясо', '🥩 Стейк', '🥩 Стейк с перцем'],
+    'butter,fish,lemon': ['🐟 Рыба с лимоном', '🧈 Рыба в масле', '🐟 Рыба на гриле'],
+    'fish,onion,rice': ['🍚 Рис с рыбой', '🐟 Рыбный плов', '🍣 Суши'],
+    'fish,lemon,sauce': ['🐟 Рыба в соусе', '🥫 Рыба с лимоном', '🐟 Рыба по-французски'],
+    'fish,rice,sauce': ['🍣 Рис с рыбой', '🐟 Рыба с рисом', '🍣 Онигири'],
+    'cucumber,salt,tomato': ['🥗 Огуречно-томатный салат', '🥒 Солёные огурцы', '🥗 Летний салат'],
+    'cucumber,onion,salt': ['🥒 Маринованные огурцы', '🧅 Огуречный салат', '🥗 Огуречный микс'],
+    'beet,carrot,onion': ['🥗 Винегрет', '🍠 Свекольный салат', '🥗 Винегрет классический'],
+    'apple,beet,carrot': ['🥗 Свекольно-яблочный салат', '🍠 Свекла с яблоком', '🥗 Свекольный салат'],
+    'carrot,onion,pumpkin': ['🎃 Тыквенный суп', '🥕 Тыква с морковью', '🍲 Тыквенный крем-суп'],
+    'carrot,potato,pumpkin': ['🎃 Тыквенный суп с картофелем', '🥕 Тыква с картофелем', '🍲 Осенний суп'],
+    'apple,berry,sugar': ['🍎 Яблочно-ягодный десерт', '🍓 Яблоки с ягодой', '🍰 Фруктовый пирог'],
+    'apple,orange,sugar': ['🍎 Фруктовый салат', '🍊 Яблочно-апельсиновый десерт', '🍊 Фруктовый микс'],
+    'lemon,orange,sugar': ['🍊 Цитрусовый десерт', '🍋 Апельсин с лимоном', '🍊 Мармелад'],
+    'berry,sugar,yogurt': ['🍓 Ягодный йогурт', '🥛 Йогурт с ягодой', '🍓 Парфе'],
+    'chicken,onion,rice': ['🍗 Плов с курицей', '🍚 Курица с рисом', '🍛 Курица карри'],
+    'carrot,chicken,potato': ['🍗 Курица с картофелем', '🥕 Куриное рагу', '🍲 Куриный суп'],
+    'chicken,onion,sauce': ['🍗 Курица в соусе', '🥘 Куриное рагу', '🍗 Курица терияки'],
+    'chicken,garlic,lemon': ['🍗 Курица с чесноком', '🍋 Курица с лимоном', '🍗 Курица на гриле'],
+    'onion,pork,potato': ['🐖 Свинина с картофелем', '🥘 Свиное рагу', '🍲 Свинина тушёная'],
+    'garlic,pork,pepper': ['🐖 Свинина с чесноком', '🌶️ Острая свинина', '🐖 Свинина по-корейски'],
+    'beef,carrot,potato': ['🐄 Говядина с картофелем', '🥘 Гуляш', '🍲 Говядина тушёная'],
+    'beef,garlic,onion': ['🐄 Говядина с чесноком', '🥘 Бефстроганов', '🥩 Стейк из говядины'],
+    'garlic,lamb,onion': ['🐑 Баранина с чесноком', '🥘 Баранина в соусе', '🍲 Плов с бараниной'],
+    'onion,sauce,sausage': ['🌭 Колбаса в соусе', '🥘 Колбасное рагу', '🌭 Хот-дог'],
+    'bacon,bread,egg': ['🥓 Бекон с яйцом', '🥪 Сэндвич с беконом', '🥪 BLT'],
+    'bread,cheese,ham': ['🥪 Сэндвич с ветчиной', '🍖 Ветчина с сыром', '🥪 Панини'],
+    'butter,garlic,shrimp': ['🦐 Креветки с чесноком', '🧄 Креветки в соусе', '🦐 Креветки по-тайски'],
+    'lemon,rice,shrimp': ['🦐 Креветки с рисом', '🍚 Рис с креветками', '🍤 Креветки темпура'],
+    'salmon,lemon,butter': ['🐟 Лосось на гриле', '🍋 Лосось с лимоном', '🐟 Лосось по-норвежски'],
+    'salmon,rice,soy_sauce': ['🍣 Суши с лососем', '🍚 Рис с лососем', '🍣 Сашими'],
+    'tuna,rice,soy_sauce': ['🍣 Суши с тунцом', '🍚 Рис с тунцом', '🍣 Тартар из тунца'],
+    'shrimp,noodles,soy_sauce': ['🍜 Лапша с креветками', '🦐 Креветки в лапше', '🍜 Пад Тай'],
+    'squid,rice,soy_sauce': ['🍣 Суши с кальмаром', '🦑 Кальмар с рисом', '🦑 Кальмар по-корейски'],
+    'octopus,lemon,olive_oil': ['🐙 Осьминог на гриле', '🍋 Осьминог с лимоном', '🐙 Тако с осьминогом'],
+    'crab,mayo,lemon': ['🦀 Крабовый салат', '🦀 Краб с майонезом', '🦀 Ролл с крабом'],
+    'mussels,garlic,white_wine': ['🦪 Мидии в соусе', '🧄 Мидии с чесноком', '🦪 Мидии марьера'],
+    'scallop,butter,garlic': ['🐚 Гребешки с маслом', '🧄 Гребешки с чесноком', '🐚 Гребешки на гриле'],
+    'mozzarella,tomato,basil': ['🍕 Маргарита', '🥗 Капрезе', '🍝 Паста с моцареллой'],
+    'parmesan,pasta,cream': ['🍝 Паста карбонара', '🧀 Паста с пармезаном', '🍝 Альфредо'],
+    'feta,cucumber,olive': ['🥗 Греческий салат', '🧀 Салат с фетой', '🥗 Хориатики'],
+    'brie,bread,honey': ['🧀 Бри с мёдом', '🍯 Бри на хлебе', '🧀 Брускетта с бри'],
+    'egg,bacon,bread': ['🍳 Яичница с беконом', '🥪 Сэндвич с беконом', '🥓 Английский завтрак'],
+    'egg,cheese,ham': ['🍳 Омлет с ветчиной', '🧀 Омлет с сыром', '🍳 Денверский омлет'],
+    'oats,milk,honey': ['🥣 Овсянка с мёдом', '🍯 Овсяная каша', '🥣 Гранола'],
+    'yogurt,berry,honey': ['🥛 Йогурт с ягодами', '🍓 Парфе с йогуртом', '🍯 Ягодный йогурт'],
+    'cottage,berry,honey': ['🧀 Творог с ягодами', '🍓 Сырники', '🍯 Творожная запеканка'],
+    'beef,beet,cabbage': ['🍲 Борщ', '🥣 Украинский борщ', '🍲 Борщ с говядиной'],
+    'chicken,noodles,carrot': ['🍜 Куриный суп с лапшой', '🥣 Куриный бульон', '🍲 Суп с курицей'],
+    'fish,potato,onion': ['🐟 Уха', '🍲 Рыбный суп', '🥣 Финская уха'],
+    'mushroom,cream,onion': ['🍄 Грибной крем-суп', '🥣 Суп-пюре из грибов', '🍄 Грибной суп'],
+    'tomato,cream,basil': ['🍅 Томатный крем-суп', '🥣 Суп-пюре томатный', '🍅 Гаспачо'],
+    'pumpkin,cream,ginger': ['🎃 Тыквенный крем-суп', '🥣 Суп-пюре из тыквы', '🎃 Тыквенный суп'],
+    'pasta,tomato,basil': ['🍝 Паста с томатами', '🍝 Спагетти помодоро', '🍝 Паста маринара'],
+    'pasta,cream,cheese': ['🍝 Паста с сыром', '🧀 Феттучини альфредо', '🍝 Паста с сливками'],
+    'pasta,bacon,egg': ['🍝 Карбонара', '🍝 Паста с беконом', '🍝 Спагетти карбонара'],
+    'pasta,meat,tomato': ['🍝 Болоньезе', '🍝 Паста с мясом', '🍝 Лазанья'],
+    'pasta,shrimp,garlic': ['🍝 Паста с креветками', '🦐 Паста с чесноком', '🍝 Спагетти с креветками'],
+    'noodles,chicken,soy_sauce': ['🍜 Курица с лапшой', '🍜 Лапша с курицей', '🍜 Якисоба'],
+    'noodles,beef,soy_sauce': ['🍜 Лапша с говядиной', '🍜 Фо бо', '🍜 Рамен с говядиной'],
+    'noodles,vegetables,soy_sauce': ['🍜 Лапша с овощами', '🍜 Вегетарианский рамен', '🍜 Лапша вок'],
+    'rice,chicken,soy_sauce': ['🍚 Курица с рисом', '🍛 Курица терияки', '🍚 Курица по-китайски'],
+    'rice,vegetables,egg': ['🍚 Жареный рис', '🍳 Рис с яйцом', '🍚 Рис по-китайски'],
+    'rice,fish,wasabi': ['🍣 Суши', '🍣 Сашими с рисом', '🍣 Нигири'],
+    'rice,shrimp,nori': ['🍣 Роллы с креветкой', '🍤 Креветки с рисом', '🍣 Калифорния'],
+    'rice,salmon,nori': ['🍣 Роллы с лососем', '🍣 Филадельфия', '🍣 Суши с лососем'],
+    'mango,rice,coconut': ['🥭 Манго с рисом', '🥥 Кокосовый рис', '🥭 Тайский десерт'],
+    'avocado,bread,egg': ['🥑 Авокадо-тост', '🥑 Тост с яйцом', '🥑 Брускетта с авокадо'],
+    'quinoa,vegetables,lemon': ['🌾 Салат с киноа', '🥗 Киноа с овощами', '🥗 Боул с киноа'],
+    'couscous,vegetables,lemon': ['🌾 Кускус с овощами', '🥗 Табуле', '🌾 Кускус по-мароккански'],
+    'caviar,bread,butter': ['🟠 Икра на хлебе', '🥪 Бутерброд с икрой', '🍞 Икорные тарталетки'],
+    'truffle,pasta,cream': ['🍄 Паста с трюфелем', '🍝 Трюфельная паста', '🍄 Трюфельное ризотто'],
+    'foie_gras,bread,fig': ['🦆 Фуа-гра с инжиром', '🍞 Тост с фуа-гра', '🦆 Фуа-гра по-французски'],
+    'wagyu,garlic,pepper': ['🥩 Вагю на гриле', '🥩 Стейк вагю', '🥩 Вагю с чесноком'],
+    'kobe,butter,truffle': ['🥩 Кобе с трюфелем', '🥩 Стейк кобе', '🥩 Кобе по-японски'],
+    'saffron,rice,chicken': ['🌿 Паэлья', '🍚 Рис с шафраном', '🌿 Ризотто с шафраном'],
+    'spinach,feta,walnut': ['🥗 Салат со шпинатом', '🧀 Шпинат с фетой', '🥗 Салат с орехами'],
+    'broccoli,chicken,cream': ['🥦 Брокколи с курицей', '🥘 Курица с брокколи', '🥦 Запеканка с брокколи'],
+    'asparagus,lemon,butter': ['🌱 Спаржа с лимоном', '🧈 Спаржа на гриле', '🌱 Спаржа с маслом'],
+    'artichoke,lemon,olive_oil': ['🌵 Артишок с лимоном', '🌵 Артишок на гриле', '🌵 Маринованный артишок'],
+    'eggplant,tomato,cheese': ['🍆 Пармиджана', '🍆 Баклажаны с сыром', '🍆 Рататуй'],
+    'zucchini,garlic,olive_oil': ['🥒 Кабачки с чесноком', '🥒 Кабачки на гриле', '🥒 Цукини'],
+    'chocolate,cream,egg': ['🍫 Шоколадный мусс', '🍫 Шоколадный крем', '🍫 Трюфели'],
+    'chocolate,flour,butter': ['🍫 Шоколадный торт', '🍫 Брауни', '🍫 Шоколадное печенье'],
+    'vanilla,cream,milk': ['🍦 Ванильное мороженое', '🍮 Ванильный крем', '🍦 Мороженое'],
+    'cinnamon,apple,flour': ['🍎 Яблочный пирог', '🍏 Шарлотка', '🍎 Яблочный крамбл'],
+    'cherry,chocolate,cream': ['🍒 Вишня в шоколаде', '🍫 Шоколад с вишней', '🍒 Трюфель с вишней'],
+    'blueberry,lemon,flour': ['🫐 Голубичный пирог', '🍋 Лимонный пирог', '🫐 Маффины'],
+    'raspberry,cream,sugar': ['🍇 Малиновый десерт', '🍇 Малина со сливками', '🍇 Павлова'],
+    'banana,chocolate,cream': ['🍌 Банановый сплит', '🍫 Шоколад с бананом', '🍌 Банановый крем'],
+    'strawberry,chocolate,cream': ['🍓 Клубника в шоколаде', '🍫 Шоколад с клубникой', '🍓 Фондан'],
+    'coffee,milk,sugar': ['☕ Кофе с молоком', '☕ Латте', '☕ Капучино'],
+    'tea,lemon,honey': ['🍵 Чай с лимоном', '🍯 Чай с мёдом', '🍵 Горячий чай'],
+    'cocoa,milk,sugar': ['🍫 Горячий шоколад', '🍫 Какао', '🍫 Шоколадный напиток'],
+    'orange,carrot,ginger': ['🥕 Морковный сок', '🍊 Апельсиновый фреш', '🥕 Витаминный сок'],
+    'apple,carrot,beet': ['🥕 Свекольный сок', '🍎 Яблочный сок', '🥕 Овощной сок'],
+    'watermelon,mint,lime': ['🍉 Арбузный смузи', '🍹 Мохито', '🍉 Арбузный фреш'],
+    'mango,banana,coconut': ['🥭 Манговый смузи', '🍌 Банановый смузи', '🥥 Тропический смузи'],
+    'flour,water,yeast': ['🍞 Домашний хлеб', '🥖 Багет', '🍞 Каравай'],
+    'flour,milk,butter': ['🥐 Круассан', '🍞 Молочный хлеб', '🥐 Булочки'],
+    'flour,egg,water': ['🥨 Крендель', '🥖 Бублик', '🥨 Претцель'],
+    'tomato,garlic,olive_oil': ['🥫 Томатный соус', '🍝 Маринара', '🥫 Соус болоньезе'],
+    'cream,mushroom,garlic': ['🍄 Грибной соус', '🥫 Крем-соус', '🍄 Соус с грибами'],
+    'mayo,garlic,lemon': ['🥫 Айоли', '🧄 Чесночный соус', '🥫 Соус тартар'],
+    'soy_sauce,ginger,garlic': ['🥫 Терияки', '🥫 Соус для вок', '🥫 Азиатский соус'],
+    'vinegar,oil,mustard': ['🥫 Винегрет', '🥫 Заправка для салата', '🥫 Горчичный соус'],
+    'chicken,rice,curry': ['🍛 Курица карри', '🍛 Индийский карри', '🍛 Карри с рисом'],
+    'beef,rice,curry': ['🍛 Говядина карри', '🍛 Карри с говядиной', '🍛 Японский карри'],
+    'vegetables,rice,curry': ['🍛 Овощное карри', '🍛 Карри с овощами', '🍛 Веган карри'],
+    'chicken,tomato,cream': ['🍗 Курица в томатном соусе', '🥘 Тикка масала', '🍗 Курица по-индийски']
+};
+
+var CUSTOMER_TYPES = [
+    { id:'regular', name:'Обычный', badge:'👤', chance:50, patience:25, mult:1.0, repServe:2, repLeave:-3 },
+    { id:'gourmet', name:'Гурман', badge:'🎩', chance:8, patience:30, mult:2.0, repServe:5, repLeave:-5 },
+    { id:'rich', name:'Богач', badge:'💎', chance:5, patience:20, mult:3.5, repServe:3, repLeave:-4 },
+    { id:'hurried', name:'Торопыга', badge:'⏱️', chance:8, patience:12, mult:1.3, repServe:2, repLeave:-4 },
+    { id:'child', name:'Ребёнок', badge:'🧒', chance:6, patience:20, mult:0.7, repServe:3, repLeave:-2 },
+    { id:'elder', name:'Старик', badge:'👴', chance:6, patience:40, mult:0.9, repServe:4, repLeave:-2 },
+    { id:'critic', name:'Критик', badge:'📝', chance:4, patience:22, mult:1.8, repServe:8, repLeave:-10 },
+    { id:'tourist', name:'Турист', badge:'🌍', chance:5, patience:28, mult:1.5, repServe:3, repLeave:-3 },
+    { id:'vegan', name:'Веган', badge:'🥗', chance:4, patience:26, mult:1.1, repServe:3, repLeave:-4 },
+    { id:'blogger', name:'Блогер', badge:'📸', chance:4, patience:18, mult:2.2, repServe:6, repLeave:-6 }
+];
+
+var CUSTOMER_NAMES = ['Анна','Борис','Вика','Гриша','Даша','Егор','Жанна','Зина','Игорь','Костя','Лена','Миша','Настя','Олег','Петя','Рита','Соня','Тимур','Ульяна','Федя'];
+var CUSTOMER_AVATARS = ['👨','👩','🧑','👴','👵','🧔','👱‍♀️','👧','👦','👨‍🦰','👩‍🦱','🧓'];
+
+var SKILLS = [
+    { id:'coin10', name:'💰 +10% монет', desc:'Больше денег', price:100, max:5 },
+    { id:'xp10', name:'⭐ +10% опыта', desc:'Быстрее прокачка', price:100, max:5 },
+    { id:'rep', name:'❤️ +10% репутации', desc:'Клиенты довольнее', price:120, max:5 }
+];
+
+var ARTIFACTS = [
+    { id:'golden_ladle', name:'🥄 Золотой половник', desc:'+20% монет', price:500 },
+    { id:'magic_pan', name:'🍳 Волшебная сковорода', desc:'+15% опыта', price:600 },
+    { id:'lucky_hat', name:'🎩 Счастливая шляпа', desc:'+10% репутации', price:750 }
+];
+
+var UPGRADES = [
+    { id:'table1', name:'🪑 Стол', desc:'+2🪙/мин', price:100, icon:'🪑', income:2 },
+    { id:'table2', name:'🪑 Второй стол', desc:'+3🪙/мин', price:250, icon:'🪑', income:3 },
+    { id:'chair', name:'💺 Стул', desc:'+1🪙/мин', price:150, icon:'💺', income:1 },
+    { id:'plant', name:'🌿 Растение', desc:'+1🪙/мин', price:180, icon:'🌿', income:1 },
+    { id:'painting', name:'🖼️ Картина', desc:'+2🪙/мин', price:400, icon:'🖼️', income:2 },
+    { id:'chandelier', name:'💡 Люстра', desc:'+4🪙/мин', price:800, icon:'💡', income:4 },
+    { id:'chef', name:'👨‍🍳 Повар', desc:'+5🪙/мин', price:1200, icon:'👨‍🍳', income:5 },
+    { id:'waiter', name:'🤵 Официант', desc:'+3🪙/мин', price:900, icon:'🤵', income:3 }
+];
+
+var ACHIEVEMENTS = [
+    { id:'first_dish', name:'🍳 Первое блюдо', desc:'Приготовь первое блюдо', icon:'🍳' },
+    { id:'ten_dishes', name:'👨‍🍳 Шеф-повар', desc:'Приготовь 10 блюд', icon:'👨‍🍳' },
+    { id:'hundred_dishes', name:'🏆 Мастер', desc:'Приготовь 100 блюд', icon:'🏆' },
+    { id:'egg_master', name:'🥚 Яичный магнат', desc:'5 блюд с яйцом', icon:'🥚' },
+    { id:'meat_lover', name:'🥩 Мясной гурман', desc:'5 блюд с мясом', icon:'🥩' },
+    { id:'fish_master', name:'🐟 Рыбный эксперт', desc:'5 блюд с рыбой', icon:'🐟' },
+    { id:'rich', name:'💰 Богач', desc:'Накопи 2000 монет', icon:'💰' },
+    { id:'level10', name:'⭐ Опытный', desc:'10 уровень', icon:'⭐' },
+    { id:'perfect', name:'✨ Идеально!', desc:'Блюдо на 10/10', icon:'✨' },
+    { id:'restaurateur', name:'🏙️ Ресторатор', desc:'5 улучшений', icon:'🏙️' },
+    { id:'first_customer', name:'🤝 Первый клиент', desc:'Обслужи клиента', icon:'🤝' },
+    { id:'ten_customers', name:'🍽️ Официант', desc:'Обслужи 10 клиентов', icon:'🍽️' },
+    { id:'serve_gourmet', name:'🎩 Гурман', desc:'Обслужи гурмана', icon:'🎩' },
+    { id:'serve_rich', name:'💎 Богач-клиент', desc:'Обслужи богача', icon:'💎' },
+    { id:'serve_hurried', name:'⏱️ Торопыга', desc:'Обслужи торопыгу', icon:'⏱️' },
+    { id:'serve_child', name:'🧒 Ребёнок', desc:'Обслужи ребёнка', icon:'🧒' },
+    { id:'serve_elder', name:'👴 Старик', desc:'Обслужи старика', icon:'👴' },
+    { id:'serve_critic', name:'📝 Критик', desc:'Обслужи критика', icon:'📝' },
+    { id:'serve_tourist', name:'🌍 Турист', desc:'Обслужи туриста', icon:'🌍' },
+    { id:'serve_vegan', name:'🥗 Веган', desc:'Обслужи вегана', icon:'🥗' },
+    { id:'serve_blogger', name:'📸 Блогер', desc:'Обслужи блогера', icon:'📸' }
+];
+
+var EVENTS = [
+    { id:'halloween', name:'🎃 Хэллоуин', desc:'Тыквенный сезон! +2 к тыквенным блюдам', icon:'🎃', bonus:'pumpkin', duration:'до 31 октября', months:[9] },
+    { id:'newyear', name:'🎄 Новый год', desc:'Праздничное настроение! +2 к мясным блюдам', icon:'🎄', bonus:'meat', duration:'до 7 января', months:[11,0] }
+];
+
+var state = {
+    selected: [],
+    discovered: [],
+    discoveredIngredients: {},
+    discoveredRatings: {},
+    discoveredRarity: {},
+    cookedCount: 0,
+    level: 1,
+    xp: 0,
+    coins: 0,
+    reputation: 50,
+    unlocked: START_INGREDIENTS.slice(),
+    achievements: {},
+    skills: {},
+    artifacts: [],
+    upgrades: {},
+    customers: [],
+    readyDishes: {},
+    dailyOrders: [],
+    contest: null,
+    servedCount: 0,
+    lastIncomeTime: Date.now(),
+    isCooking: false,
+    activeMain: 'cook',
+    activeSub: { cook:'cook', restaurant:'customers', progress:'collection' },
+    soundEnabled: true,
+    autosaveEnabled: true,
+    currentSlot: null,
+    saveSlots: { slot1:null, slot2:null }
+};
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function $id(id) { return document.getElementById(id); }
+function getIng(id) { return INGREDIENTS.find(function(i){ return i.id === id; }); }
+function escapeHtml(str) { return String(str).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function escapeJs(str) { return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+function getDishIngredients(recipe) {
+    if (state.discoveredIngredients[recipe]) return state.discoveredIngredients[recipe];
+    for (var key in RECIPES) {
+        if (RECIPES[key].indexOf(recipe) !== -1) return key.split(',');
+    }
+    return [];
+}
+
+function getDishValue(recipe) {
+    return getDishIngredients(recipe).reduce(function(sum, id){ 
+        var ing = getIng(id); return sum + (ing ? ing.price : 0); 
+    }, 0);
+}
+
+function getDishRarity(recipe) {
+    if (state.discoveredRarity[recipe]) return state.discoveredRarity[recipe];
+    var r = calcRating(getDishIngredients(recipe));
+    return r >= 10 ? 'legendary' : r >= 8 ? 'epic' : r >= 6 ? 'rare' : 'common';
+}
+
+function toast(msg, type) {
+    type = type || 'info';
+    var container = $id('toasts');
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    container.appendChild(el);
+    setTimeout(function() {
+        el.classList.add('out');
+        setTimeout(function(){ el.remove(); }, 300);
+    }, 2800);
+}
+
+var Audio = {
+    ctx: null,
+    init: function() { if (this.ctx) return; try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} },
+    play: function(freq, dur, type, vol) {
+        if (!state.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+            var osc = this.ctx.createOscillator();
+            var gain = this.ctx.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(vol || 0.1, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime);
+            osc.stop(this.ctx.currentTime + dur);
+        } catch(e) {}
+    },
+    click: function() { this.play(880, 0.08, 'sine', 0.08); },
+    coin: function() { var self = this; this.play(1000, 0.08, 'sine', 0.12); setTimeout(function(){ self.play(1400, 0.12, 'sine', 0.1); }, 60); },
+    ding: function() { var self = this; this.play(1200, 0.15, 'sine', 0.15); setTimeout(function(){ self.play(1600, 0.2, 'sine', 0.12); }, 100); },
+    error: function() { this.play(200, 0.2, 'square', 0.1); },
+    sizzle: function() { if (!state.soundEnabled) return; var self = this; for (var i = 0; i < 5; i++) setTimeout(function(){ self.play(200 + Math.random() * 400, 0.05, 'sawtooth', 0.03); }, i * 60); },
+    arrive: function() { var self = this; this.play(880, 0.1, 'sine', 0.13); setTimeout(function(){ self.play(1320, 0.15, 'sine', 0.11); }, 90); },
+    leave: function() { var self = this; this.play(440, 0.15, 'triangle', 0.1); setTimeout(function(){ self.play(280, 0.22, 'triangle', 0.1); }, 130); }
+};
+
+function getRequiredXP(lvl) {
+    if (lvl <= 1) return 5;
+    return Math.floor(5 + (lvl - 1) * 5 + Math.pow(lvl, 1.5));
+}
+
+function getRarityName(r) {
+    return { common:'Обычное', rare:'Редкое', epic:'Эпическое', legendary:'Легендарное' }[r] || 'Обычное';
+}
+
+function calcRating(ids) {
+    var items = ids.map(getIng).filter(Boolean);
+    var score = 0, bonus = 0;
+    var cats = {
+        meat: ['meat','chicken','pork','beef','lamb','turkey','sausage','bacon','ham','chorizo','duck','rabbit','venison','wagyu','kobe'],
+        fish: ['fish','salmon','tuna','cod','shrimp','lobster','oyster','mussels','squid','octopus','crab','scallop','eel'],
+        veggie: ['tomato','onion','carrot','mushroom','garlic','cabbage','potato','cucumber','beet','pumpkin','pepper','basil','broccoli','spinach','zucchini','eggplant','corn','peas','asparagus','artichoke','celery','leek','truffle'],
+        fruit: ['apple','orange','berry','lemon','fig','pomegranate','banana','peach','pear','grape','watermelon','melon','kiwi','mango','pineapple','coconut','cherry','blueberry','raspberry','avocado','lime','apricot','plum'],
+        dairy: ['cheese','milk','butter','egg','cream','yogurt','quail_egg','sour_cream','cottage','mozzarella','parmesan','feta','blue_cheese','brie'],
+        grain: ['flour','bread','rice','noodles','pasta','buckwheat','oats','quinoa','couscous'],
+        spice: ['salt','pepper','basil','mint','ginger','garlic','honey','sauce','soy_sauce','vinegar','mayo','ketchup','mustard','cinnamon','vanilla','nutmeg','oregano','thyme','rosemary','curry','paprika','turmeric','chili','wasabi','chocolate','cocoa'],
+        luxury: ['caviar','truffle','foie_gras','saffron','gold_leaf','wagyu','kobe','lobster','oyster']
+    };
+    var has = function(cat) { return items.some(function(i){ return cats[cat].indexOf(i.id) !== -1; }); };
+    if (has('meat')) score += 3;
+    if (has('fish')) score += 3;
+    if (has('veggie')) score += 2;
+    if (has('fruit')) score += 2;
+    if (has('dairy')) score += 2;
+    if (has('grain')) score += 1;
+    if (has('spice')) score += 1;
+    if (has('luxury')) score += 5;
+    getActiveEvents().forEach(function(ev) {
+        if (ev.bonus === 'pumpkin' && items.some(function(i){ return i.id === 'pumpkin'; })) score += 2;
+        if (ev.bonus === 'meat' && has('meat')) score += 2;
+    });
+    if (has('meat') && has('veggie')) bonus += 1;
+    if (has('fish') && items.some(function(i){ return i.id === 'lemon'; })) bonus += 1;
+    if (has('dairy') && has('grain')) bonus += 1;
+    if (has('fruit') && has('spice')) bonus += 1;
+    if (has('luxury') && has('meat')) bonus += 2;
+    if (has('luxury') && has('fish')) bonus += 2;
+    if (has('luxury') && has('fruit')) bonus += 2;
+    return Math.min(10, Math.max(1, Math.round(score + bonus)));
+}
+
+function getActiveEvents() {
+    var month = new Date().getMonth();
+    return EVENTS.filter(function(ev){ return ev.months.indexOf(month) !== -1; });
+}
+
+function getRestaurantIncome() {
+    var income = 0;
+    UPGRADES.forEach(function(u){ if (state.upgrades[u.id]) income += u.income; });
+    return income;
+}
+
+function generateDish(ids) {
+    var items = ids.map(getIng).filter(Boolean);
+    var has = function(arr) { return items.some(function(i){ return arr.indexOf(i.id) !== -1; }); };
+    if (has(['caviar'])) return '🟠 Икорный деликатес';
+    if (has(['lobster'])) return '🦞 Лобстер по-королевски';
+    if (has(['oyster'])) return '🦪 Свежие устрицы';
+    if (has(['truffle'])) return '🍄 Трюфельный изыск';
+    if (has(['foie_gras'])) return '🦆 Фуа-гра';
+    if (has(['wagyu'])) return '🥩 Вагю на гриле';
+    if (has(['kobe'])) return '🥩 Стейк Кобе';
+    if (has(['gold_leaf'])) return '✨ Золотой деликатес';
+    var hasMeat = has(['meat','chicken','pork','beef','lamb','turkey','sausage','bacon','ham','chorizo','duck','rabbit','venison']);
+    var hasFish = has(['fish','salmon','tuna','cod','shrimp','lobster','oyster','mussels','squid','octopus','crab','scallop','eel']);
+    var hasVeg = has(['tomato','onion','carrot','mushroom','garlic','cabbage','potato','cucumber','beet','pumpkin','pepper','basil','broccoli','spinach','zucchini','eggplant','corn','peas','asparagus','artichoke','celery','leek']);
+    var hasFruit = has(['apple','orange','berry','lemon','fig','pomegranate','banana','peach','pear','grape','watermelon','melon','kiwi','mango','pineapple','coconut','cherry','blueberry','raspberry','avocado','lime','apricot','plum']);
+    var hasDairy = has(['cheese','milk','butter','egg','cream','yogurt','quail_egg','sour_cream','cottage','mozzarella','parmesan','feta','blue_cheese','brie']);
+    var hasGrain = has(['flour','bread','rice','noodles','pasta','buckwheat','oats','quinoa','couscous']);
+    var hasSweet = has(['honey','sugar','chocolate','cocoa']);
+    if (hasMeat && hasVeg) {
+        if (has(['chicken'])) return '🍗 Курица с овощами';
+        if (has(['beef'])) return '🥩 Говядина с овощами';
+        if (has(['pork'])) return '🐖 Свинина с овощами';
+        return '🥩 Мясное ассорти';
+    }
+    if (hasFish && hasVeg) {
+        if (has(['salmon'])) return '🐟 Лосось с овощами';
+        if (has(['shrimp'])) return '🦐 Креветки с овощами';
+        return '🐟 Рыба с овощами';
+    }
+    if (hasVeg && has(['milk','cream'])) {
+        if (has(['tomato'])) return '🥣 Томатный суп';
+        if (has(['mushroom'])) return '🍄 Грибной крем-суп';
+        if (has(['pumpkin'])) return '🎃 Тыквенный суп';
+        return '🥣 Овощной суп';
+    }
+    if (hasGrain && hasVeg) {
+        if (has(['rice'])) return '🍚 Рис с овощами';
+        if (has(['noodles'])) return '🍜 Лапша с овощами';
+        if (has(['pasta'])) return '🍝 Паста с овощами';
+        return '🍚 Гарнир с овощами';
+    }
+    if (hasFruit && hasSweet) {
+        if (has(['apple'])) return '🍎 Яблочный штрудель';
+        if (has(['berry'])) return '🍓 Ягодный мусс';
+        if (has(['chocolate'])) return '🍫 Шоколадный десерт';
+        return '🍰 Фруктовый десерт';
+    }
+    if (hasDairy && hasGrain) {
+        if (has(['egg'])) return '🍳 Омлет';
+        if (has(['flour'])) return '🥞 Блины';
+        return '🧀 Сырная запеканка';
+    }
+    if (hasFruit && has(['milk','water','cream','yogurt'])) {
+        if (has(['lemon'])) return '🍋 Лимонад';
+        if (has(['berry'])) return '🍓 Смузи';
+        if (has(['banana'])) return '🍌 Банановый коктейль';
+        return '🍹 Фруктовый коктейль';
+    }
+    if (hasFish && hasGrain) {
+        if (has(['rice'])) return '🍣 Суши';
+        if (has(['noodles'])) return '🍜 Лапша с рыбой';
+        return '🐟 Рыба с гарниром';
+    }
+    if (hasMeat && hasGrain) {
+        if (has(['rice'])) return '🍛 Мясо с рисом';
+        if (has(['noodles'])) return '🍜 Лапша с мясом';
+        if (has(['pasta'])) return '🍝 Паста с мясом';
+        return '🥩 Мясо с гарниром';
+    }
+    if (hasSweet && hasDairy) return '🍰 Сладкий десерт';
+    var main = items.find(function(i){ return ['meat','chicken','fish','cheese','egg','potato','apple','rice','pasta'].indexOf(i.id) !== -1; });
+    if (main) return '🍽️ ' + main.name.replace(/^[^\s]+\s/,'') + ' по-домашнему';
+    return null;
+}
+
+function getAvailableDishes() {
+    var dishes = [];
+    for (var key in RECIPES) {
+        var ings = key.split(',');
+        var ok = ings.every(function(i){ return state.unlocked.indexOf(i) !== -1; });
+        if (ok) {
+            RECIPES[key].forEach(function(r) {
+                if (dishes.indexOf(r) === -1) dishes.push(r);
+            });
+        }
+    }
+    state.discovered.forEach(function(r) {
+        if (r.indexOf('✏️') === 0 && dishes.indexOf(r) === -1) dishes.push(r);
+    });
+    return dishes;
+}
+
+var TABS = {
+    cook: [{ id:'cook', name:'🍲 Готовить' }, { id:'book', name:'📖 Последние' }],
+    restaurant: [{ id:'customers', name:'👥 Клиенты' }, { id:'upgrades', name:'🛠️ Апгрейды' }, { id:'events', name:'🎁 События' }],
+    shop: [],
+    progress: [{ id:'collection', name:'📖 Книга' }, { id:'achievements', name:'🏆 Ачивки' }, { id:'skills', name:'🎯 Скиллы' }]
+};
+
+function switchMain(tab) {
+    Audio.click();
+    state.activeMain = tab;
+    var navBtns = document.querySelectorAll('.nav-btn');
+    for (var i = 0; i < navBtns.length; i++) {
+        navBtns[i].classList.toggle('active', navBtns[i].dataset.tab === tab);
+    }
+    renderSubTabs();
+    renderContent();
+}
+
+function switchSub(sub) {
+    Audio.click();
+    state.activeSub[state.activeMain] = sub;
+    renderSubTabs();
+    renderContent();
+}
+
+function renderSubTabs() {
+    var subs = TABS[state.activeMain];
+    var el = $id('subTabs');
+    if (subs.length === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'flex';
+    var current = state.activeSub[state.activeMain];
+    el.innerHTML = subs.map(function(s) {
+        return '<button class="sub-tab ' + (s.id === current ? 'active' : '') + '" onclick="switchSub(\'' + s.id + '\')">' + s.name + '</button>';
+    }).join('');
+}
+
+function updateStats() {
+    $id('s-level').textContent = state.level;
+    $id('s-coins').textContent = state.coins;
+    $id('s-rep').textContent = state.reputation;
+    $id('s-xp').textContent = Math.max(0, getRequiredXP(state.level) - state.xp);
+}
+
+function renderContent() {
+    var main = state.activeMain;
+    var sub = state.activeSub[main];
+    var content = $id('content');
+    var html = '';
+    if (main === 'cook') html = sub === 'cook' ? renderCookingPanel() : renderBookQuickPanel();
+    else if (main === 'restaurant') {
+        if (sub === 'customers') html = renderCustomersPanel();
+        else if (sub === 'upgrades') html = renderUpgradesPanel();
+        else if (sub === 'events') html = renderEventsPanel();
+    }
+    else if (main === 'shop') html = renderShopPanel();
+    else if (main === 'progress') {
+        if (sub === 'collection') html = renderCollectionPanel();
+        else if (sub === 'achievements') html = renderAchievementsPanel();
+        else if (sub === 'skills') html = renderSkillsPanel();
+    }
+    content.innerHTML = html;
+    updateStats();
+    if (main === 'restaurant' && sub === 'customers') syncCustomerTimers();
+}
+
+function renderCookingPanel() {
+    var unlockedByCat = {};
+    INGREDIENTS.forEach(function(ing) {
+        if (state.unlocked.indexOf(ing.id) === -1) return;
+        if (!unlockedByCat[ing.cat]) unlockedByCat[ing.cat] = [];
+        unlockedByCat[ing.cat].push(ing);
+    });
+    var grid = '';
+    for (var cat in CATEGORY_NAMES) {
+        var items = unlockedByCat[cat];
+        if (!items || items.length === 0) continue;
+        grid += '<div class="ingredient-category">' + CATEGORY_NAMES[cat] + '</div><div class="ingredient-grid">';
+        items.forEach(function(ing) {
+            var sel = state.selected.indexOf(ing.id) !== -1 ? ' selected' : '';
+            grid += '<button class="ing-btn' + sel + '" data-ing="' + ing.id + '" onclick="toggleIng(\'' + ing.id + '\')">' + ing.name + '</button>';
+        });
+        grid += '</div>';
+    }
+    var selectedNames = state.selected.map(function(id){ return (getIng(id) || {}).name || id; }).join(', ') || '—';
+    return '<div class="panel active">' +
+        '<div class="kitchen">' +
+        '<div class="steam"></div><div class="steam"></div><div class="steam"></div><div class="steam"></div>' +
+        '<div class="pot"></div></div>' +
+        '<div class="scroll-area">' + grid +
+        '<div class="selected-row">Выбрано: <b>' + selectedNames + '</b></div>' +
+        '<button class="btn btn-primary" id="cookBtn" onclick="startCooking()" ' + (state.selected.length !== 3 || state.isCooking ? 'disabled' : '') + '>🍲 Готовить!</button>' +
+        '<button class="btn btn-secondary" onclick="clearSelection()">🔄 Очистить</button>' +
+        '<div id="choiceArea"></div>' +
+        '<div id="resultArea"></div>' +
+        '</div></div>';
+}
+
+function renderBookQuickPanel() {
+    var last = state.discovered.slice(-15).reverse();
+    if (last.length === 0) return '<div class="panel active"><div class="empty-state"><span class="empty-icon">📖</span>Пока ничего не готовил</div></div>';
+    return '<div class="panel active"><div class="scroll-area">' +
+        last.map(function(r) {
+            return '<div class="book-item rarity-' + (state.discoveredRarity[r] || getDishRarity(r)) + '">' +
+                '<span>' + escapeHtml(r) + ' ⭐' + (state.discoveredRatings[r] || '?') + '/10</span></div>';
+        }).join('') + '</div></div>';
+}
+
+function toggleIng(id) {
+    if (state.isCooking) return;
+    Audio.click();
+    if (state.selected.indexOf(id) !== -1) {
+        state.selected = state.selected.filter(function(i){ return i !== id; });
+    } else {
+        if (state.selected.length >= 3) { toast('Максимум 3 ингредиента!', 'warning'); return; }
+        state.selected.push(id);
+    }
+    var btn = document.querySelector('[data-ing="' + id + '"]');
+    if (btn) btn.classList.toggle('selected', state.selected.indexOf(id) !== -1);
+    var selText = document.querySelector('.selected-row b');
+    if (selText) {
+        selText.textContent = state.selected.map(function(i){ return (getIng(i) || {}).name || i; }).join(', ') || '—';
+    }
+    var cookBtn = $id('cookBtn');
+    if (cookBtn) cookBtn.disabled = state.selected.length !== 3 || state.isCooking;
+}
+
+function clearSelection() {
+    Audio.click();
+    state.selected = [];
+    var selBtns = document.querySelectorAll('.ing-btn.selected');
+    for (var i = 0; i < selBtns.length; i++) selBtns[i].classList.remove('selected');
+    var selText = document.querySelector('.selected-row b');
+    if (selText) selText.textContent = '—';
+    var cookBtn = $id('cookBtn');
+    if (cookBtn) cookBtn.disabled = true;
+}
+
+function renderCustomersPanel() {
+    if (state.customers.length === 0) {
+        return '<div class="panel active"><div class="empty-state"><span class="empty-icon">😴</span>Ресторан пуст<br><span style="font-size:10px;">Клиенты приходят сами</span></div></div>';
+    }
+    var html = state.customers.map(function(c) {
+        var percent = (c.patienceLeft / c.maxPatience) * 100;
+        var color = percent > 60 ? '#27ae60' : percent > 30 ? '#f39c12' : '#e74c3c';
+        var hasReady = (state.readyDishes[c.order] || 0) > 0;
+        var isKnown = state.discovered.indexOf(c.order) !== -1;
+        var btn;
+        if (hasReady) {
+            var count = state.readyDishes[c.order];
+            btn = '<button class="serve-btn" onclick="serveCustomer(\'' + c.uid + '\')">🍽️ Отдать' + (count > 1 ? ' ×' + count : '') + '</button>';
+        } else if (isKnown) {
+            btn = '<button class="serve-btn disabled">⏳ Приготовь</button>';
+        } else {
+            btn = '<button class="serve-btn disabled">❌ Готовь блюдо</button>';
+        }
+        return '<div class="customer type-' + c.type.id + '" data-cid="' + c.uid + '">' +
+            '<div class="cust-avatar">' + c.avatar + '</div>' +
+            '<div class="cust-info">' +
+            '<div class="cust-name"><span>' + c.name + '</span>' +
+            '<span class="cust-type">' + c.type.badge + ' ' + c.type.name + '</span>' +
+            (c.isSpecial ? '<span class="cust-special">🔥 ×2</span>' : '') +
+            '<span class="cust-time" style="color:' + color + '">⏱️ ' + Math.ceil(c.patienceLeft) + 'с</span></div>' +
+            '<div class="cust-order">Хочет: ' + escapeHtml(c.order) + '</div>' +
+            '<div class="patience-bar"><div class="patience-fill" style="width:' + percent + '%;background:' + color + '"></div></div>' +
+            '</div>' +
+            '<div class="cust-right"><div class="cust-reward">' + c.reward + '🪙</div>' + btn + '</div>' +
+            '</div>';
+    }).join('');
+    return '<div class="panel active"><div class="scroll-area">' + html +
+        '<div class="empty-state" style="font-size:10px;padding:8px;">🚪 Макс 3 · Репа влияет на частоту</div>' +
+        '</div></div>';
+}
+
+function syncCustomerTimers() {
+    state.customers.forEach(function(c) {
+        var el = document.querySelector('[data-cid="' + c.uid + '"]');
+        if (!el) return;
+        var timeEl = el.querySelector('.cust-time');
+        var barEl = el.querySelector('.patience-fill');
+        var percent = (c.patienceLeft / c.maxPatience) * 100;
+        var color = percent > 60 ? '#27ae60' : percent > 30 ? '#f39c12' : '#e74c3c';
+        if (timeEl) { timeEl.textContent = '⏱️ ' + Math.ceil(c.patienceLeft) + 'с'; timeEl.style.color = color; }
+        if (barEl) { barEl.style.width = percent + '%'; barEl.style.background = color; }
+    });
+}
+
+function renderUpgradesPanel() {
+    var owned = UPGRADES.filter(function(u){ return state.upgrades[u.id]; });
+    var income = getRestaurantIncome();
+    var level = 1 + Math.floor(owned.length / 3);
+    var upgradesHtml = UPGRADES.map(function(u) {
+        var has = state.upgrades[u.id];
+        var canBuy = !has && state.coins >= u.price;
+        return '<div class="card ' + (has ? 'unlocked' : '') + '">' +
+            '<div class="card-icon">' + u.icon + '</div>' +
+            '<div class="card-body"><div class="card-title ' + (has ? '' : 'locked') + '">' + u.name + '</div>' +
+            '<div class="card-desc">' + u.desc + '</div></div>' +
+            (has ? '<span style="color:var(--gold);font-size:14px;">✓</span>' :
+                '<button class="card-action" onclick="buyUpgrade(\'' + u.id + '\')" ' + (!canBuy ? 'disabled' : '') + '>' + u.price + '🪙</button>') +
+            '</div>';
+    }).join('');
+    var sceneHtml = owned.length === 0
+        ? '<div style="color:var(--text-dim);font-size:11px;">Пока пусто</div>'
+        : owned.map(function(u){ return '<div class="table-item">' + u.icon + '</div>'; }).join('');
+    return '<div class="panel active"><div class="scroll-area">' +
+        '<div class="restaurant-scene">' + sceneHtml + '</div>' +
+        '<div class="restaurant-info">Ур. ресторана: <b>' + level + '</b> · Доход: <b>' + income + '</b>🪙/мин</div>' +
+        upgradesHtml +
+        '<button class="btn btn-gold" onclick="collectIncome()">💰 Собрать доход</button>' +
+        '</div></div>';
+}
+
+function renderEventsPanel() {
+    var events = getActiveEvents();
+    var eventsHtml = '';
+    if (events.length === 0) eventsHtml = '<div style="text-align:center;color:var(--text-dim);font-size:11px;padding:10px;">Сейчас нет активных событий</div>';
+    else eventsHtml = events.map(function(ev) {
+        return '<div class="event-card"><div class="event-icon">' + ev.icon + '</div>' +
+            '<div class="event-title">' + ev.name + '</div>' +
+            '<div class="event-desc">' + ev.desc + '</div>' +
+            '<div class="event-timer">⏰ ' + ev.duration + '</div></div>';
+    }).join('');
+    var tasksHtml = state.dailyOrders.length === 0 ? '' : state.dailyOrders.map(function(o, i) {
+        var p = Math.min(100, (o.progress / o.target) * 100);
+        var canClaim = o.progress >= o.target && !o.claimed;
+        return '<div class="task-card"><div class="task-title">' + o.desc + '</div>' +
+            '<div class="task-progress"><div class="task-progress-fill" style="width:' + p + '%"></div></div>' +
+            '<div class="task-row"><span>' + o.progress + '/' + o.target + '</span>' +
+            (o.claimed ? '<span style="color:var(--success);">✓ Получено</span>' :
+                canClaim ? '<button class="card-action" onclick="claimDaily(' + i + ')">Получить ' + o.reward + '🪙</button>' :
+                '<span>' + o.reward + '🪙</span>') +
+            '</div></div>';
+    }).join('');
+    var contestHtml = !state.contest ? '' : (function() {
+        var c = state.contest;
+        var p = Math.min(100, (c.progress / c.target) * 100);
+        var canClaim = c.progress >= c.target && !c.claimed;
+        return '<div class="contest-card"><div class="contest-title">' + c.name + '</div>' +
+            '<div style="color:var(--text-dim);font-size:11px;">' + c.desc + '</div>' +
+            '<div class="contest-prize">🎁 ' + c.reward + '🪙</div>' +
+            '<div class="task-progress" style="background:var(--bg-1);"><div class="task-progress-fill" style="width:' + p + '%"></div></div>' +
+            '<div style="color:var(--text-dim);font-size:11px;margin-top:4px;">' + c.progress + '/' + c.target + '</div>' +
+            (c.claimed ? '<div style="color:var(--success);font-size:12px;margin-top:6px;">✓ Пройден!</div>' :
+                canClaim ? '<button class="card-action" style="margin-top:6px;" onclick="claimContest()">🏆 Получить</button>' : '') +
+            '</div>';
+    })();
+    return '<div class="panel active"><div class="scroll-area">' + eventsHtml +
+        (tasksHtml ? '<div style="color:var(--gold);text-align:center;font-size:13px;margin:10px 0 6px;">📋 Ежедневные заказы</div>' + tasksHtml : '') +
+        (contestHtml ? '<div style="color:var(--gold);text-align:center;font-size:13px;margin:10px 0 6px;">🏆 Конкурс недели</div>' + contestHtml : '') +
+        '</div></div>';
+}
+
+function renderShopPanel() {
+    var byCat = {};
+    INGREDIENTS.forEach(function(ing) {
+        if (!byCat[ing.cat]) byCat[ing.cat] = [];
+        byCat[ing.cat].push(ing);
+    });
+    var html = '';
+    for (var cat in CATEGORY_NAMES) {
+        var items = byCat[cat];
+        if (!items || items.length === 0) continue;
+        html += '<div class="shop-header">' + CATEGORY_NAMES[cat] + '</div>';
+        items.forEach(function(ing) {
+            var has = state.unlocked.indexOf(ing.id) !== -1;
+            var canBuy = !has && state.coins >= ing.price;
+            if (has) {
+                html += '<div class="shop-item owned"><span>' + ing.name + '</span><span style="color:var(--text-dim);font-size:10px;">✅ Куплено</span></div>';
+            } else {
+                html += '<div class="shop-item"><span>' + ing.name + ' <span style="color:var(--text-dim);">(' + ing.price + '🪙)</span></span>' +
+                    '<button class="buy-btn" onclick="buyIngredient(\'' + ing.id + '\')" ' + (!canBuy ? 'disabled' : '') + '>Купить</button></div>';
+            }
+        });
+    }
+    return '<div class="panel active"><div class="scroll-area">' + html + '</div></div>';
+}
+
+function renderCollectionPanel() {
+    if (state.discovered.length === 0) {
+        return '<div class="panel active"><div class="empty-state"><span class="empty-icon">📖</span>Коллекция пуста</div></div>';
+    }
+    var html = state.discovered.map(function(r) {
+        var rating = state.discoveredRatings[r] || '?';
+        var rarity = state.discoveredRarity[r] || getDishRarity(r);
+        return '<div class="book-item rarity-' + rarity + '" onclick="showRecipeDetail(\'' + escapeJs(r) + '\')">' +
+            '<span>' + escapeHtml(r) + ' ⭐' + rating + '/10</span>' +
+            '<span class="rename-btn" onclick="event.stopPropagation(); renameRecipe(\'' + escapeJs(r) + '\')">✏️</span>' +
+            '</div>';
+    }).join('');
+    var total = 0;
+    for (var k in RECIPES) total += RECIPES[k].length;
+    total += 200;
+    return '<div class="panel active"><div class="scroll-area">' +
+        '<div style="text-align:center;color:var(--text-dim);font-size:11px;margin-bottom:8px;">Собрано: ' + state.discovered.length + '/' + total + '</div>' +
+        '<div id="recipeDetail"></div>' + html + '</div></div>';
+}
+
+function showRecipeDetail(recipe) {
+    var el = $id('recipeDetail');
+    if (!el) return;
+    if (el.dataset.active === recipe) { el.innerHTML = ''; el.dataset.active = ''; return; }
+    el.dataset.active = recipe;
+    var ings = getDishIngredients(recipe);
+    var names = ings.map(function(id){ return (getIng(id) || {}).name || id; }).join(', ');
+    var value = getDishValue(recipe);
+    el.innerHTML = '<div class="detail-box"><b style="color:var(--gold);">' + escapeHtml(recipe) + '</b><br>' +
+        getRarityName(state.discoveredRarity[recipe]) + '<br>🧂 ' + names + '<br>💰 Стоимость: ' + value + '🪙</div>';
+}
+
+function renameRecipe(oldName) {
+    var newName = prompt('Новое название:', oldName);
+    if (!newName || !newName.trim()) return;
+    var trimmed = newName.trim();
+    if (state.discovered.indexOf(trimmed) !== -1 && trimmed !== oldName) { toast('Такое блюдо уже есть!', 'warning'); return; }
+    var idx = state.discovered.indexOf(oldName);
+    if (idx === -1) return;
+    state.discovered[idx] = trimmed;
+    state.discoveredIngredients[trimmed] = state.discoveredIngredients[oldName];
+    state.discoveredRatings[trimmed] = state.discoveredRatings[oldName];
+    state.discoveredRarity[trimmed] = state.discoveredRarity[oldName];
+    delete state.discoveredIngredients[oldName];
+    delete state.discoveredRatings[oldName];
+    delete state.discoveredRarity[oldName];
+    renderContent();
+}
+
+function renderAchievementsPanel() {
+    var html = ACHIEVEMENTS.map(function(a) {
+        var has = state.achievements[a.id];
+        return '<div class="card ' + (has ? 'unlocked' : '') + '">' +
+            '<div class="card-icon">' + a.icon + '</div>' +
+            '<div class="card-body"><div class="card-title ' + (has ? '' : 'locked') + '">' + a.name + '</div>' +
+            '<div class="card-desc">' + a.desc + '</div></div>' +
+            (has ? '<span style="color:var(--gold);font-size:14px;">✓</span>' : '') +
+            '</div>';
+    }).join('');
+    return '<div class="panel active"><div class="scroll-area">' + html + '</div></div>';
+}
+
+function renderSkillsPanel() {
+    var skillsHtml = SKILLS.map(function(s) {
+        var owned = state.skills[s.id] || 0;
+        var canBuy = owned < s.max && state.coins >= s.price;
+        return '<div class="card ' + (owned > 0 ? 'unlocked' : '') + '">' +
+            '<div class="card-icon">' + s.name.split(' ')[0] + '</div>' +
+            '<div class="card-body"><div class="card-title">' + s.name.replace(/^[^\s]+\s/, '') + (owned > 0 ? ' (' + owned + '/' + s.max + ')' : '') + '</div>' +
+            '<div class="card-desc">' + s.desc + '</div></div>' +
+            (owned < s.max ? '<button class="card-action" onclick="buySkill(\'' + s.id + '\')" ' + (!canBuy ? 'disabled' : '') + '>' + s.price + '🪙</button>' : '<span style="color:var(--gold);font-size:14px;">✓</span>') +
+            '</div>';
+    }).join('');
+    var artsHtml = ARTIFACTS.map(function(a) {
+        var has = state.artifacts.indexOf(a.id) !== -1;
+        var canBuy = !has && state.coins >= a.price;
+        return '<div class="card ' + (has ? 'unlocked' : '') + '">' +
+            '<div class="card-icon">' + a.name.split(' ')[0] + '</div>' +
+            '<div class="card-body"><div class="card-title">' + a.name.replace(/^[^\s]+\s/, '') + '</div>' +
+            '<div class="card-desc">' + a.desc + '</div></div>' +
+            (has ? '<span style="color:var(--gold);font-size:14px;">✓</span>' : '<button class="card-action" onclick="buyArtifact(\'' + a.id + '\')" ' + (!canBuy ? 'disabled' : '') + '>' + a.price + '🪙</button>') +
+            '</div>';
+    }).join('');
+    return '<div class="panel active"><div class="scroll-area">' +
+        '<div style="color:var(--gold);text-align:center;font-size:14px;margin-bottom:8px;">📈 Скиллы</div>' + skillsHtml +
+        '<div style="color:var(--gold);text-align:center;font-size:14px;margin:14px 0 8px;">🎁 Артефакты</div>' + artsHtml +
+        '</div></div>';
+}
+
+function startCooking() {
+    if (state.selected.length !== 3 || state.isCooking) return;
+    state.isCooking = true;
+    var ings = state.selected.slice();
+    var key = ings.slice().sort().join(',');
+    var recipes = RECIPES[key];
+    if (recipes && recipes.length > 0) {
+        var available = recipes.filter(function(r){ return state.discovered.indexOf(r) === -1; });
+        if (available.length === 0) {
+            cookAnimation(function(){ finishCooking(recipes[0], ings, true); });
+            return;
+        }
+        if (available.length === 1) {
+            cookAnimation(function(){ finishCooking(available[0], ings, false); });
+            return;
+        }
+        state.isCooking = false;
+        var area = $id('choiceArea');
+        if (area) {
+            area.innerHTML = '<div style="color:var(--gold);text-align:center;font-size:12px;margin:8px 0;">📋 Выбери блюдо:</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">' +
+                available.map(function(r, i) {
+                    return '<button class="btn" onclick="chooseRecipe(' + i + ', \'' + escapeJs(r) + '\')">' + escapeHtml(r) + '</button>';
+                }).join('') + '</div>';
+            window._availableIngredients = ings;
+        }
+        return;
+    }
+    for (var i = 0; i < state.discovered.length; i++) {
+        var r = state.discovered[i];
+        var isStd = false;
+        for (var k in RECIPES) { if (RECIPES[k].indexOf(r) !== -1) { isStd = true; break; } }
+        if (isStd) continue;
+        var ing = state.discoveredIngredients[r];
+        if (ing && ing.slice().sort().join(',') === key) {
+            cookAnimation(function(){ finishCooking(r, ings, true); });
+            return;
+        }
+    }
+    var auto = generateDish(ings);
+    if (auto) cookAnimation(function(){ finishCooking(auto, ings, false); });
+    else { state.isCooking = false; showCustomInput(ings); }
+}
+
+function chooseRecipe(idx, recipe) {
+    var area = $id('choiceArea');
+    if (area) area.innerHTML = '';
+    state.isCooking = true;
+    cookAnimation(function(){ finishCooking(recipe, window._availableIngredients, false); });
+}
+
+function cookAnimation(cb) {
+    var overlay = $id('cookOverlay');
+    var timer = $id('cookTimer');
+    overlay.classList.add('active');
+    Audio.sizzle();
+    var steps = ['2.5', '2', '1.5', '1', '0.5'];
+    var i = 0;
+    timer.textContent = steps[0];
+    var step = function() {
+        i++;
+        if (i >= steps.length) {
+            overlay.classList.remove('active');
+            cb();
+            return;
+        }
+        timer.textContent = steps[i];
+        Audio.click();
+        setTimeout(step, 500);
+    };
+    setTimeout(step, 500);
+}
+
+function finishCooking(recipeName, ings, isRepeat) {
+    state.readyDishes[recipeName] = (state.readyDishes[recipeName] || 0) + 1;
+    if (!isRepeat && state.discovered.indexOf(recipeName) === -1) {
+        var rating = calcRating(ings);
+        var rarity = rating >= 10 ? 'legendary' : rating >= 8 ? 'epic' : rating >= 6 ? 'rare' : 'common';
+        state.discovered.push(recipeName);
+        state.discoveredIngredients[recipeName] = ings.slice();
+        state.discoveredRatings[recipeName] = rating;
+        state.discoveredRarity[recipeName] = rarity;
+        state.cookedCount++;
+        var xpGain = Math.round(rating * 1.5 + (rarity === 'legendary' ? 10 : rarity === 'epic' ? 5 : 0));
+        addXP(xpGain);
+        var coinBonus = 1 + (state.skills.coin10 || 0) * 0.1 + (state.artifacts.indexOf('golden_ladle') !== -1 ? 0.2 : 0);
+        var coinGain = Math.round((rating * 2 + (rarity === 'legendary' ? 20 : rarity === 'epic' ? 10 : 0)) * coinBonus);
+        state.coins += coinGain;
+        checkAchievements();
+        checkDailyOrders(recipeName, ings);
+        checkContest(recipeName);
+        Audio.ding();
+        confetti();
+        toast('🎉 ' + recipeName + ' — ⭐' + rating + '/10 (+' + coinGain + '🪙)', 'gold');
+        showResultBox(recipeName, rating, rarity, coinGain, xpGain, false);
+    } else {
+        Audio.ding();
+        toast('✅ ' + recipeName + ' готово! (порций: ' + state.readyDishes[recipeName] + ')', 'success');
+        showResultBox(recipeName, state.discoveredRatings[recipeName] || 5, state.discoveredRarity[recipeName] || 'common', 0, 0, true);
+    }
+    state.selected = [];
+    state.isCooking = false;
+    updateStats();
+    if (state.activeMain === 'cook') renderContent();
+}
+
+function showResultBox(recipeName, rating, rarity, coinGain, xpGain, isRepeat) {
+    var area = $id('resultArea');
+    if (!area) return;
+    var stars = '⭐'.repeat(Math.round(rating / 2)) + '☆'.repeat(5 - Math.round(rating / 2));
+    var feedbacks = ['Ммм, пальчики оближешь!', 'Это просто шедевр!', 'Божественно!', 'Лучшее, что я пробовал!', 'Вкуснотища!', 'Объедение!'];
+    var fb = pick(feedbacks);
+    if (isRepeat) {
+        area.innerHTML = '<div class="result-box">' +
+            '<div class="result-name">' + escapeHtml(recipeName) + '</div>' +
+            '<div class="result-info" style="color:var(--accent);">✅ Готово для клиента!</div>' +
+            '<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Порций: ' + state.readyDishes[recipeName] + '</div>' +
+            '</div>';
+    } else {
+        area.innerHTML = '<div class="result-box">' +
+            '<div class="result-name">' + escapeHtml(recipeName) + '</div>' +
+            '<div class="result-stars">' + stars + '</div>' +
+            '<div class="result-info">⭐' + rating + '/10 · ' + getRarityName(rarity) + '</div>' +
+            '<div class="result-rewards">+' + coinGain + '🪙 +' + xpGain + '⭐</div>' +
+            '<div class="result-feedback">«' + fb + '»</div>' +
+            '</div>';
+    }
+    setTimeout(function(){ area.innerHTML = ''; }, 3500);
+}
+
+function showCustomInput(ings) {
+    var area = $id('resultArea');
+    if (!area) return;
+    area.innerHTML = '<div class="result-box">' +
+        '<div style="color:var(--text-dim);font-size:12px;margin-bottom:6px;">🤔 Придумай название</div>' +
+        '<input type="text" id="customName" placeholder="Название" style="width:90%;padding:8px;border-radius:8px;border:2px solid var(--accent);background:var(--bg-1);color:var(--gold);text-align:center;font-family:inherit;margin-bottom:6px;">' +
+        '<button class="btn btn-gold" onclick="saveCustom()">✅ Сохранить</button>' +
+        '</div>';
+    window._customIngs = ings;
+    setTimeout(function(){ var c = $id('customName'); if (c) c.focus(); }, 100);
+}
+
+function saveCustom() {
+    var inp = $id('customName');
+    if (!inp) return;
+    var name = inp.value.trim();
+    if (!name) { toast('Введи название!', 'warning'); return; }
+    var recipe = '✏️ ' + name;
+    if (state.discovered.indexOf(recipe) !== -1) { toast('Такое блюдо уже есть!', 'warning'); return; }
+    var ings = window._customIngs || state.selected;
+    var rating = calcRating(ings);
+    var rarity = rating >= 10 ? 'legendary' : rating >= 8 ? 'epic' : rating >= 6 ? 'rare' : 'common';
+    state.discovered.push(recipe);
+    state.discoveredIngredients[recipe] = ings.slice();
+    state.discoveredRatings[recipe] = rating;
+    state.discoveredRarity[recipe] = rarity;
+    state.readyDishes[recipe] = (state.readyDishes[recipe] || 0) + 1;
+    state.cookedCount++;
+    addXP(Math.round(rating * 1.5));
+    state.coins += Math.round(rating * 2);
+    checkAchievements();
+    toast('✏️ ' + recipe + ' ⭐' + rating + '/10', 'gold');
+    state.selected = [];
+    window._customIngs = null;
+    renderContent();
+}
+
+function addXP(amount) {
+    var bonus = 1 + (state.skills.xp10 || 0) * 0.1 + (state.artifacts.indexOf('magic_pan') !== -1 ? 0.15 : 0);
+    amount = Math.round(amount * bonus);
+    state.xp += amount;
+    var need = getRequiredXP(state.level);
+    while (state.xp >= need) {
+        state.xp -= need;
+        state.level++;
+        state.coins += 10 + state.level * 2;
+        need = getRequiredXP(state.level);
+        toast('🎉 Уровень ' + state.level + '! +' + (10 + state.level * 2) + '🪙', 'gold');
+        Audio.ding();
+    }
+    updateStats();
+}
+
+function confetti() {
+    var colors = ['#f0d5b0','#a67b5b','#e8dccc','#d4b59a','#c49070'];
+    for (var i = 0; i < 30; i++) {
+        (function(i) {
+            setTimeout(function() {
+                var c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.top = '-20px';
+                c.style.background = pick(colors);
+                c.style.animationDelay = Math.random() * 0.5 + 's';
+                c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                document.body.appendChild(c);
+                setTimeout(function(){ c.remove(); }, 2500);
+            }, i * 30);
+        })(i);
+    }
+}
+
+function buyIngredient(id) {
+    var ing = getIng(id);
+    if (!ing || state.unlocked.indexOf(id) !== -1) return;
+    if (state.coins < ing.price) { toast('Недостаточно монет!', 'danger'); return; }
+    state.coins -= ing.price;
+    state.unlocked.push(id);
+    Audio.coin();
+    toast('🛒 Куплено: ' + ing.name, 'success');
+    updateStats();
+    renderContent();
+}
+
+function buySkill(id) {
+    var skill = null;
+    for (var i = 0; i < SKILLS.length; i++) if (SKILLS[i].id === id) skill = SKILLS[i];
+    if (!skill) return;
+    var owned = state.skills[id] || 0;
+    if (owned >= skill.max || state.coins < skill.price) return;
+    state.coins -= skill.price;
+    state.skills[id] = owned + 1;
+    Audio.ding();
+    toast('📈 ' + skill.name, 'success');
+    updateStats();
+    renderContent();
+}
+
+function buyArtifact(id) {
+    var art = null;
+    for (var i = 0; i < ARTIFACTS.length; i++) if (ARTIFACTS[i].id === id) art = ARTIFACTS[i];
+    if (!art || state.artifacts.indexOf(id) !== -1 || state.coins < art.price) return;
+    state.coins -= art.price;
+    state.artifacts.push(id);
+    Audio.ding();
+    toast('🎁 ' + art.name, 'gold');
+    updateStats();
+    renderContent();
+}
+
+function buyUpgrade(id) {
+    var up = null;
+    for (var i = 0; i < UPGRADES.length; i++) if (UPGRADES[i].id === id) up = UPGRADES[i];
+    if (!up || state.upgrades[id] || state.coins < up.price) return;
+    state.coins -= up.price;
+    state.upgrades[id] = true;
+    Audio.ding();
+    toast('🏙️ ' + up.name + ' куплен!', 'success');
+    checkAchievements();
+    updateStats();
+    renderContent();
+}
+
+function collectIncome() {
+    var income = getRestaurantIncome();
+    if (income === 0) { toast('Нет улучшений', 'warning'); return; }
+    var now = Date.now();
+    var elapsed = Math.floor((now - state.lastIncomeTime) / 1000);
+    if (elapsed < 30) { toast('Подожди ' + (30 - elapsed) + 'с', 'warning'); return; }
+    var earned = income * Math.floor(elapsed / 60);
+    if (earned <= 0) { toast('Пока нечего собирать', 'warning'); return; }
+    state.coins += earned;
+    state.lastIncomeTime = now;
+    Audio.coin();
+    toast('💰 Собрано ' + earned + '🪙!', 'gold');
+    updateStats();
+    renderContent();
+}
+
+function pickCustomerType() {
+    var total = CUSTOMER_TYPES.reduce(function(s, t){ return s + t.chance; }, 0);
+    var r = Math.random() * total;
+    for (var i = 0; i < CUSTOMER_TYPES.length; i++) {
+        r -= CUSTOMER_TYPES[i].chance;
+        if (r <= 0) return CUSTOMER_TYPES[i];
+    }
+    return CUSTOMER_TYPES[0];
+}
+
+function isDishSuitable(recipe, type) {
+    var name = recipe.toLowerCase();
+    var ings = getDishIngredients(recipe);
+    if (type.id === 'vegan') {
+        var animal = ['meat','chicken','pork','beef','lamb','turkey','sausage','bacon','ham','chorizo','duck','rabbit','venison','fish','salmon','tuna','cod','shrimp','lobster','oyster','mussels','squid','octopus','crab','scallop','eel','milk','cheese','butter','egg','cream','yogurt','quail_egg','sour_cream','cottage','mozzarella','parmesan','feta','blue_cheese','brie','honey'];
+        return !ings.some(function(i){ return animal.indexOf(i) !== -1; });
+    }
+    if (type.id === 'child') return (state.discoveredRatings[recipe] || calcRating(ings)) >= 5;
+    if (type.id === 'gourmet' || type.id === 'critic') {
+        var r = getDishRarity(recipe);
+        return r === 'epic' || r === 'legendary';
+    }
+    if (type.id === 'rich') return getDishRarity(recipe) !== 'common';
+    if (type.id === 'elder') return /суп|борщ|каша|пюре|щи|уха/.test(name);
+    return true;
+}
+
+function spawnCustomer() {
+    var available = getAvailableDishes();
+    if (available.length === 0) return;
+    if (state.customers.length >= 3) return;
+    var type = pickCustomerType();
+    var suitable = available.filter(function(r){ return isDishSuitable(r, type); });
+    var pool = suitable.length > 0 ? suitable : available;
+    var recipe = pick(pool);
+    var name = pick(CUSTOMER_NAMES);
+    var avatar = pick(CUSTOMER_AVATARS);
+    var ings = getDishIngredients(recipe);
+    var rating = state.discoveredRatings[recipe] || calcRating(ings);
+    var dishValue = getDishValue(recipe);
+    var baseReward = Math.round(8 + dishValue * 1.8 + rating * 2 + Math.random() * 5);
+    var reward = Math.round(baseReward * type.mult);
+    var isSpecial = Math.random() < 0.2;
+    state.customers.push({
+        uid: Date.now() + '_' + Math.random().toString(36).slice(2,7),
+        name: name, avatar: avatar, order: recipe, reward: reward, type: type, isSpecial: isSpecial,
+        patienceLeft: type.patience,
+        maxPatience: type.patience
+    });
+    Audio.arrive();
+    toast(type.badge + ' ' + name + ' пришёл! Хочет: ' + recipe + (isSpecial ? ' 🔥×2' : ''), 'info');
+    if (state.activeMain === 'restaurant' && state.activeSub.restaurant === 'customers') renderContent();
+}
+
+function tickCustomers() {
+    if (state.customers.length === 0) return;
+    var before = state.customers.length;
+    state.customers.forEach(function(c){ c.patienceLeft -= 1; });
+    var leaving = state.customers.filter(function(c){ return c.patienceLeft <= 0; });
+    leaving.forEach(function(c) {
+        state.reputation = Math.max(0, state.reputation + c.type.repLeave);
+        toast('😡 ' + c.name + ' ушёл! ' + c.type.repLeave + ' репы', 'danger');
+    });
+    state.customers = state.customers.filter(function(c){ return c.patienceLeft > 0; });
+    if (state.customers.length !== before) {
+        Audio.leave();
+        updateStats();
+        if (state.activeMain === 'restaurant' && state.activeSub.restaurant === 'customers') renderContent();
+    } else {
+        if (state.activeMain === 'restaurant' && state.activeSub.restaurant === 'customers') syncCustomerTimers();
+    }
+}
+
+function serveCustomer(uid) {
+    var idx = -1;
+    for (var i = 0; i < state.customers.length; i++) if (state.customers[i].uid === uid) idx = i;
+    if (idx === -1) return;
+    var c = state.customers[idx];
+    var hasReady = (state.readyDishes[c.order] || 0) > 0;
+    if (!hasReady) return;
+    state.readyDishes[c.order]--;
+    if (state.readyDishes[c.order] <= 0) delete state.readyDishes[c.order];
+    var servedInTime = c.patienceLeft >= c.maxPatience - 10;
+    var reward = c.reward;
+    if (c.isSpecial && servedInTime) { reward *= 2; toast('🔥 ' + c.name + ': ×2 бонус!', 'gold'); }
+    state.coins += reward;
+    var repBonus = 1 + (state.skills.rep || 0) * 0.1 + (state.artifacts.indexOf('lucky_hat') !== -1 ? 0.1 : 0);
+    var repGain = Math.round(c.type.repServe * repBonus);
+    state.reputation = Math.min(100, state.reputation + repGain);
+    state.customers.splice(idx, 1);
+    state.servedCount++;
+    Audio.coin();
+    Audio.ding();
+    confetti();
+    toast('✅ ' + c.name + ' доволен! +' + reward + '🪙 +' + repGain + ' репы', 'success');
+    if (!state.achievements.first_customer) { state.achievements.first_customer = true; toast('🏆 Первый клиент!', 'gold'); }
+    if (state.servedCount >= 10 && !state.achievements.ten_customers) { state.achievements.ten_customers = true; toast('🏆 Официант!', 'gold'); }
+    var typeAch = 'serve_' + c.type.id;
+    if (c.type.id !== 'regular' && !state.achievements[typeAch]) {
+        state.achievements[typeAch] = true;
+        toast('🏆 Обслужен: ' + c.type.name + '!', 'gold');
+    }
+    updateStats();
+    renderContent();
+}
+
+function checkAchievements() {
+    var add = function(id, msg) { if (!state.achievements[id]) { state.achievements[id] = true; toast(msg, 'gold'); } };
+    if (state.cookedCount >= 1) add('first_dish', '🏆 Первое блюдо!');
+    if (state.cookedCount >= 10) add('ten_dishes', '🏆 Шеф-повар!');
+    if (state.cookedCount >= 100) add('hundred_dishes', '🏆 Мастер!');
+    if (state.coins >= 2000) add('rich', '🏆 Богач!');
+    if (state.level >= 10) add('level10', '🏆 Опытный!');
+    var last = state.discovered[state.discovered.length - 1];
+    if (state.discoveredRatings[last] === 10) add('perfect', '🏆 Идеально!');
+    var eggDishes = state.discovered.filter(function(r){ return (state.discoveredIngredients[r] || []).indexOf('egg') !== -1; });
+    if (eggDishes.length >= 5) add('egg_master', '🏆 Яичный магнат!');
+    var meatIds = ['meat','chicken','pork','beef','lamb','turkey','sausage','bacon','ham','chorizo','duck','rabbit','venison','wagyu','kobe'];
+    var meatDishes = state.discovered.filter(function(r){ 
+        return (state.discoveredIngredients[r] || []).some(function(i){ return meatIds.indexOf(i) !== -1; }); 
+    });
+    if (meatDishes.length >= 5) add('meat_lover', '🏆 Мясной гурман!');
+    var fishIds = ['fish','salmon','tuna','cod','shrimp','lobster','oyster','mussels','squid','octopus','crab','scallop','eel'];
+    var fishDishes = state.discovered.filter(function(r){ 
+        return (state.discoveredIngredients[r] || []).some(function(i){ return fishIds.indexOf(i) !== -1; }); 
+    });
+    if (fishDishes.length >= 5) add('fish_master', '🏆 Рыбный эксперт!');
+    if (Object.keys(state.upgrades).length >= 5) add('restaurateur', '🏆 Ресторатор!');
+}
+
+function generateDailyOrders() {
+    var today = new Date().toDateString();
+    if (state.dailyOrders.length > 0 && state.dailyOrders[0].date === today) return;
+    var types = [
+        { type:'meat', desc:'Приготовь 3 блюда с мясом', target:3, reward:200 },
+        { type:'egg', desc:'Приготовь 3 блюда с яйцом', target:3, reward:150 },
+        { type:'fish', desc:'Приготовь 2 блюда с рыбой', target:2, reward:250 },
+        { type:'fruit', desc:'Приготовь 3 фруктовых блюда', target:3, reward:180 },
+        { type:'veggie', desc:'Приготовь 5 овощных блюд', target:5, reward:130 },
+        { type:'luxury', desc:'Приготовь 1 деликатес', target:1, reward:500 }
+    ];
+    var shuffled = types.slice().sort(function(){ return Math.random() - 0.5; }).slice(0, 2);
+    state.dailyOrders = shuffled.map(function(o) {
+        return { type:o.type, desc:o.desc, target:o.target, reward:o.reward, progress:0, date:today, claimed:false };
+    });
+}
+
+function checkDailyOrders(recipeName, ings) {
+    generateDailyOrders();
+    var items = ings.map(getIng);
+    state.dailyOrders.forEach(function(o) {
+        if (o.claimed) return;
+        var m = {
+            meat: items.some(function(i){ return i && ['meat','chicken','pork','beef','lamb','turkey','sausage','bacon','ham','chorizo','duck','rabbit','venison','wagyu','kobe'].indexOf(i.id) !== -1; }),
+            egg: items.some(function(i){ return i && ['egg','quail_egg'].indexOf(i.id) !== -1; }),
+            fish: items.some(function(i){ return i && ['fish','salmon','tuna','cod','shrimp','lobster','oyster','mussels','squid','octopus','crab','scallop','eel'].indexOf(i.id) !== -1; }),
+            fruit: items.some(function(i){ return i && ['apple','orange','berry','lemon','fig','pomegranate','banana','peach','pear','grape','watermelon','melon','kiwi','mango','pineapple','coconut','cherry','blueberry','raspberry','avocado','lime','apricot','plum'].indexOf(i.id) !== -1; }),
+            veggie: items.some(function(i){ return i && ['tomato','onion','carrot','mushroom','garlic','cabbage','potato','cucumber','beet','pumpkin','pepper','basil','broccoli','spinach','zucchini','eggplant','corn','peas','asparagus','artichoke','celery','leek'].indexOf(i.id) !== -1; }),
+            luxury: items.some(function(i){ return i && ['caviar','truffle','foie_gras','saffron','gold_leaf','wagyu','kobe','lobster','oyster'].indexOf(i.id) !== -1; })
+        };
+        if (m[o.type]) o.progress++;
+    });
+}
+
+function claimDaily(i) {
+    var o = state.dailyOrders[i];
+    if (!o || o.claimed || o.progress < o.target) return;
+    o.claimed = true;
+    state.coins += o.reward;
+    Audio.coin();
+    toast('🎁 +' + o.reward + '🪙', 'gold');
+    updateStats();
+    renderContent();
+}
+
+function generateContest() {
+    var week = Math.floor(Date.now() / (7 * 24 * 3600 * 1000));
+    if (state.contest && state.contest.week === week) return;
+    var contests = [
+        { name:'🍕 Пицца недели', type:'pizza', desc:'Приготовь пиццу', target:1, reward:400 },
+        { name:'🍜 Лапша недели', type:'noodles', desc:'Лапша или паста', target:1, reward:500 },
+        { name:'🍰 Десерт недели', type:'dessert', desc:'3 десерта', target:3, reward:600 },
+        { name:'🐟 Рыба недели', type:'fish', desc:'2 рыбных блюда', target:2, reward:550 },
+        { name:'🥗 Салат недели', type:'salad', desc:'3 салата', target:3, reward:450 }
+    ];
+    var c = pick(contests);
+    state.contest = { name:c.name, type:c.type, desc:c.desc, target:c.target, reward:c.reward, week:week, progress:0, claimed:false };
+}
+
+function checkContest(recipeName) {
+    generateContest();
+    var c = state.contest;
+    if (!c || c.claimed) return;
+    var n = recipeName.toLowerCase();
+    if (c.type === 'pizza' && n.indexOf('пицца') !== -1) c.progress++;
+    if (c.type === 'noodles' && (n.indexOf('лапша') !== -1 || n.indexOf('паста') !== -1)) c.progress++;
+    if (c.type === 'dessert' && /десерт|штрудель|мусс|кекс|пирог/.test(n)) c.progress++;
+    if (c.type === 'fish' && /рыба|лосось|суши|кревет/.test(n)) c.progress++;
+    if (c.type === 'salad' && n.indexOf('салат') !== -1) c.progress++;
+}
+
+function claimContest() {
+    var c = state.contest;
+    if (!c || c.claimed || c.progress < c.target) return;
+    c.claimed = true;
+    state.coins += c.reward;
+    Audio.ding();
+    confetti();
+    toast('🏆 Конкурс! +' + c.reward + '🪙', 'gold');
+    updateStats();
+    renderContent();
+}
+
+function getSaveData(name) {
+    return {
+        name: name || 'Сохранение',
+        time: new Date().toLocaleString(),
+        data: {
+            discovered: state.discovered,
+            discoveredIngredients: state.discoveredIngredients,
+            discoveredRatings: state.discoveredRatings,
+            discoveredRarity: state.discoveredRarity,
+            cookedCount: state.cookedCount,
+            level: state.level,
+            xp: state.xp,
+            coins: state.coins,
+            reputation: state.reputation,
+            unlocked: state.unlocked,
+            achievements: state.achievements,
+            skills: state.skills,
+            artifacts: state.artifacts,
+            upgrades: state.upgrades,
+            readyDishes: state.readyDishes,
+            servedCount: state.servedCount,
+            dailyOrders: state.dailyOrders,
+            contest: state.contest
+        }
+    };
+}
+
+function applySave(save) {
+    var d = save.data;
+    state.discovered = d.discovered || [];
+    state.discoveredIngredients = d.discoveredIngredients || {};
+    state.discoveredRatings = d.discoveredRatings || {};
+    state.discoveredRarity = d.discoveredRarity || {};
+    state.cookedCount = d.cookedCount || 0;
+    state.level = d.level || 1;
+    state.xp = d.xp || 0;
+    state.coins = d.coins || 0;
+    state.reputation = d.reputation || 50;
+    state.unlocked = d.unlocked || START_INGREDIENTS.slice();
+    state.achievements = d.achievements || {};
+    state.skills = d.skills || {};
+    state.artifacts = d.artifacts || [];
+    state.upgrades = d.upgrades || {};
+    state.readyDishes = d.readyDishes || {};
+    state.servedCount = d.servedCount || 0;
+    state.dailyOrders = d.dailyOrders || [];
+    state.contest = d.contest || null;
+    state.customers = [];
+}
+
+function saveGame(slot, name) {
+    var data = getSaveData(name);
+    state.saveSlots[slot] = data;
+    state.currentSlot = slot;
+    persistSlots();
+    toast('💾 Сохранено в слот ' + (slot === 'slot1' ? '1' : '2'), 'success');
+}
+
+function autosave() {
+    if (!state.autosaveEnabled) return;
+    if (state.cookedCount === 0 && state.discovered.length === 0) return;
+    if (!state.currentSlot) {
+        state.currentSlot = !state.saveSlots.slot1 ? 'slot1' : !state.saveSlots.slot2 ? 'slot2' : 'slot1';
+    }
+    var existing = state.saveSlots[state.currentSlot];
+    var name = existing ? existing.name : 'Автосохранение';
+    state.saveSlots[state.currentSlot] = getSaveData(name);
+    persistSlots();
+}
+
+function persistSlots() {
+    try {
+        localStorage.setItem('greatCooking_slots', JSON.stringify(state.saveSlots));
+        localStorage.setItem('greatCooking_slot', state.currentSlot || '');
+    } catch(e) {}
+}
+
+function loadGame(slot) {
+    var save = state.saveSlots[slot];
+    if (!save) { toast('Слот пуст', 'warning'); return; }
+    applySave(save);
+    state.currentSlot = slot;
+    persistSlots();
+    updateStats();
+    renderContent();
+    renderSaveSlots();
+    closeSettings();
+    toast('📂 Загружено: ' + save.name, 'success');
+}
+
+function deleteSave(slot) {
+    if (!state.saveSlots[slot]) return;
+    if (!confirm('Удалить это сохранение?')) return;
+    state.saveSlots[slot] = null;
+    if (state.currentSlot === slot) state.currentSlot = null;
+    persistSlots();
+    renderSaveSlots();
+}
+
+function saveToNewSlot() {
+    var name = prompt('Название сохранения:', 'Игра ' + new Date().toLocaleDateString());
+    if (!name) return;
+    var slot = !state.saveSlots.slot1 ? 'slot1' : !state.saveSlots.slot2 ? 'slot2' : 'slot1';
+    saveGame(slot, name);
+    renderSaveSlots();
+}
+
+function renderSaveSlots() {
+    var container = $id('saveSlots');
+    if (!container) return;
+    container.innerHTML = ['slot1', 'slot2'].map(function(slot, i) {
+        var save = state.saveSlots[slot];
+        var isCurrent = state.currentSlot === slot;
+        if (save) {
+            return '<div class="save-slot ' + (isCurrent ? 'current' : '') + '">' +
+                '<div class="save-slot-title">' + escapeHtml(save.name) + '</div>' +
+                '<div class="save-slot-time">' + save.time + '</div>' +
+                '<div class="save-slot-time">🍽️ ' + (save.data.cookedCount || 0) + ' блюд</div>' +
+                '<div class="save-actions">' +
+                '<button onclick="loadGame(\'' + slot + '\')">📂</button>' +
+                '<button onclick="deleteSave(\'' + slot + '\')">🗑️</button>' +
+                '</div></div>';
+        }
+        return '<div class="save-slot">' +
+            '<div class="save-slot-title">Слот ' + (i + 1) + '</div>' +
+            '<div class="save-slot-time">Пусто</div>' +
+            '</div>';
+    }).join('');
+}
+
+function openSettings() {
+    Audio.click();
+    $id('settingsModal').classList.add('active');
+    renderSaveSlots();
+    updateToggles();
+}
+
+function closeSettings() {
+    Audio.click();
+    $id('settingsModal').classList.remove('active');
+}
+
+function toggleSetting(which) {
+    Audio.click();
+    if (which === 'sound') state.soundEnabled = !state.soundEnabled;
+    if (which === 'autosave') state.autosaveEnabled = !state.autosaveEnabled;
+    updateToggles();
+    try {
+        localStorage.setItem('gc_sound', state.soundEnabled ? '1' : '0');
+        localStorage.setItem('gc_autosave', state.autosaveEnabled ? '1' : '0');
+    } catch(e) {}
+}
+
+function updateToggles() {
+    $id('toggleSound').classList.toggle('on', state.soundEnabled);
+    $id('toggleAutosave').classList.toggle('on', state.autosaveEnabled);
+}
+
+function loadFromStorage() {
+    try {
+        var slots = localStorage.getItem('greatCooking_slots');
+        if (slots) state.saveSlots = JSON.parse(slots);
+        var slot = localStorage.getItem('greatCooking_slot');
+        if (slot) state.currentSlot = slot;
+        var s = localStorage.getItem('gc_sound');
+        if (s !== null) state.soundEnabled = s === '1';
+        var a = localStorage.getItem('gc_autosave');
+        if (a !== null) state.autosaveEnabled = a === '1';
+    } catch(e) {}
+}
+
+function start() {
+    loadFromStorage();
+    if (state.currentSlot && state.saveSlots[state.currentSlot]) {
+        applySave(state.saveSlots[state.currentSlot]);
+        toast('📂 Загружено: ' + state.saveSlots[state.currentSlot].name, 'success');
+    }
+    generateDailyOrders();
+    generateContest();
+    renderSubTabs();
+    renderContent();
+    updateStats();
+    updateToggles();
+    setInterval(tickCustomers, 1000);
+    setInterval(function() {
+        if (state.customers.length >= 3) return;
+        var available = getAvailableDishes();
+        if (available.length === 0) return;
+        var repMult = 0.5 + state.reputation / 100;
+        if (Math.random() < 0.30 * repMult) spawnCustomer();
+    }, 5000);
+    setInterval(autosave, 10000);
+    setInterval(function() { if (getRestaurantIncome() > 0) state.lastIncomeTime = Date.now(); }, 60000);
+    window.addEventListener('beforeunload', autosave);
+    setTimeout(function() {
+        if (getAvailableDishes().length > 0 && state.customers.length < 3) spawnCustomer();
+    }, 8000);
+}
+
+document.addEventListener('DOMContentLoaded', start);
+</script>
+</body>
+</html>

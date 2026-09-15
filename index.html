@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Лаунчер FireLand</title>
+<meta name="theme-color" content="#6a8aff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg-particles" id="bgParticles"></div>
+<div class="stars-bg" id="starsBg"></div>
+<div class="app">
+<div class="header">
+<div class="header-left">
+<div class="logo">
+<span class="fire">🔥</span>
+<span class="launcher" id="logoLauncher"></span>
+<span class="fireland" id="logoFireland"></span>
+</div>
+<div class="level-header-badge" id="levelHeaderBadge" title="Открыть профиль 👤">
+<div class="level-num-circle" id="levelNumHeader">1</div>
+<div class="level-info">
+<div class="level-title-text" id="levelTitleHeader">🌱 Новичок</div>
+<div class="level-xp-text" id="levelXpHeader">0 / 100 XP</div>
+</div>
+</div>
+<div class="streak-badge" id="streakBadge" title="Серия дней подряд — нажми для календаря">
+<span class="streak-fire">🔥</span>
+<span id="streakCount">0</span>
+</div>
+</div>
+<div class="header-right">
+<div class="clock" id="clockDisplay"><span id="hours">00</span><span class="colon">:</span><span id="minutes">00</span></div>
+<button class="alarm-toggle-btn" id="alarmToggleBtn" title="Будильник">⏰<span class="alarm-indicator" id="alarmIndicator"></span></button>
+<button class="settings-gear-btn" id="settingsGearBtn" title="Настройки">⚙️</button>
+</div>
+</div>
+<div class="tabs">
+<button class="tab-btn active" data-tab="games">🎮 Игры</button>
+<button class="tab-btn experiments-tab" data-tab="experiments">🧪 Эксперименты</button>
+<button class="tab-btn quests-tab" data-tab="quests">📅 Задания</button>
+<button class="tab-btn leaderboard-tab" data-tab="leaderboard">🏆 Лидеры</button>
+<button class="tab-btn chat-tab" data-tab="chat">💬 Чат</button>
+</div>
+<div class="last-game-bar" id="lastGameBar">
+<div class="info">
+<span class="label">🔄 Последняя:</span>
+<span class="icon" id="lastGameIcon">🎮</span>
+<span class="name" id="lastGameName">—</span>
+<span class="time" id="lastGameTime"></span>
+</div>
+<button class="play-again-btn" id="lastGamePlayBtn">▶ Играть снова</button>
+</div>
+<div id="tab-games" class="tab-content active">
+<div class="games-layout">
+<div class="games-list-panel">
+<div class="games-list-title"><span>🎮 Игры</span><span class="count" id="gamesCount">0</span></div>
+<div id="gameGrid" class="game-grid"></div>
+</div>
+<div class="game-detail-panel" id="gameDetailPanel">
+<div class="no-game-selected" id="noGameSelected">
+<div class="icon">🎮</div><div class="text">Выберите игру</div>
+<div class="hint">Нажмите на игру слева, чтобы увидеть описание</div>
+</div>
+<div class="game-detail" id="gameDetail" style="display:none;"></div>
+</div>
+</div>
+</div>
+<div id="tab-experiments" class="tab-content">
+<div class="games-layout">
+<div class="games-list-panel">
+<div class="games-list-title exp"><span>🧪 Эксперименты</span><span class="count" id="expCount">0</span></div>
+<div id="expGrid" class="game-grid"></div>
+</div>
+<div class="game-detail-panel exp-panel" id="expDetailPanel">
+<div class="no-game-selected" id="noExpSelected">
+<div class="icon">🧪</div><div class="text">Выберите эксперимент</div>
+<div class="hint">Нажмите на эксперимент слева, чтобы увидеть описание</div>
+</div>
+<div class="game-detail" id="expDetail" style="display:none;"></div>
+</div>
+</div>
+</div>
+<div id="tab-quests" class="tab-content">
+<div class="quests-header">
+<div>
+<div style="font-family:'Manrope';font-size:20px;font-weight:800;color:var(--text);">📅 Ежедневные задания</div>
+<div style="font-size:13px;color:var(--text-secondary);margin-top:4px;font-weight:600;">Выполни все 5 — получишь бонус +200 XP. Обновление через <b id="questResetTimer">--:--:--</b></div>
+</div>
+<div class="reset-info">🎁 <b id="questsCompletedCount">0</b> / 5 выполнено</div>
+</div>
+<div class="quests-panel" id="questsPanel"></div>
+</div>
+<div id="tab-leaderboard" class="tab-content">
+<div class="lb-panel" id="leaderboardContainer">
+<div class="lb-empty">
+<div style="font-size:64px;margin-bottom:16px;">🏆</div>
+<div style="font-size:20px;font-weight:800;margin-bottom:8px;">Загрузка...</div>
+<div style="color:var(--text-secondary);font-size:14px;">Подключаемся к серверу</div>
+</div>
+</div>
+</div>
+
+<!-- ============================================
+     ВКЛАДКА ЧАТА
+     ============================================ -->
+<div id="tab-chat" class="tab-content">
+<div class="chat-layout">
+
+<!-- Сайдбар: онлайн + ЛС + комнаты -->
+<div class="chat-sidebar">
+<div class="chat-sidebar-section">
+<div class="chat-sidebar-title">
+<span>🟢 Онлайн</span>
+<span class="count" id="onlineCount">0</span>
+</div>
+<div id="onlineList" class="online-list"></div>
+</div>
+<div class="chat-sidebar-section dm-section">
+<div class="chat-sidebar-title">
+<span>✉️ Личные</span>
+<button class="mini-btn" id="chatNewDmBtn" title="Написать новому игроку">+ Написать</button>
+</div>
+<div id="dmList" class="dm-list"></div>
+</div>
+<div class="chat-sidebar-section rooms-section">
+<div class="chat-sidebar-title">
+<span>🏠 Комнаты</span>
+<button class="mini-btn" id="chatNewRoomBtn" title="Создать комнату">+ Создать</button>
+</div>
+<div id="roomsList" class="rooms-list"></div>
+</div>
+</div>
+
+<!-- Основная панель -->
+<div class="chat-main-panel">
+<div class="chat-header">
+<div class="chat-header-title">
+<button class="chat-back-btn" id="chatBackToGeneral" style="display:none;">← Общий</button>
+<span id="chatHeaderTitle">💬 Общий чат FireLand</span>
+</div>
+<div class="chat-header-actions">
+<button class="chat-search-btn" id="chatSearchBtn" title="Поиск">🔍</button>
+<div class="chat-header-status" id="chatStatus">Подключение...</div>
+</div>
+</div>
+
+<!-- Панель поиска (скрыта) -->
+<div class="chat-search-panel" id="chatSearchPanel">
+<input
+  type="text"
+  id="chatSearchInput"
+  class="chat-search-input"
+  placeholder="Поиск по сообщениям..."
+  autocomplete="off">
+<span class="chat-search-count" id="chatSearchCount"></span>
+<button class="chat-search-close" id="chatSearchClose">✕</button>
+</div>
+
+<!-- Список сообщений -->
+<div class="chat-messages" id="chatMessages"></div>
+
+<!-- Кнопка "вниз" -->
+<button class="chat-scroll-down" id="chatScrollDownBtn" title="Вниз">↓</button>
+
+<!-- Плашка "Ответ на..." (скрыта) -->
+<div class="chat-reply-preview" id="chatReplyPreview" style="display:none;">
+<div class="chat-reply-info">
+<span class="chat-reply-label">Ответ <b id="chatReplyNick">—</b></span>
+<span class="chat-reply-text" id="chatReplyText">—</span>
+</div>
+<button class="chat-reply-cancel" id="chatReplyCancel">✕</button>
+</div>
+
+<!-- Строка ввода -->
+<div class="chat-input-row">
+<button class="chat-emoji-btn" id="chatEmojiBtn" title="Эмодзи">😀</button>
+<input
+  type="text"
+  id="chatInput"
+  class="chat-input"
+  placeholder="Напиши сообщение..."
+  maxlength="500"
+  autocomplete="off">
+<button class="chat-send-btn" id="chatSendBtn" title="Отправить">➤</button>
+</div>
+
+<!-- Палитра эмодзи (скрыта) -->
+<div class="chat-emoji-panel" id="chatEmojiPanel" style="display:none;"></div>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<!-- ============================================
+     МОДАЛКА: ПРОФИЛЬ ДРУГОГО ИГРОКА
+     ============================================ -->
+<div class="modal user-profile-modal" id="userProfileModal">
+<div class="modal-content">
+<button class="modal-close" onclick="document.getElementById('userProfileModal').classList.remove('show')">✕</button>
+<div class="user-profile-avatar" id="userProfileAvatar">?</div>
+<div class="user-profile-nick" id="userProfileNick">...</div>
+<div class="user-profile-title" id="userProfileTitle">...</div>
+<div class="user-profile-stats">
+<div class="user-profile-stat"><div class="v" id="userProfileLevel">...</div><div class="l">Уровень</div></div>
+<div class="user-profile-stat"><div class="v" id="userProfileXp">...</div><div class="l">XP</div></div>
+<div class="user-profile-stat"><div class="v" id="userProfileAch">...</div><div class="l">Ачивок</div></div>
+</div>
+<div class="user-profile-actions">
+<button class="btn-dm" id="userProfileDmBtn" onclick="
+  const nick = document.getElementById('userProfileNick').textContent;
+  document.getElementById('userProfileModal').classList.remove('show');
+  if (typeof openDmWith === 'function') openDmWith(nick);
+">💬 Написать</button>
+</div>
+</div>
+</div>
+
+<!-- ============================================
+     МОДАЛКА: НОВАЯ КОМНАТА
+     ============================================ -->
+<div class="modal room-create-modal" id="roomCreateModal">
+<div class="modal-content">
+<button class="modal-close" onclick="document.getElementById('roomCreateModal').classList.remove('show')">✕</button>
+<div class="modal-title">🏠 Создать комнату</div>
+<div class="room-create-info">
+Комната — это групповой чат. Все, кто знает название, смогут зайти и общаться.
+</div>
+<input
+  type="text"
+  id="roomNameInput"
+  class="room-name-input"
+  placeholder="Название комнаты (латиница)..."
+  maxlength="30"
+  autocomplete="off">
+<input
+  type="text"
+  id="roomDisplayInput"
+  class="room-name-input"
+  placeholder="Отображаемое имя (необязательно)"
+  maxlength="40"
+  autocomplete="off">
+<div class="room-create-hint" id="roomCreateHint">Только латиница, цифры, дефис и подчёркивание</div>
+<div class="room-create-actions">
+<button class="room-create-btn" id="roomCreateConfirm">🏠 Создать</button>
+<button class="room-create-cancel" onclick="document.getElementById('roomCreateModal').classList.remove('show')">Отмена</button>
+</div>
+</div>
+</div>
+
+<!-- ============================================
+     ОНБОРДИНГ
+     ============================================ -->
+<div class="nick-onboarding" id="nickOnboarding">
+<div class="nick-onboarding-card">
+<div class="nick-onboarding-icon">👋</div>
+<div class="nick-onboarding-title">Добро пожаловать в FireLand!</div>
+<div class="nick-onboarding-sub">Как тебя звать? Ник будет виден в чате, лидерборде и профиле.</div>
+<input type="text" id="onboardingNickInput" class="nick-onboarding-input" placeholder="Введи ник..." maxlength="20" autocomplete="off">
+<div class="nick-onboarding-hint" id="onboardingNickHint">От 2 до 20 символов, без пробелов</div>
+<button class="nick-onboarding-save" id="onboardingNickSaveBtn">🔥 Начать играть</button>
+<button class="nick-onboarding-skip" id="onboardingSkipBtn">Пропустить</button>
+</div>
+</div>
+
+<!-- ============================================
+     ОСТАЛЬНЫЕ МОДАЛКИ
+     ============================================ -->
+<div class="modal" id="profileModal">
+<div class="modal-content">
+<button class="modal-close" id="profileCloseBtn">✕</button>
+<div class="modal-title">👤 Профиль игрока</div>
+<div class="profile-header">
+<div class="profile-top">
+<div class="profile-big-avatar" id="profileBigAvatar" title="Нажми, чтобы выбрать аватарку">👤</div>
+<div class="profile-info">
+<label>Никнейм</label>
+<div class="profile-nick-row">
+<input type="text" class="profile-nick-input" id="profileNickInput" placeholder="Введи ник..." maxlength="20">
+<button class="profile-nick-save" id="profileNickSaveBtn" title="Сохранить ник в таблицу лидеров">💾</button>
+</div>
+<div class="profile-hint" id="profileNickHint">Нажми 💾, чтобы сохранить ник в таблицу лидеров</div>
+<div class="profile-hint">Нажми на аватарку, чтобы выбрать из файлов ПК</div>
+</div>
+</div>
+<div class="level-section">
+<div class="level-big-badge" id="levelNumBig">1</div>
+<div class="level-info-block">
+<div class="level-title" id="levelTitleBig">🌱 Новичок</div>
+<div class="level-subtitle" id="levelSubtitleBig">Следующий уровень: 100 XP</div>
+<div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBarFill" style="width: 0%"></div></div>
+<div class="xp-text" id="xpText">0 / 100 XP</div>
+</div>
+</div>
+<div class="profile-actions">
+<button class="btn-export" id="profileExportBtn">💾 Экспорт профиля</button>
+<button class="btn-import" id="profileImportBtn">📥 Импорт профиля</button>
+<button class="btn-reset" id="profileResetBtn">🗑️ Сбросить прогресс</button>
+</div>
+</div>
+<div class="modal-subtitle">🎁 Кейсы</div>
+<div class="cases-section">
+<div class="cases-grid">
+<div class="case-card daily" id="dailyCaseCard">
+<div class="case-icon">📦</div>
+<div class="case-name">Ежедневный кейс</div>
+<div class="case-desc">Раз в день, шанс на редкое</div>
+<button class="case-open-btn" id="openDailyCaseBtn">Открыть</button>
+<div class="case-timer" id="dailyCaseTimer">Доступен</div>
+</div>
+<div class="case-card weekly" id="weeklyCaseCard">
+<div class="case-icon">🎁</div>
+<div class="case-name">Недельный кейс</div>
+<div class="case-desc">Раз в неделю, точно редкое</div>
+<button class="case-open-btn" id="openWeeklyCaseBtn">Открыть</button>
+<div class="case-timer" id="weeklyCaseTimer">Доступен</div>
+</div>
+</div>
+</div>
+<div class="modal-subtitle">🏆 Достижения (<span id="achCountHeader">0</span>)</div>
+<div class="achievements-grid" id="achievementsGrid"></div>
+<div class="modal-subtitle">📊 Рекорды по играм</div>
+<div class="records-list" id="recordsList"></div>
+<div class="stats-in-settings">
+<div class="stats-row">
+<div class="stat-card"><div class="label">Всего игр</div><div class="value" id="totalGames">0</div></div>
+<div class="stat-card"><div class="label">Времени в играх</div><div class="value" id="totalTime">0 мин</div></div>
+<div class="stat-card"><div class="label">Достижений</div><div class="value" id="achCount">0</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal" id="calendarModal">
+<div class="modal-content">
+<button class="modal-close" id="calendarCloseBtn">✕</button>
+<div class="modal-title">🔥 Серия дней</div>
+<div style="text-align:center;font-size:14px;color:var(--text-secondary);margin-bottom:8px;font-weight:600;">Заходи каждый день, чтобы не потерять серию!</div>
+<div class="calendar-header">
+<div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+</div>
+<div class="calendar-grid" id="calendarGrid"></div>
+<div class="calendar-stats">
+<div class="calendar-stat"><div class="cal-num" id="calCurrent">0</div><div class="cal-label">🔥 Сейчас</div></div>
+<div class="calendar-stat"><div class="cal-num" id="calBest">0</div><div class="cal-label">🏆 Рекорд</div></div>
+</div>
+</div>
+</div>
+
+<div class="modal daily-reward-modal" id="dailyRewardModal">
+<div class="modal-content">
+<div class="daily-reward-header">🎁</div>
+<div class="daily-reward-streak" id="dailyRewardTitle">День 1</div>
+<div class="daily-reward-sub" id="dailyRewardSub">Ежедневная награда</div>
+<div class="daily-reward-streak-bar" id="dailyRewardStreakBar"></div>
+<div class="daily-reward-icon" id="dailyRewardIcon">💰</div>
+<div class="daily-reward-xp" id="dailyRewardXp">+50 XP</div>
+<button class="daily-reward-claim" id="dailyRewardClaimBtn">✨ Забрать</button>
+</div>
+</div>
+
+<div class="modal case-open-modal" id="caseOpenModal">
+<div class="modal-content">
+<div class="case-reveal-icon" id="caseRevealIcon">📦</div>
+<div class="case-reveal-title" id="caseRevealTitle">Открываем...</div>
+<div class="case-reveal-reward" id="caseRevealReward"></div>
+<div class="case-reveal-rarity" id="caseRevealRarity" style="display:none;"></div>
+<button class="case-reveal-close" id="caseRevealCloseBtn">Забрать</button>
+</div>
+</div>
+
+<input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+<input type="file" id="importProfileInput" accept="application/json,.json" style="display:none;">
+
+<div class="modal" id="settingsModal">
+<div class="modal-content">
+<button class="modal-close" id="settingsCloseBtn">✕</button>
+<div class="modal-title">⚙️ Настройки</div>
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">🎵 Звуки и музыка</span><span class="setting-desc">Включить или выключить все звуки</span></div>
+<label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label>
+</div>
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">🔔 Звуки интерфейса</span><span class="setting-desc">Клики, достижения, награды</span></div>
+<label class="switch"><input type="checkbox" id="uiSoundsToggle" checked><span class="slider"></span></label>
+</div>
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">🎨 Смена темы</span><span class="setting-desc">Выбери оформление</span></div>
+<div class="theme-selector">
+<button class="theme-btn active" data-theme="system">💻 Системная</button>
+<button class="theme-btn" data-theme="default">🌙 Тёмная</button>
+<button class="theme-btn" data-theme="light">☀️ Светлая</button>
+<button class="theme-btn" data-theme="smart">🧠 Умная</button>
+</div>
+</div>
+<div class="modal-subtitle">⏰ Будильник</div>
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">🔊 Громкость</span><span class="setting-desc">Громкость звука будильника</span></div>
+<div class="alarm-slider-group" style="max-width:200px;"><input type="range" id="alarmVolumeSlider" min="0" max="1" step="0.05" value="0.8"><span class="slider-value" id="alarmVolumeValue">80%</span></div>
+</div>
+<div class="alarm-settings-grid">
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">🔁 Повторов</span><span class="setting-desc">Сколько раз повторить будильник</span></div>
+<div class="alarm-slider-group"><input type="range" id="alarmRepeatsSlider" min="1" max="10" step="1" value="5"><span class="slider-value" id="alarmRepeatsValue">5</span></div>
+</div>
+<div class="setting-row">
+<div class="setting-info"><span class="setting-label">⏱️ Задержка</span><span class="setting-desc">Пауза между повторами</span></div>
+<div class="alarm-slider-group"><input type="range" id="alarmDelaySlider" min="5" max="30" step="1" value="15"><span class="slider-value" id="alarmDelayValue">15с</span></div>
+</div>
+</div>
+<div class="setting-row" style="border-bottom:none;padding-bottom:4px;">
+<div class="setting-info"><span class="setting-label">📳 Виброотклик</span><span class="setting-desc">Включить вибрацию на телефоне</span></div>
+<label class="switch"><input type="checkbox" id="vibrationToggle" checked><span class="slider"></span></label>
+</div>
+<div class="setting-row" style="border-bottom:none;padding-bottom:4px;margin-top:8px;">
+<div class="setting-info"><span class="setting-label">🗑️ Сброс данных</span><span class="setting-desc">Удалить весь прогресс и вернуть настройки по умолчанию</span></div>
+<button class="reset-data-btn" id="resetProgressBtn">🗑️ Сбросить</button>
+</div>
+<div class="support-info">
+<span>📧 <span class="email">ronormav@gmail.com</span></span>
+<span>⚡ <span class="version">v15.0</span></span>
+</div>
+<div class="fireland">🔥 <span>Создано студией FireLand!</span> 🔥</div>
+</div>
+</div>
+
+<div class="modal" id="alarmModal">
+<div class="modal-content">
+<button class="modal-close" id="alarmCloseBtn">✕</button>
+<div class="modal-title">⏰ Будильник</div>
+<div class="alarm-settings-grid">
+<div class="alarm-slider-group"><span class="slider-label">Час</span><input type="range" id="alarmHoursSlider" min="0" max="23" value="0"><span class="slider-value" id="alarmHoursValue">0</span></div>
+<div class="alarm-slider-group"><span class="slider-label">Мин</span><input type="range" id="alarmMinutesSlider" min="0" max="59" value="0"><span class="slider-value" id="alarmMinutesValue">0</span></div>
+<div class="alarm-slider-group"><span class="slider-label">Сек</span><input type="range" id="alarmSecondsSlider" min="1" max="59" value="5"><span class="slider-value" id="alarmSecondsValue">5</span></div>
+</div>
+<div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+<button class="alarm-start-btn" id="alarmStartBtn">▶ Запустить</button>
+<button class="alarm-cancel-btn" id="alarmCancelBtn" style="display:none;">✕ Отмена</button>
+</div>
+<div class="alarm-status" id="alarmStatus">⏳ 00:00:05</div>
+</div>
+</div>
+
+<div class="modal post-game-modal" id="postGameModal">
+<div class="modal-content">
+<div class="pg-icon" id="pgIcon">🎮</div>
+<div class="pg-name" id="pgName">Игра</div>
+<div class="pg-sub">Сессия завершена</div>
+<div class="pg-stats">
+<div class="pg-stat"><div class="pg-stat-icon">⏱️</div><div class="pg-stat-value" id="pgSessionTime">0:00</div><div class="pg-stat-label">Длительность</div></div>
+<div class="pg-stat"><div class="pg-stat-icon">📈</div><div class="pg-stat-value" id="pgXpGained">0</div><div class="pg-stat-label">XP получено</div></div>
+<div class="pg-stat"><div class="pg-stat-icon">🏆</div><div class="pg-stat-value" id="pgAchGained">0</div><div class="pg-stat-label">Достижений</div></div>
+</div>
+<div class="pg-ach" id="pgAchInfo" style="display:none;"></div>
+<div class="pg-actions">
+<button class="pg-play-again" id="pgPlayAgainBtn">▶ Играть снова</button>
+<button class="pg-close" id="pgCloseBtn">✕ Закрыть</button>
+</div>
+</div>
+</div>
+
+<div class="game-frame-wrap" id="gameFrameContainer">
+<div class="game-menu-wrapper" id="gameMenuWrapper">
+<button class="game-menu-trigger" id="gameMenuTrigger" title="Меню"><span></span><span></span><span></span></button>
+<div class="game-menu-dropdown" id="gameMenuDropdown">
+<button class="game-menu-item" id="menuReloadBtn"><span class="menu-icon">🔄</span><span class="menu-text">Перезагрузить игру</span></button>
+<button class="game-menu-item" id="menuSettingsBtn"><span class="menu-icon">⚙️</span><span class="menu-text">Настройки</span></button>
+<button class="game-menu-item" id="menuFullscreenBtn"><span class="menu-icon">⛶</span><span class="menu-text">Полный экран</span></button>
+<div class="game-menu-divider"></div>
+<button class="game-menu-item menu-danger" id="menuBackBtn"><span class="menu-icon">⬅️</span><span class="menu-text">Выйти в лаунчер</span></button>
+</div>
+</div>
+<div class="game-skeleton" id="gameSkeleton">
+<div class="spinner"></div>
+<div class="skeleton-text">🎮 Загрузка игры...</div>
+<div class="skeleton-bar"></div>
+</div>
+<iframe id="gameIframe" src="about:blank" loading="eager" allow="fullscreen; gamepad" allowfullscreen></iframe>
+</div>
+
+<div class="mascot-wrapper" id="mascotWrapper">
+<div class="mascot-bubble"><span>Выбери игру!</span></div>
+<div class="mascot-container" id="mascotContainer">
+<video id="mascotVideo" autoplay muted loop playsinline preload="auto"><source src="fireek.mp4" type="video/mp4"></video>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="leaderboard.js"></script>
+<script src="script.js"></script>
+<script src="messenger.js"></script>
+</body>
+</html>

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликер Счастья</title>
+    <style>
+        body {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .game {
+            background: #2d2d44;
+            padding: 25px;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center;
+            width: 500px;
+        }
+        .game h1 { color: #ffd700; margin: 0 0 10px 0; }
+        .counter { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .stats-line { font-size: 14px; color: #aaa; margin: 4px 0; }
+        .event-log {
+            background: #1a1a2e;
+            padding: 6px;
+            border-radius: 8px;
+            margin: 5px 0;
+            min-height: 22px;
+            font-size: 13px;
+            color: #aaddff;
+        }
+        .click-area {
+            background: #8b5a2b;
+            padding: 20px 0;
+            border-radius: 15px;
+            cursor: pointer;
+            border: 4px solid #c79a6e;
+            margin: 10px 0;
+            transition: 0.1s;
+            user-select: none;
+            position: relative;
+        }
+        .click-area:active { transform: scale(0.96); }
+        .click-area p { margin: 0; font-size: 22px; }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 5px 0; }
+        .btn {
+            background: #4a6a4a;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .btn:hover { background: #5a8a5a; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-secret { background: #6a2a6a; color: #ffaa00; }
+        .btn-secret:hover { background: #8a3a8a; }
+
+        .panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .panel.active { display: flex; }
+        .panel-box {
+            background: #2d2d44;
+            padding: 20px;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .panel-box h2 { color: #ffd700; text-align: center; }
+        .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .category { margin: 12px 0; }
+        .category h3 { border-bottom: 1px solid #555; padding-bottom: 4px; color: #ddd; font-size: 16px; }
+        .item-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin: 2px;
+            font-size: 13px;
+            border: 1px solid #555;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .item-tag:hover { transform: scale(1.05); background: #5a5a8a; }
+        .rarity-common { border-color: #aaa; }
+        .rarity-rare { border-color: #55aaff; }
+        .rarity-epic { border-color: #aa55ff; }
+        .rarity-legendary { border-color: #ffaa00; }
+        .rarity-mythic { border-color: #ff55ff; background: #4a1a4a; }
+        .rarity-exclusive { border-color: #ff0000; background: #4a1a1a; }
+        .rarity-bedrock { border-color: #888888; background: #222; }
+
+        .save-slot {
+            display: inline-block;
+            background: #1a1a2e;
+            padding: 6px 10px;
+            margin: 3px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            cursor: pointer;
+        }
+        .save-slot:hover { background: #2a2a4e; border-color: #ffd700; }
+
+        .secret-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ffaa00;
+            color: #1a1a2e;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+        .lang-option {
+            padding: 5px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #555;
+        }
+        .lang-option.selected {
+            border-color: #ffd700;
+            background: #2a2a4e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game">
+    <h1 id="title">🗝️ Кликер Счастья</h1>
+    <div class="counter">❤️ <span id="score">0</span></div>
+    <div class="stats-line"><span id="clickLabel">🖱️ +</span><span id="clickDisplay">1</span> <span id="perClickLabel">за клик</span> | <span id="autoLabel">🤖 +</span><span id="autoDisplay">1</span>/<span id="secLabel">сек</span></div>
+    <div class="event-log" id="eventLog"><span id="startLabel">Нажми на сундук, чтобы начать...</span></div>
+    <div class="click-area" onclick="clickChest()">
+        <p>🪙 <span id="clickBtnLabel">Кликни!</span></p>
+        <div id="secretBadgeContainer"></div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn" onclick="openInventory()">🎒 <span id="invLabel">Инвентарь</span></button>
+        <button class="btn" onclick="openTrophies()">🏆 <span id="trophyLabel">Трофеи</span></button>
+        <button class="btn" onclick="openSettings()">⚙️ <span id="settingsLabel">Настройки</span></button>
+    </div>
+
+    <div class="shop">
+        <h3>🛒 <span id="shopLabel">Магазин</span></h3>
+        <button class="btn" id="upgradeBtn" onclick="buyUpgrade()">⚡️ +1 <span id="clickUpLabel">клик</span></button>
+        <button class="btn" id="autoBtn" onclick="buyAutoClicker()">🤖 +1 <span id="autoUpLabel">автоклик/сек</span></button>
+        <button class="btn" id="sellAutoBtn" onclick="buySellAuto()">💸 +1 <span id="sellAutoLabel">продажа/сек</span></button>
+        <button class="btn btn-secret" id="toggleSecretBtn" onclick="toggleSecretMode()">🔮 <span id="secretToggleLabel">Режим X</span></button>
+    </div>
+</div>
+
+<div class="panel" id="inventoryPanel">
+    <div class="panel-box">
+        <button class="close-btn" onclick="closePanel('inventoryPanel')">✕</button>
+        <h2>🎒 <span id="invTitleLabel">Инвентарь</span></h2>
+        <div id="inventoryContent"><span id="invEmptyLabel">Загрузка...</span></div>
+    </div>
+</div>
+
+<div class="panel" id="trophyPanel">
+    <div class="panel-box">
+        <button class="close-btn" onclick="closePanel('trophyPanel')">✕</button>
+        <h2>🏆 <span id="trophyTitleLabel">Трофеи</span></h2>
+        <div id="trophyContent"><span id="trophyEmptyLabel">Загрузка...</span></div>
+    </div>
+</div>
+
+<div class="panel" id="settingsPanel">
+    <div class="panel-box">
+        <button class="close-btn" onclick="closePanel('settingsPanel')">✕</button>
+        <h2>⚙️ <span id="settingsTitleLabel">Настройки</span></h2>
+        <div id="settingsContent"><span id="settingsLoadLabel">Загрузка...</span></div>
+    </div>
+</div>
+
+<script>
+    // === ЯЗЫКИ ===
+    const LANG = {
+        ru: {
+            title: "🗝️ Кликер Счастья",
+            clickBtn: "Кликни!",
+            perClick: "за клик",
+            autoLabel: "🤖 +",
+            secLabel: "сек",
+            startLabel: "Нажми на сундук, чтобы начать...",
+            invLabel: "Инвентарь",
+            trophyLabel: "Трофеи",
+            settingsLabel: "Настройки",
+            shopLabel: "Магазин",
+            clickUpLabel: "клик",
+            autoUpLabel: "автоклик/сек",
+            sellAutoLabel: "продажа/сек",
+            secretToggleLabel: "Режим X",
+            invTitle: "Инвентарь",
+            invEmpty: "Инвентарь пуст. Кликай на сундук!",
+            trophyTitle: "Трофеи",
+            trophyEmpty: "Трофеев пока нет. Продолжай кликать!",
+            settingsTitle: "Настройки",
+            settingsLoad: "Загрузка...",
+            saveTitle: "💾 Сохранения",
+            langTitle: "🌍 Язык",
+            langRu: "Русский",
+            langEn: "Английский",
+            langEs: "Испанский",
+            langZh: "Китайский",
+            buySec: "Купить X (1.000.000❤️)",
+            activeSec: "X АКТИВЕН (",
+            minLabel: "мин"
+        },
+        en: {
+            title: "🗝️ Happiness Clicker",
+            clickBtn: "Click!",
+            perClick: "per click",
+            autoLabel: "🤖 +",
+            secLabel: "sec",
+            startLabel: "Click the chest to start...",
+            invLabel: "Inventory",
+            trophyLabel: "Trophies",
+            settingsLabel: "Settings",
+            shopLabel: "Shop",
+            clickUpLabel: "click",
+            autoUpLabel: "auto-click/sec",
+            sellAutoLabel: "sell/sec",
+            secretToggleLabel: "X Mode",
+            invTitle: "Inventory",
+            invEmpty: "Inventory is empty. Keep clicking!",
+            trophyTitle: "Trophies",
+            trophyEmpty: "No trophies yet. Keep clicking!",
+            settingsTitle: "Settings",
+            settingsLoad: "Loading...",
+            saveTitle: "💾 Saves",
+            langTitle: "🌍 Language",
+            langRu: "Russian",
+            langEn: "English",
+            langEs: "Spanish",
+            langZh: "Chinese",
+            buySec: "Buy X (1.000.000❤️)",
+            activeSec: "X ACTIVE (",
+            minLabel: "min"
+        },
+        es: {
+            title: "🗝️ Clicker de la Felicidad",
+            clickBtn: "¡Haz clic!",
+            perClick: "por clic",
+            autoLabel: "🤖 +",
+            secLabel: "seg",
+            startLabel: "¡Haz clic en el cofre para empezar...",
+            invLabel: "Inventario",
+            trophyLabel: "Trofeos",
+            settingsLabel: "Ajustes",
+            shopLabel: "Tienda",
+            clickUpLabel: "clic",
+            autoUpLabel: "auto-clic/seg",
+            sellAutoLabel: "venta/seg",
+            secretToggleLabel: "Modo X",
+            invTitle: "Inventario",
+            invEmpty: "El inventario está vacío. ¡Sigue haciendo clic!",
+            trophyTitle: "Trofeos",
+            trophyEmpty: "Aún no hay trofeos. ¡Sigue haciendo clic!",
+            settingsTitle: "Ajustes",
+            settingsLoad: "Cargando...",
+            saveTitle: "💾 Guardados",
+            langTitle: "🌍 Idioma",
+            langRu: "Ruso",
+            langEn: "Inglés",
+            langEs: "Español",
+            langZh: "Chino",
+            buySec: "Comprar X (1.000.000❤️)",
+            activeSec: "X ACTIVO (",
+            minLabel: "min"
+        },
+        zh: {
+            title: "🗝️ 幸福点击器",
+            clickBtn: "点击！",
+            perClick: "每次点击",
+            autoLabel: "🤖 +",
+            secLabel: "秒",
+            startLabel: "点击宝箱开始...",
+            invLabel: "背包",
+            trophyLabel: "奖杯",
+            settingsLabel: "设置",
+            shopLabel: "商店",
+            clickUpLabel: "点击",
+            autoUpLabel: "自动点击/秒",
+            sellAutoLabel: "出售/秒",
+            secretToggleLabel: "X模式",
+            invTitle: "背包",
+            invEmpty: "背包是空的。继续点击！",
+            trophyTitle: "奖杯",
+            trophyEmpty: "还没有奖杯。继续点击！",
+            settingsTitle: "设置",
+            settingsLoad: "加载中...",
+            saveTitle: "💾 存档",
+            langTitle: "🌍 语言",
+            langRu: "俄语",
+            langEn: "英语",
+            langEs: "西班牙语",
+            langZh: "中文",
+            buySec: "购买X (1.000.000❤️)",
+            activeSec: "X 已激活 (",
+            minLabel: "分钟"
+        }
+    };
+
+    let currentLang = 'ru';
+
+    function t(key) { return LANG[currentLang][key] || key; }
+
+    function updateUI() {
+        document.getElementById('title').textContent = t('title');
+        document.getElementById('clickBtnLabel').textContent = t('clickBtn');
+        document.getElementById('perClickLabel').textContent = t('perClick');
+        document.getElementById('autoLabel').textContent = t('autoLabel');
+        document.getElementById('secLabel').textContent = t('secLabel');
+        document.getElementById('startLabel').textContent = t('startLabel');
+        document.getElementById('invLabel').textContent = t('invLabel');
+        document.getElementById('trophyLabel').textContent = t('trophyLabel');
+        document.getElementById('settingsLabel').textContent = t('settingsLabel');
+        document.getElementById('shopLabel').textContent = t('shopLabel');
+        document.getElementById('clickUpLabel').textContent = t('clickUpLabel');
+        document.getElementById('autoUpLabel').textContent = t('autoUpLabel');
+        document.getElementById('sellAutoLabel').textContent = t('sellAutoLabel');
+        document.getElementById('secretToggleLabel').textContent = t('secretToggleLabel');
+        document.getElementById('invTitleLabel').textContent = t('invTitle');
+        document.getElementById('invEmptyLabel').textContent = t('invEmpty');
+        document.getElementById('trophyTitleLabel').textContent = t('trophyTitle');
+        document.getElementById('trophyEmptyLabel').textContent = t('trophyEmpty');
+        document.getElementById('settingsTitleLabel').textContent = t('settingsTitle');
+        document.getElementById('settingsLoadLabel').textContent = t('settingsLoad');
+        updateSecretUI();
+    }
+
+    // === ДАННЫЕ ===
+    let happiness = 0;
+    let items = [];
+    let clickMultiplier = 1;
+    let nextThreshold = 15;
+    let autoMultiplier = 1;
+    let eventCooldown = 0;
+    let totalClicks = 0;
+    let trophies = [];
+    let secretActive = false;
+    let secretTimeLeft = 0;
+    let secretTimer = null;
+    let secretLevel = 0;
+    let sellAutoRate = 0;      // сколько предметов в секунду продаётся
+
+    const sellPrices = {
+        "Обычный": 5,
+        "Редкий": 15,
+        "Эпический": 30,
+        "Легендарный": 67,
+        "Мифический": 99,
+        "Эксклюзивный": 228,
+        "Бедроковый": 340
+    };
+
+    const allItems = [
+        { name: "🌸 Лепесток сакуры", rarity: "Обычный" },
+        { name: "🪙 Медный самородок", rarity: "Обычный" },
+        { name: "🌿 Саженец", rarity: "Обычный" },
+        { name: "📜 Книга уюта", rarity: "Обычный" },
+        { name: "☕ Чашка чая", rarity: "Обычный" },
+        { name: "🍪 Печенье счастья", rarity: "Обычный" },
+        { name: "🧵 Нить воспоминаний", rarity: "Обычный" },
+        { name: "🪵 Древесина сакуры", rarity: "Обычный" },
+        { name: "🪄 Сломанная кирка", rarity: "Обычный" },
+        { name: "🍎 Золотое яблоко", rarity: "Редкий" },
+        { name: "💎 Алмазная крошка", rarity: "Редкий" },
+        { name: "🦊 Лапа Firefox", rarity: "Редкий" },
+        { name: "🎵 Виниловая пластинка", rarity: "Редкий" },
+        { name: "🐑 Шерсть розовой овцы", rarity: "Редкий" },
+        { name: "🧸 Плюшевый крипер", rarity: "Редкий" },
+        { name: "🔥 Уголёк надежды", rarity: "Редкий" },
+        { name: "💫 Осколок звезды", rarity: "Эпический" },
+        { name: "🌙 Лунный камень", rarity: "Эпический" },
+        { name: "🕯️ Свеча покоя", rarity: "Эпический" },
+        { name: "🍄 Гриб удачи", rarity: "Эпический" },
+        { name: "🪶 Перо мечты", rarity: "Эпический" },
+        { name: "🧲 Магнит для счастья", rarity: "Эпический" },
+        { name: "🏆 Трофей дня", rarity: "Эпический" },
+        { name: "🐉 Легендарный дракон", rarity: "Легендарный" },
+        { name: "🪐 Кольцо Сатурна (мини)", rarity: "Легендарный" },
+        { name: "🔑 Золотой ключ", rarity: "Легендарный" },
+        { name: "⚡ Молния в бутылке", rarity: "Легендарный" },
+        { name: "🎭 Маска Махаки", rarity: "Мифический" },
+        { name: "🦄 Рог единорога", rarity: "Мифический" },
+        { name: "🔥 Феникс в банке", rarity: "Мифический" },
+        { name: "🌌 Кристалл вечности", rarity: "Эксклюзивный" },
+        { name: "🪨 Бедроковый блок", rarity: "Бедроковый" },
+    ];
+
+    function log(msg) { document.getElementById('eventLog').textContent = msg; }
+
+    function getRarityRoll() {
+        let r = Math.random();
+        if (r < 0.01) return "Бедроковый";
+        if (r < 0.03) return "Эксклюзивный";
+        if (r < 0.07) return "Мифический";
+        if (r < 0.20) return "Легендарный";
+        if (r < 0.35) return "Эпический";
+        if (r < 0.55) return "Редкий";
+        return "Обычный";
+    }
+
+    function getRandomItemByRarity(rarity) {
+        let pool = allItems.filter(i => i.rarity === rarity);
+        if (!pool.length) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function playClickSound() {
+        try {
+            let ctx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = ctx.createOscillator();
+            let gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 800 + Math.random() * 400;
+            gain.gain.value = 0.05;
+            osc.start();
+            osc.stop(ctx.currentTime + 0.05);
+        } catch(e) {}
+    }
+
+    function updateStats() {
+        let mult = secretActive ? clickMultiplier * (secretLevel + 4) : clickMultiplier;
+        document.getElementById('clickDisplay').textContent = mult;
+        document.getElementById('autoDisplay').textContent = secretActive ? autoMultiplier * (secretLevel + 4) : autoMultiplier;
+        updateShopButtons();
+    }
+
+    function updateSecretUI() {
+        let container = document.getElementById('secretBadgeContainer');
+        let btn = document.getElementById('toggleSecretBtn');
+        if (secretActive) {
+            let mins = Math.floor(secretTimeLeft / 60);
+            let secs = Math.floor(secretTimeLeft % 60);
+            container.innerHTML = `<div class="secret-badge">X${secretLevel + 4} ${t('activeSec')} ${mins}${t('minLabel')} ${secs}с</div>`;
+            btn.style.display = 'inline-block';
+            btn.textContent = '🛑 ' + t('secretToggleLabel');
+        } else {
+            container.innerHTML = '';
+            btn.style.display = 'inline-block';
+            btn.textContent = '🔮 ' + t('secretToggleLabel');
+        }
+    }
+
+    function clickChest() {
+        let mult = secretActive ? clickMultiplier * (secretLevel + 4) : clickMultiplier;
+        happiness += mult;
+        totalClicks++;
+        document.getElementById('score').textContent = Math.floor(happiness);
+        updateShopButtons();
+        checkTrophies();
+        updateStats();
+        playClickSound();
+
+        eventCooldown++;
+        if (eventCooldown >= 10 && Math.random() < 0.2) {
+            eventCooldown = 0;
+            let bonus = (5 + Math.floor(Math.random() * 15)) * (secretActive ? (secretLevel + 4) : 1);
+            happiness += bonus;
+            log("🍀 Счастливый момент! +" + bonus + "❤️");
+            document.getElementById('score').textContent = Math.floor(happiness);
+        }
+
+        if (happiness >= nextThreshold) {
+            let rarity = getRarityRoll();
+            let item = getRandomItemByRarity(rarity);
+            if (item) {
+                items.push(item);
+                log("🎁 Ты получил: " + item.name + " (" + item.rarity + ")!");
+            }
+            nextThreshold += 15;
+        }
+
+        if (Math.random() < 0.01 && !secretActive) {
+            secretActive = true;
+            secretTimeLeft = 300;
+            log("🔮 СЕКРЕТНЫЙ РЕЖИМ! X" + (secretLevel + 4) + " на 5 минут!");
+            updateSecretUI();
+            updateStats();
+            if (secretTimer) clearInterval(secretTimer);
+            secretTimer = setInterval(() => {
+                secretTimeLeft--;
+                updateSecretUI();
+                if (secretTimeLeft <= 0) {
+                    secretActive = false;
+                    clearInterval(secretTimer);
+                    log("⏰ Секретный режим закончился.");
+                    updateSecretUI();
+                    updateStats();
+                }
+            }, 1000);
+        }
+    }
+
+    // === ОБЫЧНАЯ ПРОДАЖА ===
+    function sellItem(index, fromAuto = false) {
+        let item = items[index];
+        if (!item) return;
+        let price = sellPrices[item.rarity] || 1;
+        price = secretActive ? price * (secretLevel + 4) : price;
+        happiness += price;
+        items.splice(index, 1);
+        document.getElementById('score').textContent = Math.floor(happiness);
+        if (!fromAuto) {
+            openInventory();
+            log("💰 Ты продал " + item.name + " за " + price + "❤️");
+        }
+    }
+
+    // === ИНВЕНТАРЬ ===
+    function openInventory() {
+        let content = document.getElementById('inventoryContent');
+        if (!items.length) {
+            content.innerHTML = `<p style='color:#aaa;'>${t('invEmpty')}</p>`;
+        } else {
+            let html = "";
+            let cats = ["Обычный","Редкий","Эпический","Легендарный","Мифический","Эксклюзивный","Бедроковый"];
+            cats.forEach(cat => {
+                let filtered = items.map((i, idx) => ({ ...i, idx })).filter(i => i.rarity === cat);
+                if (filtered.length) {
+                    html += `<div class="category"><h3>${cat}</h3>`;
+                    filtered.forEach((i, idx) => {
+                        let cls = "rarity-" + cat.toLowerCase();
+                        html += `<span class="item-tag ${cls}" onclick="sellItem(${i.idx})">${i.name}</span>`;
+                    });
+                    html += `</div>`;
+                }
+            });
+            content.innerHTML = html;
+        }
+        document.getElementById('inventoryPanel').classList.add('active');
+    }
+
+    // === ТРОФЕИ ===
+    function checkTrophies() {
+        let newTrophies = [];
+        if (totalClicks >= 10 && !trophies.includes("10 кликов")) newTrophies.push("10 кликов");
+        if (totalClicks >= 100 && !trophies.includes("100 кликов")) newTrophies.push("100 кликов");
+        if (totalClicks >= 1000 && !trophies.includes("1000 кликов")) newTrophies.push("1000 кликов");
+        if (happiness >= 100 && !trophies.includes("100 счастья")) newTrophies.push("100 счастья");
+        if (happiness >= 500 && !trophies.includes("500 счастья")) newTrophies.push("500 счастья");
+        if (happiness >= 1000 && !trophies.includes("1000 счастья")) newTrophies.push("1000 счастья");
+        if (items.some(i => i.rarity === "Бедроковый") && !trophies.includes("Бедроковый блок")) newTrophies.push("Бедроковый блок");
+        if (items.some(i => i.rarity === "Мифический") && !trophies.includes("Мифический предмет")) newTrophies.push("Мифический предмет");
+        if (trophies.length === 0 && newTrophies.length > 0) newTrophies.push("Первый трофей");
+        if (happiness >= 1000 && !trophies.includes("1000 счастья")) newTrophies.push("1000 счастья");
+        if (happiness >= 5000 && !trophies.includes("5000 счастья")) newTrophies.push("5000 счастья");
+        if (happiness >= 10000 && !trophies.includes("10000 счастья")) newTrophies.push("10000 счастья");
+
+        newTrophies.forEach(t => {
+            if (!trophies.includes(t)) {
+                trophies.push(t);
+                log("🏆 Трофей разблокирован: " + t + "!");
+            }
+        });
+    }
+
+    function openTrophies() {
+        let content = document.getElementById('trophyContent');
+        if (!trophies.length) {
+            content.innerHTML = `<p style='color:#aaa;'>${t('trophyEmpty')}</p>`;
+        } else {
+            content.innerHTML = trophies.map(t => `<div style="background:#2a2a4e;padding:6px;border-radius:6px;margin:4px;">🏆 ${t}</div>`).join('');
+        }
+        document.getElementById('trophyPanel').classList.add('active');
+    }
+
+    // === МАГАЗИН ===
+    function buyUpgrade() {
+        let cost = 20 + Math.floor(totalClicks / 50) * 2;
+        if (happiness >= cost) {
+            happiness -= cost;
+            clickMultiplier++;
+            document.getElementById('score').textContent = Math.floor(happiness);
+            updateShopButtons();
+            updateStats();
+            log("⚡️ +1 клик куплен!");
+        }
+    }
+
+    function buyAutoClicker() {
+        let cost = 40 + (autoMultiplier - 1) * 20;
+        if (happiness >= cost) {
+            happiness -= cost;
+            autoMultiplier++;
+            document.getElementById('score').textContent = Math.floor(happiness);
+            updateShopButtons();
+            updateStats();
+            log("🤖 Автокликер улучшен!");
+        }
+    }
+
+    function buySellAuto() {
+        let cost = 60 + (sellAutoRate) * 30;
+        if (happiness >= cost) {
+            happiness -= cost;
+            sellAutoRate++;
+            document.getElementById('score').textContent = Math.floor(happiness);
+            updateShopButtons();
+            log("💸 Продажа предметов в секунду! +1");
+        }
+    }
+
+    function toggleSecretMode() {
+        if (secretActive) {
+            secretActive = false;
+            if (secretTimer) clearInterval(secretTimer);
+            updateSecretUI();
+            updateStats();
+            log("⏰ Секретный режим отключён вручную.");
+        } else {
+            if (happiness >= 1000000) {
+                happiness -= 1000000;
+                secretActive = true;
+                secretTimeLeft = 300;
+                document.getElementById('score').textContent = Math.floor(happiness);
+                updateSecretUI();
+                updateStats();
+                log("🔮 Секретный режим X" + (secretLevel + 4) + " активирован!");
+                if (secretTimer) clearInterval(secretTimer);
+                secretTimer = setInterval(() => {
+                    secretTimeLeft--;
+                    updateSecretUI();
+                    if (secretTimeLeft <= 0) {
+                        secretActive = false;
+                        clearInterval(secretTimer);
+                        log("⏰ Секретный режим закончился.");
+                        updateSecretUI();
+                        updateStats();
+                    }
+                }, 1000);
+            } else {
+                log("❌ Недостаточно счастья! Нужно 1.000.000❤️.");
+            }
+        }
+    }
+
+    function updateShopButtons() {
+        let c1 = 20 + Math.floor(totalClicks / 50) * 2;
+        document.getElementById('upgradeBtn').disabled = happiness < c1;
+        document.getElementById('upgradeBtn').textContent = `⚡️ +1 ${t('clickUpLabel')} (${c1}❤️)`;
+
+        let c2 = 40 + (autoMultiplier - 1) * 20;
+        document.getElementById('autoBtn').disabled = happiness < c2;
+        document.getElementById('autoBtn').textContent = `🤖 +1 ${t('autoUpLabel')} (${c2}❤️)`;
+
+        let c3 = 60 + (sellAutoRate) * 30;
+        document.getElementById('sellAutoBtn').disabled = happiness < c3;
+        document.getElementById('sellAutoBtn').textContent = `💸 +1 ${t('sellAutoLabel')} (${c3}❤️)`;
+    }
+
+    function checkEvolution() {
+        if (happiness >= 10000000) {
+            secretLevel++;
+            happiness = 0;
+            nextThreshold = 15;
+            document.getElementById('score').textContent = 0;
+            log("⚡️ ЭВОЛЮЦИЯ! Ты достиг 10.000.000! Уровень X повышен до X" + (secretLevel + 4) + "! Счастье сброшено.");
+            updateStats();
+        }
+    }
+
+    // === АВТОМАТИЗАЦИЯ ===
+    // 1. Автокликер (каждую секунду)
+    setInterval(() => {
+        let mult = secretActive ? autoMultiplier * (secretLevel + 4) : autoMultiplier;
+        for (let i = 0; i < mult; i++) clickChest();
+        checkEvolution();
+    }, 1000);
+
+    // 2. Авто-продажа предметов (каждую секунду, без открытия инвентаря)
+    setInterval(() => {
+        if (sellAutoRate > 0 && items.length > 0) {
+            for (let i = 0; i < sellAutoRate; i++) {
+                if (items.length === 0) break;
+                let randomIndex = Math.floor(Math.random() * items.length);
+                sellItem(randomIndex, true);
+            }
+        }
+    }, 1000);
+
+    // === СОХРАНЕНИЯ ===
+    function saveGame(slot) {
+        let data = { happiness, items, clickMultiplier, nextThreshold, autoMultiplier, totalClicks, trophies, sellPrices, currentLang, secretLevel, sellAutoRate };
+        localStorage.setItem('clicker_save_' + slot, JSON.stringify(data));
+        log("💾 Сохранено в слот " + slot);
+        renderSaveSlots();
+    }
+    function loadGame(slot) {
+        let raw = localStorage.getItem('clicker_save_' + slot);
+        if (!raw) { log("❌ Слот пуст."); return; }
+        let data = JSON.parse(raw);
+        happiness = data.happiness;
+        items = data.items;
+        clickMultiplier = data.clickMultiplier;
+        nextThreshold = data.nextThreshold;
+        autoMultiplier = data.autoMultiplier;
+        totalClicks = data.totalClicks;
+        trophies = data.trophies;
+        if (data.currentLang) currentLang = data.currentLang;
+        if (data.secretLevel) secretLevel = data.secretLevel;
+        if (data.sellAutoRate !== undefined) sellAutoRate = data.sellAutoRate;
+        document.getElementById('score').textContent = Math.floor(happiness);
+        updateShopButtons();
+        updateStats();
+        checkTrophies();
+        updateUI();
+        renderSaveSlots();
+        log("📂 Загружено из слота " + slot);
+    }
+
+    function renderSaveSlots() {
+        let container = document.getElementById('saveSlots');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            let hasSave = localStorage.getItem('clicker_save_' + i) !== null;
+            let div = document.createElement('span');
+            div.className = 'save-slot';
+            div.innerHTML = `${t('saveTitle')} ${i} ${hasSave ? '💾' : '🗂️'}`;
+            div.onclick = () => {
+                let action = confirm(`Слот ${i}: Загрузить или Сохранить? (OK = Загрузить, Отмена = Сохранить)`);
+                if (action) loadGame(i);
+                else saveGame(i);
+            };
+            container.appendChild(div);
+        }
+    }
+
+    // === НАСТРОЙКИ ===
+    function openSettings() {
+        let content = document.getElementById('settingsContent');
+        let html = `
+            <h3>${t('saveTitle')}</h3>
+            <div id="saveSlots"></div>
+            <hr>
+            <h3>${t('langTitle')}</h3>
+            <div>
+                <span class="lang-option ${currentLang === 'ru' ? 'selected' : ''}" onclick="setLang('ru')">${t('langRu')}</span>
+                <span class="lang-option ${currentLang === 'en' ? 'selected' : ''}" onclick="setLang('en')">${t('langEn')}</span>
+                <span class="lang-option ${currentLang === 'es' ? 'selected' : ''}" onclick="setLang('es')">${t('langEs')}</span>
+                <span class="lang-option ${currentLang === 'zh' ? 'selected' : ''}" onclick="setLang('zh')">${t('langZh')}</span>
+            </div>
+            <hr>
+            <button class="btn" onclick="resetGame()">🗑️ Сбросить игру</button>
+        `;
+        content.innerHTML = html;
+        renderSaveSlots();
+        document.getElementById('settingsPanel').classList.add('active');
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        updateUI();
+        openSettings();
+    }
+
+    function resetGame() {
+        if (confirm("Ты уверен? Это удалит весь прогресс!")) {
+            happiness = 0;
+            items = [];
+            clickMultiplier = 1;
+            nextThreshold = 15;
+            autoMultiplier = 1;
+            totalClicks = 0;
+            trophies = [];
+            secretActive = false;
+            secretLevel = 0;
+            sellAutoRate = 0;
+            if (secretTimer) clearInterval(secretTimer);
+            document.getElementById('score').textContent = 0;
+            updateStats();
+            updateShopButtons();
+            updateUI();
+            updateSecretUI();
+            log("🔄 Игра сброшена!");
+            closePanel('settingsPanel');
+        }
+    }
+
+    function closePanel(id) { document.getElementById(id).classList.remove('active'); }
+
+    // === ИНИЦИАЛИЗАЦИЯ ===
+    updateUI();
+    updateStats();
+    updateShopButtons();
+    checkTrophies();
+</script>
+</body>
+</html>

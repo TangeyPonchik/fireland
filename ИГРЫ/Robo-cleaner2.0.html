@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Robo-Cleaner 2.6 — Neon Edition</title>
+<style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    :root{
+        --bg-0:#03050a;
+        --panel:rgba(15,22,35,.72);
+        --line:rgba(90,130,180,.18);
+        --line-2:rgba(120,170,220,.32);
+        --txt:#eaf2ff;
+        --muted:#8ba3c7;
+        --dim:#5a7093;
+        --cyan:#22d3ee;
+        --cyan-2:#67e8f9;
+        --cyan-3:#0ea5b7;
+        --purple:#a855f7;
+        --purple-2:#c084fc;
+        --purple-3:#7c3aed;
+        --pink:#f43f5e;
+        --pink-2:#fb7185;
+        --amber:#fbbf24;
+        --amber-2:#fde68a;
+        --green:#34d399;
+        --green-2:#6ee7b7;
+    }
+    html,body{height:100%;width:100%;overflow:hidden;}
+    body{
+        font-family:'Segoe UI',system-ui,-apple-system,'Roboto',sans-serif;
+        background:var(--bg-0);color:var(--txt);
+        display:flex;flex-direction:column;overflow:hidden;
+        -webkit-font-smoothing:antialiased;user-select:none;
+    }
+    .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    .bg-layer .grid{
+        position:absolute;inset:-2px;
+        background-image:
+            linear-gradient(rgba(34,211,238,.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34,211,238,.05) 1px, transparent 1px);
+        background-size:52px 52px;
+        mask-image:radial-gradient(ellipse at 50% 40%, #000 20%, transparent 75%);
+        -webkit-mask-image:radial-gradient(ellipse at 50% 40%, #000 20%, transparent 75%);
+        animation:gridPan 24s linear infinite;
+    }
+    @keyframes gridPan{from{background-position:0 0,0 0;}to{background-position:52px 52px,52px 52px;}}
+    .bg-layer .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;}
+    .orb-1{width:520px;height:520px;background:radial-gradient(circle,#7c3aed,transparent 70%);top:-160px;left:-140px;animation:float1 22s ease-in-out infinite;}
+    .orb-2{width:600px;height:600px;background:radial-gradient(circle,#0891b2,transparent 70%);bottom:-200px;right:-180px;animation:float2 26s ease-in-out infinite;}
+    .orb-3{width:420px;height:420px;background:radial-gradient(circle,#be185d,transparent 70%);top:40%;left:55%;animation:float3 30s ease-in-out infinite;opacity:.35;}
+    .orb-4{width:340px;height:340px;background:radial-gradient(circle,#059669,transparent 70%);bottom:10%;left:8%;animation:float2 24s ease-in-out infinite reverse;opacity:.28;}
+    @keyframes float1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(80px,60px) scale(1.12);}}
+    @keyframes float2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-70px,-50px) scale(1.08);}}
+    @keyframes float3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-60px,40px) scale(1.15);}}
+
+    .app{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;}
+
+    .header{
+        flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+        padding:12px 22px 8px;gap:14px;flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:0;}
+    .brand .logo{
+        width:42px;height:42px;border-radius:12px;
+        background:linear-gradient(135deg,var(--cyan),var(--purple));
+        display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+        box-shadow:0 0 22px rgba(34,211,238,.5),0 0 30px rgba(168,85,247,.4);
+        animation:logoPulse 3.5s ease-in-out infinite;
+    }
+    .brand .logo svg{width:24px;height:24px;color:#03050a;}
+    @keyframes logoPulse{
+        0%,100%{box-shadow:0 0 22px rgba(34,211,238,.5),0 0 30px rgba(168,85,247,.4);}
+        50%{box-shadow:0 0 34px rgba(34,211,238,.85),0 0 44px rgba(168,85,247,.7);}
+    }
+    .brand .title{
+        font-size:clamp(16px,2.2vw,26px);font-weight:900;letter-spacing:5px;line-height:1;
+        background:linear-gradient(90deg,var(--cyan),var(--purple-2),var(--cyan));
+        background-size:220% auto;-webkit-background-clip:text;background-clip:text;
+        -webkit-text-fill-color:transparent;animation:shine 7s linear infinite;white-space:nowrap;
+    }
+    .brand .subtitle{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-top:3px;white-space:nowrap;}
+    @keyframes shine{to{background-position:220% center;}}
+
+    .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+    .hud-pill{
+        display:inline-flex;align-items:center;gap:6px;
+        padding:7px 12px;border-radius:11px;
+        background:var(--panel);border:1px solid var(--line);
+        backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+        font-size:12px;font-weight:800;letter-spacing:.4px;transition:.25s;white-space:nowrap;
+    }
+    .hud-pill:hover{transform:translateY(-2px);border-color:var(--line-2);}
+    .hud-pill svg{width:14px;height:14px;flex:0 0 auto;}
+    .hud-pill .val{font-size:13.5px;font-weight:900;font-variant-numeric:tabular-nums;}
+    .hud-pill.cyan{border-color:rgba(34,211,238,.35);color:var(--cyan-2);}
+    .hud-pill.cyan .val{color:var(--cyan-2);text-shadow:0 0 10px rgba(34,211,238,.55);}
+    .hud-pill.pink{border-color:rgba(244,63,94,.35);color:var(--pink-2);}
+    .hud-pill.pink .val{color:var(--pink-2);text-shadow:0 0 10px rgba(244,63,94,.55);}
+    .hud-pill.purple{border-color:rgba(168,85,247,.35);color:var(--purple-2);}
+    .hud-pill.purple .val{color:var(--purple-2);text-shadow:0 0 10px rgba(168,85,247,.55);}
+
+    .tabs{
+        flex:0 0 auto;display:flex;gap:8px;padding:6px 22px 10px;
+        overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab-btn{
+        position:relative;flex:0 0 auto;
+        background:var(--panel);border:1px solid var(--line);
+        color:var(--muted);padding:9px 16px;border-radius:13px;
+        font-weight:800;font-size:12.5px;letter-spacing:.4px;
+        cursor:pointer;transition:.25s cubic-bezier(.2,.7,.3,1);
+        backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+        overflow:hidden;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;
+    }
+    .tab-btn svg{width:14px;height:14px;flex:0 0 auto;}
+    .tab-btn::before{
+        content:"";position:absolute;inset:0;
+        background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);
+        transform:translateX(-130%);transition:.6s;
+    }
+    .tab-btn:hover{color:var(--cyan-2);border-color:rgba(34,211,238,.5);transform:translateY(-2px);}
+    .tab-btn:hover::before{transform:translateX(130%);}
+    .tab-btn.active{
+        background:linear-gradient(180deg,var(--cyan-2),var(--cyan-3));
+        color:#04121a;border-color:transparent;
+        box-shadow:0 0 22px rgba(34,211,238,.55),0 6px 20px rgba(0,0,0,.4);
+        transform:translateY(-1px);
+    }
+    .tab-btn.active svg{color:#04121a;}
+
+    .main{flex:1 1 auto;overflow:hidden;padding:0 22px 14px;position:relative;}
+    .tab-content{
+        display:none;width:100%;height:100%;overflow-y:auto;overflow-x:hidden;
+        padding-right:6px;animation:fadeIn .35s ease;
+        scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.6) transparent;
+    }
+    .tab-content.active{display:block;}
+    .tab-content::-webkit-scrollbar{width:9px;}
+    .tab-content::-webkit-scrollbar-track{background:transparent;}
+    .tab-content::-webkit-scrollbar-thumb{
+        background:linear-gradient(180deg,var(--purple),var(--cyan));
+        border-radius:8px;border:2px solid transparent;background-clip:padding-box;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+    .panel{
+        background:var(--panel);border:1px solid var(--line);
+        border-radius:20px;padding:18px 20px;
+        backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+        box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
+        position:relative;overflow:hidden;
+    }
+    .panel + .panel{margin-top:14px;}
+    .panel::after{
+        content:"";position:absolute;top:0;left:0;right:0;height:1px;
+        background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),transparent);opacity:.6;
+    }
+
+    .battle-wrap{display:grid;grid-template-columns:1fr;gap:14px;max-width:1280px;margin:0 auto;}
+    .battle-top{
+        display:flex;justify-content:space-between;align-items:center;
+        font-size:12px;color:var(--muted);letter-spacing:1.5px;
+        text-transform:uppercase;font-weight:700;padding:0 4px;
+    }
+    .battle-top .combo{color:var(--amber);text-shadow:0 0 12px rgba(251,191,36,.6);font-size:13px;}
+
+    .hp-block{
+        position:relative;
+        background:linear-gradient(180deg,rgba(10,16,26,.9),rgba(6,10,18,.95));
+        border:1px solid var(--line);border-radius:16px;
+        padding:14px 18px;overflow:hidden;
+    }
+    .hp-block::before{
+        content:"";position:absolute;inset:0;pointer-events:none;
+        background:radial-gradient(circle at 20% 0%,rgba(34,211,238,.08),transparent 60%);
+    }
+    .hp-block.enemy::before{background:radial-gradient(circle at 80% 0%,rgba(244,63,94,.1),transparent 60%);}
+    .hp-block .hp-label{
+        display:flex;justify-content:space-between;align-items:center;
+        font-size:13.5px;color:#cfe1fb;margin-bottom:8px;font-weight:700;letter-spacing:.3px;gap:12px;
+    }
+    .hp-block .hp-label .name{display:flex;align-items:center;gap:8px;min-width:0;}
+    .hp-block .hp-label .name .stage{
+        color:var(--purple-2);font-size:10.5px;letter-spacing:2px;font-weight:900;
+        padding:3px 8px;border-radius:6px;
+        background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);
+        text-transform:uppercase;white-space:nowrap;
+    }
+    .hp-block .hp-label .hp-num{color:var(--txt);font-variant-numeric:tabular-nums;}
+    .hp-bar-outer{
+        position:relative;height:20px;border-radius:10px;overflow:hidden;
+        background:rgba(255,255,255,.05);
+        box-shadow:inset 0 0 12px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .hp-bar-inner{
+        height:100%;border-radius:10px;
+        transition:width .4s cubic-bezier(.2,.7,.3,1);
+        position:relative;overflow:hidden;
+    }
+    .hp-bar-inner::after{
+        content:"";position:absolute;inset:0;
+        background:linear-gradient(180deg,rgba(255,255,255,.4),transparent 55%);
+        border-radius:10px;
+    }
+    .hp-bar-inner::before{
+        content:"";position:absolute;inset:0;
+        background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 1px,transparent 1px 22px);
+        mix-blend-mode:overlay;
+    }
+    .hp-bar-player{background:linear-gradient(90deg,#0891b2,var(--cyan),var(--cyan-2));box-shadow:0 0 22px rgba(34,211,238,.7);}
+    .hp-bar-enemy{background:linear-gradient(90deg,#9f1239,var(--pink),var(--pink-2));box-shadow:0 0 22px rgba(244,63,94,.65);}
+
+    .arena{
+        position:relative;display:grid;grid-template-columns:1fr auto 1fr;
+        align-items:center;gap:16px;padding:26px 20px;
+        background:linear-gradient(180deg,rgba(10,16,26,.85),rgba(6,10,18,.95));
+        border:1px solid var(--line);border-radius:20px;overflow:hidden;
+        min-height:300px;
+    }
+    .arena::before{
+        content:"";position:absolute;inset:0;pointer-events:none;
+        background:
+            radial-gradient(circle at 25% 50%,rgba(34,211,238,.08),transparent 45%),
+            radial-gradient(circle at 75% 50%,rgba(244,63,94,.08),transparent 45%);
+    }
+    .arena::after{
+        content:"";position:absolute;left:50%;top:12%;bottom:12%;width:1px;
+        background:linear-gradient(180deg,transparent,rgba(168,85,247,.4),transparent);
+        pointer-events:none;
+    }
+    .fighter{
+        position:relative;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:12px;z-index:1;
+    }
+    .fighter .label{
+        font-size:11px;letter-spacing:2px;text-transform:uppercase;
+        color:var(--muted);font-weight:800;text-align:center;
+    }
+    .fighter .label .big{display:block;font-size:14px;color:var(--txt);letter-spacing:1px;margin-top:2px;}
+
+    .robot-slot{
+        position:relative;
+        width:clamp(140px,20vw,200px);height:clamp(140px,20vw,200px);
+        display:flex;align-items:center;justify-content:center;
+        transition:transform .25s cubic-bezier(.2,.7,.3,1);
+    }
+    .robot-slot svg{
+        width:100%;height:100%;
+        filter:drop-shadow(0 0 20px rgba(244,63,94,.35));
+        transition:filter .3s;
+    }
+    .robot-slot.enemy-slot{cursor:pointer;}
+    .robot-slot.enemy-slot:hover{transform:scale(1.05);}
+    .robot-slot.enemy-slot:hover svg{filter:drop-shadow(0 0 30px rgba(244,63,94,.7));}
+    .robot-slot.enemy-slot:active{transform:scale(.97);}
+    .robot-slot.enemy-slot.hit{animation:robotHit .35s ease;}
+    @keyframes robotHit{
+        0%{transform:scale(1);}
+        30%{transform:scale(.92) rotate(-3deg);}
+        60%{transform:scale(1.04) rotate(2deg);}
+        100%{transform:scale(1);}
+    }
+    .robot-slot.enemy-slot.disabled{cursor:not-allowed;pointer-events:none;}
+    .player-slot svg{filter:drop-shadow(0 0 20px rgba(34,211,238,.4));}
+
+    .vs-badge{
+        display:flex;flex-direction:column;align-items:center;gap:6px;
+        font-weight:900;color:var(--purple-2);letter-spacing:2px;font-size:14px;z-index:1;
+    }
+    .vs-badge .vs-circle{
+        width:44px;height:44px;border-radius:50%;
+        border:2px solid var(--purple);
+        background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);
+        display:flex;align-items:center;justify-content:center;
+        font-size:14px;font-weight:900;color:var(--purple-2);
+        box-shadow:0 0 24px rgba(168,85,247,.5);
+        animation:vsPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes vsPulse{
+        0%,100%{box-shadow:0 0 24px rgba(168,85,247,.5);}
+        50%{box-shadow:0 0 40px rgba(168,85,247,.9);}
+    }
+    .hit-hint{
+        font-size:11px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;
+        margin-top:6px;font-weight:700;
+    }
+    .hit-hint.pulse{animation:hintPulse 1.6s ease-in-out infinite;color:var(--pink-2);}
+    @keyframes hintPulse{0%,100%{opacity:.6;}50%{opacity:1;}}
+
+    .dialog-box{
+        display:flex;gap:10px;align-items:flex-start;
+        background:linear-gradient(180deg,rgba(30,22,52,.85),rgba(20,14,36,.85));
+        border-left:4px solid var(--purple);
+        padding:12px 15px;border-radius:12px;
+        font-size:13px;color:#e0d9f7;line-height:1.5;
+        box-shadow:0 0 30px rgba(168,85,247,.15) inset,0 8px 22px rgba(0,0,0,.4);
+    }
+    .dialog-box .who{color:var(--cyan-2);font-weight:900;flex:0 0 auto;display:flex;align-items:center;gap:6px;}
+    .dialog-box .who svg{width:14px;height:14px;}
+    .dialog-box .say{flex:1;}
+
+    .enemy-status{
+        font-size:12.5px;color:var(--pink-2);min-height:18px;text-align:center;
+        font-weight:700;letter-spacing:.4px;text-shadow:0 0 12px rgba(244,63,94,.5);
+    }
+    .log-box{
+        background:linear-gradient(180deg,rgba(8,12,20,.95),rgba(5,8,14,.95));
+        padding:12px 15px;border-radius:12px;
+        font-size:13.5px;color:var(--purple-2);
+        min-height:46px;border:1px solid var(--line);
+        box-shadow:inset 0 0 24px rgba(168,85,247,.1);
+        font-weight:700;letter-spacing:.3px;
+        display:flex;align-items:center;gap:8px;transition:.25s;
+    }
+
+    .resources-grid{
+        display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+        gap:14px;max-width:1000px;margin:0 auto;
+    }
+    .res-card{
+        position:relative;
+        background:linear-gradient(180deg,rgba(15,22,35,.9),rgba(8,12,20,.95));
+        border:1px solid var(--line);
+        padding:20px 22px;border-radius:18px;
+        text-align:center;transition:.28s cubic-bezier(.2,.7,.3,1);overflow:hidden;
+    }
+    .res-card::before{
+        content:"";position:absolute;inset:0;
+        background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.18),transparent 65%);
+        opacity:0;transition:.3s;
+    }
+    .res-card:hover{transform:translateY(-4px);border-color:rgba(34,211,238,.5);box-shadow:0 14px 36px rgba(34,211,238,.18);}
+    .res-card:hover::before{opacity:1;}
+    .res-card .icon{display:flex;justify-content:center;margin-bottom:6px;color:var(--cyan-2);filter:drop-shadow(0 0 12px rgba(34,211,238,.6));}
+    .res-card .icon svg{width:34px;height:34px;}
+    .res-card .val{font-size:30px;font-weight:900;color:var(--cyan-2);text-shadow:0 0 20px rgba(34,211,238,.55);font-variant-numeric:tabular-nums;line-height:1;}
+    .res-card .lbl{font-size:10.5px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:8px;}
+    .res-card.pink .icon{color:var(--pink-2);filter:drop-shadow(0 0 12px rgba(244,63,94,.6));}
+    .res-card.pink .val{color:var(--pink-2);text-shadow:0 0 20px rgba(244,63,94,.55);}
+    .res-card.pink::before{background:radial-gradient(circle at 50% 0%,rgba(244,63,94,.18),transparent 65%);}
+    .res-card.pink:hover{border-color:rgba(244,63,94,.5);box-shadow:0 14px 36px rgba(244,63,94,.18);}
+
+    .city-progress{
+        display:flex;align-items:center;gap:14px;
+        max-width:720px;margin:18px auto;padding:14px 20px;
+        background:var(--panel);border:1px solid var(--line);border-radius:16px;
+        backdrop-filter:blur(12px);
+    }
+    .city-progress .label{
+        font-size:12px;letter-spacing:2px;color:var(--muted);
+        text-transform:uppercase;font-weight:800;white-space:nowrap;
+        display:flex;align-items:center;gap:6px;
+    }
+    .city-progress .label svg{width:16px;height:16px;color:var(--cyan-2);}
+    .city-progress .bar{flex:1;height:12px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden;box-shadow:inset 0 0 8px rgba(0,0,0,.6);}
+    .city-progress .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));transition:width .5s cubic-bezier(.2,.7,.3,1);box-shadow:0 0 16px rgba(34,211,238,.7);position:relative;}
+    .city-progress .bar > i::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.5),transparent 60%);}
+    .city-progress .pct{font-size:15px;font-weight:900;color:var(--cyan-2);text-shadow:0 0 14px rgba(34,211,238,.6);min-width:52px;text-align:right;font-variant-numeric:tabular-nums;}
+
+    .btn{
+        display:inline-flex;align-items:center;gap:8px;justify-content:center;
+        background:linear-gradient(180deg,var(--cyan-2),var(--cyan-3));
+        border:none;padding:11px 20px;border-radius:14px;
+        font-weight:800;color:#04121a;cursor:pointer;
+        font-size:13px;letter-spacing:.5px;
+        transition:.22s cubic-bezier(.2,.7,.3,1);
+        box-shadow:0 10px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.4);
+        margin:4px;text-transform:uppercase;
+    }
+    .btn svg{width:16px;height:16px;flex:0 0 auto;}
+    .btn:hover{transform:translateY(-2px);filter:brightness(1.08);}
+    .btn:active{transform:translateY(0);}
+    .btn:disabled{opacity:.35;cursor:not-allowed;transform:none;filter:grayscale(.5);}
+    .btn-pink{background:linear-gradient(180deg,var(--pink-2),var(--pink));color:#1a0208;box-shadow:0 10px 24px rgba(244,63,94,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+    .btn-purple{background:linear-gradient(180deg,var(--purple-2),var(--purple-3));color:#0f001f;box-shadow:0 10px 24px rgba(168,85,247,.4),inset 0 1px 0 rgba(255,255,255,.4);}
+    .btn-green{background:linear-gradient(180deg,var(--green-2),var(--green));color:#03150e;box-shadow:0 10px 24px rgba(52,211,153,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+    .btn-amber{background:linear-gradient(180deg,var(--amber-2),var(--amber));color:#1a1200;box-shadow:0 10px 24px rgba(251,191,36,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+
+    .promo-input{
+        background:rgba(5,9,16,.9);border:1px solid rgba(168,85,247,.5);
+        padding:11px 15px;border-radius:12px;
+        color:#fff;width:200px;font-size:14px;
+        outline:none;transition:.2s;letter-spacing:1px;font-weight:700;
+    }
+    .promo-input:focus{border-color:var(--cyan);box-shadow:0 0 20px rgba(34,211,238,.3);}
+    .promo-input::placeholder{color:var(--dim);letter-spacing:2px;}
+
+    .shop-header{
+        display:flex;justify-content:center;gap:20px;flex-wrap:wrap;
+        font-size:13.5px;color:var(--muted);margin-bottom:16px;
+        padding:12px 18px;background:var(--panel);border-radius:14px;border:1px solid var(--line);
+    }
+    .shop-header b{font-weight:900;}
+    .shop-header .w{color:var(--cyan-2);}
+    .shop-header .a{color:var(--pink-2);}
+
+    .shop-grid{
+        display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+        gap:14px;max-width:1200px;margin:0 auto;
+    }
+    .shop-card{
+        position:relative;
+        background:linear-gradient(180deg,rgba(15,22,35,.9),rgba(8,12,20,.95));
+        border:1px solid var(--line);border-radius:16px;
+        padding:16px 14px;text-align:center;transition:.28s cubic-bezier(.2,.7,.3,1);overflow:hidden;
+    }
+    .shop-card:hover{transform:translateY(-4px);border-color:var(--purple);box-shadow:0 14px 36px rgba(168,85,247,.22);}
+    .shop-card.equipped{border-color:var(--cyan);box-shadow:0 0 28px rgba(34,211,238,.3),inset 0 0 16px rgba(34,211,238,.08);}
+    .shop-card.equipped::before{
+        content:"ЭКИПИРОВАНО";position:absolute;top:8px;right:-34px;
+        background:linear-gradient(90deg,var(--cyan),var(--purple));
+        color:#04121a;font-size:8.5px;font-weight:900;letter-spacing:1px;
+        padding:3px 38px;transform:rotate(35deg);
+    }
+    .shop-card .item-svg{
+        width:100%;height:90px;display:flex;align-items:center;justify-content:center;
+        margin-bottom:8px;
+    }
+    .shop-card .item-svg svg{width:80px;height:80px;filter:drop-shadow(0 0 10px rgba(34,211,238,.4));}
+    .shop-card .name{font-size:13.5px;font-weight:800;color:var(--txt);margin-bottom:6px;}
+    .shop-card .stat{font-size:15px;font-weight:900;color:var(--cyan-2);text-shadow:0 0 12px rgba(34,211,238,.5);}
+    .shop-card .stat.pink{color:var(--pink-2);text-shadow:0 0 12px rgba(244,63,94,.5);}
+    .shop-card .cost{font-size:11.5px;color:var(--dim);margin-top:8px;letter-spacing:.5px;font-weight:700;}
+    .shop-btn{
+        display:inline-flex;align-items:center;gap:6px;
+        background:linear-gradient(180deg,var(--purple-2),var(--purple-3));
+        border:none;padding:8px 16px;border-radius:10px;
+        font-weight:900;color:#0f001f;cursor:pointer;margin-top:10px;
+        font-size:12px;letter-spacing:.5px;transition:.2s;
+        text-transform:uppercase;
+        box-shadow:0 6px 16px rgba(168,85,247,.35),inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .shop-btn:hover{filter:brightness(1.1);transform:scale(1.05);}
+
+    .craft-section{
+        margin-top:18px;padding-top:16px;border-top:1px solid var(--line);
+    }
+    .craft-title{
+        text-align:center;font-size:11px;color:var(--dim);
+        letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:12px;
+        display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .craft-title svg{width:14px;height:14px;color:var(--purple-2);}
+
+    .hero-grid{
+        display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+        gap:16px;max-width:1280px;margin:0 auto;
+    }
+    .hero-card{
+        position:relative;
+        background:linear-gradient(180deg,rgba(15,22,35,.9),rgba(8,12,20,.95));
+        border:1px solid var(--line);border-radius:18px;
+        padding:18px 16px;text-align:center;transition:.28s cubic-bezier(.2,.7,.3,1);overflow:hidden;
+    }
+    .hero-card:hover{transform:translateY(-5px);border-color:var(--purple);box-shadow:0 18px 42px rgba(168,85,247,.25);}
+    .hero-card.active{border-color:var(--cyan);box-shadow:0 0 30px rgba(34,211,238,.35),inset 0 0 20px rgba(34,211,238,.08);}
+    .hero-card.active::before{
+        content:"АКТИВЕН";position:absolute;top:10px;right:-32px;
+        background:linear-gradient(90deg,var(--cyan),var(--purple));
+        color:#04121a;font-size:9px;font-weight:900;letter-spacing:1.5px;
+        padding:3px 36px;transform:rotate(35deg);
+        box-shadow:0 2px 10px rgba(0,0,0,.4);
+    }
+    .hero-card .portrait{
+        width:90px;height:90px;margin:0 auto 10px;
+        display:flex;align-items:center;justify-content:center;
+        border-radius:50%;
+        background:radial-gradient(circle,rgba(34,211,238,.15),transparent 70%);
+        border:2px solid rgba(34,211,238,.35);
+        box-shadow:0 0 24px rgba(34,211,238,.2);
+    }
+    .hero-card .portrait svg{width:70px;height:70px;}
+    .hero-card .hero-name{font-size:16px;font-weight:900;color:var(--cyan-2);margin-bottom:8px;letter-spacing:.5px;text-shadow:0 0 14px rgba(34,211,238,.4);}
+    .hero-card .hero-stats{display:flex;justify-content:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:700;}
+    .hero-card .hero-ability{font-size:11.5px;color:var(--purple-2);margin:8px 0;min-height:30px;line-height:1.4;font-weight:700;}
+    .hero-card .hero-lore{font-size:10.5px;color:var(--dim);margin:10px 0;font-style:italic;line-height:1.4;}
+    .hero-btn{
+        display:inline-flex;align-items:center;gap:6px;
+        background:linear-gradient(180deg,var(--cyan-2),var(--cyan-3));
+        border:none;padding:9px 18px;border-radius:11px;
+        font-weight:900;color:#04121a;cursor:pointer;
+        font-size:12.5px;letter-spacing:.5px;transition:.2s;
+        text-transform:uppercase;
+        box-shadow:0 8px 20px rgba(34,211,238,.35),inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .hero-btn:hover{filter:brightness(1.1);transform:scale(1.05);}
+    .hero-btn.locked{background:linear-gradient(180deg,var(--pink-2),var(--pink));color:#1a0208;box-shadow:0 8px 20px rgba(244,63,94,.35),inset 0 1px 0 rgba(255,255,255,.4);}
+    .hero-lock{font-size:11px;color:var(--dim);margin-top:8px;font-weight:700;letter-spacing:.5px;}
+
+    .map-wrap{max-width:1200px;margin:0 auto;}
+    .city-map-svg{
+        width:100%;
+        border-radius:20px;
+        border:1px solid var(--line);
+        box-shadow:0 0 40px rgba(34,211,238,.12),inset 0 0 30px rgba(0,0,0,.5);
+        background:#040810;
+        overflow:hidden;
+    }
+    .district-overlay{
+        display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;
+    }
+    .district-pill{
+        background:var(--panel);border:1px solid var(--line);
+        padding:10px 14px;border-radius:12px;
+        display:flex;justify-content:space-between;align-items:center;
+        font-size:12.5px;font-weight:800;color:var(--muted);
+        transition:.25s;
+    }
+    .district-pill .name{display:flex;align-items:center;gap:8px;}
+    .district-pill .name svg{width:16px;height:16px;color:var(--cyan-2);}
+    .district-pill .pct{color:var(--dim);font-variant-numeric:tabular-nums;font-weight:900;}
+    .district-pill.done{border-color:var(--cyan);color:var(--cyan-2);background:rgba(34,211,238,.06);}
+    .district-pill.done .pct{color:var(--cyan-2);text-shadow:0 0 10px rgba(34,211,238,.5);}
+
+    .status-wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px;}
+    .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+    .status-item{
+        background:var(--panel);border:1px solid var(--line);border-radius:14px;
+        padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+        font-size:12.5px;color:var(--muted);font-weight:700;letter-spacing:.4px;transition:.25s;gap:10px;
+    }
+    .status-item:hover{border-color:var(--line-2);transform:translateY(-2px);}
+    .status-item .label{display:flex;align-items:center;gap:7px;}
+    .status-item .label svg{width:15px;height:15px;color:var(--cyan-2);flex:0 0 auto;}
+    .status-item .v{color:var(--cyan-2);font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(34,211,238,.4);}
+
+    .daily-box{
+        background:var(--panel);border:1px solid var(--line);
+        border-radius:16px;padding:16px 20px;backdrop-filter:blur(12px);
+    }
+    .daily-title{
+        font-size:11px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;
+        font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;
+    }
+    .daily-title svg{width:14px;height:14px;color:var(--purple-2);}
+    #dailyList{display:flex;flex-direction:column;gap:8px;font-size:13.5px;color:#dbe6fb;font-weight:600;}
+    #dailyList .row{
+        display:flex;justify-content:space-between;align-items:center;
+        padding:9px 12px;border-radius:10px;
+        background:rgba(255,255,255,.025);border:1px solid var(--line);transition:.2s;
+    }
+    #dailyList .row.done{border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.06);color:var(--cyan-2);}
+    #dailyList .row .val{color:var(--dim);font-size:12px;font-weight:700;}
+    #dailyList .row.done .val{color:var(--cyan-2);}
+    #dailyList .reward{
+        text-align:center;color:var(--cyan-2);font-weight:900;
+        padding:10px;border-radius:10px;
+        background:linear-gradient(90deg,rgba(34,211,238,.1),rgba(168,85,247,.1));
+        border:1px solid rgba(34,211,238,.35);letter-spacing:1px;
+    }
+
+    .difficulty-selector{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0;}
+    .diff-btn{
+        background:var(--panel);border:1px solid var(--line);
+        padding:10px 22px;border-radius:12px;color:var(--muted);
+        cursor:pointer;font-size:13px;font-weight:800;letter-spacing:.5px;
+        transition:.22s cubic-bezier(.2,.7,.3,1);text-transform:uppercase;
+    }
+    .diff-btn:hover{border-color:var(--cyan);color:var(--cyan-2);transform:translateY(-2px);}
+    .diff-btn.active{
+        border-color:var(--cyan);color:#04121a;
+        background:linear-gradient(180deg,var(--cyan-2),var(--cyan-3));
+        box-shadow:0 0 22px rgba(34,211,238,.45);
+    }
+
+    .center-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;align-items:center;}
+
+    .helper-bar{flex:0 0 auto;padding:8px 22px 12px;display:flex;justify-content:center;}
+    .helper{
+        display:inline-flex;align-items:center;gap:10px;
+        border:1px solid rgba(168,85,247,.5);border-radius:14px;padding:10px 20px;
+        background:linear-gradient(180deg,rgba(168,85,247,.1),rgba(168,85,247,.02));
+        cursor:pointer;font-size:12.5px;color:#e7eefc;
+        transition:.28s cubic-bezier(.2,.7,.3,1);
+        font-weight:700;letter-spacing:.4px;max-width:100%;
+        backdrop-filter:blur(10px);
+    }
+    .helper:hover{
+        background:linear-gradient(180deg,rgba(168,85,247,.22),rgba(168,85,247,.06));
+        transform:translateY(-3px);
+        box-shadow:0 12px 32px rgba(168,85,247,.28);
+        border-color:var(--purple-2);
+    }
+    .helper .lbl{color:var(--purple-2);font-weight:900;display:flex;align-items:center;gap:6px;}
+    .helper .lbl svg{width:14px;height:14px;}
+    .helper .code{
+        color:var(--cyan-2);font-family:'Consolas',monospace;
+        font-weight:900;letter-spacing:2px;
+        text-shadow:0 0 12px rgba(34,211,238,.6);
+    }
+
+    .modal-backdrop{
+        position:fixed;inset:0;z-index:9998;
+        background:rgba(3,5,10,.82);backdrop-filter:blur(8px);
+        display:none;align-items:center;justify-content:center;padding:20px;
+    }
+    .modal-backdrop.show{display:flex;animation:fadeIn .25s ease;}
+    .loot-modal{
+        width:min(420px,100%);
+        background:linear-gradient(180deg,rgba(20,28,45,.98),rgba(10,16,28,.98));
+        border:1px solid rgba(168,85,247,.5);border-radius:24px;
+        padding:28px 24px;text-align:center;
+        box-shadow:0 0 60px rgba(168,85,247,.35),0 30px 80px rgba(0,0,0,.7);
+        animation:lootIn .4s cubic-bezier(.2,.7,.3,1);
+        position:relative;overflow:hidden;
+    }
+    @keyframes lootIn{from{opacity:0;transform:scale(.85) translateY(20px);}to{opacity:1;transform:none;}}
+    .loot-modal::before{
+        content:"";position:absolute;inset:-50%;
+        background:conic-gradient(from 0deg,transparent,rgba(34,211,238,.15),transparent,rgba(168,85,247,.15),transparent);
+        animation:rotate 6s linear infinite;pointer-events:none;
+    }
+    @keyframes rotate{to{transform:rotate(360deg);}}
+    .loot-modal > *{position:relative;z-index:1;}
+    .loot-modal .title{
+        font-size:22px;font-weight:900;letter-spacing:3px;margin-bottom:6px;
+        background:linear-gradient(90deg,var(--cyan),var(--purple),var(--cyan));
+        background-size:200% auto;
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+        animation:shine 3s linear infinite;
+    }
+    .loot-modal .subtitle{font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:18px;}
+    .loot-icon{
+        width:120px;height:120px;margin:0 auto 18px;
+        display:flex;align-items:center;justify-content:center;
+        border-radius:22px;
+        background:linear-gradient(135deg,rgba(168,85,247,.25),rgba(34,211,238,.15));
+        border:2px solid rgba(168,85,247,.5);
+        box-shadow:0 0 40px rgba(168,85,247,.4);
+    }
+    .loot-icon.shaking{animation:lootShake .6s ease-in-out;}
+    @keyframes lootShake{
+        0%,100%{transform:rotate(0) scale(1);}
+        20%{transform:rotate(-8deg) scale(1.06);}
+        40%{transform:rotate(8deg) scale(1.06);}
+        60%{transform:rotate(-5deg) scale(1.03);}
+        80%{transform:rotate(5deg) scale(1.03);}
+    }
+    .loot-icon svg{width:70px;height:70px;color:var(--purple-2);filter:drop-shadow(0 0 20px rgba(168,85,247,.8));}
+    .loot-reward{
+        font-size:15px;font-weight:900;color:var(--cyan-2);
+        letter-spacing:1px;margin-top:12px;min-height:24px;
+        text-shadow:0 0 16px rgba(34,211,238,.6);
+    }
+    .loot-reward.jackpot{
+        color:var(--amber);text-shadow:0 0 20px rgba(251,191,36,.9);
+        font-size:17px;letter-spacing:2px;
+        animation:jackpotPulse .8s ease-in-out infinite;
+    }
+    @keyframes jackpotPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+
+    .death-overlay{
+        position:fixed;inset:0;z-index:9999;
+        background:radial-gradient(circle at 50% 50%,rgba(120,0,20,.7),rgba(0,0,0,.96));
+        display:none;align-items:center;justify-content:center;padding:20px;
+    }
+    .death-overlay.show{display:flex;animation:deathIn .6s ease;}
+    @keyframes deathIn{from{opacity:0;}to{opacity:1;}}
+    .death-content{
+        text-align:center;max-width:480px;
+        animation:deathRise 1s cubic-bezier(.2,.7,.3,1);
+    }
+    @keyframes deathRise{from{transform:translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
+    .death-title{
+        font-size:clamp(38px,8vw,72px);font-weight:900;letter-spacing:8px;
+        color:#ff4d6d;
+        text-shadow:0 0 30px rgba(244,63,94,.9),0 0 60px rgba(244,63,94,.6);
+        animation:deathPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes deathPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
+    .death-subtitle{
+        font-size:14px;letter-spacing:4px;color:#fda4af;margin-top:8px;text-transform:uppercase;
+    }
+    .death-stats{
+        margin:26px 0;padding:20px;border-radius:16px;
+        background:rgba(20,10,20,.7);border:1px solid rgba(244,63,94,.4);
+        display:grid;grid-template-columns:1fr 1fr;gap:12px;
+        font-size:13px;color:#fecdd3;
+    }
+    .death-stats .row{
+        display:flex;justify-content:space-between;align-items:center;
+        padding:8px 12px;border-radius:8px;background:rgba(244,63,94,.1);
+    }
+    .death-stats .row .v{color:#fff;font-weight:900;}
+    .death-btn{
+        display:inline-flex;align-items:center;gap:8px;
+        background:linear-gradient(180deg,#fb7185,#f43f5e);
+        border:none;padding:14px 32px;border-radius:14px;
+        font-weight:900;color:#1a0208;cursor:pointer;font-size:15px;
+        letter-spacing:2px;text-transform:uppercase;
+        box-shadow:0 12px 30px rgba(244,63,94,.5),inset 0 1px 0 rgba(255,255,255,.4);
+        transition:.22s;
+    }
+    .death-btn:hover{transform:translateY(-2px) scale(1.03);filter:brightness(1.1);}
+
+    @keyframes shake{
+        0%,100%{transform:translateX(0);}
+        15%{transform:translateX(-5px);}
+        30%{transform:translateX(5px);}
+        45%{transform:translateX(-4px);}
+        60%{transform:translateX(4px);}
+        75%{transform:translateX(-2px);}
+        90%{transform:translateX(2px);}
+    }
+    .shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97);}
+    .float-dmg{
+        position:fixed;pointer-events:none;font-weight:900;font-size:26px;
+        color:#fff;z-index:9999;
+        text-shadow:0 0 14px rgba(244,63,94,.95),0 3px 8px rgba(0,0,0,.9);
+        animation:floatUp 1.1s cubic-bezier(.2,.7,.3,1) forwards;letter-spacing:.5px;
+    }
+    .float-dmg.cyan{color:var(--cyan-2);text-shadow:0 0 14px rgba(34,211,238,.95),0 3px 8px rgba(0,0,0,.9);}
+    .float-dmg.green{color:var(--green-2);text-shadow:0 0 14px rgba(52,211,153,.95),0 3px 8px rgba(0,0,0,.9);}
+    .float-dmg.amber{color:var(--amber);text-shadow:0 0 14px rgba(251,191,36,.95),0 3px 8px rgba(0,0,0,.9);font-size:32px;}
+    @keyframes floatUp{
+        0%{opacity:1;transform:translate(-50%,0) scale(.7);}
+        25%{opacity:1;transform:translate(-50%,-12px) scale(1.15);}
+        100%{opacity:0;transform:translate(-50%,-72px) scale(1.05);}
+    }
+    .flash-cyan{animation:flashCyan .35s ease;}
+    @keyframes flashCyan{0%{box-shadow:0 0 0 rgba(34,211,238,0);}50%{box-shadow:0 0 40px rgba(34,211,238,.7);}100%{box-shadow:0 0 0 rgba(34,211,238,0);}}
+    .flash-pink{animation:flashPink .35s ease;}
+    @keyframes flashPink{0%{box-shadow:0 0 0 rgba(244,63,94,0);}50%{box-shadow:0 0 40px rgba(244,63,94,.7);}100%{box-shadow:0 0 0 rgba(244,63,94,0);}}
+
+    @media (max-width:768px){
+        .header{padding:10px 14px 6px;gap:10px;}
+        .brand .logo{width:36px;height:36px;border-radius:11px;}
+        .brand .title{letter-spacing:3px;}
+        .hud-pill{padding:6px 10px;font-size:11px;}
+        .hud-pill .val{font-size:12.5px;}
+        .tabs{padding:6px 14px 8px;}
+        .tab-btn{padding:8px 12px;font-size:11.5px;border-radius:12px;}
+        .main{padding:0 14px 14px;}
+        .panel{padding:14px;border-radius:16px;}
+        .arena{grid-template-columns:1fr auto 1fr;padding:18px 12px;gap:10px;min-height:240px;}
+        .robot-slot{width:clamp(90px,26vw,140px);height:clamp(90px,26vw,140px);}
+        .vs-badge .vs-circle{width:34px;height:34px;font-size:11px;}
+        .shop-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+        .hero-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;}
+        .district-overlay{grid-template-columns:repeat(2,1fr);gap:8px;}
+        .helper-bar{padding:6px 14px 12px;}
+        .helper{padding:8px 14px;font-size:11.5px;}
+        .status-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
+        .hp-block{padding:12px 14px;}
+        .hp-bar-outer{height:16px;}
+        .float-dmg{font-size:20px;}
+        .float-dmg.amber{font-size:26px;}
+        .res-card{padding:16px;}
+        .res-card .val{font-size:24px;}
+        .res-card .icon svg{width:28px;height:28px;}
+        .death-stats{grid-template-columns:1fr;}
+    }
+    @media (max-width:420px){
+        .brand .subtitle{display:none;}
+        .hud-pill.purple{display:none;}
+        .tab-btn{padding:8px 11px;font-size:11px;}
+        .arena{padding:14px 8px;gap:6px;}
+        .district-overlay{grid-template-columns:1fr 1fr;}
+    }
+    @media (min-width:1400px){
+        .battle-wrap,.shop-grid,.hero-grid,.status-wrap,.map-wrap{max-width:1400px;}
+        .panel{padding:22px 26px;}
+    }
+</style>
+</head>
+<body>
+
+<div class="bg-layer">
+    <div class="grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+</div>
+
+<div class="app">
+    <header class="header">
+        <div class="brand">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"/></svg>
+            </div>
+            <div class="title-wrap">
+                <div class="title">ROBO-CLEANER 2.6</div>
+                <div class="subtitle">Neon Edition · Clean the City</div>
+            </div>
+        </div>
+        <div class="hud">
+            <div class="hud-pill cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span class="val" id="topParts">0</span>
+            </div>
+            <div class="hud-pill pink">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2zm0 4l6 6-6 6-6-6 6-6z"/></svg>
+                <span class="val" id="topRare">0</span>
+            </div>
+            <div class="hud-pill purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                <span class="val" id="topCity">0</span>%
+            </div>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('fight')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M9.5 6.5L21 18v3h-3L6.5 9.5"/></svg>
+            Бой
+        </button>
+        <button class="tab-btn" onclick="switchTab('parts')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1 5.6 5.6l-8.5 8.5a2.8 2.8 0 0 1-4 0l-1.6-1.6a2.8 2.8 0 0 1 0-4l8.5-8.5z"/></svg>
+            Ресурсы
+        </button>
+        <button class="tab-btn" onclick="switchTab('garage')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>
+            Гараж
+        </button>
+        <button class="tab-btn" onclick="switchTab('heroes')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            Герои
+        </button>
+        <button class="tab-btn" onclick="switchTab('map')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l-5 2v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+            Карта
+        </button>
+        <button class="tab-btn" onclick="switchTab('status')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 6-7"/></svg>
+            Статус
+        </button>
+    </nav>
+
+    <main class="main">
+        <div id="fight" class="tab-content active">
+            <div class="battle-wrap">
+                <div class="battle-top">
+                    <span>❤ <span id="hName">Выживший</span> · Ур. <span id="hLvl">1</span></span>
+                    <span class="combo">🔥 Комбо x<span id="combo">0</span></span>
+                </div>
+
+                <div class="hp-block" id="playerHpBlock">
+                    <div class="hp-label">
+                        <div class="name">
+                            <span>❤ <span id="hName2">Выживший</span></span>
+                            <span class="stage" id="stageDisplay">ЭТАП 1</span>
+                        </div>
+                        <span class="hp-num" id="hpHp">120 / 120</span>
+                    </div>
+                    <div class="hp-bar-outer">
+                        <div class="hp-bar-inner hp-bar-player" id="hpFill" style="width:100%"></div>
+                    </div>
+                </div>
+
+                <div class="arena">
+                    <div class="fighter">
+                        <div class="robot-slot player-slot" id="playerSlot"></div>
+                        <div class="label">Вы<span class="big" id="playerLabel">Выживший</span></div>
+                    </div>
+
+                    <div class="vs-badge">
+                        <div class="vs-circle">VS</div>
+                    </div>
+
+                    <div class="fighter">
+                        <div class="robot-slot enemy-slot" id="enemySlot" onclick="attack()"></div>
+                        <div class="label" style="color:var(--pink-2);">Враг<span class="big" id="enemyLabel">Боевой Дрон</span></div>
+                        <div class="hit-hint pulse" id="hitHint">👆 Клик по роботу = удар</div>
+                    </div>
+                </div>
+
+                <div class="hp-block enemy" id="enemyHpBlock">
+                    <div class="hp-label">
+                        <div class="name"><span>🤖 <span id="eName">Боевой Дрон</span></span></div>
+                        <span class="hp-num" id="enemyHpText">100 / 100</span>
+                    </div>
+                    <div class="hp-bar-outer">
+                        <div class="hp-bar-inner hp-bar-enemy" id="enemyFill" style="width:100%"></div>
+                    </div>
+                </div>
+
+                <div class="dialog-box" id="dialogBox">
+                    <span class="who">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+                        Наставник:
+                    </span>
+                    <span class="say" id="dialogSay">Вперёд, чистильщик. Ты справишься.</span>
+                </div>
+
+                <div class="enemy-status" id="enemyStatus"></div>
+                <div class="log-box" id="log">Клик по роботу чтобы атаковать.</div>
+            </div>
+        </div>
+
+        <div id="parts" class="tab-content">
+            <div class="resources-grid">
+                <div class="res-card">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </div>
+                    <div class="val" id="p1">0</div>
+                    <div class="lbl">Запчасти</div>
+                </div>
+                <div class="res-card pink">
+                    <div class="icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2zm0 4l6 6-6 6-6-6 6-6z"/></svg>
+                    </div>
+                    <div class="val" id="p2">0</div>
+                    <div class="lbl">Редкие детали</div>
+                </div>
+            </div>
+
+            <div class="city-progress">
+                <span class="label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                    Город
+                </span>
+                <div class="bar"><i id="cityBar" style="width:0%"></i></div>
+                <span class="pct" id="city">0%</span>
+            </div>
+
+            <div class="center-row" style="margin-top:6px;">
+                <button class="btn" id="repairBtn" onclick="repairCity()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1 5.6 5.6l-8.5 8.5a2.8 2.8 0 0 1-4 0l-1.6-1.6a2.8 2.8 0 0 1 0-4l8.5-8.5z"/></svg>
+                    Починить (+10%)
+                </button>
+                <button class="btn btn-pink" onclick="buyHeal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M9 5h6M5 8h14l-1.5 13h-11L5 8z"/></svg>
+                    Аптечка (+25 HP / 20⚙️)
+                </button>
+                <button class="btn btn-purple" onclick="openLoot()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18"/><path d="M9 13h6"/></svg>
+                    Лут-бокс (30🔴)
+                </button>
+            </div>
+
+            <div class="center-row" style="margin-top:20px;">
+                <input class="promo-input" id="promoInput" placeholder="ПРОМОКОД">
+                <button class="btn btn-green" onclick="applyPromo()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4"/><path d="M5 12v10h14V12M12 8v14M12 8s-1-6-5-4 5 4 5 4zM12 8s1-6 5-4-5 4-5 4z"/></svg>
+                    Активировать
+                </button>
+            </div>
+        </div>
+
+        <div id="garage" class="tab-content">
+            <div class="shop-header">
+                <span>⚔ Оружие: <b class="w" id="wName">Кулак (+0)</b></span>
+                <span>🛡 Броня: <b class="a" id="aName">Лёгкая (+0)</b></span>
+            </div>
+            <div class="shop-grid" id="shopGrid"></div>
+
+            <div class="craft-section">
+                <div class="craft-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l4 4-9 9H5v-4l9-9z"/><path d="M15 5l4 4"/></svg>
+                    Мастерская · Временные усилители на бой
+                </div>
+                <div class="center-row">
+                    <button class="btn btn-green" onclick="craftItem('shield')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 5v7c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V5l-8-3z"/></svg>
+                        Щит (20⚙️)
+                    </button>
+                    <button class="btn btn-amber" onclick="craftItem('power')">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"/></svg>
+                        Усилитель (25⚙️)
+                    </button>
+                    <button class="btn btn-pink" onclick="craftItem('healpack')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M9 5h6M5 8h14l-1.5 13h-11L5 8z"/></svg>
+                        Регенерация (30⚙️)
+                    </button>
+                </div>
+                <div class="log-box" id="craftLog" style="margin-top:16px;">Выбери улучшение.</div>
+            </div>
+        </div>
+
+        <div id="heroes" class="tab-content">
+            <div class="hero-grid" id="heroGrid"></div>
+        </div>
+
+        <div id="map" class="tab-content">
+            <div class="map-wrap">
+                <div class="city-map-svg" id="cityMapSvg"></div>
+                <div class="district-overlay" id="districtOverlay"></div>
+            </div>
+        </div>
+
+        <div id="status" class="tab-content">
+            <div class="status-wrap">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>Убито</span>
+                        <span class="v" id="sKills">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>Город</span>
+                        <span class="v" id="sCity">0%</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z"/></svg>Сила</span>
+                        <span class="v" id="sDmg">8</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 6-7"/></svg>Этап</span>
+                        <span class="v" id="sStage">1</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9 16c1-1 5-1 6 0"/></svg>Смертей</span>
+                        <span class="v" id="sDeath">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 12l10 10 10-10L12 2zm0 4l6 6-6 6-6-6 6-6z"/></svg>Редкие</span>
+                        <span class="v" id="sRare">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>Союзник</span>
+                        <span class="v" id="sAlly">Нет</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 6-7"/></svg>Уровень</span>
+                        <span class="v" id="sLvl">1</span>
+                    </div>
+                </div>
+
+                <div class="daily-box">
+                    <div class="daily-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+                        Ежедневные задания
+                    </div>
+                    <div id="dailyList"></div>
+                    <div class="center-row" style="margin-top:12px;">
+                        <button class="btn btn-purple" onclick="resetDaily()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>
+                            Сбросить задания (10⚙️)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="daily-title" style="text-align:center;justify-content:center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Сложность
+                    </div>
+                    <div class="difficulty-selector">
+                        <button class="diff-btn" onclick="setDifficulty(1)">🍃 Лёгкий</button>
+                        <button class="diff-btn active" onclick="setDifficulty(2)">🔥 Средний</button>
+                        <button class="diff-btn" onclick="setDifficulty(3)">💀 Сложный</button>
+                    </div>
+                </div>
+
+                <div class="center-row">
+                    <button class="btn btn-pink" onclick="resetProgress()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>
+                        Сбросить прогресс
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="helper-bar">
+        <div class="helper" onclick="nextHint()">
+            <span class="lbl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+                Подсказка:
+            </span>
+            <span class="code" id="hintText">ROBO2026</span>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="lootModal">
+    <div class="loot-modal">
+        <div class="title">ЛУТ-БОКС</div>
+        <div class="subtitle">Нажми чтобы открыть</div>
+        <div class="loot-icon" id="lootIcon" onclick="openLootBox()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18"/><path d="M9 13h6"/></svg>
+        </div>
+        <div class="loot-reward" id="lootReward"></div>
+        <div class="center-row" style="margin-top:16px;">
+            <button class="btn btn-purple" onclick="closeLootModal()" id="lootCloseBtn" style="display:none;">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<div class="death-overlay" id="deathOverlay">
+    <div class="death-content">
+        <div class="death-title">ВЫ ПОГИБЛИ</div>
+        <div class="death-subtitle">Система отключена</div>
+        <div class="death-stats">
+            <div class="row"><span>Убито за этап</span><span class="v" id="deathKills">0</span></div>
+            <div class="row"><span>Штраф HP</span><span class="v" id="deathPenaltyVal">-10</span></div>
+            <div class="row"><span>Всего смертей</span><span class="v" id="deathTotal">0</span></div>
+            <div class="row"><span>Макс HP</span><span class="v" id="deathMaxHp">110</span></div>
+        </div>
+        <button class="death-btn" onclick="respawn()">ВОЗРОДИТЬСЯ</button>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   SVG-РЕСУРСЫ
+============================================================ */
+const WEAPON_SVG = {
+    fist: `<svg viewBox="0 0 100 100"><defs><linearGradient id="fs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ca3af"/><stop offset="1" stop-color="#4b5563"/></linearGradient></defs><rect x="25" y="30" width="50" height="50" rx="10" fill="url(#fs)" stroke="#e5e7eb" stroke-width="2"/><rect x="30" y="36" width="40" height="8" rx="3" fill="#374151"/><rect x="30" y="48" width="40" height="8" rx="3" fill="#374151"/><rect x="30" y="60" width="40" height="8" rx="3" fill="#374151"/></svg>`,
+    pipe: `<svg viewBox="0 0 100 100"><defs><linearGradient id="pp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a16207"/><stop offset="1" stop-color="#451a03"/></linearGradient></defs><rect x="10" y="40" width="80" height="20" rx="6" fill="url(#pp)" stroke="#78350f" stroke-width="2"/><rect x="10" y="46" width="80" height="4" fill="#facc15" opacity=".3"/><circle cx="20" cy="50" r="4" fill="#78350f"/><circle cx="80" cy="50" r="4" fill="#78350f"/></svg>`,
+    knife: `<svg viewBox="0 0 100 100"><defs><linearGradient id="kk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f5f9"/><stop offset="1" stop-color="#64748b"/></linearGradient></defs><path d="M15 55 L70 25 L80 35 L25 65 Z" fill="url(#kk)" stroke="#e2e8f0" stroke-width="2"/><path d="M70 25 L85 20 L82 30 Z" fill="#94a3b8"/><rect x="10" y="52" width="20" height="14" rx="3" fill="#7c2d12" stroke="#451a03" stroke-width="2"/><circle cx="20" cy="59" r="2" fill="#fcd34d"/></svg>`,
+    cyberBat: `<svg viewBox="0 0 100 100"><defs><linearGradient id="cb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs><rect x="30" y="15" width="12" height="60" rx="5" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/><rect x="18" y="65" width="36" height="18" rx="6" fill="url(#cb)" stroke="#22d3ee" stroke-width="2"/><circle cx="36" cy="74" r="3" fill="#0ea5b7"/></svg>`,
+    shockSword: `<svg viewBox="0 0 100 100"><defs><linearGradient id="ss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><path d="M20 80 L75 25 L85 35 L30 90 Z" fill="url(#ss)" stroke="#a855f7" stroke-width="2"/><path d="M30 78 L78 30" stroke="#fff" stroke-width="1.5" opacity=".6"/><rect x="12" y="76" width="20" height="14" rx="3" fill="#312e81" stroke="#a855f7" stroke-width="1.5"/></svg>`,
+    neonStiletto: `<svg viewBox="0 0 100 100"><defs><linearGradient id="ns" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><path d="M15 60 L75 30 L78 38 L20 68 Z" fill="url(#ns)" stroke="#c084fc" stroke-width="1.5"/><rect x="10" y="58" width="18" height="12" rx="2" fill="#1e1b4b" stroke="#c084fc" stroke-width="1.5"/><circle cx="19" cy="64" r="2" fill="#22d3ee"/></svg>`,
+    lightBlade: `<svg viewBox="0 0 100 100"><defs><linearGradient id="lb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#22d3ee"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><path d="M50 10 L58 25 L50 90 L42 25 Z" fill="url(#lb)" stroke="#c084fc" stroke-width="1.5"/><path d="M50 15 L50 85" stroke="#fff" stroke-width="2" opacity=".8"/><rect x="38" y="85" width="24" height="8" rx="2" fill="#1e1b4b" stroke="#c084fc" stroke-width="1.5"/></svg>`,
+    staff: `<svg viewBox="0 0 100 100"><defs><linearGradient id="st" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#78350f"/><stop offset="1" stop-color="#451a03"/></linearGradient></defs><rect x="46" y="25" width="8" height="65" rx="3" fill="url(#st)" stroke="#92400e" stroke-width="1.5"/><circle cx="50" cy="20" r="14" fill="#22c55e" stroke="#34d399" stroke-width="2"/><circle cx="50" cy="20" r="8" fill="#10b981"/><circle cx="50" cy="20" r="3" fill="#fff"/></svg>`,
+    crystal: `<svg viewBox="0 0 100 100"><defs><linearGradient id="cr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#6d28d9"/></linearGradient></defs><polygon points="50,10 75,40 65,85 35,85 25,40" fill="url(#cr)" stroke="#a855f7" stroke-width="2"/><polygon points="50,10 75,40 50,55" fill="#e9d5ff" opacity=".4"/><circle cx="50" cy="40" r="3" fill="#fff" opacity=".9"/></svg>`,
+    servoHammer: `<svg viewBox="0 0 100 100"><defs><linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs><rect x="46" y="30" width="8" height="60" rx="3" fill="#374151" stroke="#6b7280" stroke-width="1.5"/><rect x="20" y="15" width="60" height="30" rx="6" fill="url(#sh)" stroke="#fcd34d" stroke-width="2"/><circle cx="50" cy="30" r="6" fill="#78350f"/><circle cx="50" cy="30" r="2" fill="#fcd34d"/></svg>`,
+    quantumCutter: `<svg viewBox="0 0 100 100"><defs><linearGradient id="qc" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect x="15" y="45" width="55" height="10" rx="3" fill="#334155" stroke="#64748b" stroke-width="1.5"/><path d="M70 45 L90 40 L92 50 L70 55 Z" fill="url(#qc)" stroke="#c084fc" stroke-width="1.5"/><circle cx="30" cy="50" r="4" fill="#22d3ee"/><circle cx="45" cy="50" r="4" fill="#a855f7"/></svg>`
+};
+const ARMOR_SVG = {
+    light: `<svg viewBox="0 0 100 100"><defs><linearGradient id="al" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3a3a3"/><stop offset="1" stop-color="#404040"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#al)" stroke="#d4d4d4" stroke-width="2"/><path d="M50 15 L75 27 L70 55 L50 70 L30 55 L25 27 Z" fill="none" stroke="#737373" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`,
+    leather: `<svg viewBox="0 0 100 100"><defs><linearGradient id="le" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b45309"/><stop offset="1" stop-color="#451a03"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#le)" stroke="#f59e0b" stroke-width="2"/><path d="M30 30 L50 40 L70 30 M30 50 L50 60 L70 50" stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="50" cy="40" r="3" fill="#fcd34d"/></svg>`,
+    army: `<svg viewBox="0 0 100 100"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4d7c0f"/><stop offset="1" stop-color="#1a2e05"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#ar)" stroke="#84cc16" stroke-width="2"/><path d="M30 25 L70 25 M28 35 L72 35 M26 45 L74 45 M28 55 L72 55" stroke="#365314" stroke-width="2"/><circle cx="50" cy="65" r="5" fill="#a3e635" stroke="#365314" stroke-width="1.5"/></svg>`,
+    cyberShield: `<svg viewBox="0 0 100 100"><defs><linearGradient id="cs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#cs)" stroke="#67e8f9" stroke-width="2"/><circle cx="50" cy="50" r="15" fill="none" stroke="#67e8f9" stroke-width="2"/><circle cx="50" cy="50" r="8" fill="#0891b2"/><circle cx="50" cy="50" r="3" fill="#fff"/></svg>`,
+    assault: `<svg viewBox="0 0 100 100"><defs><linearGradient id="as" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dc2626"/><stop offset="1" stop-color="#450a0a"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#as)" stroke="#f87171" stroke-width="2"/><path d="M35 25 L35 70 M50 20 L50 75 M65 25 L65 70" stroke="#7f1d1d" stroke-width="2"/><path d="M30 40 L70 40" stroke="#ef4444" stroke-width="2"/></svg>`,
+    neonCloak: `<svg viewBox="0 0 100 100"><defs><linearGradient id="nc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#nc)" stroke="#e9d5ff" stroke-width="2"/><path d="M35 25 Q50 40 65 25 M35 50 Q50 65 65 50" stroke="#f0abfc" stroke-width="2" fill="none"/><circle cx="50" cy="50" r="4" fill="#f0abfc"/></svg>`,
+    lightWall: `<svg viewBox="0 0 100 100"><defs><linearGradient id="lw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#22d3ee"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#lw)" stroke="#c084fc" stroke-width="2"/><path d="M50 15 L50 85" stroke="#fff" stroke-width="2" opacity=".6"/><path d="M30 30 L70 30 M30 50 L70 50 M30 70 L70 70" stroke="#fff" stroke-width="1" opacity=".4"/></svg>`,
+    spiritCloth: `<svg viewBox="0 0 100 100"><defs><linearGradient id="sp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#064e3b"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#sp)" stroke="#6ee7b7" stroke-width="2"/><circle cx="50" cy="40" r="8" fill="none" stroke="#a7f3d0" stroke-width="1.5"/><path d="M50 55 L50 80 M40 65 L60 65" stroke="#a7f3d0" stroke-width="2"/></svg>`,
+    mantle: `<svg viewBox="0 0 100 100"><defs><linearGradient id="ma" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#facc15"/><stop offset="1" stop-color="#713f12"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#ma)" stroke="#fde047" stroke-width="2"/><path d="M50 15 L50 85" stroke="#a16207" stroke-width="2"/><circle cx="50" cy="40" r="3" fill="#fef08a"/></svg>`,
+    servoArmor: `<svg viewBox="0 0 100 100"><defs><linearGradient id="sa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#0e7490"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#sa)" stroke="#22d3ee" stroke-width="2"/><rect x="35" y="30" width="30" height="8" rx="2" fill="#0e7490"/><rect x="35" y="45" width="30" height="8" rx="2" fill="#0e7490"/><rect x="35" y="60" width="30" height="8" rx="2" fill="#0e7490"/></svg>`,
+    nanoShield: `<svg viewBox="0 0 100 100"><defs><linearGradient id="nn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><path d="M50 10 L80 25 L75 60 L60 90 L50 80 L40 90 L25 60 L20 25 Z" fill="url(#nn)" stroke="#c084fc" stroke-width="2"/><path d="M30 30 L70 30 M30 40 L70 40 M30 50 L70 50 M30 60 L70 60 M30 70 L70 70" stroke="#e9d5ff" stroke-width=".8" opacity=".5"/><circle cx="50" cy="50" r="12" fill="none" stroke="#c084fc" stroke-width="2"/><circle cx="50" cy="50" r="5" fill="#c084fc"/></svg>`
+};
+const HERO_PORTRAIT = {
+    0: `<svg viewBox="0 0 100 100"><circle cx="50" cy="45" r="22" fill="#67e8f9" stroke="#22d3ee" stroke-width="2"/><circle cx="43" cy="42" r="3" fill="#0a0f18"/><circle cx="57" cy="42" r="3" fill="#0a0f18"/><path d="M42 55 Q50 60 58 55" stroke="#0a0f18" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M28 82 Q50 65 72 82 L72 92 L28 92 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/></svg>`,
+    1: `<svg viewBox="0 0 100 100"><rect x="28" y="20" width="44" height="50" rx="8" fill="#0891b2" stroke="#22d3ee" stroke-width="2"/><rect x="34" y="30" width="32" height="14" rx="3" fill="#0a0f18"/><circle cx="42" cy="37" r="3" fill="#67e8f9"/><circle cx="58" cy="37" r="3" fill="#67e8f9"/><rect x="38" y="52" width="24" height="6" rx="2" fill="#0a0f18"/><path d="M38 20 L32 10 M62 20 L68 10" stroke="#22d3ee" stroke-width="2"/><circle cx="32" cy="10" r="3" fill="#67e8f9"/><circle cx="68" cy="10" r="3" fill="#67e8f9"/><path d="M30 82 Q50 70 70 82 L70 92 L30 92 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/></svg>`,
+    2: `<svg viewBox="0 0 100 100"><circle cx="50" cy="45" r="22" fill="#c084fc" stroke="#a855f7" stroke-width="2"/><path d="M28 30 Q50 15 72 30 Q78 45 72 55 L68 32 Q50 25 32 32 L28 55 Q22 45 28 30 Z" fill="#7c3aed"/><circle cx="43" cy="45" r="3" fill="#0a0f18"/><circle cx="57" cy="45" r="3" fill="#0a0f18"/><path d="M44 57 Q50 61 56 57" stroke="#0a0f18" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M30 82 Q50 68 70 82 L70 92 L30 92 Z" fill="#7c3aed" stroke="#c084fc" stroke-width="1.5"/></svg>`,
+    3: `<svg viewBox="0 0 100 100"><path d="M30 30 L70 30 L70 60 Q70 78 50 85 Q30 78 30 60 Z" fill="#065f46" stroke="#34d399" stroke-width="2"/><path d="M35 35 L65 35 L65 60 Q65 73 50 78 Q35 73 35 60 Z" fill="#0a0f18"/><circle cx="42" cy="48" r="3" fill="#6ee7b7"/><circle cx="58" cy="48" r="3" fill="#6ee7b7"/><path d="M44 62 Q50 66 56 62" stroke="#6ee7b7" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M50 30 L50 18" stroke="#34d399" stroke-width="2"/><circle cx="50" cy="14" r="4" fill="#6ee7b7"/><path d="M30 82 Q50 70 70 82 L70 92 L30 92 Z" fill="#065f46" stroke="#34d399" stroke-width="1.5"/></svg>`,
+    4: `<svg viewBox="0 0 100 100"><rect x="26" y="22" width="48" height="50" rx="6" fill="#fbbf24" stroke="#f59e0b" stroke-width="2"/><rect x="32" y="32" width="36" height="12" rx="2" fill="#0a0f18"/><circle cx="42" cy="38" r="3" fill="#fde68a"/><circle cx="58" cy="38" r="3" fill="#fde68a"/><rect x="36" y="52" width="28" height="4" rx="1" fill="#0a0f18"/><rect x="36" y="60" width="28" height="4" rx="1" fill="#0a0f18"/><path d="M26 40 L18 40 M74 40 L82 40 M26 55 L18 55 M74 55 L82 55" stroke="#fbbf24" stroke-width="2"/><path d="M32 82 Q50 72 68 82 L68 92 L32 92 Z" fill="#b45309" stroke="#fbbf24" stroke-width="1.5"/></svg>`
+};
+const ROBOT_SVGS = {
+    drone: `<svg viewBox="0 0 200 200"><defs><radialGradient id="d1" cx="50%" cy="40%"><stop offset="0" stop-color="#fb7185"/><stop offset="1" stop-color="#9f1239"/></radialGradient></defs><ellipse cx="100" cy="185" rx="60" ry="8" fill="#f43f5e" opacity=".3"/><ellipse cx="100" cy="100" rx="62" ry="42" fill="url(#d1)" stroke="#fb7185" stroke-width="2.5"/><ellipse cx="100" cy="100" rx="46" ry="30" fill="#1a0208" opacity=".55"/><circle cx="100" cy="100" r="14" fill="#f43f5e"/><circle cx="100" cy="100" r="6" fill="#fecdd3"/><circle cx="60" cy="90" r="6" fill="#fecdd3" opacity=".85"/><circle cx="140" cy="90" r="6" fill="#fecdd3" opacity=".85"/><path d="M40 60 L20 40 M160 60 L180 40" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="40" r="6" fill="#f43f5e"/><circle cx="180" cy="40" r="6" fill="#f43f5e"/></svg>`,
+    bomber: `<svg viewBox="0 0 200 200"><defs><radialGradient id="d2" cx="50%" cy="35%"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#7f1d1d"/></radialGradient></defs><ellipse cx="100" cy="185" rx="65" ry="8" fill="#f43f5e" opacity=".3"/><circle cx="100" cy="115" r="60" fill="url(#d2)" stroke="#fb7185" stroke-width="2.5"/><circle cx="100" cy="115" r="46" fill="#1a0208" opacity=".55"/><circle cx="100" cy="115" r="22" fill="none" stroke="#f43f5e" stroke-width="3"/><circle cx="100" cy="115" r="10" fill="#f43f5e"/><circle cx="100" cy="115" r="4" fill="#fff"/><path d="M100 55 L110 25 L100 35 L90 25 Z" fill="#fb7185"/><circle cx="100" cy="20" r="5" fill="#fda4af"/><circle cx="70" cy="100" r="4" fill="#fecdd3"/><circle cx="130" cy="100" r="4" fill="#fecdd3"/></svg>`,
+    juggernaut: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs><ellipse cx="100" cy="190" rx="70" ry="8" fill="#f43f5e" opacity=".3"/><rect x="45" y="60" width="110" height="100" rx="14" fill="url(#d3)" stroke="#fb7185" stroke-width="3"/><rect x="60" y="80" width="80" height="30" rx="6" fill="#1a0208" opacity=".6"/><rect x="68" y="88" width="14" height="14" rx="2" fill="#fda4af"/><rect x="118" y="88" width="14" height="14" rx="2" fill="#fda4af"/><rect x="90" y="120" width="20" height="8" rx="2" fill="#fecdd3"/><rect x="70" y="138" width="60" height="8" rx="3" fill="#9f1239"/><rect x="30" y="80" width="20" height="60" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="150" y="80" width="20" height="60" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="60" y="158" width="24" height="20" rx="3" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="116" y="158" width="24" height="20" rx="3" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="85" y="34" width="30" height="26" rx="6" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="92" y="42" width="16" height="10" rx="2" fill="#fda4af"/></svg>`,
+    guardian: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#9f1239"/></linearGradient></defs><ellipse cx="100" cy="190" rx="62" ry="8" fill="#f43f5e" opacity=".3"/><path d="M100 40 L45 65 L45 120 Q45 165 100 185 Q155 165 155 120 L155 65 Z" fill="url(#d4)" stroke="#fb7185" stroke-width="3"/><path d="M100 60 L60 78 L60 118 Q60 150 100 165 Q140 150 140 118 L140 78 Z" fill="#1a0208" opacity=".5"/><circle cx="100" cy="112" r="18" fill="none" stroke="#f43f5e" stroke-width="3"/><circle cx="100" cy="112" r="8" fill="#f43f5e"/><circle cx="100" cy="112" r="3" fill="#fff"/><path d="M100 50 L100 30 M88 38 L100 30 L112 38" stroke="#fb7185" stroke-width="3" stroke-linecap="round" fill="none"/><rect x="60" y="150" width="80" height="6" rx="3" fill="#be123c"/></svg>`,
+    eye: `<svg viewBox="0 0 200 200"><defs><radialGradient id="d5" cx="50%" cy="50%"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#7f1d1d"/></radialGradient></defs><ellipse cx="100" cy="190" rx="55" ry="8" fill="#f43f5e" opacity=".3"/><circle cx="100" cy="110" r="60" fill="url(#d5)" stroke="#fb7185" stroke-width="3"/><path d="M45 110 Q100 60 155 110 Q100 160 45 110 Z" fill="#1a0208"/><circle cx="100" cy="110" r="26" fill="#f43f5e"/><circle cx="100" cy="110" r="16" fill="#7f1d1d"/><circle cx="100" cy="110" r="8" fill="#fff"/><circle cx="100" cy="110" r="3" fill="#1a0208"/><path d="M100 50 L100 20 M70 40 L60 25 M130 40 L140 25" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/></svg>`,
+    vortex: `<svg viewBox="0 0 200 200"><defs><radialGradient id="d6" cx="50%" cy="50%"><stop offset="0" stop-color="#fecdd3"/><stop offset="1" stop-color="#be123c"/></radialGradient></defs><ellipse cx="100" cy="190" rx="60" ry="8" fill="#f43f5e" opacity=".3"/><circle cx="100" cy="105" r="60" fill="url(#d6)" stroke="#fb7185" stroke-width="3"/><path d="M100 55 Q140 75 135 110 Q130 145 95 150 Q65 155 60 125 Q56 100 80 90" fill="none" stroke="#1a0208" stroke-width="8" stroke-linecap="round" opacity=".7"/><circle cx="100" cy="105" r="22" fill="#1a0208" opacity=".7"/><circle cx="100" cy="105" r="10" fill="#f43f5e"/><circle cx="100" cy="105" r="4" fill="#fff"/></svg>`,
+    hound: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs><ellipse cx="100" cy="190" rx="65" ry="8" fill="#f43f5e" opacity=".3"/><path d="M40 130 L55 90 L95 80 L120 90 L155 80 L170 110 L155 140 L120 150 L80 150 L50 145 Z" fill="url(#d7)" stroke="#fb7185" stroke-width="3"/><polygon points="55,90 45,60 75,80" fill="#be123c" stroke="#fb7185" stroke-width="2"/><polygon points="120,90 130,60 100,80" fill="#be123c" stroke="#fb7185" stroke-width="2"/><circle cx="75" cy="115" r="6" fill="#fff"/><circle cx="120" cy="115" r="6" fill="#fff"/><circle cx="76" cy="116" r="3" fill="#f43f5e"/><circle cx="121" cy="116" r="3" fill="#f43f5e"/><path d="M85 130 L95 138 L105 130 L115 138" stroke="#fff" stroke-width="2" fill="none"/></svg>`,
+    hand: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d8" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb7185"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs><ellipse cx="100" cy="190" rx="55" ry="8" fill="#f43f5e" opacity=".3"/><rect x="60" y="60" width="80" height="110" rx="14" fill="url(#d8)" stroke="#fb7185" stroke-width="3"/><rect x="60" y="30" width="14" height="40" rx="6" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="78" y="20" width="14" height="50" rx="6" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="96" y="15" width="14" height="55" rx="6" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="114" y="25" width="14" height="45" rx="6" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="55" y="80" width="90" height="70" rx="10" fill="#1a0208" opacity=".5"/><circle cx="100" cy="115" r="14" fill="#f43f5e"/><circle cx="100" cy="115" r="5" fill="#fff"/></svg>`,
+    sapper: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d9" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#9f1239"/></linearGradient></defs><ellipse cx="100" cy="190" rx="60" ry="8" fill="#f43f5e" opacity=".3"/><rect x="55" y="70" width="90" height="90" rx="12" fill="url(#d9)" stroke="#fb7185" stroke-width="3"/><rect x="70" y="88" width="60" height="24" rx="4" fill="#1a0208" opacity=".6"/><circle cx="85" cy="100" r="6" fill="#f43f5e"/><circle cx="115" cy="100" r="6" fill="#f43f5e"/><path d="M100 70 L100 45 M85 55 L100 45 L115 55" stroke="#fb7185" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="100" cy="42" r="6" fill="#fda4af"/><rect x="85" y="140" width="30" height="10" rx="2" fill="#f43f5e"/></svg>`,
+    laser: `<svg viewBox="0 0 200 200"><defs><linearGradient id="d10" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs><ellipse cx="100" cy="190" rx="58" ry="8" fill="#f43f5e" opacity=".3"/><rect x="50" y="80" width="80" height="70" rx="12" fill="url(#d10)" stroke="#fb7185" stroke-width="3"/><rect x="60" y="95" width="60" height="20" rx="4" fill="#1a0208" opacity=".6"/><circle cx="78" cy="105" r="5" fill="#f43f5e"/><circle cx="102" cy="105" r="5" fill="#f43f5e"/><rect x="130" y="98" width="60" height="18" rx="4" fill="#be123c" stroke="#fb7185" stroke-width="2"/><rect x="180" y="104" width="14" height="6" rx="2" fill="#f43f5e"/><circle cx="135" cy="107" r="6" fill="#fda4af"/></svg>`,
+    boss1: `<svg viewBox="0 0 200 200"><defs><radialGradient id="b1" cx="50%" cy="40%"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#450a0a"/></radialGradient></defs><ellipse cx="100" cy="192" rx="78" ry="8" fill="#f43f5e" opacity=".45"/><rect x="35" y="55" width="130" height="115" rx="16" fill="url(#b1)" stroke="#fb7185" stroke-width="3"/><rect x="55" y="75" width="90" height="40" rx="6" fill="#1a0208" opacity=".7"/><rect x="65" y="85" width="20" height="20" rx="2" fill="#f43f5e"/><rect x="115" y="85" width="20" height="20" rx="2" fill="#f43f5e"/><rect x="80" y="125" width="40" height="10" rx="3" fill="#fda4af"/><rect x="60" y="145" width="80" height="12" rx="3" fill="#be123c"/><path d="M100 55 L100 25 M80 30 L100 15 L120 30" stroke="#fb7185" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="100" cy="20" r="8" fill="#fda4af"/><rect x="15" y="75" width="20" height="70" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="3"/><rect x="165" y="75" width="20" height="70" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="3"/></svg>`,
+    boss2: `<svg viewBox="0 0 200 200"><defs><linearGradient id="b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fecdd3"/><stop offset="1" stop-color="#9f1239"/></linearGradient></defs><ellipse cx="100" cy="192" rx="78" ry="8" fill="#f43f5e" opacity=".45"/><rect x="45" y="40" width="110" height="130" rx="18" fill="url(#b2)" stroke="#fb7185" stroke-width="3"/><rect x="65" y="70" width="70" height="30" rx="6" fill="#1a0208" opacity=".7"/><circle cx="80" cy="85" r="6" fill="#f43f5e"/><circle cx="120" cy="85" r="6" fill="#f43f5e"/><path d="M85 120 L100 130 L115 120 L100 140 Z" fill="#be123c"/><rect x="70" y="150" width="60" height="10" rx="3" fill="#9f1239"/><path d="M70 40 L55 15 L85 30 Z M130 40 L145 15 L115 30 Z" fill="#f43f5e" stroke="#fb7185" stroke-width="2"/><rect x="20" y="70" width="22" height="70" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="3"/><rect x="158" y="70" width="22" height="70" rx="8" fill="#be123c" stroke="#fb7185" stroke-width="3"/></svg>`,
+    boss3: `<svg viewBox="0 0 200 200"><defs><linearGradient id="b3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb7185"/><stop offset="1" stop-color="#450a0a"/></linearGradient></defs><ellipse cx="100" cy="192" rx="80" ry="8" fill="#f43f5e" opacity=".45"/><polygon points="100,25 175,70 175,140 100,185 25,140 25,70" fill="url(#b3)" stroke="#fb7185" stroke-width="3"/><polygon points="100,45 155,78 155,132 100,165 45,132 45,78" fill="#1a0208" opacity=".55"/><circle cx="100" cy="105" r="26" fill="none" stroke="#f43f5e" stroke-width="3"/><circle cx="100" cy="105" r="14" fill="#f43f5e"/><circle cx="100" cy="105" r="6" fill="#fff"/><path d="M100 25 L100 5 M85 15 L100 5 L115 15" stroke="#fb7185" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="100" cy="5" r="5" fill="#fda4af"/></svg>`,
+    boss4: `<svg viewBox="0 0 200 200"><defs><radialGradient id="b4" cx="50%" cy="40%"><stop offset="0" stop-color="#fda4af"/><stop offset="1" stop-color="#7f1d1d"/></radialGradient></defs><ellipse cx="100" cy="192" rx="78" ry="8" fill="#f43f5e" opacity=".45"/><path d="M40 100 Q30 60 60 40 Q90 25 100 50 Q110 25 140 40 Q170 60 160 100 Q170 145 140 160 Q110 175 100 150 Q90 175 60 160 Q30 145 40 100 Z" fill="url(#b4)" stroke="#fb7185" stroke-width="3"/><ellipse cx="100" cy="105" rx="40" ry="30" fill="#1a0208" opacity=".6"/><circle cx="85" cy="100" r="7" fill="#f43f5e"/><circle cx="115" cy="100" r="7" fill="#f43f5e"/><path d="M80 125 L100 135 L120 125" stroke="#fda4af" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M55 55 L40 30 M145 55 L160 30" stroke="#fb7185" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="30" r="6" fill="#fda4af"/><circle cx="160" cy="30" r="6" fill="#fda4af"/></svg>`,
+    boss5: `<svg viewBox="0 0 200 200"><defs><radialGradient id="b5" cx="50%" cy="40%"><stop offset="0" stop-color="#fecdd3"/><stop offset="1" stop-color="#1a0208"/></radialGradient></defs><ellipse cx="100" cy="192" rx="82" ry="8" fill="#f43f5e" opacity=".5"/><circle cx="100" cy="105" r="80" fill="url(#b5)" stroke="#fb7185" stroke-width="4"/><circle cx="100" cy="105" r="62" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="8 6"/><circle cx="100" cy="105" r="40" fill="#0a0208"/><circle cx="100" cy="105" r="24" fill="#f43f5e"/><circle cx="100" cy="105" r="12" fill="#1a0208"/><circle cx="100" cy="105" r="4" fill="#fff"/><path d="M100 25 L100 5" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="5" r="6" fill="#fda4af"/><path d="M40 50 L25 35 M160 50 L175 35 M40 160 L25 175 M160 160 L175 175" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/><circle cx="25" cy="35" r="5" fill="#fda4af"/><circle cx="175" cy="35" r="5" fill="#fda4af"/><circle cx="25" cy="175" r="5" fill="#fda4af"/><circle cx="175" cy="175" r="5" fill="#fda4af"/></svg>`
+};
+const PLAYER_SVG = {
+    0: `<svg viewBox="0 0 200 200"><defs><linearGradient id="pBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#67e8f9"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs><ellipse cx="100" cy="180" rx="55" ry="7" fill="#22d3ee" opacity=".25"/><rect x="55" y="80" width="90" height="80" rx="14" fill="url(#pBody)" stroke="#22d3ee" stroke-width="2.5"/><rect x="70" y="100" width="60" height="40" rx="6" fill="#03050a" opacity=".55"/><rect x="76" y="106" width="18" height="10" rx="2" fill="#67e8f9"/><rect x="106" y="106" width="18" height="10" rx="2" fill="#67e8f9"/><rect x="85" y="50" width="30" height="34" rx="8" fill="url(#pBody)" stroke="#22d3ee" stroke-width="2.5"/><rect x="90" y="58" width="20" height="18" rx="4" fill="#03050a"/><circle cx="96" cy="67" r="3" fill="#67e8f9"/><circle cx="104" cy="67" r="3" fill="#67e8f9"/></svg>`,
+    1: `<svg viewBox="0 0 200 200"><defs><linearGradient id="p1Body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient></defs><ellipse cx="100" cy="180" rx="60" ry="7" fill="#a78bfa" opacity=".3"/><rect x="45" y="70" width="110" height="90" rx="14" fill="url(#p1Body)" stroke="#c4b5fd" stroke-width="3"/><rect x="65" y="90" width="70" height="30" rx="5" fill="#1e1b4b" opacity=".7"/><circle cx="80" cy="105" r="5" fill="#c4b5fd"/><circle cx="120" cy="105" r="5" fill="#c4b5fd"/><rect x="85" y="35" width="30" height="35" rx="8" fill="url(#p1Body)" stroke="#c4b5fd" stroke-width="2.5"/><path d="M85 35 L75 20 M115 35 L125 20" stroke="#c4b5fd" stroke-width="3" stroke-linecap="round"/></svg>`,
+    2: `<svg viewBox="0 0 200 200"><defs><linearGradient id="p2Body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0abfc"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><ellipse cx="100" cy="180" rx="55" ry="7" fill="#f0abfc" opacity=".3"/><rect x="60" y="80" width="80" height="80" rx="14" fill="url(#p2Body)" stroke="#f0abfc" stroke-width="2.5"/><rect x="72" y="100" width="56" height="30" rx="6" fill="#1a0b2e" opacity=".6"/><circle cx="86" cy="115" r="4" fill="#f0abfc"/><circle cx="114" cy="115" r="4" fill="#f0abfc"/><rect x="82" y="45" width="36" height="38" rx="9" fill="url(#p2Body)" stroke="#f0abfc" stroke-width="2.5"/><circle cx="100" cy="35" r="5" fill="#f0abfc"/></svg>`,
+    3: `<svg viewBox="0 0 200 200"><defs><linearGradient id="p3Body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ee7b7"/><stop offset="1" stop-color="#047857"/></linearGradient></defs><ellipse cx="100" cy="180" rx="55" ry="7" fill="#6ee7b7" opacity=".3"/><rect x="55" y="80" width="90" height="80" rx="14" fill="url(#p3Body)" stroke="#6ee7b7" stroke-width="2.5"/><circle cx="100" cy="115" r="18" fill="none" stroke="#a7f3d0" stroke-width="2"/><circle cx="100" cy="115" r="9" fill="#a7f3d0"/><rect x="85" y="45" width="30" height="38" rx="8" fill="url(#p3Body)" stroke="#6ee7b7" stroke-width="2.5"/><path d="M100 45 L100 30" stroke="#6ee7b7" stroke-width="2"/><circle cx="100" cy="26" r="5" fill="#a7f3d0"/></svg>`,
+    4: `<svg viewBox="0 0 200 200"><defs><linearGradient id="p4Body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#b45309"/></linearGradient></defs><ellipse cx="100" cy="180" rx="60" ry="7" fill="#fbbf24" opacity=".35"/><rect x="45" y="70" width="110" height="90" rx="14" fill="url(#p4Body)" stroke="#fde68a" stroke-width="3"/><rect x="60" y="88" width="80" height="24" rx="4" fill="#1a1200" opacity=".7"/><circle cx="78" cy="100" r="5" fill="#fde68a"/><circle cx="122" cy="100" r="5" fill="#fde68a"/><rect x="80" y="34" width="40" height="36" rx="8" fill="url(#p4Body)" stroke="#fde68a" stroke-width="2.5"/><path d="M80 34 L72 20 M120 34 L128 20" stroke="#fde68a" stroke-width="3" stroke-linecap="round"/></svg>`
+};
+
+/* ============================================================
+   КАРТА
+============================================================ */
+function renderCityMap(cityPct){
+    const w = 1200, h = 700;
+    const done = i => cityPct >= (i+1)*100/6;
+    const fillOn = i => done(i) ? 'rgba(34,211,238,.18)' : 'rgba(15,22,35,.72)';
+    const strokeOn = i => done(i) ? '#22d3ee' : 'rgba(90,130,180,.4)';
+    let map = `
+    <svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;">
+        <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1220"/><stop offset="1" stop-color="#040810"/></linearGradient>
+            <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e7490"/><stop offset="1" stop-color="#075985"/></linearGradient>
+            <linearGradient id="park" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#166534"/><stop offset="1" stop-color="#14532d"/></linearGradient>
+            <linearGradient id="road" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e293b"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+            <pattern id="cityGrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0 L0 0 0 40" fill="none" stroke="rgba(34,211,238,.08)" stroke-width=".5"/></pattern>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect width="${w}" height="${h}" fill="url(#skyGrad)"/>
+        <rect width="${w}" height="${h}" fill="url(#cityGrid)"/>
+        <path d="M0 520 Q200 500 320 460 Q420 430 520 440 Q660 455 780 400 Q900 340 1020 380 Q1120 415 1200 380 L1200 440 Q1100 470 1000 440 Q880 400 760 460 Q640 520 520 510 Q400 500 300 540 Q180 590 0 590 Z" fill="url(#water)" opacity=".8"/>
+        <path d="M0 520 Q200 500 320 460 Q420 430 520 440 Q660 455 780 400 Q900 340 1020 380 Q1120 415 1200 380" fill="none" stroke="#67e8f9" stroke-width="1.5" opacity=".35"/>
+        <ellipse cx="220" cy="300" rx="180" ry="120" fill="url(#park)" opacity=".55"/>
+        <ellipse cx="980" cy="180" rx="130" ry="90" fill="url(#park)" opacity=".5"/>
+        <g stroke="url(#road)" stroke-width="14" stroke-linecap="round" opacity=".9">
+            <path d="M0 200 L1200 200"/><path d="M0 500 L1200 500"/><path d="M400 0 L400 700"/><path d="M800 0 L800 700"/>
+        </g>
+        <g stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="10 12" opacity=".45">
+            <path d="M0 200 L1200 200"/><path d="M0 500 L1200 500"/><path d="M400 0 L400 700"/><path d="M800 0 L800 700"/>
+        </g>
+    `;
+    // 6 районов
+    map += districtSVG(0, 30, 30, 340, 150, done(0), fillOn(0), strokeOn(0), 'ПОРТ', 'port');
+    map += districtSVG(1, 430, 30, 340, 150, done(1), fillOn(1), strokeOn(1), 'ЦЕНТР', 'center');
+    map += districtSVG(2, 830, 30, 340, 150, done(2), fillOn(2), strokeOn(2), 'ЗАВОД', 'factory');
+    map += districtSVG(3, 30, 380, 340, 150, done(3), fillOn(3), strokeOn(3), 'ЖИЛОЙ', 'residential');
+    map += districtSVG(4, 430, 380, 340, 150, done(4), fillOn(4), strokeOn(4), 'НАУЧНЫЙ', 'science');
+    map += districtSVG(5, 830, 380, 340, 150, done(5), fillOn(5), strokeOn(5), 'КИБЕР', 'cyber');
+    for(let i = 0; i < 6; i++){
+        if(done(i)){
+            const r = [[30,30],[430,30],[830,30],[30,380],[430,380],[830,380]][i];
+            map += `<rect x="${r[0]}" y="${r[1]}" width="340" height="150" rx="14" fill="none" stroke="#22d3ee" stroke-width="3" opacity=".6" filter="url(#glow)"/>`;
+        }
+    }
+    map += `</svg>`;
+    return map;
+}
+
+function districtSVG(idx, x, y, w, h, done, fill, stroke, title, kind){
+    let inner = '';
+    const tone = done ? '#67e8f9' : '#8ba3c7';
+    const acc = done ? '#22d3ee' : '#475569';
+    if(kind === 'port'){
+        inner = `
+            <rect x="${x+30}" y="${y+50}" width="120" height="30" fill="#334155" opacity=".8"/>
+            <rect x="${x+170}" y="${y+60}" width="140" height="14" fill="#475569" opacity=".7"/>
+            <rect x="${x+40}" y="${y+90}" width="24" height="16" fill="#f97316" opacity=".8"/>
+            <rect x="${x+70}" y="${y+90}" width="24" height="16" fill="#22d3ee" opacity=".8"/>
+            <rect x="${x+100}" y="${y+90}" width="24" height="16" fill="#a855f7" opacity=".8"/>
+            <rect x="${x+40}" y="${y+110}" width="24" height="16" fill="#22c55e" opacity=".8"/>
+            <rect x="${x+70}" y="${y+110}" width="24" height="16" fill="#fbbf24" opacity=".8"/>
+            <path d="M${x+220} ${y+80} L${x+310} ${y+80} L${x+300} ${y+100} L${x+230} ${y+100} Z" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+        `;
+    } else if(kind === 'center'){
+        const towers = [[40,50],[100,40],[170,60],[250,70]];
+        towers.forEach(t => {
+            inner += `<rect x="${x+t[0]}" y="${y+t[1]}" width="40" height="90" fill="#1e293b" stroke="#475569" stroke-width="1"/>`;
+            for(let r = 0; r < 5; r++){
+                for(let c = 0; c < 3; c++){
+                    inner += `<rect x="${x+t[0]+6+c*12}" y="${y+t[1]+6+r*14}" width="6" height="6" fill="${acc}"/>`;
+                }
+            }
+        });
+    } else if(kind === 'factory'){
+        inner = `
+            <rect x="${x+40}" y="${y+50}" width="14" height="80" fill="#334155"/>
+            <rect x="${x+64}" y="${y+40}" width="14" height="90" fill="#334155"/>
+            <rect x="${x+88}" y="${y+60}" width="14" height="70" fill="#334155"/>
+            <circle cx="${x+47}" cy="${y+46}" r="4" fill="#ef4444"/>
+            <circle cx="${x+71}" cy="${y+36}" r="4" fill="#ef4444"/>
+            <circle cx="${x+95}" cy="${y+56}" r="4" fill="#ef4444"/>
+            <rect x="${x+120}" y="${y+70}" width="120" height="60" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+            <path d="M${x+120} ${y+70} L${x+180} ${y+40} L${x+240} ${y+40} L${x+240} ${y+70} Z" fill="#334155"/>
+        `;
+    } else if(kind === 'residential'){
+        for(let r = 0; r < 2; r++){
+            for(let c = 0; c < 4; c++){
+                const hx = x+30+c*70, hy = y+50+r*60;
+                inner += `<rect x="${hx}" y="${hy}" width="50" height="50" fill="#1e293b" stroke="#475569" stroke-width="1"/>`;
+                inner += `<rect x="${hx+10}" y="${hy+15}" width="10" height="8" fill="#fbbf24" opacity=".85"/>`;
+                inner += `<rect x="${hx+30}" y="${hy+15}" width="10" height="8" fill="#fbbf24" opacity=".85"/>`;
+            }
+        }
+    } else if(kind === 'science'){
+        inner = `
+            <path d="M${x+40} ${y+120} Q${x+110} ${y+60} ${x+180} ${y+120} Z" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5" opacity=".8"/>
+            <ellipse cx="${x+110}" cy="${y+120}" rx="70" ry="6" fill="#1e293b"/>
+            <rect x="${x+210}" y="${y+60}" width="110" height="60" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+            <rect x="${x+220}" y="${y+70}" width="20" height="20" fill="#22d3ee" opacity=".7"/>
+            <rect x="${x+250}" y="${y+70}" width="20" height="20" fill="#a855f7" opacity=".7"/>
+            <rect x="${x+280}" y="${y+70}" width="20" height="20" fill="#22c55e" opacity=".7"/>
+            <rect x="${x+260}" y="${y+30}" width="4" height="30" fill="#94a3b8"/>
+            <circle cx="${x+262}" cy="${y+28}" r="3" fill="#22d3ee"/>
+        `;
+    } else if(kind === 'cyber'){
+        const buildings = [[30,50],[100,30],[170,70]];
+        buildings.forEach((b, i) => {
+            inner += `<rect x="${x+b[0]}" y="${y+b[1]}" width="60" height="${140-b[1]}" fill="#1e293b" stroke="${i%2?'#22d3ee':'#a855f7'}" stroke-width="1.5"/>`;
+            for(let r = 0; r < 6; r++){
+                for(let c = 0; c < 3; c++){
+                    inner += `<rect x="${x+b[0]+8+c*16}" y="${y+b[1]+10+r*14}" width="8" height="8" fill="${(r+c)%2?'#a855f7':'#22d3ee'}"/>`;
+                }
+            }
+        });
+        inner += `<text x="${x+250}" y="${y+120}" fill="#f0abfc" font-size="24" font-weight="900" opacity=".8" filter="url(#glow)">◢◤</text>`;
+    }
+    return `
+        <g>
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+            <text x="${x+20}" y="${y+30}" fill="${tone}" font-size="16" font-weight="900" letter-spacing="3">${title}</text>
+            ${inner}
+        </g>
+    `;
+}
+
+/* ============================================================
+   STATE
+============================================================ */
+let hp = 120, maxHp = 120, enemyHp = 100, enemyMaxHp = 100;
+let kills = 0, parts = 0, rareParts = 0, city = 0, stage = 1;
+let combo = 0, deathPenalty = 0, stageDeaths = 0;
+let xp = 0, lvl = 1, dmg = 8, spirit = 0, armor = 0;
+let heroId = 0;
+let weapon = { name:"Кулак", bonus:0, svg:"fist" };
+let armorItem = { name:"Лёгкая", bonus:0, svg:"light" };
+let hintsIdx = 0, dialogIdx = 0;
+let allyActive = false, allyDmg = 3, difficulty = 2;
+let tutorialKills = 0;
+let activeBuff = null, buffDuration = 0;
+let craftedShield = false, craftedPower = false, craftedHeal = false;
+let daily = { kills:0, parts:0, combos:0 };
+const DAILY_GOALS = { kills:15, parts:40, combos:5 };
+let dailyDone = { kills:false, parts:false, combos:false };
+let dailyRewardTaken = false;
+let usedPromos = [];
+let isDead = false;
+let currentEnemySvgKey = 'drone';
+let currentEnemyVisualName = '';
+let currentEnemyIsBoss = false;
+
+const heroes = [
+    { id:0, name:"Выживший",           dmg:8,  spirit:0, armor:0, hp:120, ability:"Нет пассивки",                    cost:0,   lore:"Обычный человек с железной волей." },
+    { id:1, name:"Кибер-воин",         dmg:12, spirit:2, armor:1, hp:140, ability:"⚡ Удвоенный урон каждые 4 удара", cost:15,  lore:"Создан в лаборатории." },
+    { id:2, name:"Неоновая дева",      dmg:9,  spirit:4, armor:0, hp:130, ability:"🌀 30% шанс увернуться",           cost:30,  lore:"Пришла из руин." },
+    { id:3, name:"Механический шаман", dmg:8,  spirit:1, armor:2, hp:150, ability:"💚 +5 HP каждые 3 удара",          cost:50,  lore:"Инженер, чинящий мир." },
+    { id:4, name:"Робототехник",       dmg:18, spirit:5, armor:3, hp:180, ability:"⚙️ +25% урона каждые 5 ударов",   cost:100, lore:"Изобретатель Кибер-воина." }
+];
+let unlocked = [true,false,false,false,false];
+
+const weapons = {
+    0:[{name:"Кулак",bonus:0,cost:0,svg:"fist"},{name:"Ржавая труба",bonus:3,cost:30,svg:"pipe"},{name:"Самодельный нож",bonus:6,cost:70,svg:"knife"}],
+    1:[{name:"Кулак",bonus:0,cost:0,svg:"fist"},{name:"Кибер-бита",bonus:5,cost:40,svg:"cyberBat"},{name:"Токовый меч",bonus:12,cost:100,svg:"shockSword"}],
+    2:[{name:"Кулак",bonus:0,cost:0,svg:"fist"},{name:"Неоновый стилет",bonus:6,cost:40,svg:"neonStiletto"},{name:"Световой клинок",bonus:14,cost:120,svg:"lightBlade"}],
+    3:[{name:"Кулак",bonus:0,cost:0,svg:"fist"},{name:"Посох",bonus:4,cost:40,svg:"staff"},{name:"Кристалл",bonus:10,cost:90,svg:"crystal"}],
+    4:[{name:"Кулак",bonus:0,cost:0,svg:"fist"},{name:"Сервомолот",bonus:10,cost:60,svg:"servoHammer"},{name:"Квантовый резак",bonus:20,cost:200,svg:"quantumCutter"}]
+};
+const armors = {
+    0:[{name:"Лёгкая",bonus:0,cost:0,svg:"light"},{name:"Кожаная",bonus:1,cost:30,svg:"leather"},{name:"Армейская",bonus:3,cost:70,svg:"army"}],
+    1:[{name:"Лёгкая",bonus:0,cost:0,svg:"light"},{name:"Кибер-щит",bonus:2,cost:40,svg:"cyberShield"},{name:"Штурмовая",bonus:5,cost:100,svg:"assault"}],
+    2:[{name:"Лёгкая",bonus:0,cost:0,svg:"light"},{name:"Неоновая накидка",bonus:2,cost:40,svg:"neonCloak"},{name:"Световая стена",bonus:5,cost:120,svg:"lightWall"}],
+    3:[{name:"Лёгкая",bonus:0,cost:0,svg:"light"},{name:"Ткань духа",bonus:2,cost:40,svg:"spiritCloth"},{name:"Мантия",bonus:5,cost:90,svg:"mantle"}],
+    4:[{name:"Лёгкая",bonus:0,cost:0,svg:"light"},{name:"Сервоброня",bonus:4,cost:60,svg:"servoArmor"},{name:"Нано-щит",bonus:8,cost:200,svg:"nanoShield"}]
+};
+
+const ENEMY_LIST = [
+    { name:"Дрон",       svg:"drone" },
+    { name:"Бомба",      svg:"bomber" },
+    { name:"Джаггернаут",svg:"juggernaut" },
+    { name:"Страж",      svg:"guardian" },
+    { name:"Глаз",       svg:"eye" },
+    { name:"Вихрь",      svg:"vortex" },
+    { name:"Пёс",        svg:"hound" },
+    { name:"Рука",       svg:"hand" },
+    { name:"Сапёр",      svg:"sapper" },
+    { name:"Лазер",      svg:"laser" }
+];
+const BOSS_LIST = [
+    { name:"Гига-Дрон",         svg:"boss1" },
+    { name:"Неоновый гигант",   svg:"boss2" },
+    { name:"Механический титан",svg:"boss3" },
+    { name:"Кибер-дракон",      svg:"boss4" },
+    { name:"Финальный нуль",    svg:"boss5" }
+];
+
+const hints   = ["ROBO2026","CLEANER","ROBOTKILLER","HACKER1000"];
+const dialogs = ["Город ждёт тебя.","Ты не один.","Этап пройден.","Конец близко."];
+
+let enemyAttackTimer = 0;
+let bossShield = false, bossDodge = false;
+let enemyBlock = false;
+let lastAttackType = "", attackCount = 0;
+
+/* ============================================================
+   SAVE / LOAD
+============================================================ */
+const SAVE_KEY = 'robo_cleaner_2_6_save_v1';
+const SAVE_VERSION = 2;
+let saveInitialized = false;
+
+function collectSave(){
+    return {
+        v: SAVE_VERSION,
+        ts: Date.now(),
+        hp, maxHp, enemyHp, enemyMaxHp,
+        kills, parts, rareParts, city, stage,
+        combo, deathPenalty, stageDeaths,
+        xp, lvl, dmg, spirit, armor,
+        heroId,
+        weapon, armorItem,
+        hintsIdx, dialogIdx,
+        allyActive, allyDmg, difficulty,
+        tutorialKills,
+        activeBuff, buffDuration,
+        craftedShield, craftedPower, craftedHeal,
+        daily, dailyDone, dailyRewardTaken,
+        usedPromos,
+        unlocked,
+        isDead,
+        enemySvgKey: currentEnemySvgKey,
+        enemyVisualName: currentEnemyVisualName
+    };
+}
+
+function applySave(data){
+    if(!data || data.v !== SAVE_VERSION) return false;
+    try{
+        hp = data.hp ?? hp;
+        maxHp = data.maxHp ?? maxHp;
+        enemyHp = data.enemyHp ?? enemyHp;
+        enemyMaxHp = data.enemyMaxHp ?? enemyMaxHp;
+        kills = data.kills ?? kills;
+        parts = data.parts ?? parts;
+        rareParts = data.rareParts ?? rareParts;
+        city = data.city ?? city;
+        stage = data.stage ?? stage;
+        combo = data.combo ?? combo;
+        deathPenalty = data.deathPenalty ?? deathPenalty;
+        stageDeaths = data.stageDeaths ?? stageDeaths;
+        xp = data.xp ?? xp;
+        lvl = data.lvl ?? lvl;
+        dmg = data.dmg ?? dmg;
+        spirit = data.spirit ?? spirit;
+        armor = data.armor ?? armor;
+        heroId = data.heroId ?? heroId;
+        weapon = data.weapon || weapon;
+        armorItem = data.armorItem || armorItem;
+        hintsIdx = data.hintsIdx ?? hintsIdx;
+        dialogIdx = data.dialogIdx ?? dialogIdx;
+        allyActive = data.allyActive ?? allyActive;
+        allyDmg = data.allyDmg ?? allyDmg;
+        difficulty = data.difficulty ?? difficulty;
+        tutorialKills = data.tutorialKills ?? tutorialKills;
+        activeBuff = data.activeBuff ?? activeBuff;
+        buffDuration = data.buffDuration ?? buffDuration;
+        craftedShield = data.craftedShield ?? craftedShield;
+        craftedPower = data.craftedPower ?? craftedPower;
+        craftedHeal = data.craftedHeal ?? craftedHeal;
+        daily = data.daily || daily;
+        dailyDone = data.dailyDone || dailyDone;
+        dailyRewardTaken = data.dailyRewardTaken ?? dailyRewardTaken;
+        usedPromos = data.usedPromos || usedPromos;
+        unlocked = data.unlocked || unlocked;
+        isDead = data.isDead ?? isDead;
+        currentEnemySvgKey = data.enemySvgKey || 'drone';
+        currentEnemyVisualName = data.enemyVisualName || '';
+
+        // визуал игрока
+        updatePlayerVisual();
+
+        // визуал врага
+        if(currentEnemySvgKey && ROBOT_SVGS[currentEnemySvgKey]){
+            $('enemySlot').innerHTML = ROBOT_SVGS[currentEnemySvgKey];
+        }
+        if(currentEnemyVisualName){
+            $('eName').textContent = currentEnemyVisualName;
+            $('enemyLabel').textContent = currentEnemyVisualName;
+        }
+
+        // сложность
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        const activeDiff = document.querySelector(`.diff-btn[onclick*="${difficulty}"]`);
+        if(activeDiff) activeDiff.classList.add('active');
+
+        // смерть
+        if(isDead){
+            $('deathKills').textContent = kills;
+            $('deathPenaltyVal').textContent = '-10';
+            $('deathTotal').textContent = stageDeaths;
+            $('deathMaxHp').textContent = maxHp;
+            $('deathOverlay').classList.add('show');
+            $('enemySlot').classList.add('disabled');
+        }
+
+        return true;
+    }catch(e){
+        console.error('Save load failed', e);
+        return false;
+    }
+}
+
+function saveNow(){
+    if(!saveInitialized) return;
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(collectSave())); }catch(e){}
+}
+
+function loadSave(){
+    try{
+        const raw = localStorage.getItem(SAVE_KEY);
+        if(!raw) return false;
+        return applySave(JSON.parse(raw));
+    }catch(e){ return false; }
+}
+
+function wipeSave(){
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+}
+
+/* ============================================================
+   HELPERS
+============================================================ */
+const $ = id => document.getElementById(id);
+function log(t){ const el=$('log'); el.textContent=t; el.classList.remove('flash-cyan'); void el.offsetWidth; el.classList.add('flash-cyan'); }
+function rand(n){ return Math.floor(Math.random()*n); }
+function nextHint(){
+    hintsIdx = (hintsIdx + 1) % hints.length;
+    const code = hints[hintsIdx];
+    $('hintText').textContent = code;
+    log('💡 Промокод: '+code);
+}
+function shake(el){ if(!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function flash(el, cls){ if(!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function floatDmg(text, x, y, cls){
+    const d = document.createElement('div');
+    d.className = 'float-dmg' + (cls ? ' '+cls : '');
+    d.textContent = text;
+    d.style.left = x+'px';
+    d.style.top  = y+'px';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 1100);
+}
+function fxHitEnemy(text){
+    const r = $('enemySlot').getBoundingClientRect();
+    floatDmg(text, r.left + r.width/2, r.top + r.height/3, '');
+    $('enemySlot').classList.add('hit');
+    setTimeout(()=>$('enemySlot').classList.remove('hit'), 360);
+    shake($('enemyHpBlock'));
+    flash($('enemyHpBlock'), 'flash-pink');
+}
+function fxHitPlayer(text){
+    const r = $('playerSlot').getBoundingClientRect();
+    floatDmg(text, r.left + r.width/2, r.top + r.height/3, 'cyan');
+    shake($('playerHpBlock'));
+    flash($('playerHpBlock'), 'flash-cyan');
+}
+function fxHeal(text){
+    const r = $('playerSlot').getBoundingClientRect();
+    floatDmg(text, r.left + r.width/2, r.top + r.height/3, 'green');
+}
+function updatePlayerVisual(){
+    $('playerSlot').innerHTML = PLAYER_SVG[heroId] || PLAYER_SVG[0];
+}
+
+/* ============================================================
+   UPDATE
+============================================================ */
+function update(){
+    $('hpFill').style.width = Math.max(0,(hp/maxHp)*100)+'%';
+    $('hpHp').textContent = Math.floor(hp)+' / '+Math.floor(maxHp);
+    $('enemyFill').style.width = Math.max(0,(enemyHp/enemyMaxHp)*100)+'%';
+    $('enemyHpText').textContent = Math.floor(enemyHp)+' / '+Math.floor(enemyMaxHp);
+    $('hName').textContent = heroes[heroId].name;
+    $('hName2').textContent = heroes[heroId].name;
+    $('playerLabel').textContent = heroes[heroId].name;
+    $('hLvl').textContent = lvl;
+    $('combo').textContent = combo;
+    $('p1').textContent = parts;
+    $('p2').textContent = rareParts;
+    $('city').textContent = Math.floor(city)+'%';
+    $('cityBar').style.width = Math.min(100, city)+'%';
+    $('wName').textContent = weapon.name+' (+'+weapon.bonus+')';
+    $('aName').textContent = armorItem.name+' (+'+armorItem.bonus+')';
+    $('sKills').textContent = kills;
+    $('sCity').textContent = Math.floor(city)+'%';
+    $('sDmg').textContent = dmg + weapon.bonus;
+    $('sStage').textContent = stage;
+    $('sDeath').textContent = stageDeaths;
+    $('sRare').textContent = rareParts;
+    $('sAlly').textContent = allyActive ? 'Активен' : 'Нет';
+    $('sLvl').textContent = lvl;
+    $('stageDisplay').textContent = 'ЭТАП '+stage;
+    $('topParts').textContent = parts;
+    $('topRare').textContent = rareParts;
+    $('topCity').textContent = Math.floor(city);
+    $('repairBtn').disabled = parts < 30 || city >= 100;
+    $('enemySlot').classList.toggle('disabled', isDead);
+    renderShop(); renderHeroes(); renderMap(); renderDaily();
+}
+
+/* ============================================================
+   SPAWN / STAGE
+============================================================ */
+function spawnEnemy(){
+    const isBoss = (kills % 10 === 0 && kills > 0);
+    let h = 60 + kills*3 + stage*8 + difficulty*5;
+    const isRare = !isBoss && Math.random() < 0.12;
+    if(isRare) h = Math.floor(h * 1.4);
+    if(isBoss){
+        h = Math.floor(h * (1 + difficulty*0.2));
+        bossShield = Math.random() < 0.3 + difficulty*0.05;
+        bossDodge = !bossShield;
+        const boss = BOSS_LIST[Math.floor((kills-1)/10) % 5];
+        currentEnemySvgKey = boss.svg;
+        currentEnemyVisualName = (isRare?'✨ ':'') + boss.name;
+        $('enemySlot').innerHTML = ROBOT_SVGS[boss.svg];
+    } else {
+        const en = ENEMY_LIST[rand(ENEMY_LIST.length)];
+        currentEnemySvgKey = en.svg;
+        currentEnemyVisualName = (isRare?'✨ ':'') + en.name;
+        $('enemySlot').innerHTML = ROBOT_SVGS[en.svg];
+    }
+    $('eName').textContent = currentEnemyVisualName;
+    $('enemyLabel').textContent = currentEnemyVisualName;
+    enemyMaxHp = h; enemyHp = h;
+    enemyBlock = false; attackCount = 0; lastAttackType = "";
+    currentEnemyIsBoss = isBoss;
+    update();
+}
+
+function checkStage(){
+    let s = Math.floor(kills/25)+1; if(s>5) s=5;
+    if(s !== stage){
+        stage = s; deathPenalty = 0; stageDeaths = 0;
+        maxHp = heroes[heroId].hp; hp = maxHp;
+        parts += 20;
+        log('📈 Этап '+stage+'! +20⚙️');
+        dialogIdx = (dialogIdx+1) % dialogs.length;
+        $('dialogSay').textContent = dialogs[dialogIdx];
+        update();
+    }
+}
+
+function getCityBonus(){
+    const b = Math.floor(city/20);
+    return { armor:b, dmg:b*2 };
+}
+
+/* ============================================================
+   DEATH / RESPAWN
+============================================================ */
+function die(){
+    isDead = true;
+    combo = 0;
+    deathPenalty += 10;
+    stageDeaths++;
+    const oldMax = maxHp;
+    maxHp = Math.max(10, maxHp - 10);
+    hp = maxHp;
+    $('deathKills').textContent = kills;
+    $('deathPenaltyVal').textContent = '-10';
+    $('deathTotal').textContent = stageDeaths;
+    $('deathMaxHp').textContent = oldMax + ' → ' + maxHp;
+    $('deathOverlay').classList.add('show');
+    log('💀 Вы погибли. Штраф: -10 макс. HP');
+    update();
+    saveNow();
+}
+
+function respawn(){
+    isDead = false;
+    $('deathOverlay').classList.remove('show');
+    spawnEnemy();
+    log('🤖 Система перезапущена. В бой!');
+    update();
+    saveNow();
+}
+
+/* ============================================================
+   ATTACK
+============================================================ */
+function attack(){
+    if(isDead) return;
+    if(enemyHp <= 0) return;
+
+    const cb = getCityBonus();
+    const baseDmg = dmg + weapon.bonus + rand(5) + spirit + cb.dmg;
+    let d = baseDmg + 2;
+    let msg = '💥 Удар!';
+
+    attackCount++;
+    if(attackCount >= 3 && rand(100) < 30 + difficulty*5){
+        enemyBlock = true;
+        d = Math.floor(d*0.5);
+        msg += ' 🛡️ Робот предвидел удар!';
+        attackCount = 0;
+    }
+
+    if(currentEnemyIsBoss && rand(100) < 20){ d += 8; msg += ' ⚡ Слабость босса!'; }
+    if(allyActive){ d += allyDmg; msg += ' 🤖 Союзник +'+allyDmg; }
+    if(craftedPower){ d += 10; craftedPower = false; msg += ' ⚡ Усилитель!'; }
+    if(activeBuff === 'dmg'){ d += 5; }
+
+    if(enemyBlock){
+        enemyBlock = false;
+        $('enemyStatus').textContent = '🛡️ Робот в защите!';
+    } else {
+        $('enemyStatus').textContent = '';
+    }
+
+    enemyHp -= d; if(enemyHp < 0) enemyHp = 0;
+    log(msg + ' -' + d);
+    fxHitEnemy('-'+d);
+
+    // ответка врага
+    if(enemyHp > 0){
+        enemyAttackTimer++;
+        const speed = Math.max(2, 4 - Math.floor(stage/2) - difficulty);
+        if(enemyAttackTimer >= speed){
+            enemyAttackTimer = 0;
+            let ed = 4 + rand(6) + stage*2 + difficulty;
+            if(currentEnemyIsBoss) ed += 8;
+            ed = Math.max(1, ed - (armor + armorItem.bonus + cb.armor)*2);
+            if(craftedShield){ ed = 0; craftedShield = false; log('🛡️ Щит поглотил удар!'); }
+            hp -= ed; if(hp < 0) hp = 0;
+            log('🤖 Робот ответил -'+ed);
+            if(ed > 0) fxHitPlayer('-'+ed);
+        }
+    }
+
+    // пассивки
+    if(heroId === 3 && kills % 3 === 0){ hp += 5; if(hp > maxHp) hp = maxHp; log('💚 Шаман +5 HP'); fxHeal('+5'); }
+    if(Math.random() < 0.06){ const h = 15 + rand(15); hp += h; if(hp > maxHp) hp = maxHp; log('🛸 Отшельник +'+h); fxHeal('+'+h); }
+    if(craftedHeal){ hp += 20; craftedHeal = false; log('💊 Регенерация +20 HP'); fxHeal('+20'); }
+
+    // баффы
+    if(activeBuff && buffDuration > 0){
+        buffDuration--;
+        if(buffDuration === 0) activeBuff = null;
+    }
+
+    update();
+
+    if(hp <= 0){ die(); return; }
+
+    if(enemyHp <= 0){
+        const isTutorial = tutorialKills < 5;
+        kills++; combo++; tutorialKills++;
+        daily.kills++;
+        if(combo > daily.combos) daily.combos = combo;
+        let p = isTutorial ? 5 : (10 + rand(10));
+        if(currentEnemyIsBoss) p *= 3;
+        if($('eName').textContent.includes('✨')) p *= 2;
+        parts += p; daily.parts += p;
+        hp += 2; if(hp > maxHp) hp = maxHp;
+        xp += 5 + stage*2;
+
+        if(Math.random() < 0.25){ const r = 1 + rand(3); rareParts += r; log('🔴 +'+r); }
+        if(currentEnemyIsBoss){ const r = 5 + rand(10); rareParts += r; log('👑 БОСС! +'+r+'🔴'); bossShield = bossDodge = false; }
+        else log('✅ +'+p+'⚙️');
+
+        if(!currentEnemyIsBoss && Math.random() < 0.15){
+            const buffs = ['dmg','heal'];
+            activeBuff = buffs[rand(buffs.length)];
+            buffDuration = 5;
+            log(`⚡ Бафф: ${activeBuff==='dmg' ? '+5 урона' : '+10 HP'}`);
+            if(activeBuff === 'heal'){ hp += 10; if(hp > maxHp) hp = maxHp; fxHeal('+10'); }
+        }
+
+        checkStage(); spawnEnemy();
+    }
+    update(); checkLevelUp(); checkDaily(); saveNow();
+}
+
+function checkLevelUp(){
+    let needed = lvl * 15;
+    while(xp >= needed){
+        xp -= needed; lvl++;
+        dmg += 2; spirit += 1; maxHp += 10; hp = maxHp;
+        log('⬆️ Уровень '+lvl+'!');
+        needed = lvl * 15;
+    }
+    update();
+}
+
+/* ============================================================
+   CRAFT
+============================================================ */
+function craftItem(type){
+    const cost = type === 'shield' ? 20 : type === 'power' ? 25 : 30;
+    if(parts < cost){ $('craftLog').textContent = '❌ Недостаточно запчастей!'; return; }
+    parts -= cost;
+    if(type === 'shield'){ craftedShield = true; $('craftLog').textContent = '🛡️ Щит создан!'; }
+    else if(type === 'power'){ craftedPower = true; $('craftLog').textContent = '⚡ Усилитель создан!'; }
+    else { craftedHeal = true; $('craftLog').textContent = '💊 Регенерация создана!'; }
+    update(); saveNow();
+}
+
+/* ============================================================
+   SHOP
+============================================================ */
+function renderShop(){
+    const g = $('shopGrid'); g.innerHTML = '';
+    const wl = weapons[heroId] || weapons[0];
+    const al = armors[heroId] || armors[0];
+    wl.forEach(w => {
+        const div = document.createElement('div');
+        div.className = 'shop-card' + (weapon.name === w.name ? ' equipped' : '');
+        div.innerHTML = `
+            <div class="item-svg">${WEAPON_SVG[w.svg] || WEAPON_SVG.fist}</div>
+            <div class="name">${w.name}</div>
+            <div class="stat">⚔ +${w.bonus}</div>
+            <div class="cost">${w.cost===0?'Бесплатно':w.cost+'⚙️'}</div>
+            ${weapon.name===w.name
+                ? '<div style="color:var(--cyan);font-size:11px;margin-top:10px;font-weight:900;letter-spacing:1px;">✓ В РУКАХ</div>'
+                : `<button class="shop-btn" onclick="equipW('${w.name}', ${w.cost})">Купить</button>`}
+        `;
+        g.appendChild(div);
+    });
+    al.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'shop-card' + (armorItem.name === a.name ? ' equipped' : '');
+        div.innerHTML = `
+            <div class="item-svg">${ARMOR_SVG[a.svg] || ARMOR_SVG.light}</div>
+            <div class="name">${a.name}</div>
+            <div class="stat pink">🛡 +${a.bonus}</div>
+            <div class="cost">${a.cost===0?'Бесплатно':a.cost+'⚙️'}</div>
+            ${armorItem.name===a.name
+                ? '<div style="color:var(--cyan);font-size:11px;margin-top:10px;font-weight:900;letter-spacing:1px;">✓ НАДЕТО</div>'
+                : `<button class="shop-btn" onclick="equipA('${a.name}', ${a.cost})">Купить</button>`}
+        `;
+        g.appendChild(div);
+    });
+}
+
+function equipW(n, c){
+    const w = (weapons[heroId] || weapons[0]).find(i => i.name === n);
+    if(!w || (c > 0 && parts < c)){ log('❌ Не хватает'); return; }
+    if(c > 0) parts -= c;
+    weapon = w; log('🔧 '+n); update(); saveNow();
+}
+function equipA(n, c){
+    const a = (armors[heroId] || armors[0]).find(i => i.name === n);
+    if(!a || (c > 0 && parts < c)){ log('❌ Не хватает'); return; }
+    if(c > 0) parts -= c;
+    armorItem = a; log('🔧 '+n); update(); saveNow();
+}
+
+/* ============================================================
+   HEROES
+============================================================ */
+function renderHeroes(){
+    const g = $('heroGrid'); g.innerHTML = '';
+    heroes.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'hero-card' + (heroId === h.id ? ' active' : '');
+        div.innerHTML = `
+            <div class="portrait">${HERO_PORTRAIT[h.id] || HERO_PORTRAIT[0]}</div>
+            <div class="hero-name">${h.name}</div>
+            <div class="hero-stats">💪${h.dmg} ⚡${h.spirit} 🛡${h.armor} ❤${h.hp}</div>
+            <div class="hero-ability">${h.ability}</div>
+            <div class="hero-lore">${h.lore}</div>
+        `;
+        if(unlocked[h.id]){
+            const btn = document.createElement('button');
+            btn.className = 'hero-btn';
+            btn.textContent = heroId === h.id ? '✓ Выбран' : 'Выбрать';
+            btn.onclick = () => { if(h.id !== heroId) selectHero(h.id); };
+            div.appendChild(btn);
+        } else {
+            const info = document.createElement('div');
+            info.className = 'hero-lock';
+            info.textContent = '🔒 '+h.cost+'🔴';
+            div.appendChild(info);
+            if(rareParts >= h.cost){
+                const btn = document.createElement('button');
+                btn.className = 'hero-btn locked';
+                btn.textContent = 'Купить';
+                btn.onclick = () => { rareParts -= h.cost; unlocked[h.id] = true; update(); log('🎉 '+h.name); saveNow(); };
+                div.appendChild(btn);
+            }
+        }
+        g.appendChild(div);
+    });
+}
+
+function selectHero(id){
+    const h = heroes[id]; heroId = id;
+    dmg = h.dmg; spirit = h.spirit; armor = h.armor;
+    maxHp = h.hp - deathPenalty; if(maxHp < 10) maxHp = 10; hp = maxHp;
+    weapon = weapons[id][0];
+    armorItem = armors[id][0];
+    updatePlayerVisual();
+    log('🦸 '+h.name); update(); saveNow();
+}
+
+/* ============================================================
+   CITY / LOOT / PROMO
+============================================================ */
+function repairCity(){
+    if(parts < 30 || city >= 100) return;
+    parts -= 30; city += 10; if(city > 100) city = 100;
+    log('🔧 +10%');
+    if(city >= 100){ parts += 50; rareParts += 5; log('🎉 ГОРОД ВОССТАНОВЛЕН! +50⚙️ +5🔴'); }
+    update(); saveNow();
+}
+function buyHeal(){
+    if(parts < 20) return;
+    parts -= 20; hp += 25; if(hp > maxHp) hp = maxHp;
+    log('🧪 +25 HP'); fxHeal('+25'); update(); saveNow();
+}
+
+let lootModalOpen = false;
+function openLoot(){
+    if(rareParts < 30){ log('❌ Нужно 30🔴'); return; }
+    rareParts -= 30;
+    lootModalOpen = true;
+    $('lootModal').classList.add('show');
+    $('lootReward').textContent = '';
+    $('lootReward').classList.remove('jackpot');
+    $('lootCloseBtn').style.display = 'none';
+    $('lootIcon').classList.remove('shaking');
+    void $('lootIcon').offsetWidth;
+    $('lootIcon').classList.add('shaking');
+    update(); saveNow();
+}
+function openLootBox(){
+    if(!lootModalOpen) return;
+    const roll = rand(100);
+    let text = '';
+    let jackpot = false;
+    if(roll < 5){
+        parts += 200; rareParts += 20;
+        text = '🎉 ДЖЕКПОТ! +200⚙️ +20🔴';
+        jackpot = true;
+    } else {
+        const r = rand(3);
+        if(r === 0){ parts += 70;  text = '+70⚙️'; }
+        else if(r === 1){ parts += 140; text = '+140⚙️'; }
+        else { rareParts += 7; text = '+7🔴'; }
+    }
+    $('lootReward').textContent = text;
+    if(jackpot) $('lootReward').classList.add('jackpot');
+    $('lootCloseBtn').style.display = 'inline-flex';
+    const r = $('lootIcon').getBoundingClientRect();
+    floatDmg(text, r.left + r.width/2, r.top, jackpot ? 'amber' : 'cyan');
+    log('📦 ' + text);
+    update(); saveNow();
+}
+function closeLootModal(){
+    $('lootModal').classList.remove('show');
+    lootModalOpen = false;
+}
+
+function applyPromo(){
+    const v = $('promoInput').value.trim().toUpperCase();
+    if(!v){ log('❌ Введи код'); return; }
+    if(usedPromos.includes(v)){ log('❌ Уже использован!'); $('promoInput').value=''; return; }
+    const map = { ROBO2026:30, CLEANER:50, ROBOTKILLER:80, HACKER1000:200 };
+    if(!(v in map)){ log('❌ Неверный промокод'); $('promoInput').value=''; return; }
+    usedPromos.push(v); parts += map[v]; log('🎁 +'+map[v]+'⚙️'); $('promoInput').value=''; update(); saveNow();
+}
+
+/* ============================================================
+   MAP RENDER
+============================================================ */
+function renderMap(){
+    $('cityMapSvg').innerHTML = renderCityMap(Math.floor(city));
+    const overlay = $('districtOverlay'); overlay.innerHTML = '';
+    const names = ['Порт','Центр','Завод','Жилой','Научный','Кибер'];
+    const icons = [
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V11l7-5 7 5v10M9 21v-5h6v5"/></svg>`,
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>`,
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>`,
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>`,
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-10V3"/></svg>`,
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>`
+    ];
+    for(let i = 0; i < 6; i++){
+        const done = city >= (i+1)*100/6;
+        const div = document.createElement('div');
+        div.className = 'district-pill' + (done ? ' done' : '');
+        div.innerHTML = `<span class="name">${icons[i]} ${names[i]}</span><span class="pct">${done?'✓ ':''}${Math.floor((i+1)*100/6)}%</span>`;
+        overlay.appendChild(div);
+    }
+}
+
+function setDifficulty(d){
+    difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.diff-btn[onclick*="${d}"]`);
+    if(btn) btn.classList.add('active');
+    log(`⚙️ Сложность: ${d===1?'Лёгкая':d===2?'Средняя':'Сложная'}`);
+    saveNow();
+}
+
+function resetProgress(){
+    if(!confirm('Сбросить весь прогресс?')) return;
+    wipeSave();
+    hp = 120; maxHp = 120; kills = 0; parts = 0; rareParts = 0; city = 0; stage = 1;
+    combo = 0; deathPenalty = 0; stageDeaths = 0; xp = 0; lvl = 1; dmg = 8; spirit = 0; armor = 0;
+    weapon = weapons[0][0]; armorItem = armors[0][0];
+    unlocked = [true,false,false,false,false];
+    usedPromos = [];
+    daily = { kills:0, parts:0, combos:0 };
+    dailyDone = { kills:false, parts:false, combos:false };
+    dailyRewardTaken = false;
+    isDead = false; difficulty = 2;
+    craftedShield = craftedPower = craftedHeal = false;
+    activeBuff = null; buffDuration = 0;
+    tutorialKills = 0; hintsIdx = 0; dialogIdx = 0;
+    $('deathOverlay').classList.remove('show');
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    const d2 = document.querySelector('.diff-btn[onclick*="2"]');
+    if(d2) d2.classList.add('active');
+    selectHero(0); spawnEnemy(); update(); log('🔄 Прогресс сброшен.');
+    saveNow();
+}
+
+/* ============================================================
+   DAILY
+============================================================ */
+function renderDaily(){
+    const list = $('dailyList');
+    list.innerHTML = `
+        <div class="row ${dailyDone.kills?'done':''}"><span>${dailyDone.kills?'✅':'⬜'} Убить ${DAILY_GOALS.kills}</span><span class="val">${daily.kills}/${DAILY_GOALS.kills}</span></div>
+        <div class="row ${dailyDone.parts?'done':''}"><span>${dailyDone.parts?'✅':'⬜'} Собрать ${DAILY_GOALS.parts}⚙️</span><span class="val">${daily.parts}/${DAILY_GOALS.parts}</span></div>
+        <div class="row ${dailyDone.combos?'done':''}"><span>${dailyDone.combos?'✅':'⬜'} Комбо ${DAILY_GOALS.combos}</span><span class="val">${daily.combos}/${DAILY_GOALS.combos}</span></div>
+        ${dailyRewardTaken?'<div class="reward">🎉 Награда получена! +20⚙️</div>':''}
+    `;
+    if(dailyDone.kills && dailyDone.parts && dailyDone.combos && !dailyRewardTaken){
+        parts += 20; dailyRewardTaken = true;
+        log('🎁 +20⚙️ за дейлики'); saveNow();
+    }
+}
+function checkDaily(){
+    if(daily.kills >= DAILY_GOALS.kills) dailyDone.kills = true;
+    if(daily.parts >= DAILY_GOALS.parts) dailyDone.parts = true;
+    if(daily.combos >= DAILY_GOALS.combos) dailyDone.combos = true;
+    renderDaily();
+}
+function resetDaily(){
+    if(parts < 10){ log('❌ Нужно 10⚙️'); return; }
+    parts -= 10;
+    daily = { kills:0, parts:0, combos:0 };
+    dailyDone = { kills:false, parts:false, combos:false };
+    dailyRewardTaken = false;
+    log('🔄 Задания сброшены!'); update(); saveNow();
+}
+
+/* ============================================================
+   TABS
+============================================================ */
+function switchTab(id){
+    document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+    $(id).classList.add('active');
+    document.querySelector(`.tab-btn[onclick*="${id}"]`).classList.add('active');
+    update();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+(function init(){
+    const loaded = loadSave();
+    if(loaded){
+        update();
+        log('💾 Прогресс загружен.');
+    } else {
+        selectHero(0);
+        spawnEnemy();
+        update();
+        log('Клик по роботу чтобы атаковать.');
+    }
+    $('dialogSay').textContent = dialogs[dialogIdx % dialogs.length];
+
+    saveInitialized = true;
+    saveNow();
+
+    setInterval(saveNow, 4000);
+
+    window.addEventListener('beforeunload', saveNow);
+    document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'hidden') saveNow();
+    });
+
+    // кросс-вкладочная синхронизация
+    window.addEventListener('storage', (e) => {
+        if(e.key === SAVE_KEY){
+            loadSave();
+            update();
+            log('🔄 Синхронизировано с другой вкладкой');
+        }
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#07070d">
+<title>ПРОРЫВ 2</title>
+<style>
+/* ========== RESET & BASE ========== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:#07070d;
+  background-image:
+    radial-gradient(ellipse at 20% 0%,rgba(122,74,255,.25) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 100%,rgba(255,68,102,.15) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 50%,rgba(68,255,136,.05) 0%,transparent 70%);
+  color:#e0e0ff;
+  display:flex;justify-content:center;align-items:center;
+  min-height:100vh;padding:16px;
+  touch-action:manipulation;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font-family:inherit;outline:none}
+/* ========== GAME CONTAINER ========== */
+.game{
+  background:linear-gradient(160deg,rgba(24,24,38,.95),rgba(14,14,24,.98));
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding:22px;border-radius:32px;
+  border:1px solid rgba(122,74,255,.4);
+  max-width:560px;width:100%;
+  box-shadow:
+    0 0 0 1px rgba(122,74,255,.1),
+    0 20px 60px rgba(0,0,0,.6),
+    0 0 80px rgba(122,74,255,.15) inset;
+  position:relative;overflow:hidden;
+  animation:fadeIn .6s ease-out;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.game::before{
+  content:'';position:absolute;top:-2px;left:-2px;right:-2px;bottom:-2px;
+  background:linear-gradient(135deg,#7a4aff,#44ff88,#ff4466,#7a4aff);
+  border-radius:34px;z-index:-1;opacity:.3;filter:blur(8px);
+  animation:borderGlow 6s linear infinite;
+}
+@keyframes borderGlow{0%,100%{opacity:.2}50%{opacity:.5}}
+.game::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(122,74,255,.8),transparent);
+}
+/* ========== TITLE ========== */
+.title{
+  font-size:28px;font-weight:900;
+  background:linear-gradient(135deg,#7a4aff,#b088ff 50%,#44ff88);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-align:center;margin-bottom:4px;letter-spacing:2px;
+  text-shadow:0 0 40px rgba(122,74,255,.5);
+  position:relative;z-index:1;
+}
+.subtitle{
+  text-align:center;font-size:11px;color:#6a6a8a;
+  margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;
+  position:relative;z-index:1;
+}
+/* ========== STATS ========== */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  background:rgba(20,20,34,.8);padding:12px;border-radius:16px;
+  border:1px solid rgba(122,74,255,.25);font-size:13px;
+  margin-bottom:12px;position:relative;z-index:1;
+  box-shadow:inset 0 0 20px rgba(122,74,255,.05);
+}
+.stats>span{display:flex;align-items:center;gap:5px;padding:2px 0}
+.hp-bar{
+  height:8px;background:rgba(42,26,42,.8);border-radius:4px;
+  overflow:hidden;margin:6px 0 2px;grid-column:1/-1;
+  box-shadow:inset 0 0 4px rgba(0,0,0,.5);
+}
+.hp-fill{
+  height:100%;
+  background:linear-gradient(90deg,#7a4aff,#b088ff,#44ff88);
+  background-size:200% 100%;transition:width .4s ease;
+  box-shadow:0 0 12px rgba(122,74,255,.6);
+  animation:hpShine 3s linear infinite;
+  will-change:width;
+}
+@keyframes hpShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+.progress-bar-outer{
+  grid-column:1/-1;height:4px;background:rgba(42,26,42,.8);
+  border-radius:2px;overflow:hidden;margin-top:2px;
+}
+.progress-bar-inner{
+  height:100%;
+  background:linear-gradient(90deg,#ffaa44,#7a4aff,#44ff88);
+  background-size:200% 100%;transition:width .5s ease;
+  box-shadow:0 0 10px rgba(255,170,68,.5);
+  animation:hpShine 4s linear infinite;
+  will-change:width;
+}
+/* ========== FACTION SCREEN ========== */
+.faction-grid{
+  display:grid;grid-template-columns:1fr;gap:10px;
+  margin:14px 0;position:relative;z-index:1;
+}
+.faction-btn{
+  padding:22px 16px;border-radius:18px;
+  border:1.5px solid rgba(58,58,90,.8);
+  background:linear-gradient(160deg,rgba(26,26,42,.6),rgba(16,16,28,.6));
+  color:#c0c0dd;font-size:17px;font-weight:700;cursor:pointer;
+  text-align:center;min-height:80px;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+}
+.faction-btn::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(122,74,255,.2),transparent 70%);
+  opacity:0;transition:opacity .3s;pointer-events:none;
+}
+.faction-btn:hover::before{opacity:1}
+.faction-btn:active{transform:scale(.97)}
+.faction-btn.selected{
+  border-color:#7a4aff;
+  background:linear-gradient(160deg,rgba(42,26,82,.9),rgba(26,16,52,.9));
+  color:#d0b0ff;
+  box-shadow:
+    0 0 0 1px rgba(122,74,255,.5),
+    0 0 30px rgba(122,74,255,.4),
+    0 8px 20px rgba(0,0,0,.4);
+  transform:translateY(-2px);
+}
+.faction-desc{
+  font-size:13px;color:#8a8aaa;text-align:center;margin:8px 0;
+  padding:10px 14px;background:rgba(26,26,42,.6);border-radius:14px;
+  border:1px solid rgba(42,42,74,.8);
+  position:relative;z-index:1;line-height:1.4;
+}
+/* ========== NODE GRID ========== */
+.node-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+  gap:8px;margin:12px 0;position:relative;z-index:1;
+}
+.node-btn{
+  padding:14px 6px;border-radius:14px;
+  border:1.5px solid rgba(58,58,90,.6);
+  background:linear-gradient(160deg,rgba(26,26,42,.5),rgba(16,16,28,.5));
+  color:#8a8aaa;font-size:12px;cursor:pointer;text-align:center;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  position:relative;white-space:pre-line;
+  line-height:1.3;
+}
+.node-btn:active{transform:scale(.95)}
+.node-btn.unlocked{
+  border-color:#7a4aff;color:#b088ff;
+  background:linear-gradient(160deg,rgba(42,26,82,.5),rgba(26,16,52,.5));
+  animation:nodePulse 2.5s ease-in-out infinite;
+}
+@keyframes nodePulse{
+  0%,100%{box-shadow:0 0 16px rgba(122,74,255,.25)}
+  50%{box-shadow:0 0 24px rgba(122,74,255,.5)}
+}
+.node-btn.unlocked:hover{background:rgba(42,26,82,.8);transform:translateY(-2px)}
+.node-btn.completed{
+  border-color:#44ff88;color:#44ff88;
+  background:linear-gradient(160deg,rgba(10,26,10,.7),rgba(16,42,16,.5));
+  box-shadow:0 0 16px rgba(68,255,136,.2);
+}
+.node-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ========== BUTTONS ========== */
+.btn{
+  display:block;width:100%;padding:15px 14px;margin:8px 0;
+  border-radius:16px;border:1.5px solid rgba(58,58,90,.8);
+  background:linear-gradient(160deg,rgba(26,26,42,.6),rgba(16,16,28,.6));
+  color:#c0c0dd;cursor:pointer;font-size:16px;font-weight:600;
+  text-align:center;min-height:52px;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;letter-spacing:.3px;
+  -webkit-user-select:none;user-select:none;
+}
+.btn:focus-visible{box-shadow:0 0 0 2px rgba(122,74,255,.8)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{border-color:rgba(122,74,255,.6);color:#b088ff}
+.btn-primary:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(42,26,82,.8),rgba(26,16,52,.8));
+  box-shadow:0 0 24px rgba(122,74,255,.4);transform:translateY(-2px);
+}
+.btn-success{border-color:rgba(68,255,136,.6);color:#44ff88}
+.btn-success:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(10,42,20,.8),rgba(16,26,16,.8));
+  box-shadow:0 0 24px rgba(68,255,136,.3);transform:translateY(-2px);
+}
+.btn-danger{border-color:rgba(255,68,102,.6);color:#ff4466}
+.btn-danger:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(42,10,10,.8),rgba(26,16,16,.8));
+  box-shadow:0 0 24px rgba(255,68,102,.3);transform:translateY(-2px);
+}
+.btn-vpn{border-color:rgba(68,255,136,.6);color:#44ff88}
+.btn-vpn:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(10,42,20,.8),rgba(16,26,16,.8));
+  box-shadow:0 0 24px rgba(68,255,136,.3);transform:translateY(-2px);
+}
+.btn-fake{border-color:rgba(68,136,255,.6);color:#4488ff}
+.btn-fake:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(10,20,42,.8),rgba(16,20,26,.8));
+  box-shadow:0 0 24px rgba(68,136,255,.3);transform:translateY(-2px);
+}
+.btn-tea{border-color:rgba(255,170,68,.6);color:#ffaa44}
+.btn-tea:not(:disabled):hover{
+  background:linear-gradient(160deg,rgba(42,32,10,.8),rgba(26,20,16,.8));
+  box-shadow:0 0 24px rgba(255,170,68,.3);transform:translateY(-2px);
+}
+/* ========== ATTACK ROW ========== */
+.attack-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
+.attack-row .btn{
+  margin:0;padding:14px 6px;font-size:13px;min-height:60px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+}
+.attack-row .btn .icon{font-size:20px;line-height:1}
+.attack-row .btn.weakness-hit{animation:weaknessPulse .6s ease-out}
+@keyframes weaknessPulse{
+  0%{box-shadow:0 0 0 0 rgba(68,255,136,.8)}
+  100%{box-shadow:0 0 0 20px rgba(68,255,136,0)}
+}
+/* ========== LOG ========== */
+.log{
+  background:rgba(15,15,26,.9);padding:10px 14px;border-radius:14px;
+  border:1px solid rgba(122,74,255,.3);font-size:13px;
+  color:#b088ff;min-height:60px;max-height:100px;overflow-y:auto;
+  margin-top:10px;position:relative;z-index:1;line-height:1.4;
+  box-shadow:inset 0 0 20px rgba(122,74,255,.05);
+}
+.log-entry{padding:1px 0}
+.log-entry::before{content:'▸ ';color:#7a4aff;font-weight:bold}
+.log-entry:first-child{color:#b088ff}
+.log-entry:not(:first-child){color:#6a6a8a;opacity:.6;font-size:12px}
+/* ========== UTIL ========== */
+.hidden{display:none!important}
+/* ========== ENEMY ========== */
+.enemy-box{
+  background:linear-gradient(160deg,rgba(26,26,10,.9),rgba(42,26,10,.7));
+  border-radius:18px;padding:16px;
+  border:1px solid rgba(122,74,255,.35);
+  margin:8px 0 12px;position:relative;z-index:1;
+  box-shadow:
+    inset 0 0 30px rgba(122,74,255,.05),
+    0 8px 24px rgba(0,0,0,.3);
+  animation:enemyAppear .4s ease-out;
+}
+@keyframes enemyAppear{
+  from{opacity:0;transform:scale(.95)}
+  to{opacity:1;transform:scale(1)}
+}
+.enemy-name{
+  font-size:19px;font-weight:800;color:#ffaa44;
+  text-shadow:0 0 12px rgba(255,170,68,.4);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.enemy-stun-badge{
+  font-size:12px;padding:2px 8px;border-radius:8px;
+  background:rgba(68,136,255,.2);border:1px solid #4488ff;
+  color:#4488ff;animation:stunPulse 1s ease-in-out infinite;
+}
+@keyframes stunPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.enemy-hint{
+  font-size:13px;color:#7a7a8a;margin:8px 0;
+  font-style:italic;line-height:1.4;
+}
+.enemy-hp-bar{
+  height:8px;background:rgba(42,26,10,.9);border-radius:4px;
+  overflow:hidden;margin-top:8px;
+  box-shadow:inset 0 0 6px rgba(0,0,0,.6);
+}
+.enemy-hp-fill{
+  height:100%;
+  background:linear-gradient(90deg,#ff4466,#ffaa44);
+  transition:width .4s ease;
+  box-shadow:0 0 12px rgba(255,68,102,.5);
+  will-change:width;
+}
+.enemy-meta{
+  display:flex;justify-content:space-between;font-size:12px;
+  color:#8a8a9a;margin-top:8px;flex-wrap:wrap;gap:6px;
+}
+.weakness-badge{
+  display:inline-block;padding:2px 10px;border-radius:8px;
+  font-size:11px;background:rgba(68,255,136,.15);
+  border:1px solid rgba(68,255,136,.5);color:#44ff88;
+}
+.weakness-badge.revealed{
+  background:rgba(68,255,136,.3);
+  box-shadow:0 0 12px rgba(68,255,136,.5);
+  animation:weaknessPulse 1.5s ease-in-out infinite;
+}
+/* ========== ENDINGS ========== */
+.ending-good{
+  background:linear-gradient(160deg,rgba(10,26,10,.95),rgba(10,42,20,.9));
+  border:2px solid #44ff88;color:#44ff88;padding:24px;
+  border-radius:20px;text-align:center;
+  box-shadow:0 0 40px rgba(68,255,136,.3);
+  animation:fadeIn .5s ease-out;
+}
+.ending-bad{
+  background:linear-gradient(160deg,rgba(26,10,10,.95),rgba(42,10,20,.9));
+  border:2px solid #ff4466;color:#ff4466;padding:24px;
+  border-radius:20px;text-align:center;
+  box-shadow:0 0 40px rgba(255,68,102,.3);
+  animation:fadeIn .5s ease-out;
+}
+.ending-stats{
+  font-size:13px;color:#8a8aaa;margin-top:12px;padding-top:12px;
+  border-top:1px solid rgba(122,74,255,.3);
+  text-align:left;line-height:1.6;
+}
+.btn-reset{
+  display:inline-block;margin-top:16px;padding:12px 28px;
+  border:1.5px solid #44ff88;border-radius:30px;
+  background:transparent;color:#44ff88;cursor:pointer;
+  font-size:16px;font-weight:600;transition:all .25s;
+}
+.btn-reset:hover{background:rgba(68,255,136,.1);transform:translateY(-2px)}
+.btn-reset:active{transform:scale(.97)}
+/* ========== SAVE MANAGER ========== */
+.saved-badge{
+  font-size:11px;color:#44ff88;text-align:center;
+  margin-top:8px;opacity:.6;position:relative;z-index:1;
+}
+.save-manager{
+  margin-top:14px;padding:10px 14px;border-radius:14px;
+  border:1px solid rgba(122,74,255,.3);background:rgba(26,26,42,.7);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;position:relative;z-index:1;gap:8px;flex-wrap:wrap;
+}
+.save-manager button{
+  background:rgba(255,68,102,.15);border:1px solid #ff4466;
+  color:#ff4466;padding:6px 14px;border-radius:12px;
+  cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;
+}
+.save-manager button:hover{background:rgba(255,68,102,.3)}
+.save-manager button:active{transform:scale(.95)}
+/* ========== SHOP ========== */
+.shop-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:8px;margin-top:10px;position:relative;z-index:1;
+}
+.shop-item{
+  background:linear-gradient(160deg,rgba(26,26,42,.7),rgba(16,16,28,.7));
+  border:1.5px solid rgba(58,58,90,.6);border-radius:16px;
+  padding:12px;text-align:center;transition:all .25s;position:relative;
+}
+.shop-item.owned{
+  border-color:#44ff88;
+  background:linear-gradient(160deg,rgba(10,26,10,.7),rgba(16,42,16,.5));
+  box-shadow:0 0 16px rgba(68,255,136,.15);
+}
+.shop-item.affordable{
+  border-color:rgba(255,170,68,.6);
+  animation:affordablePulse 2s ease-in-out infinite;
+}
+@keyframes affordablePulse{
+  0%,100%{box-shadow:0 0 16px rgba(255,170,68,.15)}
+  50%{box-shadow:0 0 24px rgba(255,170,68,.35)}
+}
+.shop-item .cost{color:#ffaa44;font-size:14px;margin:4px 0}
+.shop-item .name{font-size:14px;font-weight:700;color:#b088ff}
+.shop-item .bonus{font-size:11px;color:#7a7a8a;margin-top:4px}
+.shop-btn{
+  background:linear-gradient(135deg,#7a4aff,#b088ff);
+  border:none;padding:8px 12px;border-radius:12px;
+  font-weight:700;color:#fff;cursor:pointer;margin-top:8px;
+  font-size:13px;width:100%;transition:all .2s;
+}
+.shop-btn:hover:not(:disabled){filter:brightness(1.15);transform:translateY(-1px)}
+.shop-btn:active:not(:disabled){transform:scale(.97)}
+.shop-btn:disabled{opacity:.4;cursor:not-allowed}
+.shop-btn.owned-btn{background:linear-gradient(135deg,#44ff88,#22cc66);color:#0a0a10}
+/* ========== INVENTORY ========== */
+.inventory{
+  display:flex;flex-wrap:wrap;gap:8px;padding:12px;
+  background:rgba(26,26,42,.7);border-radius:14px;
+  border:1px solid rgba(58,58,90,.6);margin-top:10px;
+  min-height:52px;position:relative;z-index:1;align-items:center;
+}
+.inv-item{
+  background:linear-gradient(160deg,rgba(42,42,26,.8),rgba(26,26,16,.8));
+  padding:8px 14px;border-radius:12px;
+  border:1px solid rgba(74,74,42,.8);cursor:pointer;
+  font-size:13px;transition:all .2s;color:#ffaa44;
+}
+.inv-item:hover{background:rgba(58,58,32,.9);transform:translateY(-2px)}
+.inv-item:active{transform:scale(.95)}
+/* ========== TABS ========== */
+.tabs{
+  display:flex;gap:6px;margin-bottom:12px;
+  background:rgba(15,15,26,.6);padding:4px;border-radius:14px;
+  border:1px solid rgba(58,58,90,.5);position:relative;z-index:1;
+}
+.tab-btn{
+  flex:1;padding:10px 4px;background:transparent;border:none;
+  border-radius:10px;color:#7a7a9a;cursor:pointer;
+  font-size:13px;font-weight:600;text-align:center;
+  transition:all .25s;
+}
+.tab-btn:hover{color:#b088ff}
+.tab-btn:focus-visible{box-shadow:0 0 0 2px rgba(122,74,255,.5)}
+.tab-btn.active{
+  background:linear-gradient(135deg,rgba(122,74,255,.3),rgba(176,136,255,.2));
+  color:#b088ff;box-shadow:0 0 16px rgba(122,74,255,.2);
+}
+.tab-content{display:none;position:relative;z-index:1}
+.tab-content.active{display:block;animation:fadeIn .3s ease-out}
+/* ========== SETTINGS ========== */
+.settings-section{
+  background:rgba(26,26,42,.6);border:1px solid rgba(58,58,90,.6);
+  border-radius:16px;padding:14px 16px;margin-bottom:10px;
+}
+.settings-section h4{
+  font-size:13px;color:#b088ff;margin-bottom:10px;
+  font-weight:700;text-transform:uppercase;letter-spacing:1px;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid rgba(58,58,90,.3);
+}
+.settings-row:last-child{border-bottom:none}
+.settings-row .label{
+  font-size:14px;color:#c0c0dd;display:flex;align-items:center;gap:8px;
+}
+.toggle{
+  position:relative;display:inline-block;width:52px;height:28px;
+  cursor:pointer;flex-shrink:0;
+}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{
+  position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+  background:rgba(58,58,90,.8);border-radius:28px;
+  transition:.3s;border:1px solid rgba(122,74,255,.3);
+}
+.toggle .slider:before{
+  position:absolute;content:"";height:20px;width:20px;
+  left:4px;bottom:3px;background:#8a8aaa;border-radius:50%;
+  transition:.3s;
+}
+.toggle input:checked+.slider{
+  background:linear-gradient(135deg,#7a4aff,#b088ff);
+  border-color:rgba(122,74,255,.8);
+  box-shadow:0 0 12px rgba(122,74,255,.5);
+}
+.toggle input:checked+.slider:before{transform:translateX(24px);background:#fff}
+.settings-info{font-size:12px;color:#7a7a9a;line-height:1.5;padding:8px 0}
+.settings-info strong{color:#b088ff}
+.btn-reset-progress{
+  width:100%;padding:14px;border-radius:14px;
+  border:1.5px solid rgba(255,68,102,.6);
+  background:linear-gradient(160deg,rgba(42,10,10,.8),rgba(26,16,16,.8));
+  color:#ff4466;font-size:15px;font-weight:700;cursor:pointer;
+  transition:all .25s;margin-top:6px;
+}
+.btn-reset-progress:hover{
+  background:linear-gradient(160deg,rgba(62,10,20,.9),rgba(36,16,16,.9));
+  box-shadow:0 0 24px rgba(255,68,102,.4);transform:translateY(-2px);
+}
+.btn-reset-progress:active{transform:scale(.98)}
+/* ========== DAMAGE POPUP ========== */
+.damage-popup{
+  position:absolute;font-weight:900;font-size:24px;color:#ff4466;
+  pointer-events:none;animation:floatUp .9s ease-out forwards;
+  text-shadow:0 0 12px rgba(255,68,102,.9),0 2px 4px rgba(0,0,0,.5);
+  z-index:100;will-change:transform,opacity;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-60px) scale(1.6)}
+}
+/* ========== MODAL ========== */
+.modal-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:20px;animation:fadeIn .2s ease-out;
+}
+.modal{
+  background:linear-gradient(160deg,rgba(24,24,38,.98),rgba(14,14,24,.98));
+  border:1.5px solid rgba(255,68,102,.6);border-radius:24px;
+  padding:24px;max-width:400px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 60px rgba(255,68,102,.2);
+  text-align:center;animation:modalIn .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn{
+  from{opacity:0;transform:scale(.9) translateY(20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.modal h3{color:#ff4466;font-size:20px;margin-bottom:12px}
+.modal p{color:#c0c0dd;font-size:14px;line-height:1.5;margin-bottom:20px}
+.modal-buttons{display:flex;gap:10px}
+.modal-buttons .btn{margin:0;flex:1}
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:rgba(15,15,26,.5);border-radius:3px}
+::-webkit-scrollbar-thumb{background:rgba(122,74,255,.5);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(122,74,255,.8)}
+</style>
+</head>
+<body>
+<div class="game" id="game">
+  <div class="title">🛡️ ПРОРЫВ 2</div>
+  <div class="subtitle">Фракции · Узлы · Осознанный выбор</div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <span>❤️ <span data-hp>100</span></span>
+    <span>💰 <span data-coins>0</span></span>
+    <span>🔓 <span data-vpn>VPNfy</span></span>
+    <span>👥 <span data-faction>—</span></span>
+    <span>⚡ <span data-prog>0%</span></span>
+    <span>💀 <span data-deaths>0</span></span>
+    <div class="hp-bar"><div class="hp-fill" data-hp-fill style="width:100%"></div></div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" data-progress style="width:0%"></div></div>
+  </div>
+
+  <!-- FACTION SCREEN -->
+  <div id="factionScreen">
+    <div class="faction-desc">Выбери фракцию — она определит твой стиль игры</div>
+    <div class="faction-grid">
+      <button class="faction-btn" data-faction="rkn">🏢 Работник РКН</button>
+    </div>
+    <button class="btn btn-primary" id="startBtn" disabled>🚀 Начать прорыв</button>
+    <div class="faction-desc" id="factionDesc">Выбери фракцию, чтобы продолжить</div>
+    <div class="save-manager">
+      <span>💾 Сохранения</span>
+      <span id="saveStatus">Нет сохранений</span>
+      <button id="clearSaveBtn" type="button">🗑️ Очистить</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="hidden">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="fight" type="button">⚔️ Бой</button>
+      <button class="tab-btn" data-tab="shop" type="button">🛒 Магазин</button>
+      <button class="tab-btn" data-tab="inventory" type="button">🎒 Инвентарь</button>
+      <button class="tab-btn" data-tab="settings" type="button">⚙️</button>
+    </div>
+
+    <!-- FIGHT TAB -->
+    <div id="tab-fight" class="tab-content active">
+      <div id="mapArea"><div class="node-grid" id="nodeGrid"></div></div>
+      <div id="battleArea" class="hidden">
+        <div id="enemyContainer"></div>
+        <div class="attack-row">
+          <button class="btn btn-vpn" data-attack="vpn" type="button"><span class="icon">🔓</span>ВПН</button>
+          <button class="btn btn-fake" data-attack="fake" type="button"><span class="icon">📖</span>Обман</button>
+          <button class="btn btn-tea" data-attack="tea" type="button"><span class="icon">☕</span>Чай</button>
+        </div>
+        <button class="btn btn-success" data-attack="special" type="button">✨ Особый приём</button>
+        <button class="btn btn-danger" id="retreatBtn" type="button">🏃 Отступить</button>
+      </div>
+      <div class="log" id="logArea">
+        <div class="log-entry">🌐 Исследуй узлы интернета</div>
+      </div>
+      <div class="saved-badge">💾 Прогресс сохраняется автоматически</div>
+    </div>
+
+    <!-- SHOP TAB -->
+    <div id="tab-shop" class="tab-content">
+      <h3 style="color:#b088ff;margin-bottom:10px;font-size:16px">🛒 Магазин ВПН</h3>
+      <div style="font-size:12px;color:#7a7a9a;margin-bottom:8px">💰 РКНкоинов: <span data-shop-coins>0</span></div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="tab-inventory" class="tab-content">
+      <h3 style="color:#b088ff;margin-bottom:10px;font-size:16px">🎒 Инвентарь</h3>
+      <div class="inventory" id="inventoryPanel">
+        <span id="inventoryList" style="color:#7a7a9a">пусто</span>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-content">
+      <h3 style="color:#b088ff;margin-bottom:10px;font-size:16px">⚙️ Настройки</h3>
+      <div class="settings-section">
+        <h4>🔊 Звук и вибрация</h4>
+        <div class="settings-row">
+          <span class="label">🔊 Звуковые эффекты</span>
+          <label class="toggle">
+            <input type="checkbox" id="soundToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <span class="label">📳 Вибрация</span>
+          <label class="toggle">
+            <input type="checkbox" id="vibrateToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h4>💾 Сохранение</h4>
+        <div class="settings-info" id="saveInfo">Загрузка...</div>
+      </div>
+      <div class="settings-section">
+        <h4>🗑️ Сброс прогресса</h4>
+        <div class="settings-info">
+          Полностью удалит все сохранения и начнёт игру заново. Это действие <strong>нельзя отменить</strong>.
+        </div>
+        <button class="btn-reset-progress" id="resetProgressBtn" type="button">🗑️ Сбросить весь прогресс</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>⚠️ Подтверждение</h3>
+    <p id="modalText">Ты уверен?</p>
+    <div class="modal-buttons">
+      <button class="btn btn-danger" id="modalCancel" type="button">Отмена</button>
+      <button class="btn btn-primary" id="modalConfirm" type="button">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+ *  CONFIG
+ * ============================================================ */
+const CONFIG = Object.freeze({
+  MAX_HP: 100,
+  BASE_DAMAGE: 8,
+  BASE_DEFENSE: 0,
+  WEAKNESS_BONUS: 8,
+  SPECIAL_COOLDOWN: 2,
+  ENEMY_ATTACK_DELAY: 700,
+  PROGRESS_PER_NODE: 20,
+  HEAL_ITEM_CHANCE: 0.3,
+  HEAL_AMOUNT: 15,
+  REGEN_INTERVAL: 4000,
+  REGEN_AMOUNT: 2,
+  RETREAT_PENALTY: 15,
+  RETREAT_MIN_HP: 10,
+  AUTOSAVE_INTERVAL: 10000,
+  AUTOSAVE_DEBOUNCE: 3000,
+  SAVE_KEY: 'proryv2_save_v4',
+  SAVE_VERSION: 4,
+  MAX_LOG_ENTRIES: 5,
+  MAX_DAMAGE_POPUPS: 5,
+  WEAKNESS_HIT_ANIM: 600
+});
+
+/* ============================================================
+ *  DATA
+ * ============================================================ */
+const FACTIONS = Object.freeze({
+  rkn: Object.freeze({
+    id: 'rkn',
+    name: 'Работник РКН',
+    icon: '🏢',
+    desc: 'Знаешь систему изнутри. +3 защита, +3 монеты. Спецприём «Бюрократия» лечит +8 HP.',
+    damageBonus: 0,
+    defenseBonus: 3,
+    coinBonus: 3,
+    specialName: 'Бюрократия',
+    specialEffect: (dmg) => ({ damage: dmg, stun: false, selfDmg: 0, heal: 8 })
+  })
+});
+
+const VPNS = Object.freeze([
+  Object.freeze({ name: 'VPNfy',         cost: 0,    damage: 0,  defense: 0, coinBonus: 0 }),
+  Object.freeze({ name: 'TipTopVPN',     cost: 30,   damage: 2,  defense: 1, coinBonus: 1 }),
+  Object.freeze({ name: 'NotVPN',        cost: 80,   damage: 4,  defense: 1, coinBonus: 2 }),
+  Object.freeze({ name: 'AmneziaVPN',    cost: 150,  damage: 6,  defense: 2, coinBonus: 3 }),
+  Object.freeze({ name: 'PortalWG',      cost: 250,  damage: 8,  defense: 3, coinBonus: 4 }),
+  Object.freeze({ name: 'AmneziaWG',     cost: 400,  damage: 10, defense: 4, coinBonus: 5 }),
+  Object.freeze({ name: 'КИБЕРЩИТ',      cost: 600,  damage: 13, defense: 5, coinBonus: 7 }),
+  Object.freeze({ name: 'КИБЕРПОРТАЛ X', cost: 1000, damage: 18, defense: 7, coinBonus: 10 })
+]);
+
+const ENEMIES = Object.freeze([
+  Object.freeze({ id: 0, name: 'Охранник РКН',      hp: 30, damage: 8,  defense: 1, weakTo: 'vpn',  coins: 15, hint: '💬 "Список запрещённых сайтов — моё оружие"' }),
+  Object.freeze({ id: 1, name: 'Секретарша',        hp: 35, damage: 10, defense: 2, weakTo: 'fake', coins: 20, hint: '💬 "Без бумажки ты — никто!"' }),
+  Object.freeze({ id: 2, name: 'Младший инспектор', hp: 40, damage: 12, defense: 2, weakTo: 'tea',  coins: 25, hint: '💬 "Мне нужен кофе... или чай..."' }),
+  Object.freeze({ id: 3, name: 'Цифровой призрак',  hp: 50, damage: 15, defense: 3, weakTo: 'vpn',  coins: 35, hint: '💬 "Я уже удалил тысячи голосов"' }),
+  Object.freeze({ id: 4, name: 'Максут Шадаев',     hp: 70, damage: 20, defense: 5, weakTo: 'tea',  coins: 60, hint: '💬 "Может, просто выпьем чаю?"' })
+]);
+
+const NODES_TEMPLATE = Object.freeze([
+  Object.freeze({ id: 0, name: 'Входной узел',  enemyId: 0, initialUnlocked: true  }),
+  Object.freeze({ id: 1, name: 'Серверная',     enemyId: 1, initialUnlocked: false }),
+  Object.freeze({ id: 2, name: 'Архив',         enemyId: 2, initialUnlocked: false }),
+  Object.freeze({ id: 3, name: 'Теневой чат',   enemyId: 3, initialUnlocked: false }),
+  Object.freeze({ id: 4, name: 'Ядро системы',  enemyId: 4, initialUnlocked: false })
+]);
+
+/* ============================================================
+ *  UTILS
+ * ============================================================ */
+const Utils = {
+  rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; },
+  clamp(v, min, max) { return v < min ? min : v > max ? max : v; },
+  $ (sel, ctx) { return (ctx || document).querySelector(sel); },
+  $$ (sel, ctx) { return Array.from((ctx || document).querySelectorAll(sel)); },
+  now() { return Date.now(); }
+};
+
+/* ============================================================
+ *  DOM CACHE
+ * ============================================================ */
+const DOM = {
+  game: Utils.$('#game'),
+  hp: Utils.$('[data-hp]'),
+  coins: Utils.$('[data-coins]'),
+  vpn: Utils.$('[data-vpn]'),
+  faction: Utils.$('[data-faction]'),
+  prog: Utils.$('[data-prog]'),
+  deaths: Utils.$('[data-deaths]'),
+  hpFill: Utils.$('[data-hp-fill]'),
+  progress: Utils.$('[data-progress]'),
+  shopCoins: Utils.$('[data-shop-coins]'),
+  factionScreen: Utils.$('#factionScreen'),
+  gameScreen: Utils.$('#gameScreen'),
+  startBtn: Utils.$('#startBtn'),
+  factionDesc: Utils.$('#factionDesc'),
+  clearSaveBtn: Utils.$('#clearSaveBtn'),
+  saveStatus: Utils.$('#saveStatus'),
+  nodeGrid: Utils.$('#nodeGrid'),
+  battleArea: Utils.$('#battleArea'),
+  enemyContainer: Utils.$('#enemyContainer'),
+  retreatBtn: Utils.$('#retreatBtn'),
+  logArea: Utils.$('#logArea'),
+  shopGrid: Utils.$('#shopGrid'),
+  inventoryList: Utils.$('#inventoryList'),
+  soundToggle: Utils.$('#soundToggle'),
+  vibrateToggle: Utils.$('#vibrateToggle'),
+  saveInfo: Utils.$('#saveInfo'),
+  resetProgressBtn: Utils.$('#resetProgressBtn'),
+  modalOverlay: Utils.$('#modalOverlay'),
+  modalText: Utils.$('#modalText'),
+  modalCancel: Utils.$('#modalCancel'),
+  modalConfirm: Utils.$('#modalConfirm'),
+  tabs: Utils.$$('.tab-btn'),
+  tabContents: Utils.$$('.tab-content'),
+  attackButtons: Utils.$$('[data-attack]')
+};
+
+/* ============================================================
+ *  STATE
+ * ============================================================ */
+const state = {
+  player: {
+    hp: CONFIG.MAX_HP,
+    maxHp: CONFIG.MAX_HP,
+    coins: 0,
+    vpnLevel: 0,
+    faction: null,
+    damage: CONFIG.BASE_DAMAGE,
+    defense: CONFIG.BASE_DEFENSE,
+    progress: 0,
+    deaths: 0,
+    defeated: 0,
+    inventory: [],
+    specialCooldown: 0
+  },
+  settings: { sound: true, vibrate: true },
+  battle: {
+    enemy: null,
+    enemyHp: 0,
+    enemyMaxHp: 0,
+    enemyStunned: false,
+    isActive: false,
+    isBusy: false,
+    weaknessRevealed: false
+  },
+  nodes: NODES_TEMPLATE.map(n => ({ ...n, completed: false, unlocked: n.initialUnlocked })),
+  gameOver: false,
+  currentNode: 0,
+  intervals: [],
+  damagePopupCount: 0,
+  lastSaveAt: 0,
+  saveTimer: null
+};
+
+/* ============================================================
+ *  AUDIO
+ * ============================================================ */
+const Audio = (function(){
+  let ctx = null;
+  function getCtx() {
+    if (!ctx) {
+      try { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e) { ctx = null; }
+    }
+    return ctx;
+  }
+  function beep(freq, gain, duration) {
+    if (!state.settings.sound) return;
+    const c = getCtx();
+    if (!c) return;
+    try {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.connect(g); g.connect(c.destination);
+      const t = c.currentTime;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.start(t); osc.stop(t + duration);
+    } catch(e) {}
+  }
+  return {
+    hit()    { beep(600, 0.10, 0.08); },
+    damage() { beep(200, 0.15, 0.15); },
+    click()  { beep(800, 0.06, 0.04); },
+    buy()    { beep(440, 0.10, 0.10); },
+    win() {
+      beep(523, 0.10, 0.10);
+      setTimeout(() => beep(659, 0.10, 0.10), 100);
+    }
+  };
+})();
+
+const Vibrate = {
+  go(ms) {
+    if (!state.settings.vibrate) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+  }
+};
+
+/* ============================================================
+ *  SAVE SYSTEM
+ * ============================================================ */
+const SaveSystem = (function(){
+  let available = null;
+  function check() {
+    if (available !== null) return available;
+    try {
+      const t = '__test__';
+      localStorage.setItem(t, t);
+      localStorage.removeItem(t);
+      available = true;
+    } catch(e) { available = false; }
+    return available;
+  }
+  function save() {
+    if (!check()) return false;
+    try {
+      const data = {
+        version: CONFIG.SAVE_VERSION,
+        timestamp: Utils.now(),
+        player: {
+          hp: state.player.hp,
+          maxHp: state.player.maxHp,
+          coins: state.player.coins,
+          vpnLevel: state.player.vpnLevel,
+          faction: state.player.faction,
+          progress: state.player.progress,
+          deaths: state.player.deaths,
+          defeated: state.player.defeated,
+          inventory: state.player.inventory
+        },
+        settings: {
+          sound: state.settings.sound,
+          vibrate: state.settings.vibrate
+        },
+        nodes: state.nodes.map(n => ({ id: n.id, completed: n.completed, unlocked: n.unlocked }))
+      };
+      localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(data));
+      state.lastSaveAt = Utils.now();
+      updateSaveInfo();
+      return true;
+    } catch(e) { return false; }
+  }
+  function load() {
+    if (!check()) return false;
+    try {
+      const raw = localStorage.getItem(CONFIG.SAVE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object' || !data.player) return false;
+
+      if (data.settings && typeof data.settings === 'object') {
+        state.settings.sound = data.settings.sound !== false;
+        state.settings.vibrate = data.settings.vibrate !== false;
+      }
+
+      const p = data.player;
+      state.player.maxHp = CONFIG.MAX_HP;
+      state.player.hp = Utils.clamp(Number(p.hp) || CONFIG.MAX_HP, 0, state.player.maxHp);
+      state.player.coins = Math.max(0, Number(p.coins) || 0);
+      state.player.vpnLevel = Utils.clamp(Number(p.vpnLevel) || 0, 0, VPNS.length - 1);
+      state.player.progress = Utils.clamp(Number(p.progress) || 0, 0, 100);
+      state.player.deaths = Math.max(0, Number(p.deaths) || 0);
+      state.player.defeated = Math.max(0, Number(p.defeated) || 0);
+      state.player.inventory = Array.isArray(p.inventory) ? p.inventory.slice(0, 50) : [];
+      state.player.specialCooldown = 0;
+      state.player.faction = (p.faction && FACTIONS[p.faction]) ? p.faction : null;
+
+      if (Array.isArray(data.nodes)) {
+        data.nodes.forEach(n => {
+          const node = state.nodes.find(x => x.id === n.id);
+          if (node) {
+            node.completed = !!n.completed;
+            node.unlocked = !!n.unlocked;
+          }
+        });
+      }
+
+      if (state.player.faction) recalcStats();
+      return true;
+    } catch(e) { return false; }
+  }
+  function clear() {
+    try { localStorage.removeItem(CONFIG.SAVE_KEY); } catch(e) {}
+    updateSaveInfo();
+  }
+  function getInfo() {
+    try {
+      const raw = localStorage.getItem(CONFIG.SAVE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      return {
+        timestamp: Number(data.timestamp) || 0,
+        size: raw.length,
+        version: Number(data.version) || 1
+      };
+    } catch(e) { return null; }
+  }
+  return { save, load, clear, getInfo, check };
+})();
+
+function scheduleSave() {
+  if (state.saveTimer) clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(() => {
+    state.saveTimer = null;
+    SaveSystem.save();
+  }, CONFIG.AUTOSAVE_DEBOUNCE);
+}
+
+function updateSaveInfo() {
+  const info = SaveSystem.getInfo();
+  if (!info) {
+    DOM.saveInfo.textContent = 'Нет сохранений';
+    DOM.saveStatus.textContent = 'Нет сохранений';
+    return;
+  }
+  const date = new Date(info.timestamp);
+  const dateStr = date.toLocaleDateString('ru-RU') + ' ' +
+    date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  DOM.saveInfo.innerHTML =
+    '<div>📅 Последнее сохранение: <strong>' + dateStr + '</strong></div>' +
+    '<div>📦 Размер: <strong>' + info.size + ' байт</strong></div>' +
+    '<div>🔢 Версия: <strong>' + info.version + '</strong></div>';
+  DOM.saveStatus.textContent = '✅ Сохранено';
+}
+
+/* ============================================================
+ *  STATS RECALC
+ * ============================================================ */
+function recalcStats() {
+  const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+  const vpn = VPNS[state.player.vpnLevel] || VPNS[0];
+  state.player.damage = CONFIG.BASE_DAMAGE + (f ? f.damageBonus : 0) + vpn.damage;
+  state.player.defense = Math.max(0, CONFIG.BASE_DEFENSE + (f ? f.defenseBonus : 0) + vpn.defense);
+}
+
+/* ============================================================
+ *  LOG
+ * ============================================================ */
+function log(msg) {
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.textContent = msg;
+  DOM.logArea.insertBefore(entry, DOM.logArea.firstChild);
+  while (DOM.logArea.children.length > CONFIG.MAX_LOG_ENTRIES) {
+    DOM.logArea.removeChild(DOM.logArea.lastChild);
+  }
+}
+
+function clearLog() {
+  DOM.logArea.innerHTML = '';
+}
+
+/* ============================================================
+ *  RENDER: STATS
+ * ============================================================ */
+function renderStats() {
+  DOM.hp.textContent = Math.floor(state.player.hp);
+  DOM.coins.textContent = state.player.coins;
+  DOM.vpn.textContent = VPNS[state.player.vpnLevel].name;
+  const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+  DOM.faction.textContent = f ? f.icon + ' ' + f.name : '—';
+  DOM.prog.textContent = Math.min(100, Math.floor(state.player.progress)) + '%';
+  DOM.deaths.textContent = state.player.deaths;
+  DOM.hpFill.style.width = Utils.clamp((state.player.hp / state.player.maxHp) * 100, 0, 100) + '%';
+  DOM.progress.style.width = Utils.clamp(state.player.progress, 0, 100) + '%';
+  DOM.shopCoins.textContent = state.player.coins;
+}
+
+/* ============================================================
+ *  RENDER: NODES
+ * ============================================================ */
+function renderNodes() {
+  const frag = document.createDocumentFragment();
+  state.nodes.forEach((node, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'node-btn';
+    if (node.completed) btn.classList.add('completed');
+    else if (node.unlocked) btn.classList.add('unlocked');
+    const enemy = ENEMIES.find(e => e.id === node.enemyId);
+    if (node.completed) btn.textContent = '✅ ' + node.name;
+    else if (node.unlocked) btn.textContent = '🔓 ' + node.name + (enemy ? '\n' + enemy.name : '');
+    else btn.textContent = '🔒 ' + node.name;
+    btn.disabled = !node.unlocked || node.completed;
+    btn.dataset.nodeId = idx;
+    frag.appendChild(btn);
+  });
+  DOM.nodeGrid.innerHTML = '';
+  DOM.nodeGrid.appendChild(frag);
+}
+
+/* ============================================================
+ *  RENDER: ENEMY
+ * ============================================================ */
+function weaknessLabel(w) {
+  return w === 'vpn' ? '🔓 ВПН-удар' :
+         w === 'fake' ? '📖 Обман' :
+         w === 'tea' ? '☕ Чай' : '—';
+}
+
+function renderEnemy() {
+  const e = state.battle.enemy;
+  if (!e) return;
+  const pct = Utils.clamp((state.battle.enemyHp / state.battle.enemyMaxHp) * 100, 0, 100);
+  const stun = state.battle.enemyStunned
+    ? '<span class="enemy-stun-badge">🌀 Оглушён</span>' : '';
+  const wClass = state.battle.weaknessRevealed ? 'weakness-badge revealed' : 'weakness-badge';
+  DOM.enemyContainer.innerHTML =
+    '<div class="enemy-box">' +
+      '<div class="enemy-name">⚔️ ' + e.name + ' ' + stun + '</div>' +
+      '<div class="enemy-hint">' + e.hint + '</div>' +
+      '<div style="font-size:14px;margin:6px 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">' +
+        '<span>❤️ <span data-enemy-hp>' + state.battle.enemyHp + '</span> / ' + state.battle.enemyMaxHp + '</span>' +
+        '<span class="' + wClass + '">💡 ' + weaknessLabel(e.weakTo) + '</span>' +
+      '</div>' +
+      '<div class="enemy-hp-bar"><div class="enemy-hp-fill" data-enemy-hp-fill style="width:' + pct + '%"></div></div>' +
+      '<div class="enemy-meta">' +
+        '<span>💰 ' + e.coins + ' РКН</span>' +
+        '<span>⚔️ ' + e.damage + ' | 🛡️ ' + e.defense + '</span>' +
+      '</div>' +
+    '</div>';
+}
+
+function updateEnemyHp() {
+  const hpText = Utils.$('[data-enemy-hp]', DOM.enemyContainer);
+  const hpFill = Utils.$('[data-enemy-hp-fill]', DOM.enemyContainer);
+  if (hpText) hpText.textContent = state.battle.enemyHp;
+  if (hpFill) {
+    const pct = Utils.clamp((state.battle.enemyHp / state.battle.enemyMaxHp) * 100, 0, 100);
+    hpFill.style.width = pct + '%';
+  }
+}
+
+/* ============================================================
+ *  RENDER: SHOP
+ * ============================================================ */
+function renderShop() {
+  const frag = document.createDocumentFragment();
+  VPNS.forEach((vpn, idx) => {
+    const owned = idx <= state.player.vpnLevel;
+    const isNext = idx === state.player.vpnLevel + 1;
+    const canBuy = isNext && state.player.coins >= vpn.cost;
+    const div = document.createElement('div');
+    div.className = 'shop-item' +
+      (owned ? ' owned' : '') +
+      (canBuy ? ' affordable' : '');
+    let btnHtml;
+    if (owned) {
+      btnHtml = '<button class="shop-btn owned-btn" disabled type="button">✅ Куплено</button>';
+    } else if (isNext) {
+      btnHtml = '<button class="shop-btn" data-buy="' + idx + '" type="button"' +
+        (canBuy ? '' : ' disabled') + '>' +
+        (canBuy ? '🛒 Купить' : '🔒 Мало монет') + '</button>';
+    } else {
+      btnHtml = '<button class="shop-btn" disabled style="opacity:.3" type="button">🔒</button>';
+    }
+    div.innerHTML =
+      '<div class="name">' + vpn.name + '</div>' +
+      '<div class="bonus">⚔️ +' + vpn.damage + ' | 🛡️ +' + vpn.defense + ' | 💰 +' + vpn.coinBonus + '</div>' +
+      '<div class="cost">💰 ' + vpn.cost + ' РКН</div>' +
+      btnHtml;
+    frag.appendChild(div);
+  });
+  DOM.shopGrid.innerHTML = '';
+  DOM.shopGrid.appendChild(frag);
+}
+
+/* ============================================================
+ *  RENDER: INVENTORY
+ * ============================================================ */
+function renderInventory() {
+  if (state.player.inventory.length === 0) {
+    DOM.inventoryList.textContent = 'пусто';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  state.player.inventory.forEach((item, idx) => {
+    const span = document.createElement('span');
+    span.className = 'inv-item';
+    span.dataset.itemIdx = idx;
+    span.textContent = item;
+    frag.appendChild(span);
+  });
+  DOM.inventoryList.innerHTML = '';
+  DOM.inventoryList.appendChild(frag);
+}
+
+/* ============================================================
+ *  RENDER: BATTLE BUTTONS STATE
+ * ============================================================ */
+function updateBattleButtons() {
+  const disabled = !state.battle.isActive || state.battle.isBusy || state.gameOver;
+  DOM.attackButtons.forEach(btn => {
+    if (btn.dataset.attack === 'special') {
+      if (state.player.specialCooldown > 0) {
+        const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+        btn.textContent = '✨ Перезарядка (' + state.player.specialCooldown + ')';
+        btn.disabled = true;
+      } else {
+        const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+        btn.textContent = f ? '✨ ' + f.specialName : '✨ Особый приём';
+        btn.disabled = disabled;
+      }
+    } else {
+      btn.disabled = disabled;
+    }
+  });
+  DOM.retreatBtn.disabled = disabled;
+}
+
+/* ============================================================
+ *  DAMAGE POPUP
+ * ============================================================ */
+function showDamagePopup(amount, anchorEl) {
+  if (state.damagePopupCount >= CONFIG.MAX_DAMAGE_POPUPS) return;
+  if (!anchorEl) return;
+  state.damagePopupCount++;
+  const popup = document.createElement('div');
+  popup.className = 'damage-popup';
+  popup.textContent = '-' + amount;
+  const aRect = anchorEl.getBoundingClientRect();
+  const gRect = DOM.game.getBoundingClientRect();
+  popup.style.left = (aRect.left - gRect.left + aRect.width / 2 - 20) + 'px';
+  popup.style.top = (aRect.top - gRect.top + 20) + 'px';
+  DOM.game.appendChild(popup);
+  setTimeout(() => {
+    popup.remove();
+    state.damagePopupCount = Math.max(0, state.damagePopupCount - 1);
+  }, 900);
+}
+
+/* ============================================================
+ *  BATTLE
+ * ============================================================ */
+function spawnEnemy(nodeId) {
+  const node = state.nodes.find(n => n.id === nodeId);
+  if (!node) return false;
+  const tmpl = ENEMIES.find(e => e.id === node.enemyId);
+  if (!tmpl) return false;
+  const scale = 1 + state.player.defeated * 0.05;
+  state.battle.enemy = {
+    ...tmpl,
+    hp: Math.floor(tmpl.hp * scale),
+    damage: Math.floor(tmpl.damage * scale),
+    defense: Math.floor(tmpl.defense * scale),
+    coins: Math.floor(tmpl.coins * scale)
+  };
+  state.battle.enemyHp = state.battle.enemy.hp;
+  state.battle.enemyMaxHp = state.battle.enemy.hp;
+  state.battle.enemyStunned = false;
+  state.battle.isActive = true;
+  state.battle.isBusy = false;
+  state.battle.weaknessRevealed = false;
+  return true;
+}
+
+function playerAttack(attackType) {
+  if (state.battle.isBusy || state.gameOver || !state.battle.isActive) return;
+  if (!state.battle.enemy) return;
+
+  const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+  const enemy = state.battle.enemy;
+
+  if (attackType === 'special' && state.player.specialCooldown > 0) return;
+
+  state.battle.isBusy = true;
+  updateBattleButtons();
+
+  let dmg = state.player.damage + Utils.rand(0, 4);
+  let logMsg = '';
+  let selfDmg = 0;
+  let stun = false;
+  let heal = 0;
+
+  if (attackType === 'special') {
+    if (!f) {
+      state.battle.isBusy = false;
+      updateBattleButtons();
+      return;
+    }
+    const res = f.specialEffect(dmg);
+    dmg = res.damage || dmg;
+    stun = !!res.stun;
+    selfDmg = res.selfDmg || 0;
+    heal = res.heal || 0;
+    logMsg = '✨ ' + f.specialName + '!';
+    state.player.specialCooldown = CONFIG.SPECIAL_COOLDOWN;
+  } else {
+    const labels = { vpn: '🔓 ВПН-удар', fake: '📖 Обман', tea: '☕ Чай' };
+    logMsg = (labels[attackType] || '⚔️ Атака') + '!';
+    if (attackType === enemy.weakTo) {
+      dmg += CONFIG.WEAKNESS_BONUS;
+      logMsg += ' 💡 Слабость!';
+      if (!state.battle.weaknessRevealed) {
+        state.battle.weaknessRevealed = true;
+        renderEnemy();
+      }
+      const btn = DOM.attackButtons.find(b => b.dataset.attack === attackType);
+      if (btn) {
+        btn.classList.add('weakness-hit');
+        setTimeout(() => btn.classList.remove('weakness-hit'), CONFIG.WEAKNESS_HIT_ANIM);
+      }
+    }
+  }
+
+  dmg = Math.max(1, dmg - enemy.defense);
+  state.battle.enemyHp = Math.max(0, state.battle.enemyHp - dmg);
+
+  log(logMsg + ' Ты нанёс ' + dmg + ' урона!');
+  Audio.hit();
+  Vibrate.go(20);
+
+  const enemyBox = Utils.$('.enemy-box', DOM.enemyContainer);
+  if (enemyBox) showDamagePopup(dmg, enemyBox);
+  updateEnemyHp();
+
+  if (selfDmg > 0) {
+    state.player.hp = Math.max(0, state.player.hp - selfDmg);
+    log('🔥 Отдача: -' + selfDmg + ' HP');
+  }
+  if (heal > 0) {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + heal);
+    log('💚 Восстановлено ' + heal + ' HP');
+  }
+  if (stun) {
+    state.battle.enemyStunned = true;
+    log('🌀 Враг оглушён!');
+    renderEnemy();
+  }
+
+  renderStats();
+
+  if (state.battle.enemyHp <= 0) {
+    state.battle.isBusy = false;
+    victory();
+    return;
+  }
+
+  if (state.player.hp <= 0) {
+    state.player.deaths++;
+    state.battle.isBusy = false;
+    endGame('bad', '💀 Ты погиб. Смертей: ' + state.player.deaths);
+    return;
+  }
+
+  setTimeout(() => {
+    if (state.battle.isActive && !state.gameOver && state.player.hp > 0 && state.battle.enemyHp > 0) {
+      enemyTurn();
+    }
+    state.battle.isBusy = false;
+    updateBattleButtons();
+    scheduleSave();
+  }, CONFIG.ENEMY_ATTACK_DELAY);
+}
+
+function enemyTurn() {
+  if (!state.battle.isActive || state.gameOver) return;
+  if (state.player.hp <= 0 || state.battle.enemyHp <= 0) return;
+  if (!state.battle.enemy) return;
+
+  if (state.battle.enemyStunned) {
+    state.battle.enemyStunned = false;
+    log('🌀 Враг пропускает ход (оглушён)');
+    renderEnemy();
+    return;
+  }
+
+  const eDmg = Math.max(1, state.battle.enemy.damage + Utils.rand(0, 3) - state.player.defense);
+  state.player.hp = Math.max(0, state.player.hp - eDmg);
+  log('🤖 ' + state.battle.enemy.name + ' нанёс ' + eDmg + ' урона!');
+  Audio.damage();
+  Vibrate.go(30);
+  renderStats();
+  scheduleSave();
+
+  if (state.player.hp <= 0) {
+    state.player.deaths++;
+    endGame('bad', '💀 Ты погиб. Смертей: ' + state.player.deaths);
+  }
+}
+
+function victory() {
+  if (!state.battle.enemy) return;
+  const deadEnemy = state.battle.enemy;
+  state.battle.isActive = false;
+
+  state.player.defeated++;
+  const node = state.nodes.find(n => n.id === state.currentNode);
+  if (node) {
+    node.completed = true;
+    const next = state.nodes.find(n => n.id === state.currentNode + 1);
+    if (next) next.unlocked = true;
+  }
+  const f = state.player.faction ? FACTIONS[state.player.faction] : null;
+  const vpn = VPNS[state.player.vpnLevel];
+  const reward = deadEnemy.coins + (f ? f.coinBonus : 0) + vpn.coinBonus;
+  state.player.coins += reward;
+  state.player.progress = Math.min(100, state.nodes.filter(n => n.completed).length * CONFIG.PROGRESS_PER_NODE);
+
+  log('✅ ' + deadEnemy.name + ' повержен! +' + reward + ' РКН');
+  Audio.win();
+  Vibrate.go(50);
+
+  if (Math.random() < CONFIG.HEAL_ITEM_CHANCE) {
+    state.player.inventory.push('🧪 Аптечка (+15 HP)');
+    log('🎒 Получено: 🧪 Аптечка');
+  }
+
+  renderStats();
+  renderNodes();
+  renderShop();
+  renderInventory();
+  SaveSystem.save();
+
+  if (state.nodes.every(n => n.completed)) {
+    endGame('good', '🏆 ТЫ ПРОШЁЛ ВЕСЬ ИНТЕРНЕТ! СИСТЕМА ПАЛА!');
+  } else {
+    // сброс боевого состояния перед возвратом на карту
+    state.battle.enemy = null;
+    state.battle.enemyHp = 0;
+    state.battle.enemyMaxHp = 0;
+    state.battle.enemyStunned = false;
+    state.battle.isBusy = false;
+    hideBattle();
+  }
+}
+
+function retreat() {
+  if (state.gameOver || state.battle.isBusy || state.player.hp <= 0 || !state.battle.isActive) return;
+  state.battle.isActive = false;
+  state.battle.isBusy = false;
+  state.battle.enemyStunned = false;
+  state.battle.enemy = null;
+  state.battle.enemyHp = 0;
+  state.battle.enemyMaxHp = 0;
+  state.player.specialCooldown = 0;
+  state.player.hp = Math.max(CONFIG.RETREAT_MIN_HP, state.player.hp - CONFIG.RETREAT_PENALTY);
+  log('🏃 Ты отступил. Потеряно ' + CONFIG.RETREAT_PENALTY + ' HP.');
+  hideBattle();
+  renderNodes();
+  renderStats();
+  updateBattleButtons();
+  scheduleSave();
+}
+
+function showBattle() {
+  DOM.battleArea.classList.remove('hidden');
+  DOM.nodeGrid.classList.add('hidden');
+  updateBattleButtons();
+}
+
+function hideBattle() {
+  DOM.battleArea.classList.add('hidden');
+  DOM.nodeGrid.classList.remove('hidden');
+  DOM.enemyContainer.innerHTML = '';
+  updateBattleButtons();
+}
+
+function enterNode(idx) {
+  if (state.gameOver || state.battle.isActive) return;
+  const node = state.nodes[idx];
+  if (!node || !node.unlocked || node.completed) return;
+  state.currentNode = idx;
+  if (!spawnEnemy(idx)) return;
+  renderEnemy();
+  showBattle();
+  log('⚔️ Бой с ' + state.battle.enemy.name + '!');
+  renderStats();
+}
+
+/* ============================================================
+ *  END GAME
+ * ============================================================ */
+function endGame(type, text) {
+  if (state.gameOver) return;
+  state.gameOver = true;
+  state.battle.isActive = false;
+  state.battle.isBusy = false;
+  state.battle.enemy = null;
+  state.battle.enemyHp = 0;
+  state.battle.enemyMaxHp = 0;
+  state.battle.enemyStunned = false;
+
+  const cls = type === 'good' ? 'ending-good' : 'ending-bad';
+  const title = type === 'good' ? '✅ ПОБЕДА' : '💀 ПОРАЖЕНИЕ';
+  const stats =
+    '<div class="ending-stats">' +
+      '💀 Смертей: <strong>' + state.player.deaths + '</strong><br>' +
+      '⚔️ Побеждено врагов: <strong>' + state.player.defeated + '</strong><br>' +
+      '💰 Монет: <strong>' + state.player.coins + '</strong><br>' +
+      '🔓 ВПН: <strong>' + VPNS[state.player.vpnLevel].name + '</strong><br>' +
+      '⚡ Прогресс: <strong>' + state.player.progress + '%</strong>' +
+    '</div>';
+
+  DOM.enemyContainer.innerHTML =
+    '<div class="' + cls + '">' +
+      '<div style="font-size:24px;font-weight:900">' + title + '</div>' +
+      '<div style="margin-top:12px;line-height:1.5">' + text + '</div>' +
+      stats +
+      '<button class="btn-reset" id="resetButton" type="button">🔄 Начать заново</button>' +
+    '</div>';
+
+  DOM.battleArea.classList.remove('hidden');
+  DOM.nodeGrid.classList.add('hidden');
+  log('🏁 Игра окончена.');
+  renderStats();
+  updateBattleButtons();
+  SaveSystem.save();
+
+  // Защита от накопления обработчиков: клонируем кнопку
+  const rb = document.getElementById('resetButton');
+  if (rb) {
+    const newRb = rb.cloneNode(true);
+    rb.parentNode.replaceChild(newRb, rb);
+    newRb.addEventListener('click', resetProgress);
+  }
+}
+
+/* ============================================================
+ *  RESET / START / LOAD
+ * ============================================================ */
+function resetProgress() {
+  SaveSystem.clear();
+
+  // === ПОЛНЫЙ СБРОС ИГРОКА ===
+  state.player.hp = CONFIG.MAX_HP;
+  state.player.maxHp = CONFIG.MAX_HP;
+  state.player.coins = 0;
+  state.player.vpnLevel = 0;
+  state.player.faction = null;
+  state.player.damage = CONFIG.BASE_DAMAGE;
+  state.player.defense = CONFIG.BASE_DEFENSE;
+  state.player.progress = 0;
+  state.player.deaths = 0;
+  state.player.defeated = 0;
+  state.player.inventory = [];
+  state.player.specialCooldown = 0;
+
+  // === ПОЛНЫЙ СБРОС БОЯ (главный фикс) ===
+  state.battle.enemy = null;
+  state.battle.enemyHp = 0;
+  state.battle.enemyMaxHp = 0;
+  state.battle.enemyStunned = false;
+  state.battle.isActive = false;
+  state.battle.isBusy = false;
+  state.battle.weaknessRevealed = false;
+
+  // === СБРОС УЗЛОВ ===
+  state.nodes.forEach((n, i) => {
+    n.completed = false;
+    n.unlocked = i === 0;
+  });
+
+  // === СБРОС ФЛАГОВ ===
+  state.gameOver = false;
+  state.currentNode = 0;
+  state.damagePopupCount = 0;
+
+  // === ОЧИСТКА DOM ===
+  DOM.enemyContainer.innerHTML = '';
+  DOM.battleArea.classList.add('hidden');
+  DOM.nodeGrid.classList.remove('hidden');
+
+  // === СБРОС UI ===
+  DOM.factionScreen.classList.remove('hidden');
+  DOM.gameScreen.classList.add('hidden');
+  DOM.startBtn.disabled = true;
+  DOM.factionDesc.textContent = 'Выбери фракцию, чтобы продолжить';
+  DOM.saveStatus.textContent = 'Нет сохранений';
+  DOM.saveInfo.textContent = 'Нет сохранений';
+
+  // === СБРОС ВЫДЕЛЕНИЯ ФРАКЦИЙ ===
+  Utils.$$('.faction-btn').forEach(b => b.classList.remove('selected'));
+
+  // === СБРОС НА ВКЛАДКУ БОЙ ===
+  switchTab('fight');
+  clearLog();
+
+  // === ПЕРЕРИСОВКА ===
+  renderNodes();
+  renderStats();
+  updateBattleButtons();
+  log('🗑️ Прогресс сброшен. Выбери фракцию.');
+}
+
+function startGame() {
+  const selected = Utils.$('.faction-btn.selected');
+  if (!selected) return;
+  const fid = selected.dataset.faction;
+  const f = FACTIONS[fid];
+  if (!f) return;
+
+  // === ПОЛНЫЙ РЕСЕТ ВСЕГО (главный фикс бага) ===
+  state.nodes.forEach((n, i) => {
+    n.completed = false;
+    n.unlocked = i === 0;
+  });
+
+  // Полный сброс боя
+  state.battle.enemy = null;
+  state.battle.enemyHp = 0;
+  state.battle.enemyMaxHp = 0;
+  state.battle.enemyStunned = false;
+  state.battle.isActive = false;
+  state.battle.isBusy = false;
+  state.battle.weaknessRevealed = false;
+
+  // Сброс флагов
+  state.gameOver = false;
+  state.currentNode = 0;
+  state.damagePopupCount = 0;
+
+  // Сброс игрока
+  state.player.hp = CONFIG.MAX_HP;
+  state.player.maxHp = CONFIG.MAX_HP;
+  state.player.coins = 0;
+  state.player.vpnLevel = 0;
+  state.player.progress = 0;
+  state.player.deaths = 0;
+  state.player.defeated = 0;
+  state.player.inventory = [];
+  state.player.specialCooldown = 0;
+  state.player.faction = fid;
+
+  recalcStats();
+  state.player.hp = state.player.maxHp;
+
+  // Очистка DOM
+  DOM.enemyContainer.innerHTML = '';
+  DOM.battleArea.classList.add('hidden');
+  DOM.nodeGrid.classList.remove('hidden');
+
+  // Показать игровой экран
+  DOM.factionScreen.classList.add('hidden');
+  DOM.gameScreen.classList.remove('hidden');
+  DOM.soundToggle.checked = state.settings.sound;
+  DOM.vibrateToggle.checked = state.settings.vibrate;
+
+  switchTab('fight');
+  clearLog();
+
+  renderNodes();
+  renderShop();
+  renderInventory();
+  renderStats();
+  updateBattleButtons();
+  log('🚀 Ты выбрал ' + f.name + '!');
+  Audio.click();
+  SaveSystem.save();
+}
+
+function loadGame() {
+  const ok = SaveSystem.load();
+  if (ok && state.player.faction) {
+    // Чистое боевое состояние
+    state.battle.enemy = null;
+    state.battle.enemyHp = 0;
+    state.battle.enemyMaxHp = 0;
+    state.battle.enemyStunned = false;
+    state.battle.isActive = false;
+    state.battle.isBusy = false;
+    state.battle.weaknessRevealed = false;
+
+    state.gameOver = false;
+    state.currentNode = 0;
+
+    DOM.factionScreen.classList.add('hidden');
+    DOM.gameScreen.classList.remove('hidden');
+    DOM.soundToggle.checked = state.settings.sound;
+    DOM.vibrateToggle.checked = state.settings.vibrate;
+
+    renderNodes();
+    renderShop();
+    renderInventory();
+    renderStats();
+    updateBattleButtons();
+    updateSaveInfo();
+    log('💾 Прогресс загружен!');
+
+    if (state.nodes.every(n => n.completed)) {
+      endGame('good', '🏆 ТЫ ПРОШЁЛ ВЕСЬ ИНТЕРНЕТ! СИСТЕМА ПАЛА!');
+    }
+  } else {
+    DOM.saveStatus.textContent = 'Нет сохранений';
+  }
+}
+
+/* ============================================================
+ *  ITEMS
+ * ============================================================ */
+function useItem(idx) {
+  if (state.gameOver) return;
+  const item = state.player.inventory[idx];
+  if (!item) return;
+  if (item.indexOf('Аптечка') === -1) return;
+  const before = state.player.hp;
+  state.player.hp = Math.min(state.player.maxHp, state.player.hp + CONFIG.HEAL_AMOUNT);
+  const healed = state.player.hp - before;
+  if (healed <= 0) {
+    log('❤️ HP уже полное!');
+    return;
+  }
+  state.player.inventory.splice(idx, 1);
+  log('🧪 +' + healed + ' HP');
+  Audio.click();
+  renderStats();
+  renderInventory();
+  scheduleSave();
+}
+
+function buyVPN(idx) {
+  if (state.gameOver) return;
+  if (idx !== state.player.vpnLevel + 1) return;
+  const vpn = VPNS[idx];
+  if (!vpn) return;
+  if (state.player.coins < vpn.cost) {
+    log('❌ Не хватает РКНкоинов!');
+    return;
+  }
+  state.player.coins -= vpn.cost;
+  state.player.vpnLevel = idx;
+  recalcStats();
+  log('✅ Куплен ' + vpn.name + '!');
+  Audio.buy();
+  Vibrate.go(30);
+  renderStats();
+  renderShop();
+  renderInventory();
+  SaveSystem.save();
+}
+
+/* ============================================================
+ *  TABS
+ * ============================================================ */
+function switchTab(id) {
+  DOM.tabContents.forEach(el => el.classList.remove('active'));
+  DOM.tabs.forEach(el => el.classList.remove('active'));
+  const content = document.getElementById('tab-' + id);
+  const btn = DOM.tabs.find(b => b.dataset.tab === id);
+  if (content) content.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'shop') renderShop();
+  if (id === 'inventory') renderInventory();
+  if (id === 'settings') updateSaveInfo();
+}
+
+/* ============================================================
+ *  MODAL
+ * ============================================================ */
+let modalCallback = null;
+function showModal(text, cb) {
+  DOM.modalText.textContent = text;
+  DOM.modalOverlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  modalCallback = cb;
+}
+function hideModal() {
+  DOM.modalOverlay.classList.add('hidden');
+  document.body.style.overflow = '';
+  modalCallback = null;
+}
+
+/* ============================================================
+ *  INTERVALS
+ * ============================================================ */
+function startIntervals() {
+  state.intervals.push(setInterval(() => {
+    if (state.gameOver) return;
+    if (state.battle.isActive) return;
+    if (state.player.hp <= 0 || state.player.hp >= state.player.maxHp) return;
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + CONFIG.REGEN_AMOUNT);
+    renderStats();
+  }, CONFIG.REGEN_INTERVAL));
+
+  state.intervals.push(setInterval(() => {
+    if (state.player.specialCooldown > 0) {
+      state.player.specialCooldown--;
+      updateBattleButtons();
+    }
+  }, 1000));
+
+  state.intervals.push(setInterval(() => {
+    if (state.player.faction && !state.gameOver && state.player.hp > 0) {
+      SaveSystem.save();
+    }
+  }, CONFIG.AUTOSAVE_INTERVAL));
+}
+
+function stopIntervals() {
+  state.intervals.forEach(id => clearInterval(id));
+  state.intervals = [];
+}
+
+/* ============================================================
+ *  EVENT WIRING
+ * ============================================================ */
+function wireEvents() {
+  // Faction buttons
+  Utils.$$('.faction-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      Utils.$$('.faction-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+      DOM.startBtn.disabled = false;
+      const f = FACTIONS[this.dataset.faction];
+      DOM.factionDesc.textContent = f ? f.desc : 'Выбери фракцию';
+      Audio.click();
+    });
+  });
+
+  DOM.startBtn.addEventListener('click', startGame);
+
+  DOM.clearSaveBtn.addEventListener('click', () => {
+    showModal('Удалить сохранение и начать заново?', () => {
+      resetProgress();
+      hideModal();
+    });
+  });
+
+  DOM.attackButtons.forEach(btn => {
+    if (btn.dataset.attack === 'special') {
+      btn.addEventListener('click', () => playerAttack('special'));
+    } else {
+      btn.addEventListener('click', () => playerAttack(btn.dataset.attack));
+    }
+  });
+
+  DOM.retreatBtn.addEventListener('click', retreat);
+
+  DOM.nodeGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.node-btn');
+    if (!btn) return;
+    const idx = Number(btn.dataset.nodeId);
+    if (!Number.isInteger(idx)) return;
+    enterNode(idx);
+  });
+
+  DOM.tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  DOM.shopGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-buy]');
+    if (!btn) return;
+    const idx = Number(btn.dataset.buy);
+    if (!Number.isInteger(idx)) return;
+    buyVPN(idx);
+  });
+
+  DOM.inventoryList.addEventListener('click', (e) => {
+    const span = e.target.closest('[data-item-idx]');
+    if (!span) return;
+    const idx = Number(span.dataset.itemIdx);
+    if (!Number.isInteger(idx)) return;
+    useItem(idx);
+  });
+
+  DOM.soundToggle.addEventListener('change', () => {
+    state.settings.sound = DOM.soundToggle.checked;
+    SaveSystem.save();
+    if (state.settings.sound) Audio.click();
+  });
+  DOM.vibrateToggle.addEventListener('change', () => {
+    state.settings.vibrate = DOM.vibrateToggle.checked;
+    SaveSystem.save();
+    if (state.settings.vibrate) Vibrate.go(30);
+  });
+
+  DOM.resetProgressBtn.addEventListener('click', () => {
+    showModal('Сбросить ВЕСЬ прогресс? Это действие нельзя отменить.', () => {
+      resetProgress();
+      hideModal();
+    });
+  });
+
+  DOM.modalCancel.addEventListener('click', hideModal);
+  DOM.modalConfirm.addEventListener('click', () => {
+    if (modalCallback) modalCallback();
+  });
+  DOM.modalOverlay.addEventListener('click', (e) => {
+    if (e.target === DOM.modalOverlay) hideModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !DOM.modalOverlay.classList.contains('hidden')) {
+      hideModal();
+    }
+  });
+}
+
+/* ============================================================
+ *  INIT
+ * ============================================================ */
+function init() {
+  wireEvents();
+  loadGame();
+  startIntervals();
+  renderNodes();
+  renderStats();
+  updateBattleButtons();
+  updateSaveInfo();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+})();
+</script>
+</body>
+</html>

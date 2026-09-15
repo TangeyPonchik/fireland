@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДОМ 2: ВОЗВРАЩЕНИЕ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Creepster&family=Special+Elite&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; width: 100%; }
+body {
+    background: #02040a;
+    color: #a8b8c8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+    padding: 2vh 2vw;
+    overflow: hidden;
+    position: relative;
+}
+body::after {
+    content: '';
+    position: fixed;
+    inset: -20%;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 30% 40%, rgba(40, 0, 0, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse at 70% 60%, rgba(0, 20, 40, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.98) 100%);
+    z-index: 100;
+    animation: shadowDrift 25s ease-in-out infinite;
+}
+@keyframes shadowDrift {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(3%, -2%) scale(1.05); }
+    66% { transform: translate(-2%, 3%) scale(0.98); }
+}
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.08;
+    z-index: 99;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: noiseShift 0.15s infinite;
+}
+@keyframes noiseShift {
+    0% { transform: translate(0,0); }
+    25% { transform: translate(-3%,1.5%); }
+    50% { transform: translate(1.5%,-3%); }
+    75% { transform: translate(-1.5%,3%); }
+    100% { transform: translate(3%,-1.5%); }
+}
+
+/* ====== CCTV ====== */
+.cctv-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 150;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15) 0px,
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    mix-blend-mode: multiply;
+}
+.cctv-top {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 160;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6), transparent);
+}
+.cctv-scanline {
+    position: fixed;
+    left: 0; right: 0;
+    height: 3px;
+    background: rgba(255, 60, 60, 0.15);
+    z-index: 161;
+    pointer-events: none;
+    animation: scanMove 4s linear infinite;
+    box-shadow: 0 0 20px rgba(255, 60, 60, 0.3);
+}
+@keyframes scanMove {
+    0% { top: 0%; }
+    100% { top: 100%; }
+}
+.rec-dot {
+    position: fixed;
+    top: 14px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    background: #cc0000;
+    border-radius: 50%;
+    z-index: 162;
+    box-shadow: 0 0 15px #cc0000;
+    animation: recPulse 1.5s infinite;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+@keyframes recPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.rec-dot.paused {
+    background: #888;
+    box-shadow: 0 0 15px #444;
+    animation: none;
+    opacity: 0.6;
+}
+.rec-time {
+    position: fixed;
+    top: 12px;
+    left: 42px;
+    font-family: 'Special Elite', monospace;
+    font-size: 14px;
+    color: #aa2222;
+    letter-spacing: 2px;
+    z-index: 162;
+    text-shadow: 0 0 8px rgba(200, 0, 0, 0.6);
+    transition: color 0.3s;
+}
+.rec-time.paused {
+    color: #666;
+    text-shadow: 0 0 8px rgba(100, 100, 100, 0.4);
+}
+/* Счётчик перезаписей */
+.rec-tape {
+    position: fixed;
+    top: 32px;
+    left: 42px;
+    font-family: 'Special Elite', monospace;
+    font-size: 11px;
+    color: #883333;
+    letter-spacing: 3px;
+    z-index: 162;
+    opacity: 0.7;
+}
+/* Надпись «пауза» */
+.rec-pause-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Special Elite', monospace;
+    font-size: 28px;
+    color: rgba(150, 150, 150, 0.35);
+    letter-spacing: 8px;
+    z-index: 163;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+    text-shadow: 0 0 30px rgba(0,0,0,0.9);
+}
+.rec-pause-msg.active {
+    opacity: 1;
+    animation: pauseBlink 2s infinite;
+}
+@keyframes pauseBlink {
+    0%,100% { opacity: 0.35; }
+    50% { opacity: 0.6; }
+}
+
+/* ====== КОНТЕЙНЕР ====== */
+.game-container {
+    background: #04070d;
+    padding: 4vh 4vw;
+    border-radius: 4px;
+    border: 1px solid #2a0a0a;
+    box-shadow:
+        0 0 150px rgba(60, 0, 0, 0.5),
+        inset 0 0 120px rgba(0,0,0,0.95),
+        inset 0 0 0 1px rgba(120, 40, 40, 0.15);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.8s, border-color 0.8s;
+    animation: containerBreath 6s ease-in-out infinite;
+}
+@keyframes containerBreath {
+    0%,100% { box-shadow: 0 0 150px rgba(60, 0, 0, 0.5), inset 0 0 120px rgba(0,0,0,0.95), inset 0 0 0 1px rgba(120, 40, 40, 0.15); }
+    50% { box-shadow: 0 0 180px rgba(80, 0, 0, 0.6), inset 0 0 140px rgba(0,0,0,0.98), inset 0 0 0 1px rgba(160, 50, 50, 0.25); }
+}
+.game-container.danger {
+    border-color: #4a0a0a;
+    animation: dangerPulse 1.2s infinite;
+}
+@keyframes dangerPulse {
+    0%,100% { border-color: #4a0a0a; box-shadow: 0 0 180px rgba(120, 0, 0, 0.6), inset 0 0 140px rgba(0,0,0,0.98); }
+    50% { border-color: #8a0a0a; box-shadow: 0 0 240px rgba(200, 0, 0, 0.8), inset 0 0 160px rgba(30,0,0,0.99); }
+}
+
+.game-container::before,
+.game-container::after {
+    content: 'ᛟ';
+    position: absolute;
+    font-family: 'Special Elite', serif;
+    font-size: 24px;
+    color: rgba(120, 30, 30, 0.25);
+    z-index: 5;
+    animation: sigilFlicker 8s infinite;
+}
+.game-container::before { top: 12px; left: 16px; }
+.game-container::after { bottom: 12px; right: 16px; transform: rotate(180deg); }
+@keyframes sigilFlicker {
+    0%,100% { opacity: 0.25; }
+    47% { opacity: 0.25; }
+    48% { opacity: 0.6; }
+    49% { opacity: 0.15; }
+    50% { opacity: 0.35; }
+    51% { opacity: 0.2; }
+}
+
+/* ====== HEADER ====== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2vh;
+    border-bottom: 1px solid #2a0a0a;
+    padding-bottom: 2vh;
+    flex-shrink: 0;
+    position: relative;
+}
+.header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, #882222, transparent);
+    opacity: 0.4;
+}
+.title {
+    font-size: clamp(28px, 4.5vw, 56px);
+    font-weight: 700;
+    color: #aa5555;
+    letter-spacing: 12px;
+    font-family: 'Creepster', cursive;
+    text-shadow: 0 0 50px rgba(200, 20, 20, 0.6);
+    animation: titleFlicker 5s infinite;
+    position: relative;
+}
+@keyframes titleFlicker {
+    0%,100% { opacity: 1; transform: translateX(0); }
+    89% { opacity: 1; transform: translateX(0); }
+    90% { opacity: 0.3; transform: translateX(2px); }
+    91% { opacity: 1; transform: translateX(-2px); }
+    92% { opacity: 0.6; transform: translateX(1px); }
+    93% { opacity: 1; transform: translateX(0); }
+}
+.location-badge {
+    font-size: clamp(14px, 1.4vw, 22px);
+    color: #886666;
+    background: #0a0608;
+    padding: 10px 28px;
+    border-radius: 4px;
+    border: 1px solid #2a1010;
+    letter-spacing: 3px;
+    font-family: 'Special Elite', monospace;
+    position: relative;
+}
+.location-badge::before { content: '['; color: #662222; margin-right: 8px; }
+.location-badge::after { content: ']'; color: #662222; margin-left: 8px; }
+
+/* ====== ПОЛОСА РАЗРУШЕНИЯ ====== */
+.destruction-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 2vh;
+    font-size: clamp(13px, 1.2vw, 18px);
+    color: #666;
+    letter-spacing: 3px;
+    flex-shrink: 0;
+    font-family: 'Special Elite', monospace;
+}
+.destruction-track {
+    flex: 1;
+    height: 14px;
+    background: #0a0608;
+    border-radius: 2px;
+    border: 1px solid #2a1010;
+    overflow: hidden;
+    position: relative;
+}
+.destruction-track::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 8px,
+        rgba(0,0,0,0.4) 8px,
+        rgba(0,0,0,0.4) 9px
+    );
+    pointer-events: none;
+}
+.destruction-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #1a4a1a, #33aa33, #66dd66);
+    border-radius: 2px;
+    transition: width 1s ease, background 1s;
+    box-shadow: 0 0 20px currentColor;
+}
+.destruction-fill.stage2 { background: linear-gradient(90deg, #4a4a1a, #aaaa33, #dddd66); color: #aaaa33; }
+.destruction-fill.stage3 { background: linear-gradient(90deg, #4a1a1a, #aa3333, #dd6666); color: #aa3333; }
+.destruction-fill.stage4 {
+    background: linear-gradient(90deg, #6a0000, #cc0000, #ff3333);
+    color: #ff3333;
+    animation: destructionPulse 0.5s infinite;
+}
+@keyframes destructionPulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.stage-label {
+    color: #886666;
+    font-size: clamp(11px, 1vw, 15px);
+    letter-spacing: 3px;
+    min-width: 200px;
+    text-align: right;
+    font-family: 'Special Elite', monospace;
+}
+
+/* ====== СЦЕНА ====== */
+.scene {
+    background: #060409;
+    padding: clamp(24px, 3vw, 50px);
+    border-radius: 4px;
+    border: 1px solid #1a0a0a;
+    margin-bottom: 2vh;
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.95);
+    position: relative;
+    transition: transform 0.1s;
+    flex: 1;
+    overflow-y: auto;
+}
+.scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 0%, rgba(80, 0, 0, 0.05) 50%, transparent 100%);
+    animation: sceneBreath 8s ease-in-out infinite;
+}
+@keyframes sceneBreath {
+    0%,100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+.scene.shake { animation: sceneShake 0.4s; }
+@keyframes sceneShake {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-8px,4px); }
+    40% { transform: translate(8px,-4px); }
+    60% { transform: translate(-6px,-6px); }
+    80% { transform: translate(6px,6px); }
+}
+.scene p {
+    font-size: clamp(16px, 1.5vw, 24px);
+    line-height: 1.8;
+    color: #a8b8c8;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+}
+.scene .note {
+    background: #0a0408;
+    padding: 18px 24px;
+    border-radius: 2px;
+    border-left: 3px solid #662222;
+    font-style: italic;
+    color: #aa8888;
+    margin: 18px 0;
+    font-size: clamp(15px, 1.4vw, 22px);
+    position: relative;
+    z-index: 1;
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 0.5px;
+}
+.scene .memory {
+    background: #04101a;
+    padding: 18px 24px;
+    border-radius: 2px;
+    border-left: 3px solid #446688;
+    font-style: italic;
+    color: #88aacc;
+    margin: 18px 0;
+    font-size: clamp(15px, 1.4vw, 22px);
+    position: relative;
+    z-index: 1;
+    font-family: 'Special Elite', monospace;
+}
+.scene .whisper {
+    color: #664444;
+    font-style: italic;
+    font-size: clamp(14px, 1.3vw, 20px);
+    text-align: center;
+    margin: 12px 0;
+    opacity: 0;
+    animation: whisperFade 3s forwards;
+    position: relative;
+    z-index: 1;
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 2px;
+}
+@keyframes whisperFade {
+    0% { opacity: 0; letter-spacing: 8px; }
+    30% { opacity: 0.9; letter-spacing: 2px; }
+    100% { opacity: 0.15; letter-spacing: 2px; }
+}
+.scene .warning {
+    color: #dd6666;
+    background: #1a0606;
+    border: 1px solid #662222;
+    padding: 12px 18px;
+    border-radius: 2px;
+    font-weight: 600;
+    margin: 14px 0;
+    text-align: center;
+    letter-spacing: 3px;
+    position: relative;
+    z-index: 1;
+    font-family: 'Special Elite', monospace;
+    animation: warningPulse 2s infinite;
+}
+@keyframes warningPulse {
+    0%,100% { border-color: #662222; }
+    50% { border-color: #cc3333; }
+}
+.scene .destroy-action {
+    color: #ff8833;
+    background: #1a0a04;
+    border: 1px solid #884422;
+    padding: 12px 18px;
+    border-radius: 2px;
+    font-weight: 600;
+    margin: 14px 0;
+    text-align: center;
+    letter-spacing: 4px;
+    position: relative;
+    z-index: 1;
+    font-family: 'Special Elite', monospace;
+    box-shadow: 0 0 30px rgba(255, 100, 0, 0.1);
+}
+.scene .death-text {
+    color: #cc2222;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 56px);
+    text-align: center;
+    letter-spacing: 15px;
+    text-shadow: 0 0 60px rgba(200, 0, 0, 0.9);
+    animation: deathGlow 2s infinite;
+    margin: 20px 0;
+    font-family: 'Creepster', cursive;
+    position: relative;
+    z-index: 1;
+}
+@keyframes deathGlow {
+    0%,100% { text-shadow: 0 0 60px rgba(200, 0, 0, 0.9); }
+    50% { text-shadow: 0 0 120px rgba(255, 0, 0, 1); }
+}
+.scene strong { color: #dd6666; font-weight: 700; }
+
+/* ====== СИГНАЛ ПОТЕРИ ====== */
+.signal-lost {
+    color: #ff3333;
+    background: #1a0000;
+    border: 2px solid #882222;
+    padding: 16px;
+    border-radius: 2px;
+    font-family: 'Special Elite', monospace;
+    font-weight: 700;
+    font-size: clamp(16px, 1.5vw, 22px);
+    letter-spacing: 6px;
+    text-align: center;
+    margin: 16px 0;
+    animation: signalFlash 0.5s infinite;
+    position: relative;
+    z-index: 1;
+}
+@keyframes signalFlash {
+    0%,100% { opacity: 1; background: #1a0000; }
+    50% { opacity: 0.6; background: #330000; }
+}
+
+/* ====== ВЫБОРЫ ====== */
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1.5vh;
+    flex-shrink: 0;
+}
+.choice-btn {
+    background: transparent;
+    border: 1px solid #2a1010;
+    color: #aa9999;
+    padding: clamp(14px, 1.5vh, 22px) clamp(20px, 2vw, 36px);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: clamp(15px, 1.3vw, 20px);
+    font-weight: 500;
+    transition: all 0.25s ease;
+    text-align: left;
+    font-family: 'Special Elite', monospace;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 1px;
+}
+.choice-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: linear-gradient(90deg, rgba(180, 40, 40, 0.15), transparent);
+    transition: width 0.35s;
+}
+.choice-btn:hover::before { width: 100%; }
+.choice-btn:hover {
+    background: #1a0a0a;
+    border-color: #662222;
+    color: #ddcccc;
+    padding-left: clamp(28px, 3vw, 50px);
+    box-shadow: 0 0 40px rgba(180, 40, 40, 0.2), inset 0 0 20px rgba(120, 20, 20, 0.15);
+    letter-spacing: 3px;
+}
+.choice-btn:active { transform: translateX(4px); }
+.choice-btn.danger-choice {
+    border-color: #883322;
+    color: #ff9955;
+    background: rgba(100, 30, 0, 0.2);
+}
+.choice-btn.danger-choice:hover {
+    background: #2a1500;
+    border-color: #cc4422;
+    color: #ffddaa;
+}
+.choice-btn.destroy-choice {
+    border-color: #884422;
+    color: #ffaa55;
+    background: rgba(120, 50, 0, 0.15);
+}
+.choice-btn.destroy-choice::before {
+    background: linear-gradient(90deg, rgba(255, 100, 0, 0.2), transparent);
+}
+.choice-btn.destroy-choice:hover {
+    background: #2a1500;
+    border-color: #cc6622;
+    color: #ffddaa;
+    box-shadow: 0 0 40px rgba(255, 100, 0, 0.25), inset 0 0 20px rgba(150, 60, 0, 0.2);
+}
+
+/* ====== ИНВЕНТАРЬ ====== */
+.inventory-bar {
+    margin-top: 1vh;
+    padding-top: 1.5vh;
+    border-top: 1px solid #1a0a0a;
+    font-size: clamp(12px, 1.1vw, 17px);
+    color: #664444;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex-shrink: 0;
+    font-family: 'Special Elite', monospace;
+}
+.inventory-item {
+    background: #0a0408;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid #2a1010;
+    color: #aa8888;
+}
+.log-box {
+    margin-top: 1vh;
+    font-size: clamp(12px, 1.1vw, 16px);
+    color: #553333;
+    min-height: 20px;
+    font-style: italic;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    font-family: 'Special Elite', monospace;
+}
+.step-counter {
+    position: absolute;
+    top: 2vh;
+    right: 3vw;
+    font-size: clamp(10px, 1vw, 14px);
+    color: #441111;
+    letter-spacing: 4px;
+    z-index: 20;
+    font-family: 'Special Elite', monospace;
+}
+
+/* ====== ГЛИТЧ ====== */
+.glitch-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    background: rgba(150, 0, 0, 0.2);
+    transition: opacity 0.2s;
+}
+.glitch-overlay.active { opacity: 1; animation: glitchFlash 0.35s; }
+@keyframes glitchFlash {
+    0% { opacity: 0; transform: translate(0); }
+    25% { opacity: 1; transform: translate(-12px, 8px); }
+    50% { opacity: 0.6; transform: translate(12px, -8px); }
+    75% { opacity: 1; transform: translate(-8px, -12px); }
+    100% { opacity: 0; transform: translate(0); }
+}
+
+/* ====== КРОВАВЫЕ ПОДТЁКИ ====== */
+.game-container.stage3::before,
+.game-container.stage3::after {
+    color: rgba(180, 30, 30, 0.4);
+}
+.blood-drip {
+    position: fixed;
+    top: 0;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, #660000, #aa0000);
+    z-index: 155;
+    pointer-events: none;
+    opacity: 0.6;
+}
+.blood-drip.d1 { left: 8%; height: 30vh; animation: drip 8s infinite; }
+.blood-drip.d2 { left: 45%; height: 20vh; animation: drip 12s infinite 2s; }
+.blood-drip.d3 { left: 82%; height: 40vh; animation: drip 10s infinite 4s; }
+@keyframes drip {
+    0%,100% { transform: scaleY(0.7); opacity: 0.4; }
+    50% { transform: scaleY(1); opacity: 0.8; }
+}
+
+/* ====== ФИНАЛЬНЫЙ ЭКРАН ЗАПИСИ ====== */
+.tape-end-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 4px;
+    padding: 40px;
+    text-align: center;
+}
+.tape-end-overlay.active { display: flex; animation: tapeEndFade 1s; }
+@keyframes tapeEndFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+.tape-end-overlay .glitch-text {
+    font-size: clamp(20px, 3vw, 40px);
+    color: #662222;
+    margin-bottom: 20px;
+    animation: textGlitch 0.3s infinite;
+}
+@keyframes textGlitch {
+    0%,100% { transform: translate(0,0); }
+    50% { transform: translate(-2px, 1px); }
+}
+.tape-end-overlay .tape-line {
+    font-size: clamp(14px, 1.5vw, 20px);
+    color: #444;
+    margin: 8px 0;
+    letter-spacing: 3px;
+}
+.tape-end-overlay .tape-time {
+    font-size: clamp(18px, 2vw, 28px);
+    color: #882222;
+    margin: 20px 0;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(150, 0, 0, 0.5);
+}
+.tape-end-overlay .tape-actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tape-end-overlay .tape-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #666;
+    padding: 14px 32px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: clamp(14px, 1.3vw, 18px);
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 4px;
+    transition: all 0.3s;
+}
+.tape-end-overlay .tape-btn:hover {
+    border-color: #882222;
+    color: #aa4444;
+    box-shadow: 0 0 30px rgba(150, 0, 0, 0.3);
+}
+
+/* ====== ОБРАТНЫЙ ОТСЧЁТ ====== */
+.rec-time.rewinding {
+    color: #66ccff;
+    text-shadow: 0 0 12px rgba(100, 200, 255, 0.8);
+    animation: rewindFlash 0.3s infinite;
+}
+@keyframes rewindFlash {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ====== АДАПТАЦИЯ ====== */
+@media (max-width: 768px) {
+    body { padding: 1vh 1vw; }
+    .game-container { padding: 3vh 4vw; }
+    .title { letter-spacing: 5px; }
+    .destruction-track { height: 10px; }
+    .choice-btn { padding: 12px 16px; font-size: 14px; }
+    .rec-time { font-size: 11px; }
+    .rec-tape { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<div class="cctv-overlay"></div>
+<div class="cctv-top"></div>
+<div class="cctv-scanline"></div>
+<div class="rec-dot" id="recDot"></div>
+<div class="rec-time" id="recTime">REC 00:00:00</div>
+<div class="rec-tape" id="recTape">ЗАПИСЬ 1</div>
+<div class="rec-pause-msg" id="recPauseMsg">⏸ ЗАПИСЬ ПРИОСТАНОВЛЕНА</div>
+
+<div class="blood-drip d1" id="drip1" style="display:none;"></div>
+<div class="blood-drip d2" id="drip2" style="display:none;"></div>
+<div class="blood-drip d3" id="drip3" style="display:none;"></div>
+
+<div class="glitch-overlay" id="glitchOverlay"></div>
+
+<!-- ФИНАЛЬНЫЙ ЭКРАН ЗАПИСИ -->
+<div class="tape-end-overlay" id="tapeEndOverlay">
+    <div class="glitch-text" id="tapeEndTitle">▶ ВОСПРОИЗВЕДЕНИЕ ОСТАНОВЛЕНО</div>
+    <div class="tape-line" id="tapeEndSub">файл повреждён</div>
+    <div class="tape-time" id="tapeEndTime">REC 00:00:00</div>
+    <div class="tape-actions">
+        <button class="tape-btn" id="tapeRestoreBtn">↻ ВОССТАНОВИТЬ</button>
+        <button class="tape-btn" id="tapeDeleteBtn">✕ УДАЛИТЬ</button>
+    </div>
+</div>
+
+<div class="game-container" id="gameContainer">
+    <div class="step-counter" id="stepCounter">ШАГ 0</div>
+    <div class="header">
+        <div class="title">ДОМ 2</div>
+        <div class="location-badge" id="locationBadge">Возвращение</div>
+    </div>
+    <div class="destruction-bar">
+        <span>РАЗРУШЕНИЕ</span>
+        <div class="destruction-track"><div class="destruction-fill" id="destructionFill"></div></div>
+        <span class="stage-label" id="stageLabel">СТАДИЯ I</span>
+    </div>
+    <div class="scene" id="sceneBox">
+        <p id="sceneText">Загрузка...</p>
+    </div>
+    <div class="choices" id="choicesBox"></div>
+    <div class="inventory-bar" id="inventoryBar">
+        <span>🎒</span>
+        <span id="inventoryList">пусто</span>
+    </div>
+    <div class="log-box" id="logBox"></div>
+</div>
+
+<script>
+// ============ СОСТОЯНИЕ ============
+const state = {
+    location: "intro",
+    inventory: [],
+    flags: {},
+    step: 0,
+    destruction: 0,
+    anchorsDestroyed: 0,
+    stage: 1,
+    ending: null,
+    history: []
+};
+
+// ============ УТИЛИТЫ ============
+const $ = (id) => document.getElementById(id);
+const log = (msg) => { $('logBox').textContent = '› ' + msg; };
+
+const updateInventory = () => {
+    const list = $('inventoryList');
+    list.textContent = state.inventory.length === 0 ? 'пусто' : state.inventory.join(' • ');
+};
+const hasItem = (item) => state.inventory.includes(item);
+const addItem = (item) => {
+    if (!hasItem(item)) {
+        state.inventory.push(item);
+        updateInventory();
+        log('🎒 ' + item);
+    }
+};
+const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// ============ ТАЙМКОД + ПАУЗА + СЧЁТЧИК ЗАПИСЕЙ ============
+let recSeconds = 0;
+let isPaused = false;
+let lastInteraction = Date.now();
+let tapeNumber = 1;
+
+// Загрузка номера записи из localStorage
+try {
+    const savedTape = localStorage.getItem('dom2_tape');
+    tapeNumber = savedTape ? parseInt(savedTape) : 1;
+} catch(e) { tapeNumber = 1; }
+$('recTape').textContent = 'ЗАПИСЬ ' + tapeNumber;
+
+const formatTime = (sec) => {
+    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+};
+
+const updateTimeDisplay = () => {
+    $('recTime').textContent = (isPaused ? 'PAUSE ' : 'REC ') + formatTime(recSeconds);
+    $('recTime').classList.toggle('paused', isPaused);
+    $('recDot').classList.toggle('paused', isPaused);
+};
+
+setInterval(() => {
+    if (!isPaused) {
+        recSeconds++;
+    }
+    updateTimeDisplay();
+    // Проверка на бездействие: 60 секунд без клика → пауза
+    if (!isPaused && Date.now() - lastInteraction > 60000) {
+        pauseRecording();
+    }
+}, 1000);
+
+const pauseRecording = () => {
+    if (isPaused) return;
+    isPaused = true;
+    $('recPauseMsg').classList.add('active');
+    log('⏸ Запись приостановлена. Кто-то смотрел вместе с тобой.');
+};
+
+const resumeRecording = () => {
+    if (!isPaused) {
+        lastInteraction = Date.now();
+        return;
+    }
+    isPaused = false;
+    lastInteraction = Date.now();
+    $('recPauseMsg').classList.remove('active');
+    log('▶ Запись продолжена.');
+};
+
+// Отслеживание взаимодействий
+document.addEventListener('click', () => {
+    if (isPaused) resumeRecording();
+    else lastInteraction = Date.now();
+});
+document.addEventListener('mousemove', () => {
+    if (!isPaused) lastInteraction = Date.now();
+});
+
+// ============ РАЗРУШЕНИЕ ============
+const changeDestruction = (delta, reason) => {
+    if (delta === 0) return;
+    const old = state.destruction;
+    state.destruction = Math.max(0, Math.min(100, state.destruction + delta));
+    const actualDelta = state.destruction - old;
+
+    $('destructionFill').style.width = state.destruction + '%';
+
+    const newStage = state.destruction < 25 ? 1 : state.destruction < 55 ? 2 : state.destruction < 85 ? 3 : 4;
+    if (newStage !== state.stage) {
+        state.stage = newStage;
+        onStageChange(newStage);
+    }
+    updateStageLabel();
+    updateStageStyles();
+
+    if (actualDelta > 0) {
+        triggerGlitch();
+        shakeScene();
+        if (reason) log(`💥 +${actualDelta} разрушение (${reason})`);
+    }
+};
+
+const updateStageLabel = () => {
+    const labels = {
+        1: 'СТАДИЯ I — СПОКОЙСТВИЕ',
+        2: 'СТАДИЯ II — БЕСПОКОЙСТВО',
+        3: 'СТАДИЯ III — АГРЕССИЯ',
+        4: 'СТАДИЯ IV — ЯРОСТЬ'
+    };
+    $('stageLabel').textContent = labels[state.stage];
+};
+
+const updateStageStyles = () => {
+    const fill = $('destructionFill');
+    fill.className = 'destruction-fill';
+    if (state.stage === 2) fill.classList.add('stage2');
+    else if (state.stage === 3) fill.classList.add('stage3');
+    else if (state.stage === 4) fill.classList.add('stage4');
+
+    const container = $('gameContainer');
+    container.classList.toggle('danger', state.stage >= 3);
+    container.classList.toggle('stage3', state.stage >= 3);
+
+    const showDrips = state.stage >= 3;
+    $('drip1').style.display = showDrips ? 'block' : 'none';
+    $('drip2').style.display = showDrips ? 'block' : 'none';
+    $('drip3').style.display = showDrips ? 'block' : 'none';
+};
+
+const onStageChange = (stage) => {
+    const messages = {
+        2: '🕯️ Свечи в доме гаснут. Стены начинают шептать.',
+        3: '💀 Дом понял, что ты пришёл не просто так. Он защищается.',
+        4: '🔥 Дом в ярости. Он больше не прячется.'
+    };
+    log(messages[stage]);
+    if (stage === 4) state.flags.houseAngry = true;
+};
+
+const triggerGlitch = () => {
+    const overlay = $('glitchOverlay');
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 350);
+};
+
+const shakeScene = () => {
+    const scene = $('sceneBox');
+    scene.classList.add('shake');
+    setTimeout(() => scene.classList.remove('shake'), 400);
+};
+
+// ============ СЛУЧАЙНЫЕ СОБЫТИЯ ============
+const randomEvent = () => {
+    const events = {
+        1: [
+            'Где-то в глубине дома что-то упало.',
+            'Ты слышишь шаги за спиной. Но там никого нет.',
+            'Пыль клубится в лунном свете из окна.'
+        ],
+        2: [
+            'Шёпот. Он зовёт тебя по имени.',
+            'Стены будто дышат.',
+            'На секунду свет гаснет. Когда он возвращается, всё на месте.',
+            'Ты чувствуешь чей-то взгляд.'
+        ],
+        3: [
+            'Дверь за тобой медленно закрывается.',
+            'Твоё отражение в тёмном стекле улыбается. Ты — нет.',
+            'По стенам течёт что-то тёмное. Оно не пахнет.',
+            'Из подвала слышен детский смех. Но там никого нет.'
+        ],
+        4: [
+            'Дом кричит. Голос идёт из-под пола.',
+            'Тени отделяются от стен и тянутся к тебе.',
+            'Ты слышишь своё имя. Много раз. Разными голосами.',
+            'Пол трескается под ногами. Дом пытается тебя проглотить.'
+        ]
+    };
+    if (Math.random() > 0.4) return null;
+    return randomFrom(events[state.stage]);
+};
+
+// ============ ПЕРЕХОДЫ ============
+const goTo = (locationId) => {
+    if (state.flags.gameOver && !locationId.startsWith('ending_')) return;
+    state.location = locationId;
+    state.step++;
+    state.history.push(locationId);
+    $('stepCounter').textContent = 'ШАГ ' + state.step;
+    renderScene(locationId);
+};
+
+// ============ СЦЕНЫ ============
+const scenes = {
+
+    intro: {
+        render: () => {
+            $('locationBadge').textContent = '🕰️ 10 лет спустя';
+            $('sceneText').innerHTML = `
+                <p>Прошло десять лет. Ты выбрался из дома тогда, но он так и не отпустил тебя.</p>
+                <p>Ты долго готовился: изучал оккультизм, собрал всё, что нужно, знаешь его слабые места.</p>
+                <div class="memory">«Если ты читаешь это — значит, ты уже внутри. Не ищи выход. Ищи ответ.»</div>
+                <p>Сегодня ты вернулся. Не для того, чтобы выжить. Для того, чтобы <strong>уничтожить</strong>.</p>
+                <p>Три ритуальных якоря держат дом в этом мире. Сожги их — и дом исчезнет.</p>
+                <div class="destroy-action">🎯 ЦЕЛЬ: НАЙТИ И УНИЧТОЖИТЬ 3 ЯКОРЯ</div>
+            `;
+            renderChoices([
+                { text: '🚪 Войти в дом', action: () => goTo('foyer') },
+                { text: '📋 Вспомнить прошлое посещение', action: () => {
+                    if (!state.flags.recalled) {
+                        state.flags.recalled = true;
+                        addItem('📓 Старый дневник');
+                        log('Ты вспомнил: три якоря — часы, детская, зеркало.');
+                    } else log('Ты уже вспомнил.');
+                    renderScene('intro');
+                } }
+            ]);
+        }
+    },
+
+    foyer: {
+        render: () => {
+            $('locationBadge').textContent = '🚪 Вестибюль';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Дверь закрывается за тобой сама. Внутри — тот же холодный воздух, что и десять лет назад.</p>
+                <p>Перед тобой — три пути: вглубь к лестнице, в подвал и в комнату с детскими игрушками.</p>
+                <p>В углу — старая лампа. Она ещё горит.</p>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '⬆️ Подняться на второй этаж', action: () => goTo('upstairs') },
+                { text: '⬇️ Спуститься в подвал', action: () => goTo('basement') },
+                { text: '🚪 Войти в детскую', action: () => goTo('nursery') },
+                { text: '🔦 Разбить лампу', action: () => {
+                    if (!state.flags.lampBroken) {
+                        state.flags.lampBroken = true;
+                        changeDestruction(5, 'первый удар');
+                    } else log('Лампа уже разбита.');
+                    renderScene('foyer');
+                }, destroy: true }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    upstairs: {
+        render: () => {
+            $('locationBadge').textContent = '⬆️ Второй этаж';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Ты поднимаешься. Лестница скрипит, но ты не боишься. Ты знаешь этот дом.</p>
+                <p>Перед тобой — три двери: в спальню, в кабинет с часами и в ванную.</p>
+                <p>На стене — старые часы. Они идут. Но не показывают время.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '🛏️ Войти в спальню', action: () => goTo('bedroom') },
+                { text: '🕰️ Войти в кабинет с часами', action: () => goTo('clock_room') },
+                { text: '🚿 Войти в ванную', action: () => goTo('bathroom') },
+                { text: '⬇️ Вернуться в вестибюль', action: () => goTo('foyer') }
+            ]);
+        }
+    },
+
+    bedroom: {
+        render: () => {
+            $('locationBadge').textContent = '🛏️ Спальня';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Кровать застелена. На тумбочке — фотография. Та же семья. Теперь ты знаешь их имена.</p>
+                <p>В шкафу — старая одежда. В ящике — спички.</p>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '🔍 Открыть ящик', action: () => {
+                    if (!hasItem('🔥 Спички')) addItem('🔥 Спички');
+                    else log('Ящик пуст.');
+                    renderScene('bedroom');
+                } },
+                { text: '📸 Взять фотографию', action: () => {
+                    if (!hasItem('📸 Фотография')) addItem('📸 Фотография');
+                    else log('Ты уже взял её.');
+                    renderScene('bedroom');
+                } },
+                { text: '🔥 Сжечь кровать', action: () => {
+                    if (!hasItem('🔥 Спички')) { log('Нужны спички.'); renderScene('bedroom'); return; }
+                    if (!state.flags.bedBurned) {
+                        state.flags.bedBurned = true;
+                        changeDestruction(10, 'постель горит');
+                    } else log('Кровать уже сгорела.');
+                    renderScene('bedroom');
+                }, destroy: true },
+                { text: '⬇️ Вернуться', action: () => goTo('upstairs') }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    clock_room: {
+        render: () => {
+            $('locationBadge').textContent = '🕰️ Кабинет';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Большие напольные часы стоят в углу. Их маятник качается, хотя их никто не заводил.</p>
+                <p>В часах — что-то бьётся. Как сердце.</p>
+                <div class="note">«Первый якорь — время. Останови его — и дом потеряет опору.»</div>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '🔍 Осмотреть часы', action: () => {
+                    if (!state.flags.clockExamined) {
+                        state.flags.clockExamined = true;
+                        addItem('🔧 Старая отвёртка');
+                        log('За стрелкой — отвёртка. Ты чувствуешь, как часы пульсируют.');
+                    } else log('Ты уже осмотрел часы.');
+                    renderScene('clock_room');
+                } },
+                { text: '🕰️ Остановить маятник', action: () => {
+                    if (state.flags.anchor1) { log('Первый якорь уже уничтожен.'); renderScene('clock_room'); return; }
+                    if (!hasItem('🔧 Старая отвёртка')) { log('Нужен инструмент.'); renderScene('clock_room'); return; }
+                    state.flags.anchor1 = true;
+                    state.anchorsDestroyed++;
+                    changeDestruction(20, 'первый якорь уничтожен');
+                    renderScene('clock_room');
+                }, destroy: true },
+                { text: '⬇️ Вернуться', action: () => goTo('upstairs') }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    bathroom: {
+        render: () => {
+            $('locationBadge').textContent = '🚿 Ванная';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Зеркало над раковиной покрыто трещинами. В отражении ты видишь себя — и ещё кого-то за спиной.</p>
+                <p>В ванне — тёмная вода. Она не стекает, хотя пробка открыта.</p>
+                ${evHtml}
+            `;
+            renderChoices([
+                { text: '🪞 Разбить зеркало', action: () => {
+                    if (!state.flags.mirrorBroken) {
+                        state.flags.mirrorBroken = true;
+                        changeDestruction(8, 'зеркало разбито');
+                    } else log('Зеркало уже разбито.');
+                    renderScene('bathroom');
+                }, destroy: true },
+                { text: '💧 Слить воду', action: () => {
+                    if (!state.flags.waterDrained) {
+                        state.flags.waterDrained = true;
+                        changeDestruction(5, 'вода ушла');
+                    } else log('Вода уже слита.');
+                    renderScene('bathroom');
+                }, destroy: true },
+                { text: '⬇️ Вернуться', action: () => goTo('upstairs') }
+            ]);
+        }
+    },
+
+    nursery: {
+        render: () => {
+            $('locationBadge').textContent = '🧸 Детская';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Комната, полная игрушек. Медвежонок с оторванной лапой сидит в центре, как хозяин.</p>
+                <p>На стенах — детские рисунки. На всех — дом. На некоторых — дом с глазами.</p>
+                <div class="note">«Второй якорь — невинность. Сожги её — и дом потеряет вторую опору.»</div>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '🧸 Взять медвежонка', action: () => {
+                    if (!hasItem('🧸 Медвежонок')) addItem('🧸 Медвежонок');
+                    else log('Ты уже взял его.');
+                    renderScene('nursery');
+                } },
+                { text: '🔥 Сжечь игрушки', action: () => {
+                    if (state.flags.anchor2) { log('Второй якорь уже уничтожен.'); renderScene('nursery'); return; }
+                    if (!hasItem('🔥 Спички')) { log('Нужны спички.'); renderScene('nursery'); return; }
+                    state.flags.anchor2 = true;
+                    state.anchorsDestroyed++;
+                    changeDestruction(20, 'второй якорь уничтожен');
+                    renderScene('nursery');
+                }, destroy: true },
+                { text: '🚪 Вернуться в вестибюль', action: () => goTo('foyer') }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    basement: {
+        render: () => {
+            $('locationBadge').textContent = '🕳️ Подвал';
+            const ev = randomEvent();
+            const evHtml = ev ? `<div class="whisper">${ev}</div>` : '';
+            $('sceneText').innerHTML = `
+                <p>Подвал изменился. Стены покрыты символами, которых ты раньше не замечал.</p>
+                <p>В центре — круг, выжженный на полу. В круге — дневник. Тот самый.</p>
+                <p>В дальнем углу — по-прежнему темно. Оно всё ещё там.</p>
+                ${evHtml}
+            `;
+            const choices = [
+                { text: '📖 Взять дневник', action: () => {
+                    if (!hasItem('📖 Дневник основателя')) addItem('📖 Дневник основателя');
+                    else log('Ты уже читал его.');
+                    renderScene('basement');
+                } },
+                { text: '👁️ Посмотреть в тёмный угол', action: () => {
+                    if (!state.flags.cornerSeen) {
+                        state.flags.cornerSeen = true;
+                        $('sceneText').innerHTML = `
+                            <p>Ты смотришь в угол. Впервые за десять лет — прямо.</p>
+                            <p>Там сидит <strong>ребёнок</strong>. Один из троих с фотографии. Он не вырос.</p>
+                            <p>Он смотрит на тебя. И улыбается.</p>
+                            <div class="note">«Ты вернулся. Мы знали. Мы ждали.»</div>
+                            <p>Теперь ты знаешь: дом — это они. Дети, которых не спасли. Их боль держит стены.</p>
+                        `;
+                        renderChoices([
+                            { text: '💬 Заговорить с ребёнком', action: () => goTo('child_dialogue') },
+                            { text: '↩️ Отойти', action: () => renderScene('basement') }
+                        ]);
+                        return;
+                    }
+                    renderScene('basement');
+                } },
+                { text: '⬆️ Вернуться в вестибюль', action: () => goTo('foyer') }
+            ];
+            renderChoices(choices);
+        }
+    },
+
+    child_dialogue: {
+        render: () => {
+            $('locationBadge').textContent = '👁️ Ребёнок';
+            $('sceneText').innerHTML = `
+                <p>Ты садишься на корточки. Ребёнок не двигается, но его глаза следят за тобой.</p>
+                <p>Он открывает рот. Голос — не детский. Он звучит как дом.</p>
+                <div class="note">«Мы не хотели. Нас оставили здесь. Мы просто хотели, чтобы кто-то остался с нами.»</div>
+                <p>Теперь ты понимаешь: дом — это не зло. Это боль, которая не может уйти.</p>
+            `;
+            renderChoices([
+                { text: '💬 «Я могу вас освободить»', action: () => goTo('ending_mercy') },
+                { text: '🔥 «Я вас сожгу»', action: () => goTo('ending_burn') },
+                { text: '🚶 Молча уйти', action: () => {
+                    log('Ты встаёшь. Ребёнок смотрит тебе вслед.');
+                    goTo('basement');
+                } }
+            ]);
+        }
+    },
+
+    final_room: {
+        render: () => {
+            if (state.anchorsDestroyed < 2) {
+                log('Дверь не поддаётся. Дом ещё держится.');
+                goTo('foyer');
+                return;
+            }
+            $('locationBadge').textContent = '🪞 Зеркальный зал';
+            $('sceneText').innerHTML = `
+                <p>Ты входишь в комнату, которой раньше не было. Всё в ней — зеркала. Сотни зеркал.</p>
+                <p>В каждом — ты. Но не совсем ты. В каждом — одна из твоих смертей, которых не случилось.</p>
+                <p>В центре — большое зеркало. Третий якорь. Твоё собственное отражение.</p>
+                <div class="note">«Третий якорь — ты сам. Тот, кто вернулся. Разбей его — и дом исчезнет. Вместе с тобой.»</div>
+            `;
+            renderChoices([
+                { text: '🪞 Разбить зеркало', action: () => goTo('ending_sacrifice') },
+                { text: '🚶 Отступить', action: () => goTo('ending_flee') },
+                { text: '📖 Прочитать заклинание из дневника', action: () => {
+                    if (hasItem('📖 Дневник основателя')) goTo('ending_ritual');
+                    else { log('Тебе нужен дневник основателя.'); renderScene('final_room'); }
+                } }
+            ]);
+        }
+    },
+
+    // ============ КОНЦОВКИ ============
+
+    // ХОРОШАЯ — ОСВОБОЖДЕНИЕ (со счётчиком перезаписей)
+    ending_ritual: {
+        render: () => {
+            state.ending = 'ritual'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '✨ Освобождение';
+            $('sceneText').innerHTML = `
+                <p>Ты открываешь дневник основателя. Читаешь вслух слова, которые никто не читал сотню лет.</p>
+                <p>Зеркала трескаются одно за другим. Дети выходят из стен — трое, держась за руки. Они улыбаются. По-настоящему.</p>
+                <p>Дом сжимается. Стены опадают, как сухая кожа. Через минуту на этом месте — только трава и небо.</p>
+                <p>Ты стоишь посреди поля. Свободен. Впервые за десять лет.</p>
+                <p style="color:#88ddff;font-weight:600;text-align:center;font-size:24px;">✨ ХОРОШАЯ КОНЦОВКА: ОСВОБОЖДЕНИЕ</p>
+                <p style="color:#446688;font-size:15px;text-align:center;">Дом не разрушен. Дом отпущен.</p>
+                <div class="memory" style="text-align:center;margin-top:20px;">
+                    📼 Эта запись сохранена как <strong>ЗАПИСЬ ${tapeNumber}</strong>.<br>
+                    <span style="opacity:0.6;">Следующий просмотр начнёт ЗАПИСЬ ${tapeNumber + 1}.</span>
+                </div>
+            `;
+            endScreen();
+        }
+    },
+
+    // ХОРОШАЯ — МИЛОСЕРДИЕ
+    ending_mercy: {
+        render: () => {
+            state.ending = 'mercy'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🕊️ Милосердие';
+            $('sceneText').innerHTML = `
+                <p>Ты протягиваешь руку. Ребёнок смотрит на неё долго. Потом берёт.</p>
+                <p>Ты выводишь его из подвала. По дороге к выходу к вам присоединяются ещё двое. Те самые дети с фотографии.</p>
+                <p>Дом не сопротивляется. Он отпускает их. Стены оседают, как выдох.</p>
+                <p>Ты выходишь на улицу. Дети исчезают в утреннем свете. Дом позади — просто старый сруб.</p>
+                <p>Ты не сжёг его. Ты спас тех, кто в нём был.</p>
+                <p style="color:#88ffaa;font-weight:600;text-align:center;font-size:24px;">🕊️ ХОРОШАЯ КОНЦОВКА: МИЛОСЕРДИЕ</p>
+                <p style="color:#448866;font-size:15px;text-align:center;">Иногда дом — это просто дом.</p>
+            `;
+            endScreen();
+        }
+    },
+
+    // ПЛОХАЯ — ЖЕРТВА (с обратным отсчётом)
+    ending_sacrifice: {
+        render: () => {
+            state.ending = 'sacrifice'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🪞 Жертва';
+            $('sceneText').innerHTML = `
+                <p>Ты разбиваешь зеркало. Осколки летят во все стороны. Дом кричит — но не от боли, а от облегчения.</p>
+                <p>Ты чувствуешь, как твоё отражение отделяется. Оно улыбается тебе. Оно остаётся здесь. Ты — уходишь.</p>
+                <p>Дом исчезает. Но каждую ночь ты видишь во сне зеркало. И в нём — себя. Который не ушёл.</p>
+                <p style="color:#cc4444;font-weight:600;text-align:center;font-size:24px;">💔 ПЛОХАЯ КОНЦОВКА: ЖЕРТВА</p>
+                <p style="color:#664444;font-size:15px;text-align:center;">Ты уничтожил дом. Но оставил в нём часть себя.</p>
+            `;
+            // Запуск обратного отсчёта
+            startRewind();
+            endScreen();
+        }
+    },
+
+    // ПЛОХАЯ — ПЕПЕЛ (запись обрывается)
+    ending_burn: {
+        render: () => {
+            state.ending = 'burn'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🔥 Пепел';
+            $('sceneText').innerHTML = `
+                <p>Ты поджигаешь дом. Дети кричат. Дом горит три дня.</p>
+                <p>На четвёртый день на месте дома — только пепел. Ты стоишь и смотришь. Ты победил.</p>
+                <p>Но по ночам ты слышишь их голоса. Ты убил их. Не освободил — убил.</p>
+                <div class="signal-lost">⚠ СИГНАЛ ПОТЕРЯН ⚠</div>
+                <p style="color:#cc2222;font-weight:600;text-align:center;font-size:24px;">🔥 ПЛОХАЯ КОНЦОВКА: ПЕПЕЛ</p>
+                <p style="color:#664444;font-size:15px;text-align:center;">Ты победил. Но ценой трёх детских душ.</p>
+            `;
+            // Обрыв записи через 3 секунды
+            setTimeout(() => showTapeEnd('▶ ВОСПРОИЗВЕДЕНИЕ ОСТАНОВЛЕНО', 'запись оборвалась. сигнал потерян.', '#ff3333'), 3000);
+            endScreen();
+        }
+    },
+
+    // ПЛОХАЯ — БЕГСТВО (запись повреждена)
+    ending_flee: {
+        render: () => {
+            state.ending = 'flee'; state.flags.gameOver = true;
+            $('locationBadge').textContent = '🏃 Бегство';
+            $('sceneText').innerHTML = `
+                <p>Ты отступаешь. Зеркало остаётся целым. Дом остаётся стоять.</p>
+                <p>Ты выбегаешь на улицу. Дверь закрывается за тобой. На этот раз — навсегда.</p>
+                <p>Ты не уничтожил его. Ты не спас их. Ты просто ушёл. Снова.</p>
+                <p>Дом остаётся. Ждёт следующего. Может, это будешь ты через двадцать лет. А может — кто-то другой.</p>
+                <p style="color:#886666;font-weight:600;text-align:center;font-size:24px;">🏃 ПЛОХАЯ КОНЦОВКА: БЕГСТВО</p>
+                <p style="color:#553333;font-size:15px;text-align:center;">Ты не проиграл. Но и не победил.</p>
+            `;
+            // Обрыв записи
+            setTimeout(() => showTapeEnd('▶ ВОСПРОИЗВЕДЕНИЕ ОСТАНОВЛЕНО', 'файл повреждён. восстановление невозможно.', '#886666'), 3000);
+            endScreen();
+        }
+    }
+};
+
+// ============ ОБРАТНЫЙ ОТСЧЁТ (для концовки Жертва) ============
+const startRewind = () => {
+    isPaused = true; // остановить прямой ход
+    $('recTime').classList.add('rewinding');
+    $('recTime').textContent = '◄◄ ' + formatTime(recSeconds);
+    const rewindInterval = setInterval(() => {
+        recSeconds = Math.max(0, recSeconds - 7); // быстро назад
+        $('recTime').textContent = '◄◄ ' + formatTime(recSeconds);
+        if (recSeconds <= 0) {
+            clearInterval(rewindInterval);
+            $('recTime').textContent = 'REC 00:00:00';
+            $('recTime').classList.remove('rewinding');
+            // Финальный кадр — замыкание круга
+            setTimeout(() => {
+                showTapeEnd('◄◄ ПЛЁНКА ОТМОТАНА', 'ты снова в начале. ты не помнишь.', '#66ccff');
+            }, 1500);
+        }
+    }, 50);
+};
+
+// ============ ЭКРАН «КОНЕЦ ЗАПИСИ» ============
+const showTapeEnd = (title, sub, color) => {
+    $('tapeEndTitle').textContent = title;
+    $('tapeEndTitle').style.color = color || '#662222';
+    $('tapeEndSub').textContent = sub || 'файл повреждён';
+    $('tapeEndTime').textContent = 'REC ' + formatTime(recSeconds);
+    $('tapeEndOverlay').classList.add('active');
+};
+
+// Обработчики финального экрана
+$('tapeRestoreBtn').onclick = () => {
+    // Восстановить = перезапустить с новой записью
+    try {
+        localStorage.setItem('dom2_tape', (tapeNumber + 1).toString());
+    } catch(e) {}
+    location.reload();
+};
+$('tapeDeleteBtn').onclick = () => {
+    // Удалить = чёрный экран навсегда
+    try {
+        localStorage.setItem('dom2_tape', '1');
+    } catch(e) {}
+    document.body.innerHTML = `
+        <div style="background:#000;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;">
+            <div style="color:#333;font-family:'Special Elite',monospace;letter-spacing:8px;font-size:clamp(14px,1.5vw,20px);text-align:center;">
+                ЗАПИСЬ УДАЛЕНА<br><br>
+                <span style="font-size:0.7em;opacity:0.5;">но кто-то всё ещё смотрит</span>
+            </div>
+        </div>
+    `;
+};
+
+// ============ ФИНАЛЬНЫЙ ЭКРАН (в контейнере) ============
+const endScreen = () => {
+    $('choicesBox').innerHTML = `
+        <div style="text-align:center;padding:20px;">
+            <button class="choice-btn" style="text-align:center;" onclick="location.reload()">🔄 Начать заново</button>
+        </div>
+    `;
+    const endings = {
+        ritual: '✨ Освобождение', mercy: '🕊️ Милосердие',
+        sacrifice: '💔 Жертва', burn: '🔥 Пепел',
+        flee: '🏃 Бегство'
+    };
+    log(`Концовка: ${endings[state.ending] || '?'} • Шагов: ${state.step} • Якорей: ${state.anchorsDestroyed}/3 • ЗАПИСЬ ${tapeNumber}`);
+};
+
+// ============ ОТРИСОВКА ============
+const renderChoices = (choicesArray) => {
+    const box = $('choicesBox');
+    box.innerHTML = '';
+    choicesArray.forEach((choice) => {
+        const btn = document.createElement('button');
+        let cls = 'choice-btn';
+        if (choice.danger) cls += ' danger-choice';
+        if (choice.destroy) cls += ' destroy-choice';
+        btn.className = cls;
+        btn.innerHTML = choice.text;
+        btn.onclick = () => { if (choice.action) choice.action(); };
+        box.appendChild(btn);
+    });
+};
+
+const renderScene = (locationId) => {
+    const scene = scenes[locationId];
+    if (scene) scene.render();
+    else {
+        $('sceneText').textContent = 'Неизвестное место...';
+        renderChoices([{ text: '↩️ Вернуться', action: () => goTo('foyer') }]);
+    }
+    updateInventory();
+};
+
+// ============ ЗАПУСК ============
+renderScene('intro');
+</script>
+</body>
+</html>

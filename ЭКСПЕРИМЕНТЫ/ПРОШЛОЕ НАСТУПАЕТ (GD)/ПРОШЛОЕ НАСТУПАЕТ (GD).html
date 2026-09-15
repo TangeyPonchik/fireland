@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ПРОШЛОЕ НАСТУПАЕТ v2.2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #0a0a1a;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        let W, H;
+        let GROUND_Y;
+        const BLOCK = 48;
+        let H1, H2, H3;
+
+        const PLAYER_SIZE = 50;
+        const GRAVITY = 1.0;            // ★ быстрее
+        const JUMP_FORCE = -18;         // ★ сильнее
+        const SPEED = 7;                // ★ быстрее
+        const MIN_SPIKE_DISTANCE = 180;
+
+        const PAST_WALL_WIDTH = 160;
+        const PAST_WALL_DISTANCE = 380;
+        const PAST_SPAWN_ANIM_DURATION = 60;
+
+        // ★ ЗАПАС ДЛЯ ПРОЩЕНИЯ КОЛЛИЗИЙ ★
+        const COLLISION_FORGIVENESS = 4;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+
+            const oldGround = GROUND_Y;
+            GROUND_Y = H - 120;
+
+            H1 = GROUND_Y - BLOCK * 2;
+            H2 = GROUND_Y - BLOCK * 3;
+            H3 = GROUND_Y - BLOCK * 4;
+
+            if (oldGround !== undefined && oldGround !== GROUND_Y && game) {
+                const delta = GROUND_Y - oldGround;
+                for (const plat of game.platforms) plat.y += delta;
+                for (const obs of game.obstacles) obs.y += delta;
+                for (const c of game.coins) c.y += delta;
+
+                if (game.player.isGrounded) {
+                    game.player.y = GROUND_Y - PLAYER_SIZE;
+                } else {
+                    game.player.y += delta;
+                }
+            }
+        }
+
+        const game = {
+            player: { x: 0, y: 0, vy: 0, isGrounded: true },
+            pastWallX: -500,
+            pastSpawnAnim: 0,
+            platforms: [],
+            obstacles: [],
+            coins: [],
+            particles: [],
+            score: 0,
+            coinsCollected: 0,
+            isGameOver: false,
+            isStarted: false,
+            frame: 0,
+            cameraX: 0,
+            nextSpawn: 1100,
+            pastSpawned: false,
+        };
+
+        window.addEventListener('resize', resize);
+        resize();
+        game.player.y = GROUND_Y - PLAYER_SIZE;
+
+        // ===== ХЕЛПЕРЫ =====
+
+        function addPlatformLine(startX, y, count) {
+            for (let i = 0; i < count; i++) {
+                game.platforms.push({
+                    x: startX + i * BLOCK,
+                    y: y,
+                    w: BLOCK,
+                    h: BLOCK,
+                    passed: false,
+                });
+            }
+        }
+
+        function isSpikeFarEnough(x) {
+            for (const obs of game.obstacles) {
+                if (Math.abs(obs.x - x) < MIN_SPIKE_DISTANCE) return false;
+            }
+            return true;
+        }
+
+        function addSpike(x, y) {
+            if (!isSpikeFarEnough(x)) return false;
+            game.obstacles.push({
+                x: x, y: y, w: 32, h: 32,
+                type: 'spike', passed: false,
+            });
+            return true;
+        }
+
+        function addCoin(x, y) {
+            game.coins.push({
+                x: x, y: y, radius: 13,
+                collected: false,
+                bobPhase: Math.random() * Math.PI * 2,
+            });
+        }
+
+        // ★ УБРАЛ ЧАСТИЦЫ ПОЛНОСТЬЮ — вместо них простое свечение на стене ★
+
+        // ===== ГЕНЕРАЦИЯ =====
+
+        function spawnPattern() {
+            const x = game.nextSpawn;
+            const patternType = Math.floor(Math.random() * 10);
+
+            if (patternType === 0) {
+                addSpike(x + 100, GROUND_Y - 32);
+                addCoin(x + 60, GROUND_Y - 90);
+                addCoin(x + 120, GROUND_Y - 110);
+                addCoin(x + 180, GROUND_Y - 90);
+            } else if (patternType === 1) {
+                addPlatformLine(x, H1, 5);
+                addSpike(x + BLOCK * 2, H1 - 32);
+                addCoin(x + BLOCK * 0.5, H1 - 65);
+                addCoin(x + BLOCK * 3.5, H1 - 65);
+            } else if (patternType === 2) {
+                addPlatformLine(x, H2, 5);
+                for (let i = 1; i <= 3; i++) addCoin(x + BLOCK * i, H2 - 65);
+            } else if (patternType === 3) {
+                addPlatformLine(x, H1, 2);
+                addPlatformLine(x + BLOCK * 2, H2, 4);
+                addSpike(x + BLOCK * 4, H2 - 32);
+                addCoin(x + BLOCK * 3, H2 - 65);
+            } else if (patternType === 4) {
+                addPlatformLine(x, H2, 3);
+                addPlatformLine(x + BLOCK * 4, H1, 5);
+                addCoin(x + BLOCK * 3.5, H2 - 45);
+                addCoin(x + BLOCK * 6, H1 - 65);
+            } else if (patternType === 5) {
+                addPlatformLine(x, H1, 8);
+                addSpike(x + BLOCK * 4, H1 - 32);
+                addCoin(x + BLOCK * 2, H1 - 65);
+                addCoin(x + BLOCK * 6, H1 - 65);
+            } else if (patternType === 6) {
+                addPlatformLine(x, H3, 4);
+                addCoin(x + BLOCK * 1.5, H3 - 65);
+                addCoin(x + BLOCK * 2.5, H3 - 65);
+            } else if (patternType === 7) {
+                addPlatformLine(x, H1, 3);
+                addPlatformLine(x + BLOCK * 3, H2, 3);
+                addPlatformLine(x + BLOCK * 7, H1, 3);
+                addSpike(x + BLOCK * 8, H1 - 32);
+                addCoin(x + BLOCK * 4, H2 - 65);
+            } else if (patternType === 8) {
+                addPlatformLine(x, H2, 3);
+                addPlatformLine(x + BLOCK * 6, H2, 3);
+                addSpike(x + BLOCK * 4.5, GROUND_Y - 32);
+                addCoin(x + BLOCK * 4.5, GROUND_Y - 110);
+            } else {
+                addPlatformLine(x, H1, 3);
+                addPlatformLine(x + BLOCK * 4, H2, 3);
+                addPlatformLine(x + BLOCK * 8, H3, 3);
+                addCoin(x + BLOCK * 5, H2 - 65);
+                addCoin(x + BLOCK * 9, H3 - 65);
+            }
+
+            if (Math.random() < 0.5) {
+                const decorX = x + 300 + Math.random() * 200;
+                const decorH = [H1, H2, H3][Math.floor(Math.random() * 3)];
+                addPlatformLine(decorX, decorH, 2 + Math.floor(Math.random() * 2));
+                if (Math.random() < 0.6) addCoin(decorX + BLOCK, decorH - 65);
+            }
+
+            game.nextSpawn += 650 + Math.random() * 250;
+        }
+
+        // ===== ОБНОВЛЕНИЕ =====
+        function update() {
+            if (!game.isStarted || game.isGameOver) return;
+
+            const p = game.player;
+            p.x += SPEED;
+            p.vy += GRAVITY;
+
+            const prevY = p.y;
+            p.y += p.vy;
+
+            // ★★★ ФИКС КОЛЛИЗИИ С ПЛАТФОРМАМИ ★★★
+            let onPlatform = false;
+            for (const plat of game.platforms) {
+                // Хитбокс игрока с прощением
+                const px = p.x + COLLISION_FORGIVENESS;
+                const py = p.y + COLLISION_FORGIVENESS;
+                const pw = PLAYER_SIZE - COLLISION_FORGIVENESS * 2;
+                const ph = PLAYER_SIZE - COLLISION_FORGIVENESS * 2;
+
+                // Проверка пересечения
+                const intersects =
+                    px < plat.x + plat.w &&
+                    px + pw > plat.x &&
+                    py < plat.y + plat.h &&
+                    py + ph > plat.y;
+
+                if (!intersects) continue;
+
+                // ★ ОПРЕДЕЛЯЕМ СТОРОНУ УДАРА ★
+                const overlapLeft = (px + pw) - plat.x;   // насколько залезли справа в платформу
+                const overlapRight = (plat.x + plat.w) - px; // насколько залезли слева
+                const overlapTop = (py + ph) - plat.y;    // насколько залезли снизу
+                const overlapBottom = (plat.y + plat.h) - py; // насколько залезли сверху
+
+                // Минимальное проникновение
+                const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+
+                if (minOverlap === overlapTop) {
+                    // ★ Стоим СВЕРХУ — всегда ок ★
+                    p.y = plat.y - PLAYER_SIZE;
+                    p.vy = 0;
+                    p.isGrounded = true;
+                    onPlatform = true;
+                } else if (minOverlap === overlapBottom) {
+                    // Ударились головой снизу — просто останавливаем
+                    p.y = plat.y + plat.h;
+                    p.vy = 0;
+                } else {
+                    // ★ СБОКУ — смерть, НО только если реально врезались ★
+                    // Если вертикальное проникновение маленькое — это край, прощаем
+                    if (overlapTop < 8) {
+                        // Игрок почти на верху — считаем что встал
+                        p.y = plat.y - PLAYER_SIZE;
+                        p.vy = 0;
+                        p.isGrounded = true;
+                        onPlatform = true;
+                    } else {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+
+            // Земля
+            if (!onPlatform) {
+                if (p.y >= GROUND_Y - PLAYER_SIZE) {
+                    p.y = GROUND_Y - PLAYER_SIZE;
+                    p.vy = 0;
+                    p.isGrounded = true;
+                } else {
+                    p.isGrounded = false;
+                }
+            }
+
+            // ★ ШИПЫ — хитбокс меньше визуального (прощение) ★
+            for (const obs of game.obstacles) {
+                const spikeShrink = 8; // шипы на 8px меньше
+                if (
+                    p.x + COLLISION_FORGIVENESS < obs.x + obs.w - spikeShrink &&
+                    p.x + PLAYER_SIZE - COLLISION_FORGIVENESS > obs.x + spikeShrink &&
+                    p.y + COLLISION_FORGIVENESS < obs.y + obs.h - spikeShrink &&
+                    p.y + PLAYER_SIZE - COLLISION_FORGIVENESS > obs.y + spikeShrink
+                ) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Монетки
+            for (const c of game.coins) {
+                if (c.collected) continue;
+                c.bobPhase += 0.08;
+                const bobY = c.y + Math.sin(c.bobPhase) * 4;
+                const cx = p.x + PLAYER_SIZE / 2;
+                const cy = p.y + PLAYER_SIZE / 2;
+                const d = Math.hypot(cx - c.x, cy - bobY);
+                if (d < c.radius + PLAYER_SIZE / 2) {
+                    c.collected = true;
+                    game.coinsCollected++;
+                    game.score += 5;
+                }
+            }
+
+            // Счёт
+            for (const plat of game.platforms) {
+                if (!plat.passed && plat.x + plat.w < p.x) {
+                    plat.passed = true;
+                    game.score++;
+                }
+            }
+            for (const obs of game.obstacles) {
+                if (!obs.passed && obs.x + obs.w < p.x) {
+                    obs.passed = true;
+                    game.score++;
+                }
+            }
+
+            // Прошлое
+            if (!game.pastSpawned && game.score > 10) {
+                game.pastSpawned = true;
+                game.pastWallX = p.x - PAST_WALL_DISTANCE - 400;
+                game.pastSpawnAnim = PAST_SPAWN_ANIM_DURATION;
+            }
+
+            if (game.pastSpawned) {
+                const targetX = p.x - PAST_WALL_DISTANCE;
+
+                if (game.pastSpawnAnim > 0) {
+                    game.pastSpawnAnim--;
+                    game.pastWallX += (targetX - game.pastWallX) * 0.08;
+                } else {
+                    game.pastWallX += SPEED;
+                    game.pastWallX += (targetX - game.pastWallX) * 0.05;
+                }
+
+                // Пожирание — БЕЗ ЧАСТИЦ, просто удаляем
+                const wallRight = game.pastWallX + PAST_WALL_WIDTH;
+
+                let consumed = 0;
+                for (let i = game.platforms.length - 1; i >= 0 && consumed < 5; i--) {
+                    if (game.platforms[i].x + game.platforms[i].w < wallRight) {
+                        game.platforms.splice(i, 1);
+                        consumed++;
+                    }
+                }
+
+                consumed = 0;
+                for (let i = game.obstacles.length - 1; i >= 0 && consumed < 5; i--) {
+                    if (game.obstacles[i].x + game.obstacles[i].w < wallRight) {
+                        game.obstacles.splice(i, 1);
+                        consumed++;
+                    }
+                }
+
+                consumed = 0;
+                for (let i = game.coins.length - 1; i >= 0 && consumed < 5; i--) {
+                    if (game.coins[i].x + game.coins[i].radius < wallRight) {
+                        game.coins.splice(i, 1);
+                        consumed++;
+                    }
+                }
+            }
+
+            // Камера
+            game.cameraX = p.x - W * 0.3;
+
+            // Спавн
+            while (game.nextSpawn < p.x + W + 400) {
+                spawnPattern();
+            }
+
+            // Очистка
+            game.platforms = game.platforms.filter(o => o.x + o.w > p.x - 500);
+            game.obstacles = game.obstacles.filter(o => o.x + o.w > p.x - 500);
+            game.coins = game.coins.filter(c => c.x > p.x - 500 && !c.collected);
+
+            if (p.y > H + 200) gameOver();
+            game.frame++;
+        }
+
+        // ===== РИСОВАНИЕ =====
+        function draw() {
+            // Чистое небо
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+            skyGrad.addColorStop(0, '#0f0520');
+            skyGrad.addColorStop(0.4, '#1a0838');
+            skyGrad.addColorStop(0.75, '#251047');
+            skyGrad.addColorStop(1, '#301855');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            const topGlow = ctx.createRadialGradient(W * 0.5, 0, 100, W * 0.5, 0, H * 0.7);
+            topGlow.addColorStop(0, 'rgba(120,80,200,0.15)');
+            topGlow.addColorStop(1, 'rgba(120,80,200,0)');
+            ctx.fillStyle = topGlow;
+            ctx.fillRect(0, 0, W, H);
+
+            // Звёзды
+            for (let i = 0; i < 25; i++) {
+                const baseX = (i * 233 + 60) % (W + 200);
+                const x = baseX - (game.cameraX * 0.1) % (W + 200);
+                const y = (i * 137) % (GROUND_Y - 150);
+                const size = 1 + (i % 3) * 0.5;
+                const twinkle = Math.sin(game.frame * 0.02 + i * 1.7) * 0.3 + 0.7;
+                ctx.fillStyle = `rgba(200, 180, 255, ${0.4 * twinkle})`;
+                ctx.beginPath();
+                ctx.arc(x < -50 ? x + W + 200 : x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.save();
+            ctx.translate(-game.cameraX, 0);
+
+            // Земля
+            const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, GROUND_Y + 60);
+            groundGrad.addColorStop(0, '#2a1a4a');
+            groundGrad.addColorStop(1, '#150a2a');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(game.cameraX - 100, GROUND_Y, W + 200, H - GROUND_Y + 200);
+
+            const edgeGrad = ctx.createLinearGradient(0, GROUND_Y - 4, 0, GROUND_Y + 8);
+            edgeGrad.addColorStop(0, 'rgba(150,100,255,0)');
+            edgeGrad.addColorStop(0.5, 'rgba(180,120,255,0.6)');
+            edgeGrad.addColorStop(1, 'rgba(150,100,255,0)');
+            ctx.fillStyle = edgeGrad;
+            ctx.fillRect(game.cameraX - 100, GROUND_Y - 4, W + 200, 12);
+
+            // Платформы
+            for (const plat of game.platforms) {
+                if (plat.x + plat.w < game.cameraX - 100) continue;
+                if (plat.x > game.cameraX + W + 100) break;
+
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(plat.x + 3, plat.y + plat.h + 2, plat.w - 6, 4);
+
+                const grad = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
+                grad.addColorStop(0, '#5a7a9a');
+                grad.addColorStop(0.4, '#3a5a7a');
+                grad.addColorStop(1, '#1a3a5a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+
+                ctx.fillStyle = 'rgba(150,200,255,0.4)';
+                ctx.fillRect(plat.x, plat.y, plat.w, 2);
+
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(plat.x, plat.y + plat.h - 2, plat.w, 2);
+
+                ctx.strokeStyle = 'rgba(100,150,200,0.4)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(plat.x + 0.5, plat.y + 0.5, plat.w - 1, plat.h - 1);
+            }
+
+            // Шипы
+            for (const obs of game.obstacles) {
+                if (obs.x + obs.w < game.cameraX - 100) continue;
+                if (obs.x > game.cameraX + W + 100) break;
+
+                ctx.shadowColor = 'rgba(255,71,87,0.6)';
+                ctx.shadowBlur = 15;
+
+                const spikeGrad = ctx.createLinearGradient(obs.x, obs.y + obs.h, obs.x, obs.y);
+                spikeGrad.addColorStop(0, '#8a1a2a');
+                spikeGrad.addColorStop(0.5, '#ff4757');
+                spikeGrad.addColorStop(1, '#ff8a9a');
+                ctx.fillStyle = spikeGrad;
+                ctx.beginPath();
+                ctx.moveTo(obs.x, obs.y + obs.h);
+                ctx.lineTo(obs.x + obs.w / 2, obs.y);
+                ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = 'rgba(255,200,200,0.3)';
+                ctx.beginPath();
+                ctx.moveTo(obs.x + obs.w * 0.3, obs.y + obs.h * 0.7);
+                ctx.lineTo(obs.x + obs.w * 0.5, obs.y + obs.h * 0.2);
+                ctx.lineTo(obs.x + obs.w * 0.6, obs.y + obs.h * 0.7);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // ★ МОНЕТКИ — ФИКС (без двойного круга) ★
+            for (const c of game.coins) {
+                if (c.collected) continue;
+                if (c.x < game.cameraX - 100) continue;
+                if (c.x > game.cameraX + W + 100) break;
+
+                const bobY = c.y + Math.sin(c.bobPhase) * 4;
+
+                // Мягкое свечение
+                const glow = ctx.createRadialGradient(c.x, bobY, 2, c.x, bobY, c.radius * 2.5);
+                glow.addColorStop(0, 'rgba(255,215,0,0.35)');
+                glow.addColorStop(1, 'rgba(255,215,0,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(c.x, bobY, c.radius * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Тело монеты — один градиент
+                const grad = ctx.createRadialGradient(c.x - 4, bobY - 4, 1, c.x, bobY, c.radius);
+                grad.addColorStop(0, '#fff8c0');
+                grad.addColorStop(0.5, '#ffd700');
+                grad.addColorStop(1, '#a67c00');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(c.x, bobY, c.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ★ ОДИН блик ★
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.beginPath();
+                ctx.arc(c.x - 4, bobY - 4, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Стена прошлого
+            if (game.pastSpawned) {
+                const wallX = game.pastWallX;
+                const wallRight = wallX + PAST_WALL_WIDTH;
+
+                const aura = ctx.createLinearGradient(wallX - 100, 0, wallX, 0);
+                aura.addColorStop(0, 'rgba(150,0,150,0)');
+                aura.addColorStop(1, 'rgba(180,20,180,0.5)');
+                ctx.fillStyle = aura;
+                ctx.fillRect(wallX - 100, 0, 100, H);
+
+                const wallGrad = ctx.createLinearGradient(wallX, 0, wallRight, 0);
+                wallGrad.addColorStop(0, '#1a001a');
+                wallGrad.addColorStop(0.4, '#4a0a4a');
+                wallGrad.addColorStop(0.75, '#7a1a7a');
+                wallGrad.addColorStop(1, '#a020a0');
+                ctx.fillStyle = wallGrad;
+                ctx.fillRect(wallX, 0, PAST_WALL_WIDTH, H);
+
+                ctx.strokeStyle = 'rgba(200,50,200,0.25)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 6; i++) {
+                    const ly = (i / 6) * H + Math.sin(game.frame * 0.04 + i) * 15;
+                    ctx.beginPath();
+                    ctx.moveTo(wallX, ly);
+                    ctx.lineTo(wallRight, ly + 25);
+                    ctx.stroke();
+                }
+
+                ctx.strokeStyle = '#ff33ff';
+                ctx.lineWidth = 4;
+                ctx.shadowColor = '#ff33ff';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.moveTo(wallRight, 0);
+                ctx.lineTo(wallRight, H);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                for (let i = 0; i < 3; i++) {
+                    const eyeY = H * (0.3 + i * 0.2);
+                    const eyeX = wallRight - 50;
+                    const pulse = Math.sin(game.frame * 0.08 + i * 1.5) * 0.3 + 0.7;
+
+                    ctx.fillStyle = `rgba(255,0,68,${pulse * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(eyeX, eyeY, 20, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = `rgba(255,0,68,${pulse})`;
+                    ctx.shadowColor = '#ff0044';
+                    ctx.shadowBlur = 25;
+                    ctx.beginPath();
+                    ctx.arc(eyeX, eyeY, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.fillStyle = '#ff8899';
+                    ctx.beginPath();
+                    ctx.arc(eyeX, eyeY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Игрок
+            const p = game.player;
+
+            if (p.isGrounded) {
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(p.x + PLAYER_SIZE / 2, p.y + PLAYER_SIZE + 5, PLAYER_SIZE * 0.4, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const playerGlow = ctx.createRadialGradient(
+                p.x + PLAYER_SIZE / 2, p.y + PLAYER_SIZE / 2, 5,
+                p.x + PLAYER_SIZE / 2, p.y + PLAYER_SIZE / 2, PLAYER_SIZE * 1.5
+            );
+            playerGlow.addColorStop(0, 'rgba(74,230,230,0.4)');
+            playerGlow.addColorStop(1, 'rgba(74,230,230,0)');
+            ctx.fillStyle = playerGlow;
+            ctx.fillRect(p.x - PLAYER_SIZE, p.y - PLAYER_SIZE, PLAYER_SIZE * 3, PLAYER_SIZE * 3);
+
+            const playerGrad = ctx.createLinearGradient(p.x, p.y, p.x + PLAYER_SIZE, p.y + PLAYER_SIZE);
+            playerGrad.addColorStop(0, '#6affff');
+            playerGrad.addColorStop(0.5, '#4ae6e6');
+            playerGrad.addColorStop(1, '#1a8a8a');
+            ctx.fillStyle = playerGrad;
+            ctx.shadowColor = 'rgba(74,230,230,0.8)';
+            ctx.shadowBlur = 20;
+            ctx.fillRect(p.x, p.y, PLAYER_SIZE, PLAYER_SIZE);
+            ctx.shadowBlur = 0;
+
+            ctx.strokeStyle = 'rgba(200,255,255,0.6)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p.x + 1, p.y + 1, PLAYER_SIZE - 2, PLAYER_SIZE - 2);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(p.x + 4, p.y + 4, PLAYER_SIZE - 8, 4);
+
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 5;
+            ctx.fillRect(p.x + 10, p.y + 12, 12, 10);
+            ctx.fillRect(p.x + 28, p.y + 12, 12, 10);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(p.x + 14, p.y + 15, 5, 5);
+            ctx.fillRect(p.x + 32, p.y + 15, 5, 5);
+
+            ctx.restore();
+
+            // UI
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.font = 'bold 26px "Segoe UI", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 8;
+            ctx.fillText(`🏆 ${game.score}`, W - 25, 20);
+
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 22px "Segoe UI", sans-serif';
+            ctx.fillText(`🪙 ${game.coinsCollected}`, W - 25, 58);
+            ctx.shadowBlur = 0;
+
+            if (!game.isStarted && !game.isGameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 36px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(180,100,255,0.5)';
+                ctx.shadowBlur = 20;
+                ctx.fillText('ПРОШЛОЕ НАСТУПАЕТ', W / 2, H / 2 - 100);
+                ctx.shadowBlur = 0;
+                ctx.font = '20px "Segoe UI", sans-serif';
+                ctx.fillStyle = 'rgba(200,150,255,0.9)';
+                ctx.fillText('👻 Стена прошлого пожирает мир за твоей спиной', W / 2, H / 2 - 40);
+                ctx.fillStyle = 'rgba(255,215,0,0.9)';
+                ctx.fillText('🪙 Собирай монетки на платформах', W / 2, H / 2);
+                ctx.font = '16px "Segoe UI", sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillText('Пробел / ↑ / W / клик — прыжок   •   R — рестарт', W / 2, H / 2 + 60);
+                ctx.fillText('Нажми пробел чтобы начать', W / 2, H / 2 + 100);
+            }
+
+            if (game.isGameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.75)';
+                ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#ff4757';
+                ctx.font = 'bold 60px "Segoe UI", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(255,0,68,0.5)';
+                ctx.shadowBlur = 30;
+                ctx.fillText('💀 ПРОШЛОЕ ДОГНАЛО', W / 2, H / 2 - 60);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'white';
+                ctx.font = '26px "Segoe UI", sans-serif';
+                ctx.fillText(`Счёт: ${game.score}`, W / 2, H / 2 + 20);
+                ctx.fillStyle = '#ffd700';
+                ctx.fillText(`🪙 Монет: ${game.coinsCollected}`, W / 2, H / 2 + 60);
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.font = '16px "Segoe UI", sans-serif';
+                ctx.fillText('Нажми R для рестарта', W / 2, H / 2 + 110);
+            }
+        }
+
+        // ===== ДЕЙСТВИЯ =====
+        function jump() {
+            if (game.isGameOver) { restart(); return; }
+            if (!game.isStarted) { game.isStarted = true; return; }
+            const p = game.player;
+            if (p.isGrounded) {
+                p.vy = JUMP_FORCE;
+                p.isGrounded = false;
+            }
+        }
+
+        function gameOver() { game.isGameOver = true; }
+
+        function restart() {
+            resize();
+            game.player.x = 0;
+            game.player.y = GROUND_Y - PLAYER_SIZE;
+            game.player.vy = 0;
+            game.player.isGrounded = true;
+
+            game.pastWallX = -500;
+            game.pastSpawnAnim = 0;
+            game.pastSpawned = false;
+            game.particles = [];
+
+            game.platforms = [];
+            game.obstacles = [];
+            game.coins = [];
+            game.score = 0;
+            game.coinsCollected = 0;
+            game.isGameOver = false;
+            game.isStarted = false;
+            game.frame = 0;
+            game.cameraX = 0;
+            game.nextSpawn = 1100;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                e.preventDefault();
+                jump();
+            }
+            if (e.key === 'r' || e.key === 'R') { restart(); }
+        });
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        }, { passive: false });
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        console.log('🎮 ПРОШЛОЕ НАСТУПАЕТ v2.2');
+    </script>
+</body>
+</html>

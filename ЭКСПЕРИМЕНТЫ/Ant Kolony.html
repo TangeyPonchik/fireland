@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>⚡ ANT EVOLUTION SIMULATOR ⚡</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0c0f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    .simulation-container {
+      background: #12161c;
+      border-radius: 2.5rem;
+      padding: 1.2rem;
+      box-shadow: 0 25px 50px -8px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,180,80,0.15);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    canvas {
+      display: block;
+      border-radius: 2rem;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+      width: 100%;
+      height: auto;
+      background: #0b0e11;
+    }
+    .honey-display {
+      position: absolute;
+      top: 1.8rem;
+      right: 2.5rem;
+      background: rgba(20, 25, 30, 0.9);
+      backdrop-filter: blur(12px);
+      padding: 0.5rem 1.4rem;
+      border-radius: 3rem;
+      color: #ffc857;
+      font-weight: bold;
+      font-size: 1.2rem;
+      border: 1px solid #ffaa33;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .ui-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding: 0.5rem 0.8rem;
+      background: rgba(20, 25, 30, 0.8);
+      backdrop-filter: blur(16px);
+      border-radius: 3rem;
+      border: 1px solid rgba(255, 140, 30, 0.25);
+      color: #f0e6d2;
+      flex-wrap: wrap;
+    }
+    .stats {
+      display: flex;
+      gap: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #1e252e;
+      padding: 0.4rem 1.2rem;
+      border-radius: 2rem;
+      font-size: 0.9rem;
+    }
+    .stat-value {
+      color: #ffae4f;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-left: 0.2rem;
+    }
+    .buttons {
+      display: flex;
+      gap: 0.7rem;
+    }
+    .btn {
+      background: #232b34;
+      border: none;
+      color: #f5e7d3;
+      font-weight: 600;
+      padding: 0.6rem 1.5rem;
+      border-radius: 2.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      letter-spacing: 0.4px;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255, 160, 40, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .btn:hover {
+      background: #36404b;
+      border-color: #ff9f3c;
+      color: white;
+      box-shadow: 0 0 14px rgba(255, 140, 0, 0.5);
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .shop-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 0.8rem;
+      background: rgba(20, 25, 30, 0.75);
+      backdrop-filter: blur(16px);
+      border-radius: 2rem;
+      padding: 0.7rem 1.2rem;
+      border: 1px solid rgba(255, 180, 40, 0.3);
+      justify-content: center;
+    }
+    .shop-btn {
+      background: #1f2933;
+      border: 1px solid #4a5562;
+      color: #e2e8f0;
+      font-weight: 600;
+      padding: 0.55rem 1.3rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+    }
+    .shop-btn:hover:not(:disabled) {
+      background: #2d3b48;
+      border-color: #f6ad55;
+    }
+    .shop-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .notification {
+      position: absolute;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #ffd966;
+      padding: 0.5rem 1.5rem;
+      border-radius: 2rem;
+      font-weight: bold;
+      backdrop-filter: blur(10px);
+      border: 1px solid #ffb347;
+      z-index: 20;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+<div style="display: flex; flex-direction: column; position: relative;">
+  <div class="simulation-container" id="simContainer">
+    <canvas id="evolutionCanvas" width="900" height="600"></canvas>
+    <div class="honey-display" id="honeyDisplay">🍯 <span id="honeyValue">0</span></div>
+    <div class="ui-panel">
+      <div class="stats">
+        <div class="stat-item">🧬 <span>Gen</span> <span class="stat-value" id="genDisplay">0</span></div>
+        <div class="stat-item">🐜 <span>Alive</span> <span class="stat-value" id="aliveDisplay">150</span></div>
+        <div class="stat-item">🍎 <span>Eaten</span> <span class="stat-value" id="foodDisplay">0</span></div>
+      </div>
+      <div class="buttons">
+        <button class="btn" id="playPauseBtn">⏯️ Pause</button>
+        <button class="btn" id="resetBtn">🔄 Reset</button>
+      </div>
+    </div>
+    <!-- SHOP PANEL -->
+    <div class="shop-panel">
+      <button class="shop-btn" id="buyAnthill">🏚️ Муравейник (10🍯)</button>
+      <button class="shop-btn" id="buyTurret">🔫 Кислотная турель (25🍯)</button>
+      <button class="shop-btn" id="buyBarrier">🚧 Замедляющий барьер (15🍯)</button>
+    </div>
+    <div id="notificationArea" class="notification" style="opacity:0;"> </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- CANVAS & GLOBALS ----------
+    const canvas = document.getElementById('evolutionCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = 900;
+    const H = canvas.height = 600;
+
+    // UI elements
+    const genSpan = document.getElementById('genDisplay');
+    const aliveSpan = document.getElementById('aliveDisplay');
+    const foodSpan = document.getElementById('foodDisplay');
+    const honeySpan = document.getElementById('honeyValue');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const notifDiv = document.getElementById('notificationArea');
+
+    // Shop buttons
+    const buyAnthillBtn = document.getElementById('buyAnthill');
+    const buyTurretBtn = document.getElementById('buyTurret');
+    const buyBarrierBtn = document.getElementById('buyBarrier');
+
+    // ---------- ECONOMY ----------
+    let honey = 30;                // starting honey
+    let maxAntsLimit = 150;       // dynamic max (base 150 + anthill bonuses)
+
+    // ---------- SIMULATION STATE ----------
+    let ants = [];
+    let foods = [];
+    let generation = 0;
+    let totalFoodEaten = 0;
+    let running = true;
+    let animationFrameId = null;
+
+    // Buildings / structures
+    let turrets = [];             // { x, y, cooldown, range, damage }
+    let barriers = [];           // { x1, y1, x2, y2 } (line segment)
+
+    // Build mode
+    let buildMode = null;        // 'turret' or 'barrier'
+    let buildStartPoint = null;  // for barrier first click
+
+    // Zombies (враги)
+    let zombies = [];
+
+    // Fixed parameters
+    const FOOD_SENSE_RADIUS = 100;
+    const REPRODUCTION_ENERGY_THRESHOLD = 80;
+    const ENERGY_GAIN_FROM_FOOD = 60;
+    const MAX_ENERGY = 150;
+    const BASE_ANT_RADIUS = 5.5;
+    const CHILD_SIZE_FACTOR = 0.75;
+    const ZOMBIE_SPAWN_INTERVAL = 2800; // ms
+
+    // ---------- ANT CLASS (unchanged) ----------
+    class Ant {
+      constructor(x, y, speed, turnSpeed, color = null, energy = 100, radius = BASE_ANT_RADIUS) {
+        this.x = x; this.y = y;
+        this.angle = Math.random()*Math.PI*2;
+        this.speed = speed;
+        this.turnSpeed = turnSpeed;
+        this.energy = energy;
+        this.radius = radius;
+        if (color) { this.color = color; }
+        else {
+          const hue = 15 + Math.random()*25;
+          const sat = 70 + Math.random()*20;
+          const light = 55 + Math.random()*20;
+          this.color = `hsl(${hue}, ${sat}%, ${light}%)`;
+        }
+        this.reproductionReady = false;
+      }
+      updateReproductionStatus() {
+        this.reproductionReady = this.energy > REPRODUCTION_ENERGY_THRESHOLD;
+      }
+      update(foodSources) {
+        this.energy -= 0.08;
+        if (this.energy <= 0) return;
+        let closestDist = Infinity, closestFood = null;
+        for (let f of foodSources) {
+          const d = Math.hypot(f.x-this.x, f.y-this.y);
+          if (d < closestDist) { closestDist = d; closestFood = f; }
+        }
+        if (closestFood && closestDist < FOOD_SENSE_RADIUS) {
+          const desired = Math.atan2(closestFood.y-this.y, closestFood.x-this.x);
+          let diff = desired - this.angle;
+          while (diff > Math.PI) diff -= Math.PI*2;
+          while (diff < -Math.PI) diff += Math.PI*2;
+          this.angle += Math.min(Math.abs(diff), this.turnSpeed) * Math.sign(diff);
+        } else {
+          this.angle += (Math.random()-0.5)*this.turnSpeed*1.2;
+        }
+        this.x += Math.cos(this.angle)*this.speed;
+        this.y += Math.sin(this.angle)*this.speed;
+        if (this.x<this.radius) { this.x=this.radius; this.angle=Math.PI-this.angle; this.energy-=1.2; }
+        else if (this.x>W-this.radius) { this.x=W-this.radius; this.angle=Math.PI-this.angle; this.energy-=1.2; }
+        if (this.y<this.radius) { this.y=this.radius; this.angle=-this.angle; this.energy-=1.2; }
+        else if (this.y>H-this.radius) { this.y=H-this.radius; this.angle=-this.angle; this.energy-=1.2; }
+        if (this.energy<0) this.energy=0;
+        if (this.energy>MAX_ENERGY) this.energy=MAX_ENERGY;
+        this.updateReproductionStatus();
+      }
+    }
+
+    // ---------- ZOMBIE CLASS ----------
+    class Zombie {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.speed = 0.7;
+        this.radius = 10;
+        this.health = 5;
+      }
+      update(antList) {
+        if (antList.length === 0) { this.randomMove(); return; }
+        let target = null, minD = Infinity;
+        for (let a of antList) {
+          const d = Math.hypot(a.x-this.x, a.y-this.y);
+          if (d < minD) { minD = d; target = a; }
+        }
+        if (target) {
+          const angle = Math.atan2(target.y-this.y, target.x-this.x);
+          let speedMult = 1.0;
+          for (let b of barriers) {
+            if (lineIntersectCircle(b.x1,b.y1,b.x2,b.y2, this.x,this.y, this.radius+4)) {
+              speedMult = 0.35; break;
+            }
+          }
+          this.x += Math.cos(angle)*this.speed*speedMult;
+          this.y += Math.sin(angle)*this.speed*speedMult;
+          if (Math.hypot(target.x-this.x, target.y-this.y) < this.radius+target.radius) {
+            target.energy = 0;
+          }
+        } else this.randomMove();
+        this.x = Math.min(W-5, Math.max(5, this.x));
+        this.y = Math.min(H-5, Math.max(5, this.y));
+      }
+      randomMove() {
+        this.x += (Math.random()-0.5)*1.2;
+        this.y += (Math.random()-0.5)*1.2;
+      }
+    }
+
+    function lineIntersectCircle(x1,y1,x2,y2, cx,cy, r) {
+      const d = [x2-x1, y2-y1];
+      const f = [x1-cx, y1-cy];
+      const a = d[0]*d[0]+d[1]*d[1];
+      const b = 2*(f[0]*d[0]+f[1]*d[1]);
+      const c = f[0]*f[0]+f[1]*f[1]-r*r;
+      let disc = b*b-4*a*c;
+      if (disc<0) return false;
+      disc = Math.sqrt(disc);
+      const t1 = (-b-disc)/(2*a);
+      const t2 = (-b+disc)/(2*a);
+      return (t1>=0 && t1<=1) || (t2>=0 && t2<=1) || (t1<0&&t2>1);
+    }
+
+    // ---------- FOOD & SPAWNING ----------
+    function randomFoodPos() { return { x: 40+Math.random()*(W-80), y: 40+Math.random()*(H-80) }; }
+    function addRandomFood(count=1) { for(let i=0;i<count;i++) foods.push({...randomFoodPos(), radius:14}); }
+
+    function createInitialAnts(count) {
+      const arr = [];
+      for(let i=0;i<count;i++) {
+        arr.push(new Ant(40+Math.random()*(W-80), 40+Math.random()*(H-80), 0.9+Math.random()*1.5, 0.04+Math.random()*0.14));
+      }
+      return arr;
+    }
+
+    // ---------- REPRODUCTION ----------
+    function attemptReproduction() {
+      if (ants.length >= maxAntsLimit) return;
+      const ready = ants.filter(a=>a.reproductionReady && a.energy>REPRODUCTION_ENERGY_THRESHOLD);
+      if (ready.length<2) return;
+      for (let i=0;i<ready.length;i++) {
+        for (let j=i+1;j<ready.length;j++) {
+          const a=ready[i], b=ready[j];
+          if (Math.hypot(a.x-b.x, a.y-b.y) < (a.radius+b.radius)*1.1) {
+            if (ants.length >= maxAntsLimit) return;
+            const avgSp = (a.speed+b.speed)/2, avgTr = (a.turnSpeed+b.turnSpeed)/2;
+            const mut = 0.95+Math.random()*0.1;
+            const cSp = Math.min(2.8,Math.max(0.7,avgSp*mut));
+            const cTr = Math.min(0.22,Math.max(0.03,avgTr*mut));
+            const parse = s=>{let m=s.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/); return m?{h:+m[1],s:+m[2],l:+m[3]}:{h:25,s:80,l:60};};
+            const ca=parse(a.color), cb=parse(b.color);
+            const ch = (ca.h+cb.h)/2+(Math.random()-0.5)*10;
+            const cs = Math.min(100,Math.max(50,(ca.s+cb.s)/2+(Math.random()-0.5)*8));
+            const cl = Math.min(80,Math.max(45,(ca.l+cb.l)/2+(Math.random()-0.5)*10));
+            ants.push(new Ant((a.x+b.x)/2,(a.y+b.y)/2, cSp,cTr,`hsl(${Math.round(ch)},${Math.round(cs)}%,${Math.round(cl)}%)`,100,BASE_ANT_RADIUS*CHILD_SIZE_FACTOR));
+            a.energy-=25; b.energy-=25;
+            break;
+          }
+        }
+      }
+    }
+
+    // ---------- TURRET LOGIC ----------
+    function updateTurrets() {
+      for (let t of turrets) {
+        if (t.cooldown>0) t.cooldown--;
+        if (t.cooldown<=0 && zombies.length>0) {
+          let target=null, minD=Infinity;
+          for (let z of zombies) {
+            const d = Math.hypot(z.x-t.x, z.y-t.y);
+            if (d<t.range && d<minD) { minD=d; target=z; }
+          }
+          if (target) {
+            target.health -= t.damage;
+            t.cooldown = 25;
+            if (target.health<=0) zombies = zombies.filter(z=>z!==target);
+          }
+        }
+      }
+    }
+
+    // ---------- NOTIFICATIONS ----------
+    function showNotification(text, color='#ffd966') {
+      notifDiv.style.opacity = '1';
+      notifDiv.textContent = text;
+      notifDiv.style.color = color;
+      setTimeout(()=>{ notifDiv.style.opacity='0'; }, 1800);
+    }
+
+    // ---------- BUILD MODE HANDLING ----------
+    function enterBuildMode(type) {
+      buildMode = type;
+      canvas.style.cursor = 'crosshair';
+      buildStartPoint = null;
+    }
+    function exitBuildMode() {
+      buildMode = null;
+      canvas.style.cursor = 'default';
+    }
+
+    canvas.addEventListener('click', (e) => {
+      if (!buildMode) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W/rect.width, scaleY = H/rect.height;
+      const mx = (e.clientX-rect.left)*scaleX, my = (e.clientY-rect.top)*scaleY;
+      
+      if (buildMode === 'turret') {
+        if (honey < 25) { showNotification('Недостаточно мёда!','#ff8888'); exitBuildMode(); return; }
+        honey -= 25;
+        turrets.push({ x: mx, y: my, cooldown:0, range:130, damage:3 });
+        showNotification('Турель построена!','#a5d6a5');
+        exitBuildMode();
+      }
+      else if (buildMode === 'barrier') {
+        if (!buildStartPoint) {
+          buildStartPoint = { x: mx, y: my };
+          showNotification('Выберите вторую точку барьера','#cccccc');
+        } else {
+          if (honey < 15) { showNotification('Недостаточно мёда!','#ff8888'); exitBuildMode(); buildStartPoint=null; return; }
+          honey -= 15;
+          barriers.push({ x1: buildStartPoint.x, y1: buildStartPoint.y, x2: mx, y2: my });
+          showNotification('Барьер построен!','#a5d6a5');
+          exitBuildMode();
+        }
+      }
+    });
+
+    // ---------- SHOP BUTTONS ----------
+    buyAnthillBtn.addEventListener('click', ()=>{
+      if (honey < 10) { showNotification('Не хватает 10 мёда','#ff8888'); return; }
+      honey -= 10;
+      maxAntsLimit += 5;
+      showNotification(`Макс. муравьёв +5 (стало ${maxAntsLimit})`,'#ffb347');
+    });
+    buyTurretBtn.addEventListener('click', ()=>{
+      if (honey < 25) { showNotification('Нужно 25 мёда','#ff8888'); return; }
+      enterBuildMode('turret');
+      showNotification('Кликните на карте для установки турели','#ddd');
+    });
+    buyBarrierBtn.addEventListener('click', ()=>{
+      if (honey < 15) { showNotification('Нужно 15 мёда','#ff8888'); return; }
+      enterBuildMode('barrier');
+      showNotification('Первый клик – начало барьера','#ddd');
+    });
+
+    // ---------- UPDATE SIMULATION ----------
+    let lastHoneyTick = Date.now();
+    let lastZombieSpawn = Date.now();
+
+    function updateSimulation() {
+      if (!running) return;
+      const now = Date.now();
+
+      // Honey per second
+      if (now - lastHoneyTick >= 1000) {
+        honey += 1;
+        lastHoneyTick = now;
+      }
+
+      // Zombie spawning
+      if (now - lastZombieSpawn > ZOMBIE_SPAWN_INTERVAL && zombies.length < 18) {
+        const side = Math.floor(Math.random()*4);
+        let zx, zy;
+        if (side===0) { zx=Math.random()*W; zy=-10; }
+        else if(side===1) { zx=W+10; zy=Math.random()*H; }
+        else if(side===2) { zx=Math.random()*W; zy=H+10; }
+        else { zx=-10; zy=Math.random()*H; }
+        zombies.push(new Zombie(zx,zy));
+        lastZombieSpawn = now;
+      }
+
+      // Move ants
+      for (let a of ants) a.update(foods);
+      // Food eating
+      for (let a of ants) {
+        if (a.energy<=0) continue;
+        for (let i=foods.length-1;i>=0;i--) {
+          if (Math.hypot(a.x-foods[i].x, a.y-foods[i].y) < a.radius+foods[i].radius) {
+            a.energy += ENERGY_GAIN_FROM_FOOD;
+            if (a.energy>MAX_ENERGY) a.energy=MAX_ENERGY;
+            totalFoodEaten++;
+            foods.splice(i,1);
+            break;
+          }
+        }
+      }
+      ants = ants.filter(a=>a.energy>0);
+
+      // Move zombies
+      for (let z of zombies) z.update(ants);
+      zombies = zombies.filter(z=>z.health>0);
+      ants = ants.filter(a=>a.energy>0);
+
+      // Turrets
+      updateTurrets();
+
+      // Reproduction
+      attemptReproduction();
+
+      // UI updates
+      honeySpan.textContent = Math.floor(honey);
+    }
+
+    // ---------- RENDERING ----------
+    function drawBackground() {
+      ctx.fillStyle = '#0b0e14'; ctx.fillRect(0,0,W,H);
+    }
+    function drawFoods() {
+      for (let f of foods) {
+        ctx.beginPath(); ctx.arc(f.x,f.y,f.radius,0,2*Math.PI);
+        ctx.fillStyle='#ff9f2e'; ctx.fill();
+        ctx.shadowColor='#ff8c1a'; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+      }
+    }
+    function drawAnts() {
+      for (let a of ants) {
+        ctx.beginPath(); ctx.arc(a.x,a.y,a.radius,0,2*Math.PI);
+        ctx.fillStyle=a.color; ctx.fill();
+        if(a.reproductionReady){ ctx.beginPath(); ctx.arc(a.x,a.y,a.radius+2,0,2*Math.PI); ctx.strokeStyle='#FFD966'; ctx.stroke(); }
+      }
+    }
+    function drawZombies() {
+      for (let z of zombies) {
+        ctx.beginPath(); ctx.arc(z.x,z.y,z.radius,0,2*Math.PI);
+        ctx.fillStyle='#3d7a3d'; ctx.fill();
+        ctx.fillStyle='black'; ctx.beginPath(); ctx.arc(z.x-2,z.y-2,2.5,0,2*Math.PI); ctx.fill();
+      }
+    }
+    function drawTurrets() {
+      for (let t of turrets) {
+        ctx.fillStyle='#4a6fa5'; ctx.beginPath(); ctx.arc(t.x,t.y,9,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='#ffcc00'; ctx.beginPath(); ctx.arc(t.x,t.y,4,0,2*Math.PI); ctx.fill();
+      }
+    }
+    function drawBarriers() {
+      for (let b of barriers) {
+        ctx.beginPath(); ctx.moveTo(b.x1,b.y1); ctx.lineTo(b.x2,b.y2);
+        ctx.strokeStyle='#b0b0ff'; ctx.lineWidth=5; ctx.stroke();
+      }
+    }
+
+    function render() {
+      drawBackground();
+      drawFoods();
+      drawBarriers();
+      drawTurrets();
+      drawZombies();
+      drawAnts();
+      genSpan.textContent = generation;
+      aliveSpan.textContent = ants.length;
+      foodSpan.textContent = totalFoodEaten;
+    }
+
+    // ---------- GAME LOOP ----------
+    let frameCounter=0;
+    function gameLoop() {
+      if (running) {
+        updateSimulation();
+        frameCounter++;
+        if (frameCounter%45===0) generation++;
+      }
+      render();
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function resetSimulation() {
+      ants = createInitialAnts(150);
+      foods = []; addRandomFood(1);
+      zombies = [];
+      turrets = [];
+      barriers = [];
+      honey = 30;
+      maxAntsLimit = 150;
+      generation = 0; totalFoodEaten=0;
+      exitBuildMode();
+    }
+
+    playPauseBtn.addEventListener('click', ()=>{
+      running=!running; playPauseBtn.textContent=running?'⏯️ Pause':'▶️ Play';
+    });
+    resetBtn.addEventListener('click', ()=>{
+      resetSimulation();
+      if(!running){ running=true; playPauseBtn.textContent='⏯️ Pause'; }
+    });
+
+    // Start
+    ants = createInitialAnts(150);
+    foods = []; addRandomFood(1);
+    gameLoop();
+  })();
+</script>
+</body>
+</html>

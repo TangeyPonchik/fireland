@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⛏️ Шахтер - Кликер</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a237e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            flex-direction: column;
+            touch-action: manipulation;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(138, 43, 226, 0.05) 0%, transparent 60%),
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -2;
+            pointer-events: none;
+        }
+        
+        body::after {
+            content: '⛏️ 💎 ⛏️ 💰 ⛏️ 💎 ⛏️ 💰 ⛏️ 💎 ⛏️ 💰 ⛏️ 💎 ⛏️ 💰';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 40px;
+            letter-spacing: 80px;
+            line-height: 120px;
+            opacity: 0.03;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            word-break: break-all;
+        }
+        
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            z-index: 1;
+        }
+        
+        .game-container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 255, 0.96) 100%);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.4),
+                0 0 0 2px rgba(255, 215, 0, 0.15),
+                inset 0 0 60px rgba(138, 43, 226, 0.03);
+            width: 100%;
+            position: relative;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .inventory-btn {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            border: none;
+            padding: 16px 36px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 6px 20px rgba(156, 39, 176, 0.4),
+                inset 0 -2px 0 rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            touch-action: manipulation;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .inventory-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .inventory-btn:hover::before { left: 100%; }
+        
+        .inventory-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 10px 30px rgba(156, 39, 176, 0.5),
+                inset 0 -2px 0 rgba(0,0,0,0.2);
+        }
+        
+        .floating-buttons {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 999;
+        }
+        
+        .reset-btn, .achievements-btn, .sound-btn {
+            width: 64px;
+            height: 64px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.6em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+            position: relative;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.15);
+        }
+        
+        .reset-btn { 
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%); 
+            color: white; 
+        }
+        .reset-btn:hover { transform: scale(1.12) rotate(-10deg); box-shadow: 0 10px 30px rgba(244, 67, 54, 0.5); }
+        
+        .achievements-btn { 
+            background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%); 
+            color: white; 
+        }
+        .achievements-btn:hover { transform: scale(1.12) rotate(10deg); box-shadow: 0 10px 30px rgba(255, 215, 0, 0.5); }
+        
+        .sound-btn { 
+            background: linear-gradient(135deg, #2196F3 0%, #1565C0 100%); 
+            color: white; 
+        }
+        .sound-btn:hover { transform: scale(1.12); box-shadow: 0 10px 30px rgba(33, 150, 243, 0.5); }
+        .sound-btn.muted { background: linear-gradient(135deg, #9E9E9E 0%, #616161 100%); }
+        
+        .header { 
+            text-align: center; 
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        h1 { 
+            color: #1a237e;
+            font-size: 2.8em;
+            text-shadow: 
+                2px 2px 0 rgba(255, 215, 0, 0.3),
+                4px 4px 8px rgba(0,0,0,0.1);
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #1a237e 0%, #9C27B0 50%, #FF6F00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h1::after {
+            content: '';
+            display: block;
+            width: 80%;
+            height: 3px;
+            margin: 8px auto 0;
+            background: linear-gradient(90deg, transparent, #FFD700, #9C27B0, #FFD700, transparent);
+            border-radius: 2px;
+        }
+        
+        .resources {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 255, 0.9) 100%);
+            border-radius: 14px;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            color: #333;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .resource:hover {
+            background: rgba(255, 215, 0, 0.15);
+            transform: scale(1.05);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: linear-gradient(145deg, #e8eaf6 0%, #c5cae9 100%);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            min-width: 100px;
+            touch-action: manipulation;
+            user-select: none;
+            color: #1a237e;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            background: linear-gradient(145deg, #d1d9ff 0%, #9fa8da 100%);
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            border-color: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: linear-gradient(145deg, rgba(249, 249, 255, 0.95) 0%, rgba(240, 240, 250, 0.95) 100%);
+            border-radius: 16px;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(156, 39, 176, 0.1);
+        }
+        
+        .tab-content.active { display: block; }
+        
+        .mining-area {
+            text-align: center;
+            padding: 50px 0;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .pickaxe-icon {
+            font-size: 6em;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            display: inline-block;
+            transition: transform 0.05s;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .pickaxe-icon:active { 
+            transform: scale(0.85);
+            animation: none;
+        }
+        
+        .pickaxe-info {
+            margin-top: 20px;
+            font-size: 1.3em;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.9);
+            font-weight: bold;
+        }
+        
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .item-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f5f5fa 100%);
+            border: 2px solid rgba(156, 39, 176, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+            user-select: none;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .item-card:hover { 
+            border-color: #9C27B0;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(156, 39, 176, 0.2);
+        }
+        
+        .item-icon { 
+            font-size: 2.2em; 
+            margin-bottom: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        .item-name { font-weight: bold; margin-bottom: 5px; color: #1a237e; }
+        .item-price { color: #666; font-size: 0.9em; }
+        
+        .planet-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .planet-btn {
+            padding: 12px 22px;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            touch-action: manipulation;
+            user-select: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        .planet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(33, 150, 243, 0.4);
+        }
+        
+        .planet-btn.active { 
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        .planet-btn.locked { opacity: 0.4; cursor: not-allowed; }
+        
+        .smelting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: linear-gradient(145deg, #ffffff 0%, #f5f5fa 100%);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(156, 39, 176, 0.15);
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 22px;
+            background: linear-gradient(145deg, #e0e0e0 0%, #c8c8c8 100%);
+            border-radius: 11px;
+            overflow: hidden;
+            margin-top: 5px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            transition: width 0.2s linear;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .cancel-btn {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            touch-action: manipulation;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+        }
+        
+        .cancel-btn:hover { transform: scale(1.1); }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            z-index: 1000;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .locked { opacity: 0.5; cursor: not-allowed; }
+        .unlocked { opacity: 1; cursor: pointer; }
+        
+        .owned { 
+            border-color: #4CAF50;
+            background: linear-gradient(145deg, #f0f8f0 0%, #e8f5e9 100%);
+        }
+        
+        .owned::after {
+            content: "✓ Куплено";
+            display: block;
+            margin-top: 6px;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .planet-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            opacity: 0.35;
+            z-index: 1;
+            pointer-events: none;
+            border-radius: 16px;
+        }
+        
+        .confirm-modal, .inventory-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, #ffffff 0%, #f8f8ff 100%);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 
+                0 30px 80px rgba(0,0,0,0.4),
+                0 0 0 3px rgba(156, 39, 176, 0.15);
+            z-index: 1001;
+            text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes modalIn {
+            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .inventory-modal { min-width: 420px; max-width: 640px; }
+        
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(156, 39, 176, 0.15);
+        }
+        
+        .inventory-header h2 {
+            background: linear-gradient(135deg, #1a237e 0%, #9C27B0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8em;
+        }
+        
+        .close-btn {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        .close-btn:hover { 
+            transform: rotate(90deg) scale(1.15);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.6);
+        }
+        
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        .inventory-item {
+            background: linear-gradient(145deg, #ffffff 0%, #f5f5fa 100%);
+            border: 2px solid rgba(156, 39, 176, 0.15);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .inventory-item:hover {
+            border-color: #9C27B0;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(156, 39, 176, 0.2);
+        }
+        
+        .survival-timer {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff5722 0%, #d84315 100%);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-size: 1.6em;
+            font-weight: bold;
+            z-index: 999;
+            display: none;
+            box-shadow: 0 10px 30px rgba(255, 87, 34, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .confirm-modal button {
+            margin: 10px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .confirm-yes { 
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        .confirm-yes:hover { transform: translateY(-2px); }
+        
+        .confirm-no { 
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        .confirm-no:hover { transform: translateY(-2px); }
+        
+        .inventory-item button {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            font-weight: bold;
+        }
+        
+        .save-indicator.show { opacity: 1; }
+        
+        @media (max-width: 600px) {
+            .game-container { padding: 15px; }
+            .item-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+            .tabs { gap: 4px; }
+            .tab { padding: 10px 8px; font-size: 0.85em; min-width: 60px; }
+            .pickaxe-icon { font-size: 4.5em; }
+            .resources { gap: 5px; padding: 10px; }
+            .resource { padding: 4px 8px; font-size: 0.85em; }
+            .floating-buttons { bottom: 15px; right: 15px; gap: 8px; }
+            .reset-btn, .achievements-btn, .sound-btn { width: 54px; height: 54px; font-size: 1.3em; }
+            h1 { font-size: 2em; }
+            .inventory-modal { min-width: 90vw; max-width: 95vw; }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-buttons">
+        <button class="sound-btn" onclick="toggleSound()" id="sound-btn">🔊</button>
+        <button class="achievements-btn" onclick="openAchievements()">🏆</button>
+        <button class="reset-btn" onclick="confirmReset()">⛔</button>
+    </div>
+    
+    <div class="save-indicator" id="save-indicator">💾 Сохранено</div>
+    <div class="survival-timer" id="survival-timer"></div>
+    
+    <div class="game-wrapper">
+        <div class="game-container">
+            <div class="header">
+                <h1>⛏️ Шахтер</h1>
+            </div>
+            
+            <div class="resources">
+                <div class="resource"><span>💰</span><span id="money">0</span> монет</div>
+                <div class="resource"><span>⛏️</span><span id="current-pickaxe">Каменная кирка</span></div>
+                <div class="resource"><span>🌍</span><span id="current-planet">Земля</span></div>
+                <div class="resource"><span>🍖</span><span id="food">0</span> еды</div>
+                <div class="resource"><span>📦</span><span id="inventory-count">0</span>/750</div>
+                <div class="resource"><span>🐾</span><span id="pet-status">Нет питомца</span></div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(event, 'mining')">⛏️ Копание</button>
+                <button class="tab" onclick="switchTab(event, 'selling')">💰 Продажа</button>
+                <button class="tab" onclick="switchTab(event, 'smelting')">🔥 Плавильня</button>
+                <button class="tab" onclick="switchTab(event, 'shop')">🏪 Магазин</button>
+            </div>
+            
+            <div id="mining" class="tab-content active">
+                <div class="planet-background" id="mining-background"></div>
+                <div class="planet-selector" id="planet-selector"></div>
+                <div class="mining-area">
+                    <div class="pickaxe-icon" id="pickaxe-icon" onclick="mine()">⛏️</div>
+                    <div class="pickaxe-info">Нажми на кирку, чтобы копать!</div>
+                </div>
+            </div>
+            
+            <div id="selling" class="tab-content">
+                <h3>Продажа (ЛКМ - 1 шт, SHIFT+ЛКМ - все)</h3>
+                <div class="item-grid" id="selling-items"></div>
+            </div>
+            
+            <div id="smelting" class="tab-content">
+                <h3>Плавильня (ЛКМ - 1, SHIFT+ЛКМ - все)</h3>
+                <div class="item-grid" id="smelting-items"></div>
+                <div class="smelting-queue" id="smelting-queue"></div>
+            </div>
+            
+            <div id="shop" class="tab-content">
+                <h3>Магазин</h3>
+                <h4>⛏️ Кирки</h4>
+                <div class="item-grid" id="shop-items"></div>
+                <h4>🌍 Планеты</h4>
+                <div class="item-grid" id="planet-shop-items"></div>
+                <h4>👥 Помощники</h4>
+                <div class="item-grid" id="helpers-items"></div>
+                <h4>🎮 Режимы</h4>
+                <div class="item-grid" id="modes-items"></div>
+            </div>
+        </div>
+        
+        <button class="inventory-btn" onclick="openInventory()">🎒 Инвентарь (<span id="inv-count-btn">0</span>/750)</button>
+    </div>
+    
+    <script>
+        // ============================================
+        // 🛡️ ПУЛЕНЕПРОБИВАЕМАЯ СИСТЕМА СОХРАНЕНИЯ
+        // ============================================
+        
+        const SAVE_KEY = 'minerGame_v2';
+        const DB_NAME = 'MinerGameDB';
+        const DB_STORE = 'saves';
+        const DB_VERSION = 1;
+        
+        let db = null;
+        let saveInProgress = false;
+        let pendingSave = false;
+        
+        async function initIndexedDB() {
+            return new Promise((resolve) => {
+                if (!window.indexedDB) {
+                    console.warn('IndexedDB не поддерживается');
+                    resolve(null);
+                    return;
+                }
+                
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => {
+                    console.error('Ошибка открытия IndexedDB');
+                    resolve(null);
+                };
+                
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    console.log('✅ IndexedDB инициализирован');
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const database = event.target.result;
+                    if (!database.objectStoreNames.contains(DB_STORE)) {
+                        database.createObjectStore(DB_STORE, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+        
+        async function saveToIndexedDB(data) {
+            if (!db) return false;
+            
+            return new Promise((resolve) => {
+                try {
+                    const transaction = db.transaction([DB_STORE], 'readwrite');
+                    const store = transaction.objectStore(DB_STORE);
+                    
+                    store.put({
+                        id: SAVE_KEY,
+                        data: data,
+                        timestamp: Date.now()
+                    });
+                    
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                } catch(e) {
+                    resolve(false);
+                }
+            });
+        }
+        
+        async function loadFromIndexedDB() {
+            if (!db) return null;
+            
+            return new Promise((resolve) => {
+                try {
+                    const transaction = db.transaction([DB_STORE], 'readonly');
+                    const store = transaction.objectStore(DB_STORE);
+                    const request = store.get(SAVE_KEY);
+                    
+                    request.onsuccess = () => {
+                        resolve(request.result ? request.result.data : null);
+                    };
+                    request.onerror = () => resolve(null);
+                } catch(e) {
+                    resolve(null);
+                }
+            });
+        }
+        
+        function saveToLocalStorage(data) {
+            try {
+                localStorage.setItem(SAVE_KEY, data);
+                return true;
+            } catch(e) {
+                console.warn('localStorage недоступен');
+                return false;
+            }
+        }
+        
+        function loadFromLocalStorage() {
+            try {
+                return localStorage.getItem(SAVE_KEY);
+            } catch(e) {
+                return null;
+            }
+        }
+        
+        // Показываем индикатор сохранения
+        function showSaveIndicator() {
+            const indicator = document.getElementById('save-indicator');
+            if (indicator) {
+                indicator.classList.add('show');
+                setTimeout(() => indicator.classList.remove('show'), 800);
+            }
+        }
+        
+        // Главная функция сохранения
+        async function saveGame() {
+            if (!gameState) return;
+            if (saveInProgress) {
+                pendingSave = true;
+                return;
+            }
+            
+            saveInProgress = true;
+            
+            try {
+                // Добавляем timestamp для сравнения при загрузке
+                gameState._timestamp = Date.now();
+                const data = JSON.stringify(gameState);
+                
+                const [lsOk, idbOk] = await Promise.all([
+                    Promise.resolve(saveToLocalStorage(data)),
+                    saveToIndexedDB(data)
+                ]);
+                
+                if (lsOk || idbOk) {
+                    showSaveIndicator();
+                } else {
+                    console.error('❌ Оба хранилища недоступны!');
+                }
+            } catch(e) {
+                console.error('Ошибка сохранения:', e);
+            }
+            
+            saveInProgress = false;
+            
+            if (pendingSave) {
+                pendingSave = false;
+                saveGame();
+            }
+        }
+        
+        // Загрузка игры
+        async function loadGame(defaultState) {
+            try {
+                const lsData = loadFromLocalStorage();
+                const idbData = await loadFromIndexedDB();
+                
+                let dataToUse = null;
+                let source = '';
+                
+                if (lsData && idbData) {
+                    try {
+                        const lsTime = JSON.parse(lsData)._timestamp || 0;
+                        const idbTime = JSON.parse(idbData)._timestamp || 0;
+                        if (idbTime >= lsTime) {
+                            dataToUse = idbData;
+                            source = 'IndexedDB';
+                        } else {
+                            dataToUse = lsData;
+                            source = 'localStorage';
+                        }
+                    } catch(e) {
+                        dataToUse = idbData || lsData;
+                        source = 'резерв';
+                    }
+                } else if (lsData) {
+                    dataToUse = lsData;
+                    source = 'localStorage';
+                } else if (idbData) {
+                    dataToUse = idbData;
+                    source = 'IndexedDB';
+                }
+                
+                if (dataToUse) {
+                    console.log(`📂 Загружено из ${source}`);
+                    return JSON.parse(dataToUse);
+                }
+            } catch(e) {
+                console.error('Ошибка загрузки:', e);
+            }
+            
+            console.log('📂 Новая игра');
+            return JSON.parse(JSON.stringify(defaultState));
+        }
+        
+        // ============================================
+        // 🎮 ИГРОВАЯ ЛОГИКА
+        // ============================================
+        
+        let audioContext;
+        let soundEnabled = true;
+        let currentTab = 'mining';
+        let gameState = null;
+        
+        function initAudio() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔕';
+            document.getElementById('sound-btn').classList.toggle('muted', !soundEnabled);
+        }
+        
+        function playMiningSound() {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.15);
+            } catch(e) {}
+        }
+        
+        const defaultState = {
+            money: 0,
+            currentPickaxe: 'stone',
+            currentPlanet: 'earth',
+            food: 0,
+            inventory: {},
+            smeltingQueue: [],
+            ownedPickaxes: ['stone'],
+            ownedPlanets: ['earth'],
+            helpers: { miner: false, smith: false, trader: false, farmer: false },
+            survivalMode: false,
+            survivalUnlocked: false,
+            creativeMode: false,
+            pets: [],
+            activePet: null,
+            achievements: []
+        };
+        
+        const MAX_INVENTORY = 750;
+        const SMELTING_TIME = 3;
+        
+        const pickaxes = {
+            stone: { name: 'Каменная кирка', power: 1, cost: 0, materials: {} },
+            copper: { name: 'Медная кирка', power: 2, cost: 500, materials: { copperIngot: 5 } },
+            iron: { name: 'Железная кирка', power: 3, cost: 1000, materials: { ironIngot: 5 } },
+            chrome: { name: 'Хромовая кирка', power: 4, cost: 2500, materials: { chromeIngot: 5 } },
+            diamond: { name: 'Алмазная кирка', power: 6, cost: 5000, materials: { diamond: 8 } },
+            emerald: { name: 'Изумрудная кирка', power: 8, cost: 8000, materials: { emerald: 8 } },
+            ruby: { name: 'Рубиновая кирка', power: 10, cost: 12000, materials: { ruby: 8 } },
+            obsidian: { name: 'Обсидиановая кирка', power: 15, cost: 20000, materials: { obsidian: 10 } },
+            oil: { name: 'Нефтяная кирка', power: 1.5, cost: 25000, materials: { oil: 10, goldIngot: 5 } },
+            electric: { name: 'Электрическая кирка', power: 20, cost: 35000, materials: { uraniumIngot: 8, ironIngot: 4 } },
+            dragon: { name: 'Драконовая кирка', power: 25, cost: 50000, materials: { dragoniteIngot: 12, crushedSapphire: 6 } },
+            mithril: { name: 'Мифриловая кирка', power: 30, cost: 70000, materials: { mithrilIngot: 10 } },
+            crystal: { name: 'Кристаловая кирка', power: 35, cost: 85000, materials: { crystalShard: 10 } },
+            meteorite: { name: 'Метеоритная кирка', power: 40, cost: 100000, materials: { meteoriteIngot: 10 } },
+            adamantite: { name: 'Адамантиевая кирка', power: 50, cost: 120000, materials: { adamantiteIngot: 10 } }
+        };
+        
+        const planets = {
+            earth: { name: 'Земля', resources: ['coal', 'iron', 'gold', 'copper', 'chrome'], chances: { coal: 0.2, iron: 0.15, gold: 0.05, copper: 0.1, chrome: 0.03 }, background: 'image1.jpeg', requiredPickaxe: null, cost: 0, pet: { id: 'cat', name: 'Кошка', icon: '🐱', chance: 0.03, bonus: 'sell_bonus', bonusValue: 1.15, description: '+15% к продаже' } },
+            mars: { name: 'Марс', resources: ['coal', 'diamond', 'emerald', 'ruby', 'obsidian'], chances: { coal: 0.15, diamond: 0.1, emerald: 0.08, ruby: 0.06, obsidian: 0.04 }, background: 'image2.jpeg', requiredPickaxe: 'chrome', cost: 20000, pet: { id: 'snake', name: 'Змей', icon: '🐍', chance: 0.02, bonus: 'mining_bonus', bonusValue: 1.15, description: '+15% к добыче' } },
+            pluto: { name: 'Плутон', resources: ['fertileSoil', 'crudeOil'], chances: { fertileSoil: 0.25, crudeOil: 0.1 }, background: 'image5.jpeg', requiredPickaxe: 'emerald', cost: 30000, pet: { id: 'salamander', name: 'Саламандра', icon: '🦎', chance: 0.04, bonus: 'food_bonus', bonusValue: 1.2, description: '+20% к еде' } },
+            uranus: { name: 'Уран', resources: ['uranium', 'sapphire', 'gem'], chances: { uranium: 0.12, sapphire: 0.08, gem: 0.05 }, background: 'image4.jpeg', requiredPickaxe: 'obsidian', cost: 40000, pet: { id: 'owl', name: 'Сова', icon: '🦉', chance: 0.02, bonus: 'smelt_speed', bonusValue: 0.75, description: '-25% времени плавки' } },
+            venus: { name: 'Венера', resources: ['dragonite', 'godite', 'universite'], chances: { dragonite: 0.1, godite: 0.08, universite: 0.05 }, background: 'image3.jpeg', requiredPickaxe: 'oil', cost: 50000, pet: { id: 'phoenix', name: 'Феникс', icon: '🦅', chance: 0.015, bonus: 'mining_bonus', bonusValue: 1.25, description: '+25% к добыче' } },
+            neptune: { name: 'Нептун', resources: ['mithril', 'adamantite', 'crystal', 'meteoriteIron'], chances: { mithril: 0.08, adamantite: 0.06, crystal: 0.08, meteoriteIron: 0.06 }, background: 'image6.jpeg', requiredPickaxe: 'dragon', cost: 60000, pet: { id: 'dragon', name: 'Дракон', icon: '🐉', chance: 0.01, bonus: 'mining_bonus', bonusValue: 1.5, description: '+50% к добыче' } }
+        };
+        
+        const prices = {
+            coal: 10, iron: 40, gold: 60, copper: 20, chrome: 30,
+            diamond: 100, emerald: 150, ruby: 200, obsidian: 250,
+            dragonite: 500, godite: 750, universite: 1000,
+            uranium: 300, sapphire: 350, gem: 400,
+            fertileSoil: 25, crudeOil: 50, oil: 100,
+            friedCoal: 15, ironIngot: 50, goldIngot: 70,
+            copperIngot: 30, chromeIngot: 45, dragoniteIngot: 550,
+            goditeIngot: 800, universiteIngot: 1050, uraniumIngot: 350,
+            crushedSapphire: 375, crushedGem: 425, obsidianLiquid: 750,
+            mithril: 800, adamantite: 1000, crystal: 600, meteoriteIron: 900,
+            mithrilIngot: 900, adamantiteIngot: 1100, crystalShard: 700, meteoriteIngot: 1000
+        };
+        
+        const helpers = {
+            miner: { name: 'Шахтер', icon: '⛏️', cost: 50000 },
+            smith: { name: 'Кузнец', icon: '🔥', cost: 15000 },
+            trader: { name: 'Торгаш', icon: '💰', cost: 30000 },
+            farmer: { name: 'Фермер', icon: '🌾', cost: 45000 }
+        };
+        
+        const achievements = {
+            firstMillion: { name: '💰 Первый миллион', description: 'Заработать 1,000,000 монет', check: () => gameState.money >= 1000000 },
+            coalDigger: { name: '⚫ Копатель угля', description: 'Добыть 1000 угля', check: () => (gameState.inventory.coal || 0) >= 1000 },
+            astronaut: { name: '🚀 Космонавт', description: 'Открыть все планеты', check: () => gameState.ownedPlanets.length === 6 },
+            masterMiner: { name: '⛏️ Мастер', description: 'Купить все кирки', check: () => gameState.ownedPickaxes.length === 15 },
+            petCollector: { name: '🐾 Коллекционер', description: 'Найти 3 питомца', check: () => gameState.pets.length >= 3 },
+            rich: { name: '💎 Богач', description: '500,000 монет', check: () => gameState.money >= 500000 },
+            neptuneExplorer: { name: '🔵 Нептун', description: 'Купить Нептун', check: () => gameState.ownedPlanets.includes('neptune') },
+            allPets: { name: '🐉 Повелитель', description: 'Все питомцы', check: () => gameState.pets.length === 6 }
+        };
+        
+        function getActivePetBonus() {
+            if (!gameState.activePet) return null;
+            for (const planet of Object.values(planets)) {
+                if (planet.pet && planet.pet.id === gameState.activePet) return planet.pet;
+            }
+            return null;
+        }
+        
+        function countInventory() {
+            return Object.values(gameState.inventory).reduce((a, b) => a + b, 0);
+        }
+        
+        function hasInventorySpace() {
+            return countInventory() < MAX_INVENTORY;
+        }
+        
+        function getPetById(id) {
+            for (const planet of Object.values(planets)) {
+                if (planet.pet && planet.pet.id === id) return planet.pet;
+            }
+            return null;
+        }
+        
+        function openInventory() {
+            const modal = document.createElement('div');
+            modal.className = 'inventory-modal';
+            let html = '<div class="inventory-header"><h2>🎒 Инвентарь</h2><button class="close-btn" onclick="closeInventory()">✕</button></div>';
+            html += `<p>Предметов: ${countInventory()}/750</p>`;
+            html += '<div class="inventory-grid">';
+            
+            for (const [item, count] of Object.entries(gameState.inventory)) {
+                if (count > 0) {
+                    html += `<div class="inventory-item"><div style="font-size:2em;">${getItemIcon(item)}</div><div style="font-weight:bold;margin:5px 0;">${getItemName(item)}</div><div style="color:#666;">${count} шт.</div></div>`;
+                }
+            }
+            
+            if (gameState.pets.length > 0) {
+                html += '<h3 style="grid-column:1/-1; margin-top:15px; color:#9C27B0;">🐾 Питомцы:</h3>';
+                for (const petId of gameState.pets) {
+                    const pet = getPetById(petId);
+                    const isActive = gameState.activePet === petId;
+                    html += `<div class="inventory-item" style="${isActive ? 'border-color:#FF9800; background:linear-gradient(145deg,#fff3e0,#ffe0b2);' : ''}">
+                        <div style="font-size:2em;">${pet.icon}</div>
+                        <div style="font-weight:bold;margin:5px 0;">${pet.name}</div>
+                        <div style="color:#666;font-size:0.85em;">${pet.description}</div>
+                        ${isActive ? '<div style="color:#FF9800;font-weight:bold;margin-top:5px;">✅ Активен</div>' : `<button onclick="activatePet('${petId}')">Активировать</button>`}
+                    </div>`;
+                }
+            }
+            
+            html += '</div>';
+            modal.innerHTML = html;
+            document.body.appendChild(modal);
+        }
+        
+        function activatePet(id) {
+            gameState.activePet = id;
+            saveGame();
+            updateUI();
+            closeInventory();
+            showNotification('🐾 Питомец активирован!');
+        }
+        
+        function openAchievements() {
+            const modal = document.createElement('div');
+            modal.className = 'inventory-modal';
+            let html = '<div class="inventory-header"><h2>🏆 Достижения</h2><button class="close-btn" onclick="closeInventory()">✕</button></div>';
+            html += '<div class="inventory-grid">';
+            
+            for (const [key, ach] of Object.entries(achievements)) {
+                const unlocked = gameState.achievements.includes(key);
+                html += `<div class="inventory-item" style="${unlocked ? 'background:linear-gradient(145deg,#ffd700,#ffa000);color:white;border-color:#ffd700;' : ''}">
+                    <div style="font-weight:bold;margin-bottom:5px;">${ach.name}</div>
+                    <div style="font-size:0.85em;opacity:0.9;">${ach.description}</div>
+                    <div style="font-size:1.5em;margin-top:5px;">${unlocked ? '✅' : '🔒'}</div>
+                </div>`;
+            }
+            
+            html += '</div>';
+            modal.innerHTML = html;
+            document.body.appendChild(modal);
+        }
+        
+        function closeInventory() {
+            document.querySelector('.inventory-modal')?.remove();
+        }
+        
+        function confirmReset() {
+            const modal = document.createElement('div');
+            modal.className = 'confirm-modal';
+            modal.innerHTML = '<h3>Сбросить прогресс?</h3><p>Все будет потеряно!</p><button class="confirm-yes" onclick="resetGame()">Да</button><button class="confirm-no" onclick="this.closest(\'.confirm-modal\').remove()">Нет</button>';
+            document.body.appendChild(modal);
+        }
+        
+        async function resetGame() {
+            gameState = JSON.parse(JSON.stringify(defaultState));
+            document.querySelector('.confirm-modal')?.remove();
+            
+            // Очищаем оба хранилища
+            try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+            try {
+                if (db) {
+                    const transaction = db.transaction([DB_STORE], 'readwrite');
+                    transaction.objectStore(DB_STORE).delete(SAVE_KEY);
+                }
+            } catch(e) {}
+            
+            updateUI();
+            renderAll();
+            showNotification('🔄 Прогресс сброшен!');
+        }
+        
+        function mine() {
+            const planet = planets[gameState.currentPlanet];
+            const pickaxe = pickaxes[gameState.currentPickaxe];
+            
+            if (!hasInventorySpace() && !gameState.creativeMode) {
+                showNotification('⚠️ Инвентарь полон!');
+                return;
+            }
+            
+            playMiningSound();
+            
+            let power = pickaxe.power;
+            if (gameState.currentPlanet === 'venus' && gameState.currentPickaxe === 'oil') power = 15;
+            
+            const petBonus = getActivePetBonus();
+            if (petBonus && petBonus.bonus === 'mining_bonus') power *= petBonus.bonusValue;
+            
+            if (gameState.creativeMode) {
+                for (const res of planet.resources) {
+                    gameState.inventory[res] = (gameState.inventory[res] || 0) + 10;
+                }
+            } else {
+                for (const res of planet.resources) {
+                    if (Math.random() < planet.chances[res] * power) {
+                        gameState.inventory[res] = (gameState.inventory[res] || 0) + 1;
+                    }
+                }
+                
+                if (planet.pet && !gameState.pets.includes(planet.pet.id) && Math.random() < planet.pet.chance) {
+                    gameState.pets.push(planet.pet.id);
+                    if (!gameState.activePet) gameState.activePet = planet.pet.id;
+                    showNotification(`🐾 Найден: ${planet.pet.name}!`);
+                }
+            }
+            
+            checkAchievements();
+            saveGame();
+            updateUI();
+        }
+        
+        function checkAchievements() {
+            for (const [key, ach] of Object.entries(achievements)) {
+                if (!gameState.achievements.includes(key) && ach.check()) {
+                    gameState.achievements.push(key);
+                    showNotification(`🏆 ${ach.name}!`);
+                }
+            }
+        }
+        
+        function switchTab(e, name) {
+            currentTab = name;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById(name).classList.add('active');
+            
+            if (name === 'selling') renderSelling();
+            if (name === 'smelting') renderSmelting();
+            if (name === 'shop') renderShop();
+            if (name === 'mining') updateBackground();
+        }
+        
+        function switchPlanet(name) {
+            if (!gameState.ownedPlanets.includes(name) && !gameState.creativeMode) {
+                showNotification('Планета не куплена!');
+                return;
+            }
+            gameState.currentPlanet = name;
+            updateUI();
+            updateBackground();
+            renderPlanetSelector();
+            saveGame();
+        }
+        
+        function renderPlanetSelector() {
+            const container = document.getElementById('planet-selector');
+            container.innerHTML = '';
+            for (const [key, planet] of Object.entries(planets)) {
+                const btn = document.createElement('button');
+                btn.className = 'planet-btn';
+                if (gameState.currentPlanet === key) btn.classList.add('active');
+                if (!gameState.ownedPlanets.includes(key) && !gameState.creativeMode) btn.classList.add('locked');
+                btn.textContent = planet.name;
+                btn.onclick = () => switchPlanet(key);
+                container.appendChild(btn);
+            }
+        }
+        
+        function updateBackground() {
+            document.getElementById('mining-background').style.backgroundImage = `url('${planets[gameState.currentPlanet].background}')`;
+        }
+        
+        function renderSelling() {
+            const container = document.getElementById('selling-items');
+            container.innerHTML = '';
+            for (const [item, count] of Object.entries(gameState.inventory)) {
+                if (count > 0 && prices[item]) {
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.innerHTML = `<div class="item-icon">${getItemIcon(item)}</div><div class="item-name">${getItemName(item)}</div><div class="item-price">${count} шт.</div>`;
+                    card.onclick = (e) => e.shiftKey ? sellAll(item) : sellOne(item);
+                    container.appendChild(card);
+                }
+            }
+        }
+        
+        function sellOne(item) {
+            if (gameState.inventory[item] > 0) {
+                let price = prices[item];
+                const pet = getActivePetBonus();
+                if (pet && pet.bonus === 'sell_bonus') price *= pet.bonusValue;
+                gameState.money += Math.round(price);
+                gameState.inventory[item]--;
+                saveGame();
+                updateUI();
+                renderSelling();
+            }
+        }
+        
+        function sellAll(item) {
+            const count = gameState.inventory[item];
+            if (count > 0) {
+                let price = prices[item];
+                const pet = getActivePetBonus();
+                if (pet && pet.bonus === 'sell_bonus') price *= pet.bonusValue;
+                gameState.money += Math.round(price * count);
+                gameState.inventory[item] = 0;
+                saveGame();
+                updateUI();
+                renderSelling();
+            }
+        }
+        
+        function renderSmelting() {
+            const container = document.getElementById('smelting-items');
+            container.innerHTML = '';
+            const recipes = [
+                { input: 'coal', output: 'friedCoal', name: 'Уголь → Жареный уголь' },
+                { input: 'iron', output: 'ironIngot', name: 'Железо → Слиток' },
+                { input: 'gold', output: 'goldIngot', name: 'Золото → Слиток' },
+                { input: 'copper', output: 'copperIngot', name: 'Медь → Слиток' },
+                { input: 'chrome', output: 'chromeIngot', name: 'Хром → Слиток' },
+                { input: 'dragonite', output: 'dragoniteIngot', name: 'Драконит → Слиток' },
+                { input: 'godite', output: 'goditeIngot', name: 'Боженит → Слиток' },
+                { input: 'universite', output: 'universiteIngot', name: 'Вселенит → Слиток' },
+                { input: 'uranium', output: 'uraniumIngot', name: 'Уран → Слиток' },
+                { input: 'sapphire', output: 'crushedSapphire', name: 'Сапфир → Крошка' },
+                { input: 'gem', output: 'crushedGem', name: 'Самоцвет → Крошка' },
+                { input: 'fertileSoil', output: 'food', name: 'Земля → Еда' },
+                { input: 'crudeOil', output: 'oil', name: 'Нефть сырая → Нефть', requiresGold: true },
+                { input: 'obsidian', output: 'obsidianLiquid', name: 'Обсидиан → Жидкость' },
+                { input: 'mithril', output: 'mithrilIngot', name: 'Мифрил → Слиток' },
+                { input: 'adamantite', output: 'adamantiteIngot', name: 'Адамантий → Слиток' },
+                { input: 'crystal', output: 'crystalShard', name: 'Кристалл → Осколок' },
+                { input: 'meteoriteIron', output: 'meteoriteIngot', name: 'Метеорит → Слиток' }
+            ];
+            
+            for (const recipe of recipes) {
+                if (gameState.inventory[recipe.input] > 0 && (!recipe.requiresGold || gameState.inventory.gold > 0)) {
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.innerHTML = `<div class="item-icon">🔥</div><div class="item-name">${recipe.name}</div><div class="item-price">${gameState.inventory[recipe.input]} шт.</div>`;
+                    card.onclick = (e) => {
+                        if (e.shiftKey) {
+                            startSmeltingAll(recipe);
+                        } else {
+                            startSmelting(recipe, 1);
+                        }
+                    };
+                    container.appendChild(card);
+                }
+            }
+            renderSmeltingQueue();
+        }
+        
+        function startSmelting(recipe, count) {
+            for (let i = 0; i < count; i++) {
+                if (gameState.inventory[recipe.input] > 0 && (!recipe.requiresGold || gameState.inventory.gold > 0)) {
+                    gameState.inventory[recipe.input]--;
+                    if (recipe.requiresGold) gameState.inventory.gold--;
+                    
+                    let time = SMELTING_TIME;
+                    const pet = getActivePetBonus();
+                    if (pet && pet.bonus === 'smelt_speed') time *= pet.bonusValue;
+                    
+                    gameState.smeltingQueue.push({ 
+                        ...recipe, 
+                        time, 
+                        progress: 0, 
+                        startTime: Date.now(),
+                        id: Date.now() + Math.random()
+                    });
+                } else break;
+            }
+            renderSmelting();
+            saveGame();
+        }
+        
+        function startSmeltingAll(recipe) {
+            const available = recipe.requiresGold ? Math.min(gameState.inventory[recipe.input], gameState.inventory.gold) : gameState.inventory[recipe.input];
+            startSmelting(recipe, available);
+        }
+        
+        function cancelSmelting(id) {
+            const index = gameState.smeltingQueue.findIndex(item => item.id === id);
+            if (index !== -1) {
+                const item = gameState.smeltingQueue[index];
+                gameState.inventory[item.input] = (gameState.inventory[item.input] || 0) + 1;
+                if (item.requiresGold) gameState.inventory.gold = (gameState.inventory.gold || 0) + 1;
+                gameState.smeltingQueue.splice(index, 1);
+                renderSmelting();
+                saveGame();
+            }
+        }
+        
+        function renderSmeltingQueue() {
+            const container = document.getElementById('smelting-queue');
+            if (!container) return;
+            
+            const now = Date.now();
+            let hasCompleted = false;
+            
+            for (let i = gameState.smeltingQueue.length - 1; i >= 0; i--) {
+                const item = gameState.smeltingQueue[i];
+                const elapsed = (now - item.startTime) / 1000;
+                const progress = elapsed / item.time;
+                
+                if (progress >= 1) {
+                    if (item.output === 'food') {
+                        gameState.food = (gameState.food || 0) + 1;
+                    } else {
+                        gameState.inventory[item.output] = (gameState.inventory[item.output] || 0) + 1;
+                    }
+                    gameState.smeltingQueue.splice(i, 1);
+                    hasCompleted = true;
+                }
+            }
+            
+            if (hasCompleted) {
+                saveGame();
+                updateUI();
+            }
+            
+            container.innerHTML = '';
+            
+            if (gameState.smeltingQueue.length === 0) {
+                container.innerHTML = '<p>Очередь пуста</p>';
+                return;
+            }
+            
+            gameState.smeltingQueue.forEach((item) => {
+                const elapsed = (now - item.startTime) / 1000;
+                const progress = Math.min(elapsed / item.time * 100, 100);
+                
+                const div = document.createElement('div');
+                div.className = 'smelting-item';
+                div.innerHTML = `
+                    <div style="flex:1;min-width:150px;">
+                        <div style="font-weight:bold;">${item.name}</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                    </div>
+                    <div style="font-weight:bold;color:#4CAF50;">${Math.floor(progress)}%</div>
+                    <button class="cancel-btn" onclick="cancelSmelting(${item.id})">✕</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        function renderShop() {
+            const pickaxeContainer = document.getElementById('shop-items');
+            pickaxeContainer.innerHTML = '';
+            for (const [key, pickaxe] of Object.entries(pickaxes)) {
+                const card = document.createElement('div');
+                const owned = gameState.ownedPickaxes.includes(key) || gameState.creativeMode;
+                card.className = owned ? 'item-card owned' : 'item-card locked';
+                card.innerHTML = `<div class="item-icon">⛏️</div><div class="item-name">${pickaxe.name}</div><div class="item-price">Сила: ${pickaxe.power}</div><div class="item-price">Цена: ${pickaxe.cost}</div>`;
+                if (!owned && gameState.money >= pickaxe.cost && canBuyPickaxe(key)) {
+                    card.className = 'item-card unlocked';
+                    card.onclick = () => buyPickaxe(key);
+                } else if (owned && gameState.currentPickaxe !== key) {
+                    card.onclick = () => equipPickaxe(key);
+                }
+                pickaxeContainer.appendChild(card);
+            }
+            
+            const planetContainer = document.getElementById('planet-shop-items');
+            planetContainer.innerHTML = '';
+            for (const [key, planet] of Object.entries(planets)) {
+                if (planet.cost === 0) continue;
+                const card = document.createElement('div');
+                const owned = gameState.ownedPlanets.includes(key) || gameState.creativeMode;
+                card.className = owned ? 'item-card owned' : 'item-card locked';
+                card.innerHTML = `<div class="item-icon">🌍</div><div class="item-name">${planet.name}</div><div class="item-price">Цена: ${planet.cost}</div>`;
+                if (!owned && gameState.money >= planet.cost) {
+                    card.className = 'item-card unlocked';
+                    card.onclick = () => buyPlanet(key);
+                }
+                planetContainer.appendChild(card);
+            }
+            
+            const helperContainer = document.getElementById('helpers-items');
+            helperContainer.innerHTML = '';
+            for (const [key, helper] of Object.entries(helpers)) {
+                const card = document.createElement('div');
+                const owned = gameState.helpers[key];
+                card.className = owned ? 'item-card owned' : 'item-card locked';
+                card.innerHTML = `<div class="item-icon">${helper.icon}</div><div class="item-name">${helper.name}</div><div class="item-price">Цена: ${helper.cost}</div>`;
+                if (!owned && gameState.money >= helper.cost) {
+                    card.className = 'item-card unlocked';
+                    card.onclick = () => buyHelper(key);
+                }
+                helperContainer.appendChild(card);
+            }
+            
+            const modeContainer = document.getElementById('modes-items');
+            modeContainer.innerHTML = '';
+            if (gameState.survivalUnlocked) {
+                const card = document.createElement('div');
+                card.className = 'item-card unlocked';
+                card.innerHTML = '<div class="item-icon">🎮</div><div class="item-name">Режим выживания</div>';
+                card.onclick = () => startSurvivalMode();
+                modeContainer.appendChild(card);
+            }
+            if (!gameState.creativeMode) {
+                const card = document.createElement('div');
+                card.className = gameState.money >= 1500000 ? 'item-card unlocked' : 'item-card locked';
+                card.innerHTML = '<div class="item-icon">🎨</div><div class="item-name">Креативный режим</div><div class="item-price">1,500,000</div>';
+                if (gameState.money >= 1500000) card.onclick = () => unlockCreative();
+                modeContainer.appendChild(card);
+            }
+        }
+        
+        function canBuyPickaxe(key) {
+            const pickaxe = pickaxes[key];
+            for (const [mat, count] of Object.entries(pickaxe.materials)) {
+                if ((gameState.inventory[mat] || 0) < count) return false;
+            }
+            return true;
+        }
+        
+        function buyPickaxe(key) {
+            const pickaxe = pickaxes[key];
+            gameState.money -= pickaxe.cost;
+            for (const [mat, count] of Object.entries(pickaxe.materials)) {
+                gameState.inventory[mat] -= count;
+            }
+            gameState.ownedPickaxes.push(key);
+            gameState.currentPickaxe = key;
+            checkAchievements();
+            saveGame();
+            updateUI();
+            renderShop();
+        }
+        
+        function equipPickaxe(key) {
+            gameState.currentPickaxe = key;
+            saveGame();
+            updateUI();
+            renderShop();
+        }
+        
+        function buyPlanet(key) {
+            gameState.money -= planets[key].cost;
+            gameState.ownedPlanets.push(key);
+            checkAchievements();
+            saveGame();
+            updateUI();
+            renderShop();
+            renderPlanetSelector();
+        }
+        
+        function buyHelper(key) {
+            gameState.money -= helpers[key].cost;
+            gameState.helpers[key] = true;
+            saveGame();
+            updateUI();
+            renderShop();
+        }
+        
+        function unlockCreative() {
+            gameState.money -= 1500000;
+            gameState.creativeMode = true;
+            gameState.ownedPickaxes = Object.keys(pickaxes);
+            gameState.ownedPlanets = Object.keys(planets);
+            saveGame();
+            updateUI();
+            renderShop();
+            renderPlanetSelector();
+        }
+        
+        function startSurvivalMode() {
+            const normalState = JSON.parse(JSON.stringify(gameState));
+            gameState = JSON.parse(JSON.stringify(defaultState));
+            gameState.survivalMode = true;
+            gameState.survivalUnlocked = true;
+            
+            let timeLeft = 170;
+            const timer = document.getElementById('survival-timer');
+            timer.style.display = 'block';
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                timer.textContent = `⏰ ${timeLeft} сек`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    timer.style.display = 'none';
+                    if (gameState.ownedPickaxes.includes('adamantite')) {
+                        showVictory();
+                    } else {
+                        showNotification('Время вышло!');
+                        gameState = normalState;
+                        updateUI();
+                        renderAll();
+                    }
+                }
+            }, 1000);
+            
+            updateUI();
+            renderAll();
+        }
+        
+        function showVictory() {
+            const modal = document.createElement('div');
+            modal.className = 'confirm-modal';
+            modal.innerHTML = '<h2>🏆 ПОЗДРАВЛЯЕМ!</h2><p>Вы прошли игру! Теперь вы готовы пройти остальные игры FireLand!</p><button class="confirm-no" onclick="this.closest(\'.confirm-modal\').remove()">OK</button>';
+            document.body.appendChild(modal);
+        }
+        
+        function renderAll() {
+            updateBackground();
+            renderPlanetSelector();
+            renderSelling();
+            renderSmelting();
+            renderShop();
+            updateUI();
+        }
+        
+        function getItemIcon(item) {
+            const icons = {
+                coal: '⚫', iron: '⚙️', gold: '🟡', copper: '🟠', chrome: '⚪',
+                diamond: '💎', emerald: '🟢', ruby: '🔴', obsidian: '⚫',
+                dragonite: '🐉', godite: '✨', universite: '🌌',
+                uranium: '☢️', sapphire: '🔷', gem: '💠',
+                fertileSoil: '🌱', crudeOil: '🛢️', oil: '⛽',
+                friedCoal: '🔥', ironIngot: '🏗️', goldIngot: '🏆',
+                copperIngot: '🥉', chromeIngot: '🥈', dragoniteIngot: '🐲',
+                goditeIngot: '💫', universiteIngot: '🌠',
+                uraniumIngot: '☢️', crushedSapphire: '🔹', crushedGem: '💎',
+                obsidianLiquid: '🖤', mithril: '⚡', adamantite: '🔩',
+                crystal: '💠', meteoriteIron: '☄️', mithrilIngot: '⚡',
+                adamantiteIngot: '🔩', crystalShard: '💠', meteoriteIngot: '☄️'
+            };
+            return icons[item] || '📦';
+        }
+        
+        function getItemName(item) {
+            const names = {
+                coal: 'Уголь', iron: 'Железо', gold: 'Золото', copper: 'Медь', chrome: 'Хром',
+                diamond: 'Алмаз', emerald: 'Изумруд', ruby: 'Рубин', obsidian: 'Обсидиан',
+                dragonite: 'Драконит', godite: 'Боженит', universite: 'Вселенит',
+                uranium: 'Уран', sapphire: 'Сапфир', gem: 'Самоцвет',
+                fertileSoil: 'Земля', crudeOil: 'Сырая нефть', oil: 'Нефть',
+                friedCoal: 'Жареный уголь', ironIngot: 'Железный слиток', goldIngot: 'Золотой слиток',
+                copperIngot: 'Медный слиток', chromeIngot: 'Хромовый слиток',
+                dragoniteIngot: 'Драконитовый слиток', goditeIngot: 'Боженитовый слиток',
+                universiteIngot: 'Вселенитовый слиток', uraniumIngot: 'Урановый слиток',
+                crushedSapphire: 'Крошка сапфира', crushedGem: 'Крошка самоцвета',
+                obsidianLiquid: 'Обсидиановая жидкость', mithril: 'Мифрил',
+                adamantite: 'Адамантий', crystal: 'Кристалл', meteoriteIron: 'Метеоритное железо',
+                mithrilIngot: 'Мифриловый слиток', adamantiteIngot: 'Адамантиевый слиток',
+                crystalShard: 'Кристальный осколок', meteoriteIngot: 'Метеоритный слиток'
+            };
+            return names[item] || item;
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+        
+        function updateUI() {
+            document.getElementById('money').textContent = gameState.money;
+            document.getElementById('current-pickaxe').textContent = pickaxes[gameState.currentPickaxe]?.name || 'Каменная кирка';
+            document.getElementById('current-planet').textContent = planets[gameState.currentPlanet]?.name || 'Земля';
+            document.getElementById('food').textContent = gameState.food || 0;
+            
+            const pet = getActivePetBonus();
+            document.getElementById('pet-status').textContent = pet ? `${pet.icon} ${pet.name}` : 'Нет питомца';
+            
+            const total = countInventory();
+            document.getElementById('inventory-count').textContent = total;
+            document.getElementById('inv-count-btn').textContent = total;
+        }
+        
+        // ==== ИГРОВОЙ ЦИКЛ ====
+        let lastHelperTime = Date.now();
+        let lastSaveTime = Date.now();
+        let lastSmeltingRender = 0;
+        
+        function gameLoop() {
+            const now = Date.now();
+            
+            if (now - lastHelperTime >= 1000) {
+                lastHelperTime = now;
+                if (gameState && (gameState.helpers.miner || gameState.helpers.smith || gameState.helpers.trader || gameState.helpers.farmer)) {
+                    let changed = false;
+                    
+                    if (gameState.helpers.miner && gameState.food > 0) {
+                        const planet = planets[gameState.currentPlanet];
+                        const pickaxe = pickaxes[gameState.currentPickaxe];
+                        let power = pickaxe.power;
+                        const pet = getActivePetBonus();
+                        if (pet && pet.bonus === 'mining_bonus') power *= pet.bonusValue;
+                        
+                        for (const res of planet.resources) {
+                            if (Math.random() < planet.chances[res] * power * 0.5) {
+                                gameState.inventory[res] = (gameState.inventory[res] || 0) + 1;
+                                changed = true;
+                            }
+                        }
+                        gameState.food--;
+                        changed = true;
+                    }
+                    
+                    if (gameState.helpers.smith && gameState.food > 0) {
+                        const recipes = [
+                            { input: 'coal', output: 'friedCoal' },
+                            { input: 'iron', output: 'ironIngot' },
+                            { input: 'gold', output: 'goldIngot' },
+                            { input: 'copper', output: 'copperIngot' },
+                            { input: 'chrome', output: 'chromeIngot' }
+                        ];
+                        for (let i = 0; i < 2; i++) {
+                            for (const recipe of recipes) {
+                                if (gameState.inventory[recipe.input] > 0) {
+                                    gameState.inventory[recipe.input]--;
+                                    gameState.inventory[recipe.output] = (gameState.inventory[recipe.output] || 0) + 1;
+                                    changed = true;
+                                    break;
+                                }
+                            }
+                        }
+                        gameState.food--;
+                    }
+                    
+                    if (gameState.helpers.trader && gameState.food > 0) {
+                        for (let i = 0; i < 2; i++) {
+                            for (const [item, count] of Object.entries(gameState.inventory)) {
+                                if (count > 0 && prices[item]) {
+                                    let price = prices[item];
+                                    const pet = getActivePetBonus();
+                                    if (pet && pet.bonus === 'sell_bonus') price *= pet.bonusValue;
+                                    gameState.money += Math.round(price);
+                                    gameState.inventory[item]--;
+                                    changed = true;
+                                    break;
+                                }
+                            }
+                        }
+                        gameState.food--;
+                    }
+                    
+                    if (gameState.helpers.farmer && gameState.food > 0) {
+                        let production = 2;
+                        const pet = getActivePetBonus();
+                        if (pet && pet.bonus === 'food_bonus') production *= pet.bonusValue;
+                        gameState.food += Math.round(production) - 1;
+                        changed = true;
+                    }
+                    
+                    if (changed) {
+                        saveGame();
+                        updateUI();
+                    }
+                }
+            }
+            
+            if (now - lastSaveTime >= 30000) {
+                lastSaveTime = now;
+                saveGame();
+            }
+            
+            if (currentTab === 'smelting' && gameState && gameState.smeltingQueue.length > 0 && now - lastSmeltingRender >= 100) {
+                lastSmeltingRender = now;
+                renderSmeltingQueue();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Сохранение при закрытии
+        window.addEventListener('beforeunload', () => {
+            if (gameState) {
+                gameState._timestamp = Date.now();
+                try {
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+                } catch(e) {}
+            }
+        });
+        
+        // Сохранение при переключении вкладки браузера (для мобильных)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && gameState) {
+                saveGame();
+            }
+        });
+        
+        // ==== ИНИЦИАЛИЗАЦИЯ ====
+        async function init() {
+            console.log('🎮 Инициализация игры...');
+            
+            await initIndexedDB();
+            
+            gameState = await loadGame(defaultState);
+            
+            console.log('✅ Игра готова!');
+            
+            renderAll();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        init();
+    </script>
+</body>
+</html>
