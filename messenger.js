@@ -288,7 +288,6 @@ async function loadChatHistory(room, force = false) {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(
-      const res = await fetch(
   `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id,image_url,voice_url,voice_duration&order=created_at.asc&limit=150`,
       {
         headers: chatHeaders(),
