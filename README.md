@@ -32,7 +32,7 @@
 - **Frontend:** чистый HTML + CSS + JavaScript (без React/Vue/Svelte)
 - **Сборка:** нет (без Webpack/Vite/npm)
 - **База данных:** Supabase (Postgres + REST + Realtime)
-- **Хостинг:** GitHub Pages (деплой из GitHub)
+- **Хостинг:** GitHub Pages
 - **Реалтайм:** WebSocket через Supabase Realtime
 
 **⚠️ VPN не нужен.** Сайт работает в России без VPN.
@@ -156,7 +156,6 @@ FireLand/
 ├── script.js               ← логика лаунчера
 ├── messenger.js            ← чат
 ├── leaderboard.js          ← топ игроков
-├── push.bat                ← скрипт деплоя (двойной клик → git push)
 ├── .gitignore              ← игнор для Git
 ├── README.md               ← этот файл
 ├── fireek.mp4              ← маскот (видео)
@@ -201,20 +200,6 @@ npx serve
 ```
 
 Затем открой: `http://localhost:8000`
-
-### Деплой
-
-**Автоматический через GitHub + GitHub Pages:**
-
-```bash
-git add .
-git commit -m "что изменил"
-git push
-```
-
-**Или двойной клик на `push.bat`** → введи сообщение → Enter.
-
-**GitHub Pages сам задеплоит за 10-20 секунд.**
 
 ### База данных
 

@@ -553,8 +553,8 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 
 /* ============================================
-   CHAT / MESSENGER v19
-   Fixed: hover actions bug (actions inside message bounds)
+   CHAT / MESSENGER v20
+   Fix: actions INSIDE bubble, never runs away
    ============================================ */
 
 .chat-layout{
@@ -957,7 +957,7 @@ body[data-device="tv"] .support-info{font-size:18px}
   background:var(--panel-bg);
 }
 
-/* ═══ FIX v19: сообщение relative, кнопки внутри его bounds ═══ */
+/* ═══ v20: сообщение relative, bubble relative ═══ */
 .chat-message{
   display:flex;
   gap:8px;
@@ -997,7 +997,7 @@ body[data-device="tv"] .support-info{font-size:18px}
   gap:2px;
   min-width:0;
   max-width:100%;
-  position:relative;
+  position:relative;   /* ← ВАЖНО для позиционирования кнопок */
 }
 .chat-author{
   font-size:11px;
@@ -1069,35 +1069,26 @@ body[data-device="tv"] .support-info{font-size:18px}
   font-weight:500;
 }
 
-/* ═══ FIX v19: кнопки действий — НАД сообщением, внутри .chat-message ═══ */
+/* ═══ v20 FIX: кнопки ВНУТРИ bubble, справа сверху. Никогда не убегают ═══ */
 .chat-message-actions{
+  display:none;
   position:absolute;
-  top:0;
-  display:flex;
-  gap:4px;
-  background:var(--bg-modal);
+  top:4px;
+  right:4px;
+  gap:2px;
+  background:rgba(10,18,40,0.95);
   border:1px solid var(--border);
-  border-radius:20px;
-  padding:3px 6px;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity 0.2s;
+  border-radius:16px;
+  padding:2px 4px;
   z-index:10;
-  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
   white-space:nowrap;
 }
-.chat-message.me .chat-message-actions{
-  right:0;
-  transform:translateY(-100%);
+.chat-message:hover .chat-message-actions{
+  display:flex;
 }
-.chat-message:not(.me) .chat-message-actions{
-  left:0;
-  transform:translateY(-100%);
-}
-.chat-message:hover .chat-message-actions,
 .chat-message-actions:hover{
-  opacity:1;
-  pointer-events:auto;
+  display:flex;
 }
 .chat-action-btn{
   background:transparent;
