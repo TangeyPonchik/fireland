@@ -23,7 +23,6 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.4)}50%{box-shadow:0 0 28px rgba(251,191,36,0.6)}}
 @keyframes reactionPop{0%{transform:scale(0.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 @keyframes replySlide{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}
-
 .logo{display:flex;align-items:baseline;gap:6px;user-select:none;line-height:1}
 .logo .fire{font-size:30px;line-height:1;display:inline-block;animation:fireBurn 1.5s ease-in-out infinite;transform-origin:center bottom}
 .logo .launcher{font-family:'Manrope',sans-serif;font-weight:800;color:var(--text-secondary);font-size:26px;letter-spacing:-0.02em;display:inline-block;line-height:1}
@@ -422,18 +421,15 @@ body[data-device="tv"] .game-detail .fav-btn-detail{font-size:28px;padding:24px 
 body[data-device="tv"] .no-game-selected .icon{font-size:140px}
 body[data-device="tv"] .no-game-selected .text{font-size:36px}
 body[data-device="tv"] .no-game-selected .hint{font-size:20px;max-width:500px}
-
 body[data-device="tv"] *:focus{outline:4px solid var(--accent-secondary);outline-offset:4px;box-shadow:0 0 30px rgba(251,191,36,0.6);border-radius:14px}
 body[data-device="tv"] .game-card:focus,
 body[data-device="tv"] .tab-btn:focus{transform:scale(1.06)}
 body[data-device="tv"] .play-btn:focus{transform:scale(1.1)}
-
 body[data-device="tv"] .game-card:hover{transform:none;box-shadow:none;border-color:var(--border)}
 body[data-device="tv"] .game-card:hover .icon{transform:none}
 body[data-device="tv"] .game-card:hover .name{color:var(--text)}
 body[data-device="tv"] .tab-btn:hover{transform:none;border-color:var(--border)}
 body[data-device="tv"] .fav-btn{opacity:1;width:40px;height:40px;font-size:20px}
-
 body[data-device="tv"] .modal .modal-content{padding:40px;border-radius:40px}
 body[data-device="tv"] .modal .modal-title{font-size:36px}
 body[data-device="tv"] .modal .modal-close{font-size:42px;width:56px;height:56px}
@@ -557,8 +553,8 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 
 /* ============================================
-   CHAT / MESSENGER v18
-   Fixed: hover-actions bug, actions inside message
+   CHAT / MESSENGER v19
+   Fixed: hover actions bug (actions inside message bounds)
    ============================================ */
 
 .chat-layout{
@@ -961,7 +957,7 @@ body[data-device="tv"] .support-info{font-size:18px}
   background:var(--panel-bg);
 }
 
-/* ═══ ИСПРАВЛЕНО: кнопки действий ВНУТРИ сообщения, hover не сбрасывается ═══ */
+/* ═══ FIX v19: сообщение relative, кнопки внутри его bounds ═══ */
 .chat-message{
   display:flex;
   gap:8px;
@@ -1042,6 +1038,7 @@ body[data-device="tv"] .support-info{font-size:18px}
 }
 .chat-message:hover .chat-time{opacity:1}
 .chat-message.grouped .chat-time{opacity:0.5}
+
 .chat-reply-quote{
   display:flex;
   flex-direction:column;
@@ -1072,10 +1069,10 @@ body[data-device="tv"] .support-info{font-size:18px}
   font-weight:500;
 }
 
-/* ═══ FIX: кнопки действий — внутри .chat-message, hover не сбрасывается ═══ */
+/* ═══ FIX v19: кнопки действий — НАД сообщением, внутри .chat-message ═══ */
 .chat-message-actions{
   position:absolute;
-  top:-8px;
+  top:0;
   display:flex;
   gap:4px;
   background:var(--bg-modal);
@@ -1097,10 +1094,7 @@ body[data-device="tv"] .support-info{font-size:18px}
   left:0;
   transform:translateY(-100%);
 }
-.chat-message:hover .chat-message-actions{
-  opacity:1;
-  pointer-events:auto;
-}
+.chat-message:hover .chat-message-actions,
 .chat-message-actions:hover{
   opacity:1;
   pointer-events:auto;
