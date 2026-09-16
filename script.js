@@ -63,6 +63,9 @@ const ACHIEVEMENTS=[
 {id:'first_exp',icon:'🧪',name:'Экспериментатор',desc:'Запустить первый эксперимент',xp:75,rarity:'rare'},
 {id:'speed_runner',icon:'🏃',name:'Скорость света',desc:'Сыграть в 3D-раннер',xp:100,rarity:'rare'},
 {id:'ant_keeper',icon:'🐜',name:'Муравьиный бог',desc:'Запустить Ant Kolony',xp:100,rarity:'rare'},
+{id:'first_community',icon:'🌍',name:'Первопроходец',desc:'Загрузить свою игру в Сообщество',xp:200,rarity:'epic'},
+{id:'community_5',icon:'🎨',name:'Творец',desc:'Загрузить 5 игр в Сообщество',xp:500,rarity:'legendary',progress:s=>Math.min(1,(s.myCommunityGames||0)/5),progressText:s=>`${s.myCommunityGames||0}/5`},
+{id:'play_community',icon:'🌐',name:'Исследователь',desc:'Сыграть в игру из Сообщества',xp:100,rarity:'rare'},
 {id:'time_1min',icon:'⏱️',name:'Минутка',desc:'Провести 1 минуту в играх',xp:25,rarity:'common',progress:s=>Math.min(1,s.totalTime/60),progressText:s=>`${Math.floor(s.totalTime/60)}м/1м`},
 {id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 мин в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
 {id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 мин в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
@@ -122,6 +125,9 @@ const QUEST_POOL=[
 {id:'q_profile_view',icon:'👤',name:'Самолюбование',desc:'Открой свой профиль',xp:25,target:1,type:'profile_view_today'},
 {id:'q_settings_view',icon:'⚙️',name:'Настройщик',desc:'Открой настройки',xp:25,target:1,type:'settings_view_today'},
 {id:'q_quests_view',icon:'📅',name:'Планировщик',desc:'Открой вкладку заданий',xp:25,target:1,type:'quests_view_today'},
+{id:'q_community_view',icon:'🌍',name:'Любопытный',desc:'Открой вкладку Сообщества',xp:30,target:1,type:'community_view_today'},
+{id:'q_community_play',icon:'🎮',name:'Тестировщик',desc:'Сыграй в игру из Сообщества',xp:100,target:1,type:'community_play_today'},
+{id:'q_community_upload',icon:'📤',name:'Автор',desc:'Загрузи игру в Сообщество',xp:150,target:1,type:'community_upload_today'},
 {id:'q_case_open',icon:'📦',name:'Кейс-охотник',desc:'Открой кейс',xp:60,target:1,type:'case_today'},
 {id:'q_mix_play_time',icon:'🎯',name:'Марафонец',desc:'Запусти 3 игры И проведи 10 минут',xp:250,target:2,type:'mix_today'},
 {id:'q_mix_exp_ach',icon:'🌟',name:'Двойной удар',desc:'Запусти эксперимент И получи достижение',xp:200,target:2,type:'mix_today'},
@@ -133,7 +139,7 @@ nickname:'Игрок',avatar:null,achievements:[],playedGames:[],gamesOpened:0,g
 totalXp:0,level:1,temporalParadox:{level:1,totalAccumulated:0},favorites:[],
 streak:{current:0,best:0,lastLogin:null,history:[]},
 dailyQuests:{date:null,quests:[],progress:{},completed:[]},questsCompletedTotal:0,
-todayStats:{date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0},
+todayStats:{date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0},
 lastDailyReward:null,dailyRewardsClaimed:0,
 lastDailyCase:null,lastWeeklyCase:null,caseItems:[],
 lastSubmittedNick:null,
@@ -141,6 +147,7 @@ lastReadChatAt:null,
 unreadChatCount:0,
 onboardingDone:false,
 myRooms:[],
+myCommunityGames:0,
 _savedAt:0};
 let state=JSON.parse(JSON.stringify(DEFAULT_STATE));
 let isGameOpen=false;
@@ -166,7 +173,10 @@ async function loadState(){
         if(!state.streak.history) state.streak.history=[];
         if(!state.favorites) state.favorites=[];
         if(!state.dailyQuests) state.dailyQuests={date:null,quests:[],progress:{},completed:[]};
-        if(!state.todayStats) state.todayStats={date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
+        if(!state.todayStats) state.todayStats={date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0};
+        if(state.todayStats.communityViewed===undefined) state.todayStats.communityViewed=false;
+        if(state.todayStats.communityPlayed===undefined) state.todayStats.communityPlayed=false;
+        if(state.todayStats.communityUploaded===undefined) state.todayStats.communityUploaded=false;
         if(state.lastDailyReward===undefined) state.lastDailyReward=null;
         if(state.dailyRewardsClaimed===undefined) state.dailyRewardsClaimed=0;
         if(state.lastDailyCase===undefined) state.lastDailyCase=null;
@@ -178,6 +188,7 @@ async function loadState(){
         if(state.unreadChatCount===undefined) state.unreadChatCount=0;
         if(state.onboardingDone===undefined) state.onboardingDone=false;
         if(!state.myRooms) state.myRooms=[];
+        if(state.myCommunityGames===undefined) state.myCommunityGames=0;
         if(state.theme==='dark'||state.theme==='blue') state.theme='system';
     }catch(e){console.warn('Load failed:',e)}
 }
@@ -199,7 +210,7 @@ levelup(){playTone(523,0.15,'triangle',0.15,0);playTone(659,0.15,'triangle',0.15
 reward(){playTone(1047,0.1,'sine',0.15,0);playTone(1319,0.1,'sine',0.15,0.08);playTone(1568,0.3,'sine',0.15,0.16)},
 caseOpen(){playTone(200,0.3,'sawtooth',0.1,0);playTone(400,0.3,'sawtooth',0.08,0.15);playTone(800,0.5,'sawtooth',0.05,0.3)},
 error(){playTone(220,0.15,'square',0.1)}};
-document.addEventListener('click',(e)=>{if(e.target.closest('button')||e.target.closest('.game-card')||e.target.closest('.tab-btn')){SOUNDS.click()}},true);
+document.addEventListener('click',(e)=>{if(e.target.closest('button')||e.target.closest('.game-card')||e.target.closest('.tab-btn')||e.target.closest('.community-card')){SOUNDS.click()}},true);
 const DAILY_REWARDS=[50,100,200,400,800,1500];
 function getDailyRewardAmount(streakDay){const idx=Math.min(streakDay-1,DAILY_REWARDS.length-1);return DAILY_REWARDS[idx]}
 function checkDailyReward(){
@@ -345,11 +356,11 @@ function checkDailyQuests(){
     const shuffled=[...QUEST_POOL].sort(()=>Math.random()-0.5);
     const quests=shuffled.slice(0,5);
     state.dailyQuests={date:today,quests:quests.map(q=>q.id),progress:{},completed:[]};
-    state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
+    state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0};
     saveState()}
 function updateQuestProgress(){
     const today=todayStr();
-    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0}}
     let changed=false;
     state.dailyQuests.quests.forEach(qId=>{
         const quest=QUEST_POOL.find(q=>q.id===qId);
@@ -369,6 +380,9 @@ function updateQuestProgress(){
             case 'profile_view_today':progress=state.todayStats.profileViewed?1:0;break;
             case 'settings_view_today':progress=state.todayStats.settingsViewed?1:0;break;
             case 'quests_view_today':progress=state.todayStats.questsViewed?1:0;break;
+            case 'community_view_today':progress=state.todayStats.communityViewed?1:0;break;
+            case 'community_play_today':progress=state.todayStats.communityPlayed?1:0;break;
+            case 'community_upload_today':progress=state.todayStats.communityUploaded?1:0;break;
             case 'fav_time_today':progress=state.todayStats.favTimeSpent;break;
             case 'case_today':progress=state.todayStats.caseOpened||0;break;
             case 'mix_today':{
@@ -464,7 +478,7 @@ function startTimeTicker(gameId){
         state.temporalParadox.totalAccumulated+=cappedElapsed;
         checkParadox();
         const today=todayStr();
-        if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+        if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0}}
         state.todayStats.timeSpent+=cappedElapsed;
         if(state.favorites.includes(gameId))state.todayStats.favTimeSpent=(state.todayStats.favTimeSpent||0)+cappedElapsed;
         const totalMin=Math.floor(state.totalTime/60);
@@ -568,13 +582,18 @@ function showLevelUpToast(level){
     setTimeout(()=>{toast.style.transition='all 0.4s ease';toast.style.opacity='0';setTimeout(()=>toast.remove(),400)},3000)}
 function checkGameAchievements(gameId){
     const isExp=EXPERIMENTS.some(e=>e.id===gameId);
+    const isCommunity=gameId && String(gameId).startsWith('community_');
     const today=todayStr();
-    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,communityViewed:false,communityPlayed:false,communityUploaded:false,favTimeSpent:0,caseOpened:0}}
     if(isExp){
         unlockAch('first_exp');
         if(!state.todayStats.expPlayed.includes(gameId))state.todayStats.expPlayed.push(gameId);
         if(gameId==='pastrunner')unlockAch('speed_runner');
         if(gameId==='antcolony')unlockAch('ant_keeper')}
+    if(isCommunity){
+        unlockAch('play_community');
+        state.todayStats.communityPlayed=true;
+    }
     if(state.favorites.includes(gameId)){if(!state.todayStats.favPlayed.includes(gameId))state.todayStats.favPlayed.push(gameId)}
     if(!state.todayStats.gamesPlayed.includes(gameId))state.todayStats.gamesPlayed.push(gameId);
     if(!state.playedGames.includes(gameId)){
@@ -814,7 +833,10 @@ function closeGame(){
 let lastPlayedGameId=null;
 function showPostGameScreen(gameId,sessionTime,xpGained,achEarned){
     const ALL=[...GAMES,...EXPERIMENTS];
-    const game=ALL.find(g=>g.id===gameId);
+    let game=ALL.find(g=>g.id===gameId);
+    if(!game && gameId && String(gameId).startsWith('community_')){
+        game={icon:'🌍',name:'Игра из Сообщества'};
+    }
     if(!game)return;
     lastPlayedGameId=gameId;
     document.getElementById('pgIcon').textContent=game.icon;
@@ -838,7 +860,10 @@ function updateLastGameBar(){
     const playBtn=document.getElementById('lastGamePlayBtn');
     if(state.lastGameId){
         const ALL=[...GAMES,...EXPERIMENTS];
-        const game=ALL.find(g=>g.id===state.lastGameId);
+        let game=ALL.find(g=>g.id===state.lastGameId);
+        if(!game && String(state.lastGameId).startsWith('community_')){
+            game={icon:'🌍',name:'Игра из Сообщества',id:state.lastGameId};
+        }
         if(game){icon.textContent=game.icon;name.textContent=game.name;time.textContent=state.lastGameTime?`⏱️ ${state.lastGameTime}`:'';bar.classList.add('show');playBtn.onclick=()=>openGame(game.id);return}}
     bar.classList.remove('show')}
 function renderProfile(){
@@ -899,14 +924,15 @@ function renderRecords(){
     if(sorted.length===0){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-secondary);font-weight:600;">Пока нет рекордов — сыграй в игру!</div>';return}
     const ALL=[...GAMES,...EXPERIMENTS];
     sorted.forEach(([gameId,seconds])=>{
-        const game=ALL.find(g=>g.id===gameId);
+        let game=ALL.find(g=>g.id===gameId);
+        if(!game && String(gameId).startsWith('community_')){game={icon:'🌍',name:'Игра из Сообщества'}}
         if(!game)return;
         const row=document.createElement('div');
         row.className='record-row';
         row.innerHTML=`<div class="rec-game"><span class="rec-icon">${game.icon}</span><span class="rec-name">${game.name}</span></div><span class="rec-time">${formatTime(seconds)}</span>`;
         list.appendChild(row)})}
 async function exportProfile(){
-    const data={version:15,exportedAt:new Date().toISOString(),state:state};
+    const data={version:22,exportedAt:new Date().toISOString(),state:state};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1219,6 +1245,7 @@ document.addEventListener('keydown',(e)=>{
         else if(document.getElementById('postGameModal').classList.contains('show'))document.getElementById('postGameModal').classList.remove('show');
         else if(document.getElementById('userProfileModal').classList.contains('show'))document.getElementById('userProfileModal').classList.remove('show');
         else if(document.getElementById('roomCreateModal').classList.contains('show'))document.getElementById('roomCreateModal').classList.remove('show');
+        else if(document.getElementById('uploadModal').classList.contains('show'))document.getElementById('uploadModal').classList.remove('show');
         else if(typeof CHAT!=='undefined'&&CHAT.currentRoom&&CHAT.currentRoom!=='general'){
             if(typeof switchRoom==='function')switchRoom('general');
         }
@@ -1251,6 +1278,11 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
         }
         if(btn.dataset.tab==='chat'){
             if(typeof onChatTabOpen==='function')onChatTabOpen();
+        }
+        if(btn.dataset.tab==='community'){
+            if(state.todayStats)state.todayStats.communityViewed=true;
+            updateQuestProgress();
+            if(typeof loadCommunityGames==='function')loadCommunityGames();
         }
     });
 });
@@ -1285,7 +1317,7 @@ function setupTVNavigation() {
     document.addEventListener('keydown', (e) => {
         if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
         const focusable = Array.from(document.querySelectorAll(
-            'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"]), .game-card'
+            'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"]), .game-card, .community-card'
         )).filter(el => el.offsetParent !== null && !el.closest('.game-frame-wrap'));
         if (focusable.length === 0) return;
         const current = document.activeElement;
@@ -1329,7 +1361,7 @@ function setupSwipeNavigation() {
     let touchStartTime = 0;
     const SWIPE_THRESHOLD = 80;
     const SWIPE_TIME = 500;
-    const tabsOrder = ['games', 'experiments', 'quests', 'leaderboard', 'chat'];
+    const tabsOrder = ['games', 'experiments', 'community', 'quests', 'leaderboard', 'chat'];
     function showSwipeIndicator(text) {
         let el = document.querySelector('.tab-swipe-indicator');
         if (!el) {
@@ -1366,7 +1398,7 @@ function setupSwipeNavigation() {
         if (e.target.closest('.game-frame-wrap')) return;
         if (e.target.closest('.modal.show')) return;
         if (e.target.closest('input, textarea, select')) return;
-        if (e.target.closest('.lb-list, .games-list-panel, .chat-messages, .online-list, .dm-list, .rooms-list')) return;
+        if (e.target.closest('.lb-list, .games-list-panel, .chat-messages, .online-list, .dm-list, .rooms-list, .community-panel')) return;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         touchStartTime = Date.now();
@@ -1428,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLastGameBar();
     updateClock();
     renderCases();
-    console.log('🔥 Лаунчер FireLand v15.0 · Chat+DM+Rooms+Search · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
+    console.log('🔥 Лаунчер FireLand v22.0 · Community Edition · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
     if(typeof initLeaderboard==='function')initLeaderboard();
     if(state.lastSubmittedNick){
         setTimeout(()=>{
@@ -1437,119 +1469,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     setupTVNavigation();
     setupSwipeNavigation();
+    if(typeof initCommunity==='function')initCommunity();
     if(typeof updateChatBadge==='function')setTimeout(updateChatBadge, 800);
-    (async () => {
-  console.log('═══════════════════════════════════');
-  console.log('🔍 ДИАГНОСТИКА FireLand Chat');
-  console.log('═══════════════════════════════════');
-
-  // 1. Проверка переменных
-  console.log('\n1️⃣ Переменные:');
-  console.log('SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '❌ НЕ НАЙДЕНА');
-  console.log('SUPABASE_ANON_KEY длина:', typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY.length : '❌ НЕ НАЙДЕН');
-  console.log('CHAT_URL:', typeof CHAT_URL !== 'undefined' ? CHAT_URL : '❌ НЕ НАЙДЕНА');
-  console.log('CHAT_ANON_KEY длина:', typeof CHAT_ANON_KEY !== 'undefined' ? CHAT_ANON_KEY.length : '❌ НЕ НАЙДЕН');
-  console.log('Ключи одинаковые:', CHAT_ANON_KEY === SUPABASE_ANON_KEY);
-  console.log('URL одинаковые:', CHAT_URL === SUPABASE_URL);
-
-  // 2. Расшифровка JWT
-  console.log('\n2️⃣ Расшифровка JWT:');
-  try {
-    const payload = JSON.parse(atob(SUPABASE_ANON_KEY.split('.')[1]));
-    console.log('ref:', payload.ref);
-    console.log('role:', payload.role);
-    console.log('exp:', payload.exp, '→', new Date(payload.exp * 1000));
-    console.log('ref правильный:', payload.ref === 'syfkmrjdrxphtxcpwgyy');
-    console.log('срок действия истёк:', payload.exp * 1000 < Date.now());
-  } catch (e) {
-    console.error('❌ JWT не расшифровывается:', e.message);
-  }
-
-  // 3. Тест REST: leaderboard
-  console.log('\n3️⃣ Тест REST → leaderboard:');
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/leaderboard?select=nickname&limit=1`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
-    console.log('Status:', res.status, res.statusText);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log('Ответ:', err);
-    } else {
-      const data = await res.json();
-      console.log('✅ Работает! Данные:', data);
-    }
-  } catch (e) {
-    console.error('❌ Ошибка:', e.message);
-  }
-
-  // 4. Тест REST: messages
-  console.log('\n4️⃣ Тест REST → messages:');
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=id&limit=1`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
-    console.log('Status:', res.status, res.statusText);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log('❌ Ответ:', err);
-    } else {
-      const data = await res.json();
-      console.log('✅ Работает! Данные:', data);
-    }
-  } catch (e) {
-    console.error('❌ Ошибка:', e.message);
-  }
-
-  // 5. Тест REST: messages БЕЗ Authorization
-  console.log('\n5️⃣ Тест REST → messages (без Authorization):');
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=id&limit=1`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-      },
-    });
-    console.log('Status:', res.status, res.statusText);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log('❌ Ответ:', err);
-    } else {
-      const data = await res.json();
-      console.log('✅ Работает! Данные:', data);
-    }
-  } catch (e) {
-    console.error('❌ Ошибка:', e.message);
-  }
-
-  // 6. Тест REST: reactions
-  console.log('\n6️⃣ Тест REST → reactions:');
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/reactions?select=id&limit=1`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    });
-    console.log('Status:', res.status, res.statusText);
-    if (!res.ok) {
-      const err = await res.text();
-      console.log('❌ Ответ:', err);
-    } else {
-      const data = await res.json();
-      console.log('✅ Работает! Данные:', data);
-    }
-  } catch (e) {
-    console.error('❌ Ошибка:', e.message);
-  }
-
-  console.log('\n═══════════════════════════════════');
-  console.log('✅ Диагностика завершена');
-  console.log('═══════════════════════════════════');
-})();
 })();

@@ -42,6 +42,7 @@
 <div class="tabs">
 <button class="tab-btn active" data-tab="games">🎮 Игры</button>
 <button class="tab-btn experiments-tab" data-tab="experiments">🧪 Эксперименты</button>
+<button class="tab-btn community-tab" data-tab="community">🌍 Сообщество</button>
 <button class="tab-btn quests-tab" data-tab="quests">📅 Задания</button>
 <button class="tab-btn leaderboard-tab" data-tab="leaderboard">🏆 Лидеры</button>
 <button class="tab-btn chat-tab" data-tab="chat">💬 Чат</button>
@@ -85,6 +86,22 @@
 </div>
 </div>
 </div>
+<div id="tab-community" class="tab-content">
+<div class="community-header">
+<div class="community-title">
+<span>🌍 Сообщество FireLand</span>
+<span class="community-count" id="communityCount">0 игр</span>
+</div>
+<button class="community-upload-btn" id="communityUploadBtn">+ Загрузить игру</button>
+</div>
+<div class="community-panel" id="communityPanel">
+<div class="community-empty">
+<div style="font-size:80px;margin-bottom:16px;">🌍</div>
+<div style="font-size:22px;font-weight:800;margin-bottom:8px;">Пока нет игр от сообщества</div>
+<div style="color:var(--text-secondary);font-size:14px;">Стань первым! Загрузи свою игру.</div>
+</div>
+</div>
+</div>
 <div id="tab-quests" class="tab-content">
 <div class="quests-header">
 <div>
@@ -104,14 +121,8 @@
 </div>
 </div>
 </div>
-
-<!-- ============================================
-     ВКЛАДКА ЧАТА
-     ============================================ -->
 <div id="tab-chat" class="tab-content">
 <div class="chat-layout">
-
-<!-- Сайдбар: онлайн + ЛС + комнаты -->
 <div class="chat-sidebar">
 <div class="chat-sidebar-section">
 <div class="chat-sidebar-title">
@@ -135,8 +146,6 @@
 <div id="roomsList" class="rooms-list"></div>
 </div>
 </div>
-
-<!-- Основная панель -->
 <div class="chat-main-panel">
 <div class="chat-header">
 <div class="chat-header-title">
@@ -148,26 +157,13 @@
 <div class="chat-header-status" id="chatStatus">Подключение...</div>
 </div>
 </div>
-
-<!-- Панель поиска (скрыта) -->
 <div class="chat-search-panel" id="chatSearchPanel">
-<input
-  type="text"
-  id="chatSearchInput"
-  class="chat-search-input"
-  placeholder="Поиск по сообщениям..."
-  autocomplete="off">
+<input type="text" id="chatSearchInput" class="chat-search-input" placeholder="Поиск по сообщениям..." autocomplete="off">
 <span class="chat-search-count" id="chatSearchCount"></span>
 <button class="chat-search-close" id="chatSearchClose">✕</button>
 </div>
-
-<!-- Список сообщений -->
 <div class="chat-messages" id="chatMessages"></div>
-
-<!-- Кнопка "вниз" -->
 <button class="chat-scroll-down" id="chatScrollDownBtn" title="Вниз">↓</button>
-
-<!-- Плашка "Ответ на..." (скрыта) -->
 <div class="chat-reply-preview" id="chatReplyPreview" style="display:none;">
 <div class="chat-reply-info">
 <span class="chat-reply-label">Ответ <b id="chatReplyNick">—</b></span>
@@ -175,32 +171,26 @@
 </div>
 <button class="chat-reply-cancel" id="chatReplyCancel">✕</button>
 </div>
-
-<!-- Строка ввода -->
 <div class="chat-input-row">
 <button class="chat-emoji-btn" id="chatEmojiBtn" title="Эмодзи">😀</button>
-<input
-  type="text"
-  id="chatInput"
-  class="chat-input"
-  placeholder="Напиши сообщение..."
-  maxlength="500"
-  autocomplete="off">
+<button class="chat-attach-btn" id="chatImageBtn" title="Прикрепить картинку">📎</button>
+<button class="chat-attach-btn" id="chatVoiceBtn" title="Голосовое сообщение">🎤</button>
+<input type="text" id="chatInput" class="chat-input" placeholder="Напиши сообщение..." maxlength="500" autocomplete="off">
 <button class="chat-send-btn" id="chatSendBtn" title="Отправить">➤</button>
 </div>
-
-<!-- Палитра эмодзи (скрыта) -->
+<div class="chat-recording-bar" id="chatRecordingBar" style="display:none;">
+<div class="chat-recording-dot"></div>
+<span class="chat-recording-time" id="chatRecordingTime">00:00</span>
+<button class="chat-recording-cancel" id="chatRecordingCancel">✕ Отмена</button>
+<button class="chat-recording-send" id="chatRecordingSend">➤ Отправить</button>
+</div>
+<input type="file" id="chatImageInput" accept="image/*" style="display:none;">
 <div class="chat-emoji-panel" id="chatEmojiPanel" style="display:none;"></div>
 </div>
-
 </div>
 </div>
-
 </div>
 
-<!-- ============================================
-     МОДАЛКА: ПРОФИЛЬ ДРУГОГО ИГРОКА
-     ============================================ -->
 <div class="modal user-profile-modal" id="userProfileModal">
 <div class="modal-content">
 <button class="modal-close" onclick="document.getElementById('userProfileModal').classList.remove('show')">✕</button>
@@ -222,9 +212,6 @@
 </div>
 </div>
 
-<!-- ============================================
-     МОДАЛКА: НОВАЯ КОМНАТА
-     ============================================ -->
 <div class="modal room-create-modal" id="roomCreateModal">
 <div class="modal-content">
 <button class="modal-close" onclick="document.getElementById('roomCreateModal').classList.remove('show')">✕</button>
@@ -232,20 +219,8 @@
 <div class="room-create-info">
 Комната — это групповой чат. Все, кто знает название, смогут зайти и общаться.
 </div>
-<input
-  type="text"
-  id="roomNameInput"
-  class="room-name-input"
-  placeholder="Название комнаты (латиница)..."
-  maxlength="30"
-  autocomplete="off">
-<input
-  type="text"
-  id="roomDisplayInput"
-  class="room-name-input"
-  placeholder="Отображаемое имя (необязательно)"
-  maxlength="40"
-  autocomplete="off">
+<input type="text" id="roomNameInput" class="room-name-input" placeholder="Название комнаты (латиница)..." maxlength="30" autocomplete="off">
+<input type="text" id="roomDisplayInput" class="room-name-input" placeholder="Отображаемое имя (необязательно)" maxlength="40" autocomplete="off">
 <div class="room-create-hint" id="roomCreateHint">Только латиница, цифры, дефис и подчёркивание</div>
 <div class="room-create-actions">
 <button class="room-create-btn" id="roomCreateConfirm">🏠 Создать</button>
@@ -254,9 +229,52 @@
 </div>
 </div>
 
-<!-- ============================================
-     ОНБОРДИНГ
-     ============================================ -->
+<div class="modal upload-modal" id="uploadModal">
+<div class="modal-content">
+<button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('show')">✕</button>
+<div class="modal-title">🚀 Загрузить игру</div>
+<div class="upload-info">
+Игра должна быть <b>одним HTML-файлом</b> (можно встроить CSS и JS внутрь).<br>
+Максимум <b>10 МБ</b>. Внешние CDN-библиотеки разрешены.
+</div>
+
+<label class="upload-label">Название игры</label>
+<input type="text" id="uploadName" class="upload-input" placeholder="Моя крутая игра" maxlength="60">
+
+<label class="upload-label">Иконка (1 эмодзи)</label>
+<input type="text" id="uploadIcon" class="upload-input" placeholder="🎮" maxlength="4">
+
+<label class="upload-label">Жанр</label>
+<select id="uploadGenre" class="upload-input">
+<option value="RPG">RPG</option>
+<option value="Экшен">Экшен</option>
+<option value="Хоррор">Хоррор</option>
+<option value="Стратегия">Стратегия</option>
+<option value="Кликер">Кликер</option>
+<option value="Головоломка">Головоломка</option>
+<option value="Симулятор">Симулятор</option>
+<option value="Разное">Разное</option>
+</select>
+
+<label class="upload-label">Описание (до 500 символов)</label>
+<textarea id="uploadDescription" class="upload-input upload-textarea" placeholder="О чём игра?" maxlength="500"></textarea>
+
+<label class="upload-label">HTML-файл игры</label>
+<div class="upload-file-row">
+<input type="file" id="uploadFile" accept=".html,.htm" style="display:none;">
+<button class="upload-file-btn" id="uploadFileBtn">📁 Выбрать файл</button>
+<span class="upload-file-name" id="uploadFileName">Файл не выбран</span>
+</div>
+
+<div class="upload-hint" id="uploadHint"></div>
+
+<div class="upload-actions">
+<button class="upload-submit" id="uploadSubmitBtn">🚀 Загрузить</button>
+<button class="upload-cancel" onclick="document.getElementById('uploadModal').classList.remove('show')">Отмена</button>
+</div>
+</div>
+</div>
+
 <div class="nick-onboarding" id="nickOnboarding">
 <div class="nick-onboarding-card">
 <div class="nick-onboarding-icon">👋</div>
@@ -269,9 +287,6 @@
 </div>
 </div>
 
-<!-- ============================================
-     ОСТАЛЬНЫЕ МОДАЛКИ
-     ============================================ -->
 <div class="modal" id="profileModal">
 <div class="modal-content">
 <button class="modal-close" id="profileCloseBtn">✕</button>
@@ -424,7 +439,7 @@
 </div>
 <div class="support-info">
 <span>📧 <span class="email">ronormav@gmail.com</span></span>
-<span>⚡ <span class="version">v15.0</span></span>
+<span>⚡ <span class="version">v22.0</span></span>
 </div>
 <div class="fireland">🔥 <span>Создано студией FireLand!</span> 🔥</div>
 </div>
@@ -495,5 +510,10 @@
 <script src="leaderboard.js"></script>
 <script src="script.js"></script>
 <script src="messenger.js"></script>
+<script src="community.js"></script>
+<div class="chat-lightbox" id="chatLightbox" style="display:none;">
+<button class="chat-lightbox-close" id="chatLightboxClose">✕</button>
+<img id="chatLightboxImg" src="" alt="">
+</div>
 </body>
 </html>

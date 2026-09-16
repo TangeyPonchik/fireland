@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Messenger v17 · Publishable key only
+// FireLand Messenger v21 · Smart date dividers
 // ============================================
 
 const CHAT = {
@@ -22,6 +22,7 @@ const CHAT = {
   searchQuery: '',
   reactions: {},
   emojiPanelOpen: false,
+  presenceHeartbeat: null,
 };
 
 const CHAT_URL = SUPABASE_URL;
@@ -33,6 +34,14 @@ const EMOJI_LIST = [
   '🚀','⚡','🌟','🌈','🍕','🍔','☕','🎮','🎵','🎨',
   '😅','🙃','😇','🤩','😱','🤗','🤫','🙄','😬','💀',
 ];
+
+function chatHeaders(extra = {}) {
+  return {
+    'apikey': CHAT_ANON_KEY,
+    'Authorization': `Bearer ${CHAT_ANON_KEY}`,
+    ...extra,
+  };
+}
 
 // ============================================
 // ФИЛЬТР МАТА
@@ -66,6 +75,34 @@ function censorProfanity(text) {
 }
 
 // ============================================
+// SMART DATE LABEL
+// ============================================
+function getDateLabel(iso) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+  const twoDaysAgo = new Date(); twoDaysAgo.setDate(today.getDate() - 2);
+  const weekAgo = new Date(); weekAgo.setDate(today.getDate() - 7);
+  const monthAgo = new Date(); monthAgo.setDate(today.getDate() - 30);
+  const yearAgo = new Date(); yearAgo.setDate(today.getDate() - 365);
+  const centuryAgo = new Date(); centuryAgo.setFullYear(today.getFullYear() - 100);
+
+  const sameDay = (a, b) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  if (sameDay(d, today)) return 'Сегодня';
+  if (sameDay(d, yesterday)) return 'Вчера';
+  if (sameDay(d, twoDaysAgo)) return 'Два дня назад';
+  if (d > weekAgo) return 'Неделю назад';
+  if (d > monthAgo) return 'Месяц назад';
+  if (d > yearAgo) return 'Год назад';
+  if (d > centuryAgo) return 'Много лет назад';
+  return 'Век назад';
+}
+
+// ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 function initMessenger() {
@@ -93,15 +130,7 @@ function initMessenger() {
   bindChatUI();
   initEmojiPanel();
   loadMyRooms();
-  console.log('[Chat] Мессенджер v17 · publishable key only');
-}
-
-function chatHeaders(extra = {}) {
-  return {
-    'apikey': CHAT_ANON_KEY,
-    'Authorization': `Bearer ${CHAT_ANON_KEY}`,
-    ...extra,
-  };
+  console.log('[Chat] Мессенджер v21 · smart dates');
 }
 
 function bindChatUI() {
@@ -142,12 +171,39 @@ function bindChatUI() {
   }
   if (replyCancel) replyCancel.addEventListener('click', cancelReply);
   if (emojiBtn) emojiBtn.addEventListener('click', toggleEmojiPanel);
+    const imageBtn = document.getElementById('chatImageBtn');
+  const voiceBtn = document.getElementById('chatVoiceBtn');
+  const imageInput = document.getElementById('chatImageInput');
+  const recCancel = document.getElementById('chatRecordingCancel');
+  const recSend = document.getElementById('chatRecordingSend');
+  const lightbox = document.getElementById('chatLightbox');
+  const lightboxClose = document.getElementById('chatLightboxClose');
+
+  if (imageBtn && imageInput) {
+    imageBtn.addEventListener('click', () => imageInput.click());
+  }
+  if (imageInput) {
+    imageInput.addEventListener('change', handleImageUpload);
+  }
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', toggleVoiceRecording);
+  }
+  if (recCancel) recCancel.addEventListener('click', cancelVoiceRecording);
+  if (recSend) recSend.addEventListener('click', sendVoiceRecording);
+  if (lightbox && lightboxClose) {
+    lightboxClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+  }
 
   const scrollBtn = document.getElementById('chatScrollDownBtn');
   if (scrollBtn) scrollBtn.addEventListener('click', scrollChatToBottom);
 
   const box = document.getElementById('chatMessages');
-  if (box) box.addEventListener('scroll', () => updateScrollDownBtn());
+  if (box) {
+    box.addEventListener('scroll', () => updateScrollDownBtn());
+  }
 
   const roomCreateConfirm = document.getElementById('roomCreateConfirm');
   if (roomCreateConfirm) roomCreateConfirm.addEventListener('click', handleCreateRoom);
@@ -232,7 +288,8 @@ async function loadChatHistory(room, force = false) {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(
-      `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id&order=created_at.asc&limit=150`,
+      const res = await fetch(
+  `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id,image_url,voice_url,voice_duration&order=created_at.asc&limit=150`,
       {
         headers: chatHeaders(),
         signal: controller.signal,
@@ -270,6 +327,7 @@ async function loadChatHistory(room, force = false) {
           renderDateDivider(msg.created_at);
           lastDate = d;
           lastNick = null;
+          lastTime = null;
         }
         const t = new Date(msg.created_at).getTime();
         const grouped = lastNick === msg.nickname && (t - lastTime) < 5 * 60 * 1000;
@@ -393,11 +451,18 @@ function trackPresence() {
     try { CHAT.client.removeChannel(CHAT.presenceChannel); } catch (e) {}
     CHAT.presenceChannel = null;
   }
+  if (CHAT.presenceHeartbeat) {
+    clearInterval(CHAT.presenceHeartbeat);
+    CHAT.presenceHeartbeat = null;
+  }
+
   const myNick = state.nickname || 'Аноним';
-  const uniqueKey = `${myNick}__${Math.random().toString(36).slice(2, 8)}`;
+  const uniqueKey = myNick;
+
   CHAT.presenceChannel = CHAT.client.channel('fireland-online', {
     config: { presence: { key: uniqueKey } },
   });
+
   CHAT.presenceChannel
     .on('presence', { event: 'sync' }, () => {
       const stateMap = CHAT.presenceChannel.presenceState();
@@ -424,6 +489,18 @@ function trackPresence() {
         });
       }
     });
+
+  CHAT.presenceHeartbeat = setInterval(async () => {
+    if (!CHAT.presenceChannel) return;
+    try {
+      await CHAT.presenceChannel.track({
+        nickname: myNick,
+        avatar: state.avatar || null,
+        typing: false,
+        online_at: new Date().toISOString(),
+      });
+    } catch (e) {}
+  }, 20000);
 }
 
 function reinitializePresenceWithNewNick() {
@@ -468,7 +545,9 @@ function updateTypingIndicator(stateMap) {
   });
   const list = [...typers];
   if (list.length > 0) {
-    statusEl.textContent = list.length === 1 ? `${list[0]} печатает...` : `${list.length} печатают...`;
+    statusEl.textContent = list.length === 1
+      ? `${list[0]} печатает...`
+      : `${list.length} печатают...`;
     statusEl.className = 'chat-header-status typing';
   } else {
     statusEl.textContent = '🟢 Онлайн';
@@ -523,13 +602,21 @@ function openDmWith(peerNick) {
 
 function openNewDmModal() {
   const online = CHAT.onlineUsers.filter(n => n !== state.nickname);
-  if (online.length === 0) { alert('Сейчас никого нет в сети'); return; }
-  const choice = prompt('Кому написать?\n\n' + online.map((n, i) => `${i + 1}. ${n}`).join('\n') + '\n\nВведи номер или ник:');
+  if (online.length === 0) {
+    alert('Сейчас никого нет в сети');
+    return;
+  }
+  const choice = prompt(
+    'Кому написать?\n\n' + online.map((n, i) => `${i + 1}. ${n}`).join('\n') + '\n\nВведи номер или ник:'
+  );
   if (!choice) return;
   let peer = choice.trim();
   const num = parseInt(peer);
   if (!isNaN(num) && num >= 1 && num <= online.length) peer = online[num - 1];
-  if (!CHAT.onlineUsers.includes(peer)) { alert('Такого игрока нет в онлайне'); return; }
+  if (!CHAT.onlineUsers.includes(peer)) {
+    alert('Такого игрока нет в онлайне');
+    return;
+  }
   openDmWith(peer);
 }
 
@@ -700,15 +787,25 @@ async function handleSendClick() {
   const raw = input.value.trim();
   if (!raw) return;
   const nick = state.nickname;
-  if (!nick || nick === 'Игрок') { alert('Сначала установи ник в профиле'); return; }
-  if (hasProfanity(raw)) { alert('🚫 Сообщение содержит недопустимые слова'); return; }
+  if (!nick || nick === 'Игрок') {
+    alert('Сначала установи ник в профиле');
+    return;
+  }
+  if (hasProfanity(raw)) {
+    alert('🚫 Сообщение содержит недопустимые слова');
+    return;
+  }
   const clean = censorProfanity(raw).slice(0, 500);
   CHAT.sending = true;
   if (sendBtn) sendBtn.disabled = true;
   input.disabled = true;
 
   try {
-    const body = { room: CHAT.currentRoom, nickname: nick, text: clean };
+    const body = {
+      room: CHAT.currentRoom,
+      nickname: nick,
+      text: clean,
+    };
     if (CHAT.replyTo) body.reply_to_id = CHAT.replyTo.id;
 
     const res = await fetch(`${CHAT_URL}/rest/v1/chat_messages`, {
@@ -846,7 +943,9 @@ async function toggleReaction(messageId, emoji) {
         { method: 'DELETE', headers: chatHeaders() }
       );
       if (!res.ok) return;
-      CHAT.reactions[messageId] = list.filter(r => !(r.emoji === emoji && r.nickname === myNick));
+      CHAT.reactions[messageId] = list.filter(
+        r => !(r.emoji === emoji && r.nickname === myNick)
+      );
     } else {
       const res = await fetch(`${CHAT_URL}/rest/v1/chat_reactions`, {
         method: 'POST',
@@ -885,7 +984,9 @@ function updateMessageReactionsUI(messageId) {
   });
   const html = Object.entries(grouped).map(([emoji, nicks]) => {
     const mine = nicks.includes(state.nickname);
-    return `<div class="chat-reaction ${mine ? 'mine' : ''}" data-emoji="${emoji}"><span>${emoji}</span><span class="r-count">${nicks.length}</span></div>`;
+    return `<div class="chat-reaction ${mine ? 'mine' : ''}" data-emoji="${emoji}">
+      <span>${emoji}</span><span class="r-count">${nicks.length}</span>
+    </div>`;
   }).join('');
   if (!reactionsEl) {
     reactionsEl = document.createElement('div');
@@ -1008,23 +1109,22 @@ function findMessageById(id) {
   return { id, nickname: nick, text };
 }
 
-function renderDateDivider(iso) {
+// ═══ FIX v21: не дублировать разделитель ═══
+function renderDateDivider(iso, forceLabel = null) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
-  const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-  const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  let label;
-  if (sameDay(d, today)) label = 'Сегодня';
-  else if (sameDay(d, yesterday)) label = 'Вчера';
-  else label = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long' });
+  const label = forceLabel || getDateLabel(iso);
+
+  const lastDivider = box.querySelector('.chat-date-divider:last-of-type');
+  if (lastDivider && lastDivider.textContent.trim() === label) return;
+
   const el = document.createElement('div');
   el.className = 'chat-date-divider';
   el.innerHTML = `<span>${label}</span>`;
   box.appendChild(el);
 }
 
+// ═══ FIX v21: разделитель только когда день реально меняется ═══
 function renderMessage(msg, scroll, grouped, replyMsg) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
@@ -1032,14 +1132,28 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
   if (empty) empty.remove();
   const isMe = msg.nickname === state.nickname;
   const time = formatChatTime(msg.created_at);
-  if (!box.querySelector('.chat-message:last-of-type')) {
+
+  const lastMsg = box.querySelector('.chat-message:last-of-type');
+  if (!lastMsg) {
     renderDateDivider(msg.created_at);
+  } else {
+    const lastCreatedAt = lastMsg.dataset.createdAt;
+    if (lastCreatedAt) {
+      const lastDay = new Date(lastCreatedAt).toDateString();
+      const thisDay = new Date(msg.created_at).toDateString();
+      if (lastDay !== thisDay) {
+        renderDateDivider(msg.created_at);
+      }
+    } else {
+      renderDateDivider(msg.created_at);
+    }
   }
 
   const el = document.createElement('div');
   el.className = 'chat-message' + (isMe ? ' me' : '') + (grouped ? ' grouped' : '');
   el.dataset.nick = msg.nickname;
   el.dataset.messageId = msg.id;
+  el.dataset.createdAt = msg.created_at;   // ← ВАЖНО
 
   const avatar = getAvatarForNick(msg.nickname);
 
@@ -1054,22 +1168,88 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
   }
 
   el.innerHTML = `
-    ${!isMe ? `<div class="chat-avatar" data-nick="${escapeHtml(msg.nickname)}">${avatar}</div>` : ''}
-    <div class="chat-bubble">
-      ${replyHtml}
-      <div class="chat-author" data-nick="${escapeHtml(msg.nickname)}">${escapeHtml(msg.nickname)}</div>
-      <div class="text">${escapeHtml(msg.text)}</div>
-      <div class="chat-time">${time}</div>
+   let mediaHtml = '';
+if (msg.image_url) {
+  mediaHtml = `
+    <div class="chat-image-wrapper" data-image-url="${escapeHtml(msg.image_url)}">
+      <img src="${escapeHtml(msg.image_url)}" alt="картинка" loading="lazy">
     </div>
-    ${isMe ? `<div class="chat-avatar me">${avatar}</div>` : ''}
+  `;
+} else if (msg.voice_url) {
+  const dur = msg.voice_duration || 0;
+  const durStr = `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`;
+  const barsCount = 30;
+  const barsHtml = Array.from({length: barsCount}, () => {
+    const h = 6 + Math.random() * 16;
+    return `<div class="bar" style="height:${h}px"></div>`;
+  }).join('');
+  mediaHtml = `
+    <div class="chat-voice-wrapper" data-voice-url="${escapeHtml(msg.voice_url)}" data-duration="${dur}">
+      <button class="chat-voice-play" data-play>▶</button>
+      <div class="chat-voice-waveform">${barsHtml}</div>
+      <span class="chat-voice-duration">${durStr}</span>
+      <audio preload="none" src="${escapeHtml(msg.voice_url)}"></audio>
+    </div>
+  `;
+}
+
+el.innerHTML = `
+  ${!isMe ? `<div class="chat-avatar" data-nick="${escapeHtml(msg.nickname)}">${avatar}</div>` : ''}
+  <div class="chat-bubble">
+    ${replyHtml}
+    <div class="chat-author" data-nick="${escapeHtml(msg.nickname)}">${escapeHtml(msg.nickname)}</div>
+    ${mediaHtml || `<div class="text">${escapeHtml(msg.text)}</div>`}
+    <div class="chat-time">${time}</div>
     <div class="chat-message-actions">
       <button class="chat-action-btn" data-action="reply" title="Ответить">↩️</button>
       <button class="chat-action-btn" data-action="react" title="Реакция">😀</button>
       ${isMe ? `<button class="chat-action-btn danger" data-action="delete" title="Удалить">🗑️</button>` : ''}
     </div>
-  `;
-
+  </div>
+  ${isMe ? `<div class="chat-avatar me">${avatar}</div>` : ''}
+`;
   el.querySelectorAll('[data-nick]').forEach(node => {
+  // Lightbox для картинок
+el.querySelectorAll('.chat-image-wrapper').forEach(w => {
+  w.addEventListener('click', () => openLightbox(w.dataset.imageUrl));
+});
+
+// Плеер для голосовых
+el.querySelectorAll('.chat-voice-wrapper').forEach(w => {
+  const btn = w.querySelector('[data-play]');
+  const audio = w.querySelector('audio');
+  const bars = w.querySelectorAll('.bar');
+  const updateBars = () => {
+    const dur = parseFloat(audio.duration) || 1;
+    const progress = audio.currentTime / dur;
+    const playedCount = Math.floor(bars.length * progress);
+    bars.forEach((b, i) => b.classList.toggle('played', i < playedCount));
+  };
+  btn.addEventListener('click', () => {
+    if (audio.paused) {
+      // Останавливаем другие плееры
+      document.querySelectorAll('.chat-voice-wrapper audio').forEach(a => {
+        if (a !== audio) { a.pause(); a.currentTime = 0; }
+      });
+      audio.play();
+      btn.textContent = '⏸';
+      btn.classList.add('playing');
+      w.classList.add('playing');
+    } else {
+      audio.pause();
+      btn.textContent = '▶';
+      btn.classList.remove('playing');
+      w.classList.remove('playing');
+    }
+  });
+  audio.addEventListener('timeupdate', updateBars);
+  audio.addEventListener('ended', () => {
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    w.classList.remove('playing');
+    bars.forEach(b => b.classList.remove('played'));
+  });
+});
     if (node.classList.contains('chat-avatar') && isMe) return;
     if (node.classList.contains('chat-author') && isMe) return;
     node.addEventListener('click', () => showUserProfile(msg.nickname));
@@ -1207,7 +1387,8 @@ async function showUserProfile(nick) {
       document.getElementById('userProfileTitle').textContent = 'Нет в лидерборде';
       return;
     }
-    const title = typeof getTitleForLevel === 'function' ? getTitleForLevel(row.level) : 'Игрок';
+    const title = typeof getTitleForLevel === 'function'
+      ? getTitleForLevel(row.level) : 'Игрок';
     document.getElementById('userProfileLevel').textContent = row.level;
     document.getElementById('userProfileXp').textContent = (row.total_xp || 0).toLocaleString('ru-RU');
     document.getElementById('userProfileAch').textContent = row.achievements_count || 0;
@@ -1431,7 +1612,325 @@ window.debouncedPresenceRefresh = function() {
     }
   }, 1500);
 };
+// ============================================
+// КАРТИНКИ В ЧАТЕ
+// ============================================
+async function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
 
+  if (!state.nickname || state.nickname === 'Игрок') {
+    alert('Сначала установи ник в профиле');
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    alert('❌ Максимум 2 МБ');
+    return;
+  }
+  if (!file.type.startsWith('image/')) {
+    alert('❌ Только изображения');
+    return;
+  }
+
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (sendBtn) sendBtn.disabled = true;
+  if (input) input.disabled = true;
+
+  try {
+    // Сжимаем картинку
+    const compressed = await compressImage(file, 800, 0.8);
+
+    // Загружаем в Storage
+    const ext = 'jpg';
+    const fileName = `${state.nickname}_${Date.now()}.${ext}`;
+    const uploadUrl = `${CHAT_URL}/storage/v1/object/chat-images/${fileName}`;
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': CHAT_ANON_KEY,
+        'Authorization': `Bearer ${CHAT_ANON_KEY}`,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true',
+      },
+      body: compressed,
+    });
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      console.warn('[Chat] upload image:', uploadRes.status, err);
+      alert('Не удалось загрузить картинку');
+      return;
+    }
+
+    const publicUrl = `${CHAT_URL}/storage/v1/object/public/chat-images/${fileName}`;
+
+    // Отправляем сообщение с картинкой
+    const body = {
+      room: CHAT.currentRoom,
+      nickname: state.nickname,
+      text: '📷 Картинка',
+      image_url: publicUrl,
+    };
+    if (CHAT.replyTo) body.reply_to_id = CHAT.replyTo.id;
+
+    const res = await fetch(`${CHAT_URL}/rest/v1/chat_messages`, {
+      method: 'POST',
+      headers: chatHeaders({
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      }),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      console.warn('[Chat] insert image:', res.status);
+      alert('Не удалось отправить');
+      return;
+    }
+
+    const [saved] = await res.json();
+    markSelfMessage(saved);
+    renderMessage(saved, true, false, CHAT.replyTo);
+    cancelReply();
+  } catch (err) {
+    console.warn('[Chat] image error:', err);
+    alert('Ошибка загрузки');
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+    if (input) input.disabled = false;
+  }
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function openLightbox(url) {
+  const lb = document.getElementById('chatLightbox');
+  const img = document.getElementById('chatLightboxImg');
+  if (!lb || !img) return;
+  img.src = url;
+  lb.style.display = 'flex';
+}
+function closeLightbox() {
+  const lb = document.getElementById('chatLightbox');
+  if (lb) lb.style.display = 'none';
+}
+
+// ============================================
+// ГОЛОСОВЫЕ СООБЩЕНИЯ
+// ============================================
+let voiceRecorder = null;
+let voiceChunks = [];
+let voiceStartTime = 0;
+let voiceTimerInterval = null;
+let voiceStream = null;
+
+async function toggleVoiceRecording() {
+  if (voiceRecorder && voiceRecorder.state === 'recording') {
+    // Стоп → отправить
+    stopVoiceRecording(true);
+    return;
+  }
+
+  if (!state.nickname || state.nickname === 'Игрок') {
+    alert('Сначала установи ник в профиле');
+    return;
+  }
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceRecorder = new MediaRecorder(voiceStream);
+    voiceChunks = [];
+
+    voiceRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) voiceChunks.push(e.data);
+    };
+
+    voiceRecorder.onstop = () => {
+      if (voiceStream) {
+        voiceStream.getTracks().forEach(t => t.stop());
+        voiceStream = null;
+      }
+    };
+
+    voiceRecorder.start();
+    voiceStartTime = Date.now();
+
+    // Показываем панель записи
+    const bar = document.getElementById('chatRecordingBar');
+    const timeEl = document.getElementById('chatRecordingTime');
+    const voiceBtn = document.getElementById('chatVoiceBtn');
+    if (bar) bar.style.display = 'flex';
+    if (voiceBtn) voiceBtn.classList.add('recording');
+
+    voiceTimerInterval = setInterval(() => {
+      const sec = Math.floor((Date.now() - voiceStartTime) / 1000);
+      const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      if (timeEl) timeEl.textContent = `${mm}:${ss}`;
+      // Автостоп на 60 сек
+      if (sec >= 60) stopVoiceRecording(true);
+    }, 200);
+  } catch (e) {
+    console.warn('[Chat] mic error:', e);
+    alert('Не удалось получить доступ к микрофону');
+  }
+}
+
+function stopVoiceRecording(send) {
+  if (voiceRecorder && voiceRecorder.state === 'recording') {
+    voiceRecorder._sendAfterStop = send;
+    voiceRecorder.stop();
+  }
+  if (voiceTimerInterval) {
+    clearInterval(voiceTimerInterval);
+    voiceTimerInterval = null;
+  }
+  const bar = document.getElementById('chatRecordingBar');
+  const voiceBtn = document.getElementById('chatVoiceBtn');
+  if (bar) bar.style.display = 'none';
+  if (voiceBtn) voiceBtn.classList.remove('recording');
+}
+
+function cancelVoiceRecording() {
+  voiceChunks = [];
+  stopVoiceRecording(false);
+}
+
+async function sendVoiceRecording() {
+  stopVoiceRecording(true);
+}
+
+async function uploadVoiceMessage() {
+  if (voiceChunks.length === 0) return;
+  const duration = Math.floor((Date.now() - voiceStartTime) / 1000);
+  if (duration < 1) {
+    alert('Слишком коротко');
+    return;
+  }
+
+  const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+  voiceChunks = [];
+
+  if (blob.size > 1024 * 1024) {
+    alert('❌ Максимум 1 МБ (попробуй короче)');
+    return;
+  }
+
+  const voiceBtn = document.getElementById('chatVoiceBtn');
+  if (voiceBtn) voiceBtn.disabled = true;
+
+  try {
+    const fileName = `${state.nickname}_${Date.now()}.webm`;
+    const uploadUrl = `${CHAT_URL}/storage/v1/object/chat-voice/${fileName}`;
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': CHAT_ANON_KEY,
+        'Authorization': `Bearer ${CHAT_ANON_KEY}`,
+        'Content-Type': 'audio/webm',
+        'x-upsert': 'true',
+      },
+      body: blob,
+    });
+
+    if (!uploadRes.ok) {
+      console.warn('[Chat] upload voice:', uploadRes.status);
+      alert('Не удалось загрузить голосовое');
+      return;
+    }
+
+    const publicUrl = `${CHAT_URL}/storage/v1/object/public/chat-voice/${fileName}`;
+
+    const body = {
+      room: CHAT.currentRoom,
+      nickname: state.nickname,
+      text: '🎤 Голосовое',
+      voice_url: publicUrl,
+      voice_duration: duration,
+    };
+    if (CHAT.replyTo) body.reply_to_id = CHAT.replyTo.id;
+
+    const res = await fetch(`${CHAT_URL}/rest/v1/chat_messages`, {
+      method: 'POST',
+      headers: chatHeaders({
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      }),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      console.warn('[Chat] insert voice:', res.status);
+      alert('Не удалось отправить');
+      return;
+    }
+
+    const [saved] = await res.json();
+    markSelfMessage(saved);
+    renderMessage(saved, true, false, CHAT.replyTo);
+    cancelReply();
+  } catch (err) {
+    console.warn('[Chat] voice error:', err);
+    alert('Ошибка загрузки');
+  } finally {
+    if (voiceBtn) voiceBtn.disabled = false;
+  }
+}
+
+// Автозапуск upload после stop
+document.addEventListener('DOMContentLoaded', () => {
+  // voiceRecorder.onstop уже задан выше — добавим upload внутри
+  // Но проще: переопределим onstop в toggleVoiceRecording через setTimeout
+});
+
+// Патч: после stop — если _sendAfterStop, загружаем
+const _origStopVoiceRecording = stopVoiceRecording;
+stopVoiceRecording = function(send) {
+  if (voiceRecorder && voiceRecorder.state === 'recording') {
+    voiceRecorder._sendAfterStop = send;
+    voiceRecorder.onstop = () => {
+      if (voiceStream) {
+        voiceStream.getTracks().forEach(t => t.stop());
+        voiceStream = null;
+      }
+      if (voiceRecorder._sendAfterStop) {
+        uploadVoiceMessage();
+      }
+    };
+    voiceRecorder.stop();
+  }
+  if (voiceTimerInterval) {
+    clearInterval(voiceTimerInterval);
+    voiceTimerInterval = null;
+  }
+  const bar = document.getElementById('chatRecordingBar');
+  const voiceBtn = document.getElementById('chatVoiceBtn');
+  if (bar) bar.style.display = 'none';
+  if (voiceBtn) voiceBtn.classList.remove('recording');
+};
 window.onChatTabOpen = onChatTabOpen;
 window.updateChatBadge = updateChatBadge;
 window.reinitializePresenceWithNewNick = reinitializePresenceWithNewNick;

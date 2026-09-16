@@ -31,7 +31,11 @@
         }
         .hp-bar { height: 6px; background: #2a1a2a; border-radius: 4px; overflow: hidden; margin: 4px 0 0; grid-column: 1 / -1; }
         .hp-fill { height: 100%; background: #ffaa44; transition: 0.2s; }
-        .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
         .tab-btn {
             flex: 1;
             padding: 10px 4px;
@@ -91,7 +95,12 @@
             min-height: 22px;
             margin-top: 6px;
         }
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+        .shop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
+        }
         .shop-item {
             background: #1a1a2a;
             border: 1px solid #3a3a2a;
@@ -219,40 +228,40 @@
     //  ВСЕ ВРАГИ (20 ШТУК)
     // ============================================================
     const ENEMIES = [
-        { name: 'Охранник РКН', hp: 30, damage: 8, defense: 1, weakTo: 'vpn', hint: '💬 "Мой список блокировок не прошибить простым ударом..."', coins: 5 },
-        { name: 'Секретарша', hp: 28, damage: 6, defense: 0, weakTo: 'fake', hint: '💬 "Без бумажки ты — никто!"', coins: 6 },
-        { name: 'Младший инспектор', hp: 32, damage: 9, defense: 1, weakTo: 'tea', hint: '💬 "Мне нужен кофе... или чай..."', coins: 7 },
-        { name: 'Начальник отдела', hp: 38, damage: 11, defense: 2, weakTo: 'vpn', hint: '💬 "Только очень сильный поток пробьёт её!"', coins: 10 },
-        { name: 'Замдиректора', hp: 40, damage: 12, defense: 2, weakTo: 'fake', hint: '💬 "...или обманешь?"', coins: 12 },
-        { name: 'Архивариус', hp: 35, damage: 10, defense: 1, weakTo: 'vpn', hint: '💬 "Только цифровой штурм их возьмёт!"', coins: 9 },
-        { name: 'Юрист РКН', hp: 42, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или не проверю?"', coins: 14 },
-        { name: 'Системный аналитик', hp: 45, damage: 14, defense: 2, weakTo: 'tea', hint: '💬 "Мне бы чашечку чая..."', coins: 15 },
-        { name: 'Техник', hp: 34, damage: 9, defense: 1, weakTo: 'vpn', hint: '💬 "Он не выдержит прямого потока данных!"', coins: 8 },
-        { name: 'Секретарь приёмной', hp: 30, damage: 7, defense: 0, weakTo: 'fake', hint: '💬 "...хотя я не проверяю его внимательно"', coins: 6 },
-        { name: 'Делопроизводитель', hp: 38, damage: 11, defense: 1, weakTo: 'tea', hint: '💬 "Может, выпить чего?"', coins: 11 },
-        { name: 'Методист', hp: 40, damage: 12, defense: 2, weakTo: 'vpn', hint: '💬 "Новый протокол её обходит!"', coins: 13 },
-        { name: 'Куратор', hp: 44, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "...или проведёт?"', coins: 16 },
-        { name: 'Аудитор', hp: 48, damage: 15, defense: 3, weakTo: 'tea', hint: '💬 "Хоть бы кто-то чай предложил..."', coins: 18 },
-        { name: 'Начальник серверной', hp: 50, damage: 16, defense: 3, weakTo: 'vpn', hint: '💬 "Если кто-то сможет их взломать..."', coins: 20 },
-        { name: 'Замначальника', hp: 46, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "Ну, может, за 500 метров..."', coins: 17 },
-        { name: 'Специалист по трафику', hp: 42, damage: 13, defense: 2, weakTo: 'tea', hint: '💬 "Чай бы не помешал..."', coins: 14 },
-        { name: 'Администратор БД', hp: 52, damage: 17, defense: 3, weakTo: 'vpn', hint: '💬 "Только прямой взлом её возьмёт!"', coins: 22 },
-        { name: 'Инспектор по жалобам', hp: 45, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или проходят, если красиво написаны?"', coins: 16 },
-        { name: 'Максут Шадаев', hp: 60, damage: 18, defense: 4, weakTo: 'tea', hint: '💬 "Может, просто выпьем чаю?"', coins: 30 }
+        { name: 'Охранник РКН', hp: 30, damage: 8, defense: 1, weakTo: 'vpn', hint: '💬 "Мой список блокировок не прошибить простым ударом..."', coins: 12 },
+        { name: 'Секретарша', hp: 28, damage: 6, defense: 0, weakTo: 'fake', hint: '💬 "Без бумажки ты — никто!"', coins: 14 },
+        { name: 'Младший инспектор', hp: 32, damage: 9, defense: 1, weakTo: 'tea', hint: '💬 "Мне нужен кофе... или чай..."', coins: 16 },
+        { name: 'Начальник отдела', hp: 38, damage: 11, defense: 2, weakTo: 'vpn', hint: '💬 "Только очень сильный поток пробьёт её!"', coins: 22 },
+        { name: 'Замдиректора', hp: 40, damage: 12, defense: 2, weakTo: 'fake', hint: '💬 "...или обманешь?"', coins: 25 },
+        { name: 'Архивариус', hp: 35, damage: 10, defense: 1, weakTo: 'vpn', hint: '💬 "Только цифровой штурм их возьмёт!"', coins: 20 },
+        { name: 'Юрист РКН', hp: 42, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или не проверю?"', coins: 28 },
+        { name: 'Системный аналитик', hp: 45, damage: 14, defense: 2, weakTo: 'tea', hint: '💬 "Мне бы чашечку чая..."', coins: 30 },
+        { name: 'Техник', hp: 34, damage: 9, defense: 1, weakTo: 'vpn', hint: '💬 "Он не выдержит прямого потока данных!"', coins: 18 },
+        { name: 'Секретарь приёмной', hp: 30, damage: 7, defense: 0, weakTo: 'fake', hint: '💬 "...хотя я не проверяю его внимательно"', coins: 14 },
+        { name: 'Делопроизводитель', hp: 38, damage: 11, defense: 1, weakTo: 'tea', hint: '💬 "Может, выпить чего?"', coins: 24 },
+        { name: 'Методист', hp: 40, damage: 12, defense: 2, weakTo: 'vpn', hint: '💬 "Новый протокол её обходит!"', coins: 26 },
+        { name: 'Куратор', hp: 44, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "...или проведёт?"', coins: 32 },
+        { name: 'Аудитор', hp: 48, damage: 15, defense: 3, weakTo: 'tea', hint: '💬 "Хоть бы кто-то чай предложил..."', coins: 36 },
+        { name: 'Начальник серверной', hp: 50, damage: 16, defense: 3, weakTo: 'vpn', hint: '💬 "Если кто-то сможет их взломать..."', coins: 40 },
+        { name: 'Замначальника', hp: 46, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "Ну, может, за 500 метров..."', coins: 34 },
+        { name: 'Специалист по трафику', hp: 42, damage: 13, defense: 2, weakTo: 'tea', hint: '💬 "Чай бы не помешал..."', coins: 30 },
+        { name: 'Администратор БД', hp: 52, damage: 17, defense: 3, weakTo: 'vpn', hint: '💬 "Только прямой взлом её возьмёт!"', coins: 45 },
+        { name: 'Инспектор по жалобам', hp: 45, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или проходят, если красиво написаны?"', coins: 32 },
+        { name: 'Максут Шадаев', hp: 60, damage: 18, defense: 4, weakTo: 'tea', hint: '💬 "Может, просто выпьем чаю?"', coins: 80 }
     ];
 
     // ============================================================
-    //  ВПН
+    //  ВПН (перебалансировано — можно копить)
     // ============================================================
     const VPNS = [
-        { name: 'VPNfy', cost: 10, damage: 2, defense: 0, coinBonus: 0 },
-        { name: 'TipTopVPN', cost: 50, damage: 4, defense: 1, coinBonus: 1 },
-        { name: 'NotVPN', cost: 100, damage: 6, defense: 1, coinBonus: 2 },
-        { name: 'AmneziaVPN', cost: 200, damage: 8, defense: 2, coinBonus: 3 },
-        { name: 'PortalWG', cost: 350, damage: 10, defense: 3, coinBonus: 4 },
-        { name: 'AmneziaWG', cost: 500, damage: 12, defense: 4, coinBonus: 5 },
-        { name: 'КИБЕРЩИТ', cost: 850, damage: 16, defense: 5, coinBonus: 7 },
-        { name: 'КИБЕРПОРТАЛ X', cost: 1500, damage: 22, defense: 7, coinBonus: 10 }
+        { name: 'VPNfy',         cost: 0,   damage: 2,  defense: 0, coinBonus: 0 },
+        { name: 'TipTopVPN',     cost: 25,  damage: 4,  defense: 1, coinBonus: 1 },
+        { name: 'NotVPN',        cost: 60,  damage: 6,  defense: 1, coinBonus: 2 },
+        { name: 'AmneziaVPN',    cost: 120, damage: 8,  defense: 2, coinBonus: 3 },
+        { name: 'PortalWG',      cost: 200, damage: 10, defense: 3, coinBonus: 4 },
+        { name: 'AmneziaWG',     cost: 320, damage: 12, defense: 4, coinBonus: 5 },
+        { name: 'КИБЕРЩИТ',      cost: 500, damage: 16, defense: 5, coinBonus: 7 },
+        { name: 'КИБЕРПОРТАЛ X', cost: 800, damage: 22, defense: 7, coinBonus: 10 }
     ];
 
     // ============================================================
@@ -439,9 +448,6 @@
         log(`✅ Куплен ${vpn.name}!`);
         playSound('click');
         updateUI();
-        if (!gameOver && currentIdx < ENEMIES.length && enemyHp > 0) {
-            // не пересоздаём врага — просто обновляем UI
-        }
     }
 
     function log(msg) {
@@ -497,7 +503,7 @@
             return;
         }
         if (enemyHp <= 0) {
-            // защита от перескока: если врага уже нет — просто показать текущего
+            // защита от перескока: если врага уже нет — показать текущего
             showEnemy(currentIdx);
             return;
         }
@@ -529,14 +535,16 @@
         updateUI();
 
         if (enemyHp <= 0) {
-            let reward = e.coins + (vpn.coinBonus || 0);
+            // Бонус монет: награда врага + бонус ВПН + бонус за прогресс
+            let reward = e.coins + (vpn.coinBonus || 0) + Math.floor(player.defeated / 2);
             player.coins += reward;
             player.defeated++;
             player.progress += Math.floor(100 / ENEMIES.length);
             log(`✅ ${e.name} повержен! +${reward} РКН!`);
             playSound('win');
             vibrate(50);
-            if (Math.random() < 0.3) addItem('🧪 Аптечка (+15 HP)');
+            // Аптечка падает с шансом 55%
+            if (Math.random() < 0.55) addItem('🧪 Аптечка (+15 HP)');
             busy = false;
             if (currentIdx + 1 >= ENEMIES.length) {
                 showEnding('good', '🏆 ТЫ ПРОШЁЛ ВСЕХ 20 ВРАГОВ! СВОБОДА! Можешь идти пить чай. 🍵');
@@ -594,7 +602,7 @@
     }
 
     // ============================================================
-    //  СБРОС (ГЛАВНЫЙ ФИКС БАГА)
+    //  СБРОС (главный фикс бага перескока врага)
     // ============================================================
     function resetGame() {
         // сброс игрока
@@ -622,7 +630,7 @@
         // сброс вкладок на "Бой"
         switchTab('fight');
 
-        // показать первого врага (он сам выставит enemyHp и enemyMaxHp)
+        // показать первого врага
         showEnemy(0);
         updateUI();
     }
@@ -633,7 +641,8 @@
     function switchTab(id) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        const content = document.getElementById(id);
+        if (content) content.classList.add('active');
         const btn = document.querySelector(`.tab-btn[onclick*="${id}"]`);
         if (btn) btn.classList.add('active');
         if (id === 'shop') renderShop();
