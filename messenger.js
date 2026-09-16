@@ -1123,7 +1123,6 @@ function renderDateDivider(iso, forceLabel = null) {
   box.appendChild(el);
 }
 
-// ═══ FIX v21: разделитель только когда день реально меняется ═══
 function renderMessage(msg, scroll, grouped, replyMsg) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
@@ -1152,7 +1151,7 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
   el.className = 'chat-message' + (isMe ? ' me' : '') + (grouped ? ' grouped' : '');
   el.dataset.nick = msg.nickname;
   el.dataset.messageId = msg.id;
-  el.dataset.createdAt = msg.created_at;   // ← ВАЖНО
+  el.dataset.createdAt = msg.created_at;
 
   const avatar = getAvatarForNick(msg.nickname);
 
@@ -1166,94 +1165,101 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
     `;
   }
 
+  // ═══ Определяем mediaHtml ЗАРАНЕЕ (вне template literal) ═══
+  let mediaHtml = '';
+  if (msg.image_url) {
+    mediaHtml = `
+      <div class="chat-image-wrapper" data-image-url="${escapeHtml(msg.image_url)}">
+        <img src="${escapeHtml(msg.image_url)}" alt="картинка" loading="lazy">
+      </div>
+    `;
+  } else if (msg.voice_url) {
+    const dur = msg.voice_duration || 0;
+    const durStr = `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`;
+    const barsCount = 30;
+    let barsHtml = '';
+    for (let i = 0; i < barsCount; i++) {
+      const h = 6 + Math.random() * 16;
+      barsHtml += `<div class="bar" style="height:${h}px"></div>`;
+    }
+    mediaHtml = `
+      <div class="chat-voice-wrapper" data-voice-url="${escapeHtml(msg.voice_url)}" data-duration="${dur}">
+        <button class="chat-voice-play" data-play>▶</button>
+        <div class="chat-voice-waveform">${barsHtml}</div>
+        <span class="chat-voice-duration">${durStr}</span>
+        <audio preload="none" src="${escapeHtml(msg.voice_url)}"></audio>
+      </div>
+    `;
+  }
+
+  // ═══ Собираем HTML сообщения ═══
+  const textOrMedia = mediaHtml || `<div class="text">${escapeHtml(msg.text)}</div>`;
+
   el.innerHTML = `
-   let mediaHtml = '';
-if (msg.image_url) {
-  mediaHtml = `
-    <div class="chat-image-wrapper" data-image-url="${escapeHtml(msg.image_url)}">
-      <img src="${escapeHtml(msg.image_url)}" alt="картинка" loading="lazy">
+    ${!isMe ? `<div class="chat-avatar" data-nick="${escapeHtml(msg.nickname)}">${avatar}</div>` : ''}
+    <div class="chat-bubble">
+      ${replyHtml}
+      <div class="chat-author" data-nick="${escapeHtml(msg.nickname)}">${escapeHtml(msg.nickname)}</div>
+      ${textOrMedia}
+      <div class="chat-time">${time}</div>
+      <div class="chat-message-actions">
+        <button class="chat-action-btn" data-action="reply" title="Ответить">↩️</button>
+        <button class="chat-action-btn" data-action="react" title="Реакция">😀</button>
+        ${isMe ? `<button class="chat-action-btn danger" data-action="delete" title="Удалить">🗑️</button>` : ''}
+      </div>
     </div>
+    ${isMe ? `<div class="chat-avatar me">${avatar}</div>` : ''}
   `;
-} else if (msg.voice_url) {
-  const dur = msg.voice_duration || 0;
-  const durStr = `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`;
-  const barsCount = 30;
-  const barsHtml = Array.from({length: barsCount}, () => {
-    const h = 6 + Math.random() * 16;
-    return `<div class="bar" style="height:${h}px"></div>`;
-  }).join('');
-  mediaHtml = `
-    <div class="chat-voice-wrapper" data-voice-url="${escapeHtml(msg.voice_url)}" data-duration="${dur}">
-      <button class="chat-voice-play" data-play>▶</button>
-      <div class="chat-voice-waveform">${barsHtml}</div>
-      <span class="chat-voice-duration">${durStr}</span>
-      <audio preload="none" src="${escapeHtml(msg.voice_url)}"></audio>
-    </div>
-  `;
-}
 
-el.innerHTML = `
-  ${!isMe ? `<div class="chat-avatar" data-nick="${escapeHtml(msg.nickname)}">${avatar}</div>` : ''}
-  <div class="chat-bubble">
-    ${replyHtml}
-    <div class="chat-author" data-nick="${escapeHtml(msg.nickname)}">${escapeHtml(msg.nickname)}</div>
-    ${mediaHtml || `<div class="text">${escapeHtml(msg.text)}</div>`}
-    <div class="chat-time">${time}</div>
-    <div class="chat-message-actions">
-      <button class="chat-action-btn" data-action="reply" title="Ответить">↩️</button>
-      <button class="chat-action-btn" data-action="react" title="Реакция">😀</button>
-      ${isMe ? `<button class="chat-action-btn danger" data-action="delete" title="Удалить">🗑️</button>` : ''}
-    </div>
-  </div>
-  ${isMe ? `<div class="chat-avatar me">${avatar}</div>` : ''}
-`;
-  el.querySelectorAll('[data-nick]').forEach(node => {
-  // Lightbox для картинок
-el.querySelectorAll('.chat-image-wrapper').forEach(w => {
-  w.addEventListener('click', () => openLightbox(w.dataset.imageUrl));
-});
+  // ═══ Lightbox для картинок ═══
+  el.querySelectorAll('.chat-image-wrapper').forEach(w => {
+    w.addEventListener('click', () => openLightbox(w.dataset.imageUrl));
+  });
 
-// Плеер для голосовых
-el.querySelectorAll('.chat-voice-wrapper').forEach(w => {
-  const btn = w.querySelector('[data-play]');
-  const audio = w.querySelector('audio');
-  const bars = w.querySelectorAll('.bar');
-  const updateBars = () => {
-    const dur = parseFloat(audio.duration) || 1;
-    const progress = audio.currentTime / dur;
-    const playedCount = Math.floor(bars.length * progress);
-    bars.forEach((b, i) => b.classList.toggle('played', i < playedCount));
-  };
-  btn.addEventListener('click', () => {
-    if (audio.paused) {
-      // Останавливаем другие плееры
-      document.querySelectorAll('.chat-voice-wrapper audio').forEach(a => {
-        if (a !== audio) { a.pause(); a.currentTime = 0; }
-      });
-      audio.play();
-      btn.textContent = '⏸';
-      btn.classList.add('playing');
-      w.classList.add('playing');
-    } else {
-      audio.pause();
+  // ═══ Плеер для голосовых ═══
+  el.querySelectorAll('.chat-voice-wrapper').forEach(w => {
+    const btn = w.querySelector('[data-play]');
+    const audio = w.querySelector('audio');
+    const bars = w.querySelectorAll('.bar');
+    const updateBars = () => {
+      const dur = parseFloat(audio.duration) || 1;
+      const progress = audio.currentTime / dur;
+      const playedCount = Math.floor(bars.length * progress);
+      bars.forEach((b, i) => b.classList.toggle('played', i < playedCount));
+    };
+    btn.addEventListener('click', () => {
+      if (audio.paused) {
+        document.querySelectorAll('.chat-voice-wrapper audio').forEach(a => {
+          if (a !== audio) { a.pause(); a.currentTime = 0; }
+        });
+        audio.play();
+        btn.textContent = '⏸';
+        btn.classList.add('playing');
+        w.classList.add('playing');
+      } else {
+        audio.pause();
+        btn.textContent = '▶';
+        btn.classList.remove('playing');
+        w.classList.remove('playing');
+      }
+    });
+    audio.addEventListener('timeupdate', updateBars);
+    audio.addEventListener('ended', () => {
       btn.textContent = '▶';
       btn.classList.remove('playing');
       w.classList.remove('playing');
-    }
+      bars.forEach(b => b.classList.remove('played'));
+    });
   });
-  audio.addEventListener('timeupdate', updateBars);
-  audio.addEventListener('ended', () => {
-    btn.textContent = '▶';
-    btn.classList.remove('playing');
-    w.classList.remove('playing');
-    bars.forEach(b => b.classList.remove('played'));
-  });
-});
+
+  // ═══ Клик на ник/аватар → профиль ═══
+  el.querySelectorAll('[data-nick]').forEach(node => {
     if (node.classList.contains('chat-avatar') && isMe) return;
     if (node.classList.contains('chat-author') && isMe) return;
     node.addEventListener('click', () => showUserProfile(msg.nickname));
   });
 
+  // ═══ Кнопки действий ═══
   el.querySelectorAll('.chat-action-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1264,6 +1270,7 @@ el.querySelectorAll('.chat-voice-wrapper').forEach(w => {
     });
   });
 
+  // ═══ Клик на reply-цитату ═══
   const replyQuote = el.querySelector('.chat-reply-quote');
   if (replyQuote) {
     replyQuote.addEventListener('click', () => {
