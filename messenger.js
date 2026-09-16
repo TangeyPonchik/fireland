@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Messenger v21 · Smart date dividers
+// FireLand Messenger v22 · FIXED
 // ============================================
 
 const CHAT = {
@@ -34,6 +34,25 @@ const EMOJI_LIST = [
   '🚀','⚡','🌟','🌈','🍕','🍔','☕','🎮','🎵','🎨',
   '😅','🙃','😇','🤩','😱','🤗','🤫','🙄','😬','💀',
 ];
+
+// ===== Безопасные обёртки =====
+function chatEscape(text) {
+  return (window.escapeHtml || function(t){return t})(text);
+}
+function chatSafePlayTone(freq, duration, type, volume) {
+  if (typeof playTone === 'function') {
+    try { playTone(freq, duration, type, volume); } catch (e) {}
+  }
+}
+function chatGetState() {
+  if (typeof state !== 'undefined' && state) return state;
+  return null;
+}
+function chatSaveState(immediate = false) {
+  if (typeof saveState === 'function') {
+    try { saveState(immediate); } catch (e) {}
+  }
+}
 
 function chatHeaders(extra = {}) {
   return {
@@ -130,7 +149,7 @@ function initMessenger() {
   bindChatUI();
   initEmojiPanel();
   loadMyRooms();
-  console.log('[Chat] Мессенджер v21 · smart dates');
+  console.log('[Chat] Мессенджер v22 · FIXED');
 }
 
 function bindChatUI() {
@@ -171,7 +190,8 @@ function bindChatUI() {
   }
   if (replyCancel) replyCancel.addEventListener('click', cancelReply);
   if (emojiBtn) emojiBtn.addEventListener('click', toggleEmojiPanel);
-    const imageBtn = document.getElementById('chatImageBtn');
+
+  const imageBtn = document.getElementById('chatImageBtn');
   const voiceBtn = document.getElementById('chatVoiceBtn');
   const imageInput = document.getElementById('chatImageInput');
   const recCancel = document.getElementById('chatRecordingCancel');
@@ -221,13 +241,15 @@ function bindChatUI() {
 // ============================================
 function switchRoom(room) {
   if (!CHAT.client) return;
+  const st = chatGetState();
+  if (!st) return;
   if (CHAT.currentRoom === room && CHAT.historyLoaded[room]) {
     updateChatHeader();
     return;
   }
   const oldRoom = CHAT.currentRoom;
   if (CHAT.subscribed[oldRoom]) {
-    CHAT.client.removeChannel(CHAT.subscribed[oldRoom]);
+    try { CHAT.client.removeChannel(CHAT.subscribed[oldRoom]); } catch (e) {}
     delete CHAT.subscribed[oldRoom];
   }
   CHAT.currentRoom = room;
@@ -268,7 +290,9 @@ function parseDmRoom(room) {
 function getPeerNick(room) {
   const parsed = parseDmRoom(room);
   if (!parsed) return null;
-  return parsed.a === state.nickname ? parsed.b : parsed.a;
+  const st = chatGetState();
+  if (!st) return null;
+  return parsed.a === st.nickname ? parsed.b : parsed.a;
 }
 
 // ============================================
@@ -288,7 +312,7 @@ async function loadChatHistory(room, force = false) {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(
-  `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id,image_url,voice_url,voice_duration&order=created_at.asc&limit=150`,
+      `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id,image_url,voice_url,voice_duration&order=created_at.asc&limit=150`,
       {
         headers: chatHeaders(),
         signal: controller.signal,
@@ -365,11 +389,13 @@ function subscribeToRoom(room) {
         filter: `room=eq.${room}`,
       },
       (payload) => {
+        const st = chatGetState();
+        if (!st) return;
         const msg = payload.new;
-        if (msg.nickname === state.nickname && isRecentSelfMessage(msg)) return;
+        if (msg.nickname === st.nickname && isRecentSelfMessage(msg)) return;
         const isCurrent = CHAT.currentRoom === room;
         const isHidden = document.hidden;
-        if (msg.nickname !== state.nickname && (!isCurrent || isHidden)) {
+        if (msg.nickname !== st.nickname && (!isCurrent || isHidden)) {
           bumpUnread(room);
         }
         if (isCurrent) {
@@ -377,11 +403,11 @@ function subscribeToRoom(room) {
           renderMessage(msg, true, false, replyMsg);
           if (CHAT.searchActive) filterMessagesBySearch();
         }
-        if (msg.nickname !== state.nickname) {
-          playTone(880, 0.08, 'sine', 0.06);
-          setTimeout(() => playTone(1175, 0.12, 'sine', 0.06), 80);
+        if (msg.nickname !== st.nickname) {
+          chatSafePlayTone(880, 0.08, 'sine', 0.06);
+          setTimeout(() => chatSafePlayTone(1175, 0.12, 'sine', 0.06), 80);
         }
-        if (document.hidden && msg.nickname !== state.nickname) {
+        if (document.hidden && msg.nickname !== st.nickname) {
           notifyNewMessage(msg);
         }
         if (room.startsWith('dm_')) refreshDmList();
@@ -446,6 +472,8 @@ function subscribeToReactions() {
 // PRESENCE
 // ============================================
 function trackPresence() {
+  const st = chatGetState();
+  if (!st) return;
   if (CHAT.presenceChannel) {
     try { CHAT.client.removeChannel(CHAT.presenceChannel); } catch (e) {}
     CHAT.presenceChannel = null;
@@ -455,7 +483,7 @@ function trackPresence() {
     CHAT.presenceHeartbeat = null;
   }
 
-  const myNick = state.nickname || 'Аноним';
+  const myNick = st.nickname || 'Аноним';
   const uniqueKey = myNick;
 
   CHAT.presenceChannel = CHAT.client.channel('fireland-online', {
@@ -482,7 +510,7 @@ function trackPresence() {
       if (status === 'SUBSCRIBED') {
         await CHAT.presenceChannel.track({
           nickname: myNick,
-          avatar: state.avatar || null,
+          avatar: st.avatar || null,
           typing: false,
           online_at: new Date().toISOString(),
         });
@@ -491,10 +519,12 @@ function trackPresence() {
 
   CHAT.presenceHeartbeat = setInterval(async () => {
     if (!CHAT.presenceChannel) return;
+    const s = chatGetState();
+    if (!s) return;
     try {
       await CHAT.presenceChannel.track({
-        nickname: myNick,
-        avatar: state.avatar || null,
+        nickname: s.nickname || 'Аноним',
+        avatar: s.avatar || null,
         typing: false,
         online_at: new Date().toISOString(),
       });
@@ -510,18 +540,22 @@ function reinitializePresenceWithNewNick() {
 
 function handleTypingInput() {
   if (!CHAT.presenceChannel) return;
+  const st = chatGetState();
+  if (!st) return;
   CHAT.presenceChannel.track({
-    nickname: state.nickname,
-    avatar: state.avatar || null,
+    nickname: st.nickname,
+    avatar: st.avatar || null,
     typing: true,
     room: CHAT.currentRoom,
     online_at: new Date().toISOString(),
   });
   clearTimeout(CHAT.typingTimeout);
   CHAT.typingTimeout = setTimeout(() => {
+    const s = chatGetState();
+    if (!s || !CHAT.presenceChannel) return;
     CHAT.presenceChannel.track({
-      nickname: state.nickname,
-      avatar: state.avatar || null,
+      nickname: s.nickname,
+      avatar: s.avatar || null,
       typing: false,
       room: CHAT.currentRoom,
       online_at: new Date().toISOString(),
@@ -532,10 +566,12 @@ function handleTypingInput() {
 function updateTypingIndicator(stateMap) {
   const statusEl = document.getElementById('chatStatus');
   if (!statusEl) return;
+  const st = chatGetState();
+  if (!st) return;
   const typers = new Set();
   Object.values(stateMap).flat().forEach(p => {
     if (!p.typing) return;
-    if (p.nickname === state.nickname) return;
+    if (p.nickname === st.nickname) return;
     if (CHAT.currentRoom === 'general' && (!p.room || p.room === 'general')) {
       typers.add(p.nickname);
     } else if (p.room === CHAT.currentRoom) {
@@ -561,9 +597,11 @@ function renderOnlineList() {
   const box = document.getElementById('onlineList');
   const count = document.getElementById('onlineCount');
   if (!box) return;
+  const st = chatGetState();
+  if (!st) return;
   const users = [...CHAT.onlineUsers].sort((a, b) => {
-    if (a === state.nickname) return -1;
-    if (b === state.nickname) return 1;
+    if (a === st.nickname) return -1;
+    if (b === st.nickname) return 1;
     return a.localeCompare(b);
   });
   if (count) count.textContent = users.length;
@@ -572,12 +610,12 @@ function renderOnlineList() {
     return;
   }
   box.innerHTML = users.map(nick => {
-    const isMe = nick === state.nickname;
+    const isMe = nick === st.nickname;
     const avatar = getAvatarForNick(nick);
     return `
-      <div class="online-user ${isMe ? 'me' : ''}" data-nick="${escapeHtml(nick)}" ${!isMe ? 'role="button" tabindex="0"' : ''}>
+      <div class="online-user ${isMe ? 'me' : ''}" data-nick="${chatEscape(nick)}" ${!isMe ? 'role="button" tabindex="0"' : ''}>
         <div class="online-avatar">${avatar}</div>
-        <span class="nick">${escapeHtml(nick)}${isMe ? ' (ты)' : ''}</span>
+        <span class="nick">${chatEscape(nick)}${isMe ? ' (ты)' : ''}</span>
       </div>
     `;
   }).join('');
@@ -590,8 +628,10 @@ function renderOnlineList() {
 // ЛС
 // ============================================
 function openDmWith(peerNick) {
-  if (!peerNick || peerNick === state.nickname) return;
-  const room = makeDmRoom(state.nickname, peerNick);
+  const st = chatGetState();
+  if (!st) return;
+  if (!peerNick || peerNick === st.nickname) return;
+  const room = makeDmRoom(st.nickname, peerNick);
   const existing = CHAT.dmList.find(d => d.room === room);
   if (existing) existing.unread = 0;
   else CHAT.dmList.unshift({ room, peer: peerNick, lastMsg: null, unread: 0 });
@@ -600,7 +640,9 @@ function openDmWith(peerNick) {
 }
 
 function openNewDmModal() {
-  const online = CHAT.onlineUsers.filter(n => n !== state.nickname);
+  const st = chatGetState();
+  if (!st) return;
+  const online = CHAT.onlineUsers.filter(n => n !== st.nickname);
   if (online.length === 0) {
     alert('Сейчас никого нет в сети');
     return;
@@ -622,6 +664,8 @@ function openNewDmModal() {
 function renderDmList() {
   const box = document.getElementById('dmList');
   if (!box) return;
+  const st = chatGetState();
+  if (!st) return;
   const visible = CHAT.dmList.filter(d => d.lastMsg !== null || CHAT.currentRoom === d.room);
   if (visible.length === 0) {
     box.innerHTML = '<div class="chat-empty" style="padding:14px 10px;font-size:12px;">Нажми на игрока в онлайне →</div>';
@@ -632,11 +676,11 @@ function renderDmList() {
     const unread = dm.unread || 0;
     const avatar = getAvatarForNick(dm.peer);
     return `
-      <div class="dm-item ${isActive ? 'active' : ''}" data-room="${escapeHtml(dm.room)}">
+      <div class="dm-item ${isActive ? 'active' : ''}" data-room="${chatEscape(dm.room)}">
         <div class="dm-avatar">${avatar}</div>
         <div class="dm-info">
-          <div class="dm-peer">${escapeHtml(dm.peer)}</div>
-          <div class="dm-preview">${dm.lastMsg ? escapeHtml(dm.lastMsg.slice(0, 30)) : 'Нет сообщений'}</div>
+          <div class="dm-peer">${chatEscape(dm.peer)}</div>
+          <div class="dm-preview">${dm.lastMsg ? chatEscape(dm.lastMsg.slice(0, 30)) : 'Нет сообщений'}</div>
         </div>
         ${unread > 0 ? `<div class="dm-unread">${unread > 99 ? '99+' : unread}</div>` : ''}
       </div>
@@ -655,13 +699,14 @@ function renderDmList() {
 }
 
 async function refreshDmList() {
-  if (!state.nickname || state.nickname === 'Игрок') return;
+  const st = chatGetState();
+  if (!st || !st.nickname || st.nickname === 'Игрок') return;
   if (Date.now() - CHAT.lastDmFetch < 3000) return;
   CHAT.lastDmFetch = Date.now();
   try {
-    const myPrefix1 = `dm_${state.nickname}_`;
+    const myPrefix1 = `dm_${st.nickname}_`;
     const res = await fetch(
-      `${CHAT_URL}/rest/v1/chat_messages?or=(room.like.${encodeURIComponent(myPrefix1)}*,room.like.*_${encodeURIComponent(state.nickname)})&select=room,nickname,text,created_at&order=created_at.desc&limit=100`,
+      `${CHAT_URL}/rest/v1/chat_messages?or=(room.like.${encodeURIComponent(myPrefix1)}*,room.like.*_${encodeURIComponent(st.nickname)})&select=room,nickname,text,created_at&order=created_at.desc&limit=100`,
       { headers: chatHeaders() }
     );
     if (!res.ok) return;
@@ -698,18 +743,24 @@ async function refreshDmList() {
 function openRoomCreateModal() {
   const modal = document.getElementById('roomCreateModal');
   if (!modal) return;
-  document.getElementById('roomNameInput').value = '';
-  document.getElementById('roomDisplayInput').value = '';
+  const nameEl = document.getElementById('roomNameInput');
+  const dispEl = document.getElementById('roomDisplayInput');
+  if (nameEl) nameEl.value = '';
+  if (dispEl) dispEl.value = '';
   const hint = document.getElementById('roomCreateHint');
-  hint.textContent = 'Только латиница, цифры, дефис и подчёркивание';
-  hint.classList.remove('error');
+  if (hint) {
+    hint.textContent = 'Только латиница, цифры, дефис и подчёркивание';
+    hint.classList.remove('error');
+  }
   modal.classList.add('show');
-  setTimeout(() => document.getElementById('roomNameInput').focus(), 200);
+  setTimeout(() => nameEl && nameEl.focus(), 200);
 }
 
 function validateRoomName() {
-  const val = document.getElementById('roomNameInput').value.trim().toLowerCase();
+  const input = document.getElementById('roomNameInput');
   const hint = document.getElementById('roomCreateHint');
+  if (!input || !hint) return false;
+  const val = input.value.trim().toLowerCase();
   const re = /^[a-z0-9_-]{3,30}$/;
   if (val.length === 0) {
     hint.textContent = 'Только латиница, цифры, дефис и подчёркивание';
@@ -727,26 +778,32 @@ function validateRoomName() {
 }
 
 async function handleCreateRoom() {
+  const st = chatGetState();
+  if (!st) return;
   const nameInput = document.getElementById('roomNameInput');
   const displayInput = document.getElementById('roomDisplayInput');
+  if (!nameInput) return;
   const name = nameInput.value.trim().toLowerCase();
-  const display = displayInput.value.trim() || name;
+  const display = (displayInput && displayInput.value.trim()) || name;
   if (!validateRoomName()) return;
   const room = `room_${name}`;
-  if (!state.myRooms) state.myRooms = [];
-  if (!state.myRooms.find(r => r.room === room)) {
-    state.myRooms.push({ room, name, display, created: Date.now() });
-    saveState();
+  if (!st.myRooms) st.myRooms = [];
+  if (!st.myRooms.find(r => r.room === room)) {
+    st.myRooms.push({ room, name, display, created: Date.now() });
+    chatSaveState();
   }
-  document.getElementById('roomCreateModal').classList.remove('show');
+  const modal = document.getElementById('roomCreateModal');
+  if (modal) modal.classList.remove('show');
   await loadMyRooms();
   switchRoom(room);
   renderRoomsList();
 }
 
 function loadMyRooms() {
-  if (!state.myRooms) state.myRooms = [];
-  CHAT.roomsList = [...state.myRooms];
+  const st = chatGetState();
+  if (!st) return;
+  if (!st.myRooms) st.myRooms = [];
+  CHAT.roomsList = [...st.myRooms];
   renderRoomsList();
 }
 
@@ -762,11 +819,11 @@ function renderRoomsList() {
     const isActive = CHAT.currentRoom === r.room;
     const key = r.room.replace('room_', '');
     return `
-      <div class="room-item ${isActive ? 'active' : ''}" data-room="${escapeHtml(r.room)}">
+      <div class="room-item ${isActive ? 'active' : ''}" data-room="${chatEscape(r.room)}">
         <div class="room-icon">🏠</div>
         <div class="room-info">
-          <div class="room-name">${escapeHtml(r.display || r.name)}</div>
-          <div class="room-key">#${escapeHtml(key)}</div>
+          <div class="room-name">${chatEscape(r.display || r.name)}</div>
+          <div class="room-key">#${chatEscape(key)}</div>
         </div>
       </div>
     `;
@@ -780,12 +837,14 @@ function renderRoomsList() {
 // ОТПРАВКА
 // ============================================
 async function handleSendClick() {
+  const st = chatGetState();
+  if (!st) return;
   const input = document.getElementById('chatInput');
   const sendBtn = document.getElementById('chatSendBtn');
   if (!input || CHAT.sending) return;
   const raw = input.value.trim();
   if (!raw) return;
-  const nick = state.nickname;
+  const nick = st.nickname;
   if (!nick || nick === 'Игрок') {
     alert('Сначала установи ник в профиле');
     return;
@@ -831,8 +890,8 @@ async function handleSendClick() {
 
     if (CHAT.presenceChannel) {
       CHAT.presenceChannel.track({
-        nickname: state.nickname,
-        avatar: state.avatar || null,
+        nickname: nick,
+        avatar: st.avatar || null,
         typing: false,
         room: CHAT.currentRoom,
         online_at: new Date().toISOString(),
@@ -890,8 +949,10 @@ function startReply(messageId, nickname, text) {
   CHAT.replyTo = { id: messageId, nickname, text };
   const preview = document.getElementById('chatReplyPreview');
   if (!preview) return;
-  document.getElementById('chatReplyNick').textContent = nickname;
-  document.getElementById('chatReplyText').textContent = text.slice(0, 60);
+  const nickEl = document.getElementById('chatReplyNick');
+  const textEl = document.getElementById('chatReplyText');
+  if (nickEl) nickEl.textContent = nickname;
+  if (textEl) textEl.textContent = (text || '').slice(0, 60);
   preview.style.display = 'flex';
   const input = document.getElementById('chatInput');
   if (input) input.focus();
@@ -931,7 +992,9 @@ async function loadReactionsForMessages(messageIds) {
 }
 
 async function toggleReaction(messageId, emoji) {
-  const myNick = state.nickname;
+  const st = chatGetState();
+  if (!st) return;
+  const myNick = st.nickname;
   if (!myNick || myNick === 'Игрок') return;
   const list = CHAT.reactions[messageId] || [];
   const existing = list.find(r => r.emoji === emoji && r.nickname === myNick);
@@ -968,6 +1031,7 @@ async function toggleReaction(messageId, emoji) {
 function updateMessageReactionsUI(messageId) {
   const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
   if (!msgEl) return;
+  const st = chatGetState();
   const bubble = msgEl.querySelector('.chat-bubble');
   if (!bubble) return;
   let reactionsEl = bubble.querySelector('.chat-reactions');
@@ -982,7 +1046,7 @@ function updateMessageReactionsUI(messageId) {
     grouped[r.emoji].push(r.nickname);
   });
   const html = Object.entries(grouped).map(([emoji, nicks]) => {
-    const mine = nicks.includes(state.nickname);
+    const mine = st && nicks.includes(st.nickname);
     return `<div class="chat-reaction ${mine ? 'mine' : ''}" data-emoji="${emoji}">
       <span>${emoji}</span><span class="r-count">${nicks.length}</span>
     </div>`;
@@ -1108,7 +1172,6 @@ function findMessageById(id) {
   return { id, nickname: nick, text };
 }
 
-// ═══ FIX v21: не дублировать разделитель ═══
 function renderDateDivider(iso, forceLabel = null) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
@@ -1119,16 +1182,18 @@ function renderDateDivider(iso, forceLabel = null) {
 
   const el = document.createElement('div');
   el.className = 'chat-date-divider';
-  el.innerHTML = `<span>${label}</span>`;
+  el.innerHTML = `<span>${chatEscape(label)}</span>`;
   box.appendChild(el);
 }
 
 function renderMessage(msg, scroll, grouped, replyMsg) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
+  const st = chatGetState();
+  if (!st) return;
   const empty = box.querySelector('.chat-empty');
   if (empty) empty.remove();
-  const isMe = msg.nickname === state.nickname;
+  const isMe = msg.nickname === st.nickname;
   const time = formatChatTime(msg.created_at);
 
   const lastMsg = box.querySelector('.chat-message:last-of-type');
@@ -1159,18 +1224,17 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
   if (replyMsg) {
     replyHtml = `
       <div class="chat-reply-quote" data-reply-id="${replyMsg.id}">
-        <div class="r-nick">${escapeHtml(replyMsg.nickname)}</div>
-        <div class="r-text">${escapeHtml(replyMsg.text.slice(0, 80))}</div>
+        <div class="r-nick">${chatEscape(replyMsg.nickname)}</div>
+        <div class="r-text">${chatEscape((replyMsg.text || '').slice(0, 80))}</div>
       </div>
     `;
   }
 
-  // ═══ Определяем mediaHtml ЗАРАНЕЕ (вне template literal) ═══
   let mediaHtml = '';
   if (msg.image_url) {
     mediaHtml = `
-      <div class="chat-image-wrapper" data-image-url="${escapeHtml(msg.image_url)}">
-        <img src="${escapeHtml(msg.image_url)}" alt="картинка" loading="lazy">
+      <div class="chat-image-wrapper" data-image-url="${chatEscape(msg.image_url)}">
+        <img src="${chatEscape(msg.image_url)}" alt="картинка" loading="lazy">
       </div>
     `;
   } else if (msg.voice_url) {
@@ -1183,23 +1247,22 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
       barsHtml += `<div class="bar" style="height:${h}px"></div>`;
     }
     mediaHtml = `
-      <div class="chat-voice-wrapper" data-voice-url="${escapeHtml(msg.voice_url)}" data-duration="${dur}">
+      <div class="chat-voice-wrapper" data-voice-url="${chatEscape(msg.voice_url)}" data-duration="${dur}">
         <button class="chat-voice-play" data-play>▶</button>
         <div class="chat-voice-waveform">${barsHtml}</div>
         <span class="chat-voice-duration">${durStr}</span>
-        <audio preload="none" src="${escapeHtml(msg.voice_url)}"></audio>
+        <audio preload="none" src="${chatEscape(msg.voice_url)}"></audio>
       </div>
     `;
   }
 
-  // ═══ Собираем HTML сообщения ═══
-  const textOrMedia = mediaHtml || `<div class="text">${escapeHtml(msg.text)}</div>`;
+  const textOrMedia = mediaHtml || `<div class="text">${chatEscape(msg.text)}</div>`;
 
   el.innerHTML = `
-    ${!isMe ? `<div class="chat-avatar" data-nick="${escapeHtml(msg.nickname)}">${avatar}</div>` : ''}
+    ${!isMe ? `<div class="chat-avatar" data-nick="${chatEscape(msg.nickname)}">${avatar}</div>` : ''}
     <div class="chat-bubble">
       ${replyHtml}
-      <div class="chat-author" data-nick="${escapeHtml(msg.nickname)}">${escapeHtml(msg.nickname)}</div>
+      <div class="chat-author" data-nick="${chatEscape(msg.nickname)}">${chatEscape(msg.nickname)}</div>
       ${textOrMedia}
       <div class="chat-time">${time}</div>
       <div class="chat-message-actions">
@@ -1211,16 +1274,15 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
     ${isMe ? `<div class="chat-avatar me">${avatar}</div>` : ''}
   `;
 
-  // ═══ Lightbox для картинок ═══
   el.querySelectorAll('.chat-image-wrapper').forEach(w => {
     w.addEventListener('click', () => openLightbox(w.dataset.imageUrl));
   });
 
-  // ═══ Плеер для голосовых ═══
   el.querySelectorAll('.chat-voice-wrapper').forEach(w => {
     const btn = w.querySelector('[data-play]');
     const audio = w.querySelector('audio');
     const bars = w.querySelectorAll('.bar');
+    if (!btn || !audio) return;
     const updateBars = () => {
       const dur = parseFloat(audio.duration) || 1;
       const progress = audio.currentTime / dur;
@@ -1252,14 +1314,12 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
     });
   });
 
-  // ═══ Клик на ник/аватар → профиль ═══
   el.querySelectorAll('[data-nick]').forEach(node => {
     if (node.classList.contains('chat-avatar') && isMe) return;
     if (node.classList.contains('chat-author') && isMe) return;
     node.addEventListener('click', () => showUserProfile(msg.nickname));
   });
 
-  // ═══ Кнопки действий ═══
   el.querySelectorAll('.chat-action-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1270,9 +1330,8 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
     });
   });
 
-  // ═══ Клик на reply-цитату ═══
   const replyQuote = el.querySelector('.chat-reply-quote');
-  if (replyQuote) {
+  if (replyQuote && replyMsg) {
     replyQuote.addEventListener('click', () => {
       const orig = document.querySelector(`[data-message-id="${replyMsg.id}"]`);
       if (orig) {
@@ -1347,20 +1406,23 @@ function setChatStatus(text, cls) {
 // АВАТАРКИ
 // ============================================
 function getAvatarForNick(nick) {
-  if (nick === state.nickname && state.avatar) {
-    return `<img src="${state.avatar}" alt="">`;
+  const st = chatGetState();
+  if (st && nick === st.nickname && st.avatar) {
+    return `<img src="${st.avatar}" alt="">`;
   }
   if (CHAT.onlineAvatars[nick]) {
     return `<img src="${CHAT.onlineAvatars[nick]}" alt="">`;
   }
-  return escapeHtml(nick.charAt(0).toUpperCase());
+  return chatEscape(nick.charAt(0).toUpperCase());
 }
 
 // ============================================
 // ПРОФИЛЬ ИГРОКА
 // ============================================
 async function showUserProfile(nick) {
-  if (nick === state.nickname) {
+  const st = chatGetState();
+  if (!st) return;
+  if (nick === st.nickname) {
     if (typeof renderProfile === 'function') renderProfile();
     if (typeof renderAchievements === 'function') renderAchievements();
     if (typeof renderRecords === 'function') renderRecords();
@@ -1371,13 +1433,18 @@ async function showUserProfile(nick) {
   }
   const modal = document.getElementById('userProfileModal');
   if (!modal) return;
-  document.getElementById('userProfileNick').textContent = nick;
-  document.getElementById('userProfileLevel').textContent = '...';
-  document.getElementById('userProfileXp').textContent = '...';
-  document.getElementById('userProfileAch').textContent = '...';
-  document.getElementById('userProfileTitle').textContent = '...';
+  const nickEl = document.getElementById('userProfileNick');
+  const levelEl = document.getElementById('userProfileLevel');
+  const xpEl = document.getElementById('userProfileXp');
+  const achEl = document.getElementById('userProfileAch');
+  const titleEl = document.getElementById('userProfileTitle');
   const avatarEl = document.getElementById('userProfileAvatar');
-  avatarEl.innerHTML = getAvatarForNick(nick);
+  if (nickEl) nickEl.textContent = nick;
+  if (levelEl) levelEl.textContent = '...';
+  if (xpEl) xpEl.textContent = '...';
+  if (achEl) achEl.textContent = '...';
+  if (titleEl) titleEl.textContent = '...';
+  if (avatarEl) avatarEl.innerHTML = getAvatarForNick(nick);
   modal.classList.add('show');
   try {
     const res = await fetch(
@@ -1387,21 +1454,21 @@ async function showUserProfile(nick) {
     if (!res.ok) throw new Error('fetch failed');
     const [row] = await res.json();
     if (!row) {
-      document.getElementById('userProfileLevel').textContent = '—';
-      document.getElementById('userProfileXp').textContent = '—';
-      document.getElementById('userProfileAch').textContent = '—';
-      document.getElementById('userProfileTitle').textContent = 'Нет в лидерборде';
+      if (levelEl) levelEl.textContent = '—';
+      if (xpEl) xpEl.textContent = '—';
+      if (achEl) achEl.textContent = '—';
+      if (titleEl) titleEl.textContent = 'Нет в лидерборде';
       return;
     }
     const title = typeof getTitleForLevel === 'function'
       ? getTitleForLevel(row.level) : 'Игрок';
-    document.getElementById('userProfileLevel').textContent = row.level;
-    document.getElementById('userProfileXp').textContent = (row.total_xp || 0).toLocaleString('ru-RU');
-    document.getElementById('userProfileAch').textContent = row.achievements_count || 0;
-    document.getElementById('userProfileTitle').textContent = title;
+    if (levelEl) levelEl.textContent = row.level;
+    if (xpEl) xpEl.textContent = (row.total_xp || 0).toLocaleString('ru-RU');
+    if (achEl) achEl.textContent = row.achievements_count || 0;
+    if (titleEl) titleEl.textContent = title;
   } catch (e) {
     console.warn('[Chat] Профиль:', e);
-    document.getElementById('userProfileTitle').textContent = 'Ошибка загрузки';
+    if (titleEl) titleEl.textContent = 'Ошибка загрузки';
   }
 }
 
@@ -1409,8 +1476,10 @@ async function showUserProfile(nick) {
 // НЕПРОЧИТАННЫЕ
 // ============================================
 function bumpUnread(room) {
+  const st = chatGetState();
+  if (!st) return;
   if (room === 'general') {
-    state.unreadChatCount = (state.unreadChatCount || 0) + 1;
+    st.unreadChatCount = (st.unreadChatCount || 0) + 1;
   } else {
     const dm = CHAT.dmList.find(d => d.room === room);
     if (dm) dm.unread = (dm.unread || 0) + 1;
@@ -1421,15 +1490,17 @@ function bumpUnread(room) {
     renderDmList();
   }
   updateChatBadge();
-  saveState();
+  chatSaveState();
 }
 
 function updateChatBadge() {
+  const st = chatGetState();
+  if (!st) return;
   const tab = document.querySelector('.tab-btn[data-tab="chat"]');
   if (!tab) return;
   const old = tab.querySelector('.tab-badge');
   if (old) old.remove();
-  const generalCount = state.unreadChatCount || 0;
+  const generalCount = st.unreadChatCount || 0;
   const dmCount = CHAT.dmList.reduce((sum, d) => sum + (d.unread || 0), 0);
   const total = generalCount + dmCount;
   if (total > 0) {
@@ -1455,6 +1526,8 @@ function notifyNewMessage(msg) {
 // ОТКРЫТИЕ ВКЛАДКИ
 // ============================================
 function onChatTabOpen() {
+  const st = chatGetState();
+  if (!st) return;
   if (!CHAT.client) return;
   if (!CHAT.presenceChannel) trackPresence();
   subscribeToReactions();
@@ -1468,7 +1541,7 @@ function onChatTabOpen() {
   refreshDmList();
   loadMyRooms();
 
-  if (CHAT.currentRoom === 'general') state.unreadChatCount = 0;
+  if (CHAT.currentRoom === 'general') st.unreadChatCount = 0;
   else {
     const dm = CHAT.dmList.find(d => d.room === CHAT.currentRoom);
     if (dm) dm.unread = 0;
@@ -1476,8 +1549,8 @@ function onChatTabOpen() {
   updateChatBadge();
   hideNickOnboarding();
   if (box) box.scrollTop = box.scrollHeight;
-  state.lastReadChatAt = new Date().toISOString();
-  saveState();
+  st.lastReadChatAt = new Date().toISOString();
+  chatSaveState();
 }
 
 // ============================================
@@ -1508,7 +1581,8 @@ function updateChatHeader() {
 function showNickOnboarding() {
   const el = document.getElementById('nickOnboarding');
   if (!el) return;
-  if (state.nickname && state.nickname !== 'Игрок') {
+  const st = chatGetState();
+  if (st && st.nickname && st.nickname !== 'Игрок') {
     el.classList.remove('show');
     return;
   }
@@ -1557,14 +1631,16 @@ function initNickOnboarding() {
 
   if (btn) {
     btn.addEventListener('click', async () => {
+      const st = chatGetState();
+      if (!st || !input) return;
       const nick = (input.value || '').trim();
       if (!nick || nick.length < 2 || /\s/.test(nick)) {
         input.focus();
         return;
       }
-      const oldNick = state.nickname;
-      state.nickname = nick.slice(0, 20);
-      saveState();
+      const oldNick = st.nickname;
+      st.nickname = nick.slice(0, 20);
+      chatSaveState();
       if (typeof saveNickname === 'function') {
         btn.disabled = true;
         btn.textContent = '⏳';
@@ -1576,12 +1652,12 @@ function initNickOnboarding() {
       if (typeof updateChatBadge === 'function') updateChatBadge();
       hideNickOnboarding();
       if (typeof SOUNDS !== 'undefined' && SOUNDS.quest) SOUNDS.quest();
-      if (oldNick !== state.nickname) reinitializePresenceWithNewNick();
+      if (oldNick !== st.nickname) reinitializePresenceWithNewNick();
     });
   }
   if (input) {
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); btn.click(); }
+      if (e.key === 'Enter' && btn) { e.preventDefault(); btn.click(); }
     });
   }
   if (skip) skip.addEventListener('click', hideNickOnboarding);
@@ -1589,44 +1665,16 @@ function initNickOnboarding() {
 }
 
 // ============================================
-// ESCAPE HTML
-// ============================================
-if (typeof window.escapeHtml !== 'function') {
-  window.escapeHtml = function (text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  };
-}
-
-// ============================================
-// АВТОИНИЦИАЛИЗАЦИЯ
-// ============================================
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    initMessenger();
-    initNickOnboarding();
-  }, 500);
-});
-
-let _presenceRefreshTimer = null;
-window.debouncedPresenceRefresh = function() {
-  clearTimeout(_presenceRefreshTimer);
-  _presenceRefreshTimer = setTimeout(() => {
-    if (state.nickname && state.nickname !== 'Игрок') {
-      reinitializePresenceWithNewNick();
-    }
-  }, 1500);
-};
-// ============================================
 // КАРТИНКИ В ЧАТЕ
 // ============================================
 async function handleImageUpload(e) {
+  const st = chatGetState();
+  if (!st) return;
   const file = e.target.files[0];
   if (!file) return;
   e.target.value = '';
 
-  if (!state.nickname || state.nickname === 'Игрок') {
+  if (!st.nickname || st.nickname === 'Игрок') {
     alert('Сначала установи ник в профиле');
     return;
   }
@@ -1645,12 +1693,8 @@ async function handleImageUpload(e) {
   if (input) input.disabled = true;
 
   try {
-    // Сжимаем картинку
     const compressed = await compressImage(file, 800, 0.8);
-
-    // Загружаем в Storage
-    const ext = 'jpg';
-    const fileName = `${state.nickname}_${Date.now()}.${ext}`;
+    const fileName = `${st.nickname}_${Date.now()}.jpg`;
     const uploadUrl = `${CHAT_URL}/storage/v1/object/chat-images/${fileName}`;
 
     const uploadRes = await fetch(uploadUrl, {
@@ -1673,10 +1717,9 @@ async function handleImageUpload(e) {
 
     const publicUrl = `${CHAT_URL}/storage/v1/object/public/chat-images/${fileName}`;
 
-    // Отправляем сообщение с картинкой
     const body = {
       room: CHAT.currentRoom,
-      nickname: state.nickname,
+      nickname: st.nickname,
       text: '📷 Картинка',
       image_url: publicUrl,
     };
@@ -1744,22 +1787,25 @@ function closeLightbox() {
 }
 
 // ============================================
-// ГОЛОСОВЫЕ СООБЩЕНИЯ
+// ГОЛОСОВЫЕ СООБЩЕНИЯ · FIXED
 // ============================================
 let voiceRecorder = null;
 let voiceChunks = [];
 let voiceStartTime = 0;
 let voiceTimerInterval = null;
 let voiceStream = null;
+let voiceSendAfterStop = false;
 
 async function toggleVoiceRecording() {
+  const st = chatGetState();
+  if (!st) return;
+
   if (voiceRecorder && voiceRecorder.state === 'recording') {
-    // Стоп → отправить
     stopVoiceRecording(true);
     return;
   }
 
-  if (!state.nickname || state.nickname === 'Игрок') {
+  if (!st.nickname || st.nickname === 'Игрок') {
     alert('Сначала установи ник в профиле');
     return;
   }
@@ -1768,6 +1814,7 @@ async function toggleVoiceRecording() {
     voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     voiceRecorder = new MediaRecorder(voiceStream);
     voiceChunks = [];
+    voiceSendAfterStop = false;
 
     voiceRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) voiceChunks.push(e.data);
@@ -1778,12 +1825,16 @@ async function toggleVoiceRecording() {
         voiceStream.getTracks().forEach(t => t.stop());
         voiceStream = null;
       }
+      if (voiceSendAfterStop) {
+        voiceSendAfterStop = false;
+        uploadVoiceMessage();
+      }
+      voiceRecorder = null;
     };
 
     voiceRecorder.start();
     voiceStartTime = Date.now();
 
-    // Показываем панель записи
     const bar = document.getElementById('chatRecordingBar');
     const timeEl = document.getElementById('chatRecordingTime');
     const voiceBtn = document.getElementById('chatVoiceBtn');
@@ -1795,7 +1846,6 @@ async function toggleVoiceRecording() {
       const mm = String(Math.floor(sec / 60)).padStart(2, '0');
       const ss = String(sec % 60).padStart(2, '0');
       if (timeEl) timeEl.textContent = `${mm}:${ss}`;
-      // Автостоп на 60 сек
       if (sec >= 60) stopVoiceRecording(true);
     }, 200);
   } catch (e) {
@@ -1806,8 +1856,8 @@ async function toggleVoiceRecording() {
 
 function stopVoiceRecording(send) {
   if (voiceRecorder && voiceRecorder.state === 'recording') {
-    voiceRecorder._sendAfterStop = send;
-    voiceRecorder.stop();
+    voiceSendAfterStop = !!send;
+    try { voiceRecorder.stop(); } catch (e) {}
   }
   if (voiceTimerInterval) {
     clearInterval(voiceTimerInterval);
@@ -1821,6 +1871,7 @@ function stopVoiceRecording(send) {
 
 function cancelVoiceRecording() {
   voiceChunks = [];
+  voiceSendAfterStop = false;
   stopVoiceRecording(false);
 }
 
@@ -1829,12 +1880,10 @@ async function sendVoiceRecording() {
 }
 
 async function uploadVoiceMessage() {
-  if (voiceChunks.length === 0) return;
-  const duration = Math.floor((Date.now() - voiceStartTime) / 1000);
-  if (duration < 1) {
-    alert('Слишком коротко');
-    return;
-  }
+  const st = chatGetState();
+  if (!st) return;
+  if (!voiceChunks || voiceChunks.length === 0) return;
+  const duration = Math.max(1, Math.floor((Date.now() - voiceStartTime) / 1000));
 
   const blob = new Blob(voiceChunks, { type: 'audio/webm' });
   voiceChunks = [];
@@ -1848,7 +1897,7 @@ async function uploadVoiceMessage() {
   if (voiceBtn) voiceBtn.disabled = true;
 
   try {
-    const fileName = `${state.nickname}_${Date.now()}.webm`;
+    const fileName = `${st.nickname}_${Date.now()}.webm`;
     const uploadUrl = `${CHAT_URL}/storage/v1/object/chat-voice/${fileName}`;
 
     const uploadRes = await fetch(uploadUrl, {
@@ -1872,7 +1921,7 @@ async function uploadVoiceMessage() {
 
     const body = {
       room: CHAT.currentRoom,
-      nickname: state.nickname,
+      nickname: st.nickname,
       text: '🎤 Голосовое',
       voice_url: publicUrl,
       voice_duration: duration,
@@ -1906,39 +1955,45 @@ async function uploadVoiceMessage() {
   }
 }
 
-// Автозапуск upload после stop
-document.addEventListener('DOMContentLoaded', () => {
-  // voiceRecorder.onstop уже задан выше — добавим upload внутри
-  // Но проще: переопределим onstop в toggleVoiceRecording через setTimeout
-});
+// ============================================
+// АВТОИНИЦИАЛИЗАЦИЯ · ждём state
+// ============================================
+function tryInitMessenger(attempt = 0) {
+  if (typeof state !== 'undefined' && state) {
+    initMessenger();
+    initNickOnboarding();
+    return;
+  }
+  if (attempt < 40) {
+    setTimeout(() => tryInitMessenger(attempt + 1), 250);
+  } else {
+    console.warn('[Chat] state так и не появился — инициализирую без него');
+    initMessenger();
+    initNickOnboarding();
+  }
+}
 
-// Патч: после stop — если _sendAfterStop, загружаем
-const _origStopVoiceRecording = stopVoiceRecording;
-stopVoiceRecording = function(send) {
-  if (voiceRecorder && voiceRecorder.state === 'recording') {
-    voiceRecorder._sendAfterStop = send;
-    voiceRecorder.onstop = () => {
-      if (voiceStream) {
-        voiceStream.getTracks().forEach(t => t.stop());
-        voiceStream = null;
-      }
-      if (voiceRecorder._sendAfterStop) {
-        uploadVoiceMessage();
-      }
-    };
-    voiceRecorder.stop();
-  }
-  if (voiceTimerInterval) {
-    clearInterval(voiceTimerInterval);
-    voiceTimerInterval = null;
-  }
-  const bar = document.getElementById('chatRecordingBar');
-  const voiceBtn = document.getElementById('chatVoiceBtn');
-  if (bar) bar.style.display = 'none';
-  if (voiceBtn) voiceBtn.classList.remove('recording');
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(() => tryInitMessenger(), 300);
+} else {
+  window.addEventListener('load', () => setTimeout(() => tryInitMessenger(), 300));
+}
+
+let _presenceRefreshTimer = null;
+window.debouncedPresenceRefresh = function() {
+  clearTimeout(_presenceRefreshTimer);
+  _presenceRefreshTimer = setTimeout(() => {
+    const st = chatGetState();
+    if (st && st.nickname && st.nickname !== 'Игрок') {
+      reinitializePresenceWithNewNick();
+    }
+  }, 1500);
 };
+
+// Экспорт
 window.onChatTabOpen = onChatTabOpen;
 window.updateChatBadge = updateChatBadge;
 window.reinitializePresenceWithNewNick = reinitializePresenceWithNewNick;
 window.openDmWith = openDmWith;
 window.switchRoom = switchRoom;
+window.showUserProfile = showUserProfile;

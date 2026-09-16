@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Community Games
+// FireLand Community Games · FIXED
 // ============================================
 
 const COMM = {
@@ -19,6 +19,19 @@ function commHeaders(extra = {}) {
   };
 }
 
+function commEscape(text) {
+  return (window.escapeHtml || function(t){return t})(text);
+}
+function commGetState() {
+  if (typeof state !== 'undefined' && state) return state;
+  return null;
+}
+function commSaveState(immediate = false) {
+  if (typeof saveState === 'function') {
+    try { saveState(immediate); } catch (e) {}
+  }
+}
+
 // ============================================
 // ЗАГРУЗКА СПИСКА ИГР
 // ============================================
@@ -26,7 +39,7 @@ async function loadCommunityGames() {
   if (COMM.loading) return;
   COMM.loading = true;
   const panel = document.getElementById('communityPanel');
-  if (!panel) return;
+  if (!panel) { COMM.loading = false; return; }
   panel.innerHTML = '<div class="community-empty">⏳ Загрузка...</div>';
 
   try {
@@ -53,6 +66,7 @@ function renderCommunityGames() {
   const panel = document.getElementById('communityPanel');
   const count = document.getElementById('communityCount');
   if (!panel) return;
+  const st = commGetState();
   if (count) count.textContent = COMM.games.length + ' игр';
 
   if (COMM.games.length === 0) {
@@ -67,14 +81,14 @@ function renderCommunityGames() {
   }
 
   panel.innerHTML = COMM.games.map(g => {
-    const isMine = g.author_nick === state.nickname;
+    const isMine = st && g.author_nick === st.nickname;
     return `
       <div class="community-card" data-game-id="${g.id}">
         ${isMine ? `<button class="community-card-delete" data-delete-id="${g.id}" title="Удалить">✕</button>` : ''}
-        <div class="community-card-icon">${escapeHtml(g.icon || '🎮')}</div>
-        <div class="community-card-name">${escapeHtml(g.name)}</div>
-        <div class="community-card-genre">${escapeHtml(g.genre || 'Разное')}</div>
-        <div class="community-card-author">от <b>${escapeHtml(g.author_nick)}</b></div>
+        <div class="community-card-icon">${commEscape(g.icon || '🎮')}</div>
+        <div class="community-card-name">${commEscape(g.name)}</div>
+        <div class="community-card-genre">${commEscape(g.genre || 'Разное')}</div>
+        <div class="community-card-author">от <b>${commEscape(g.author_nick)}</b></div>
         <div class="community-card-plays">▶ ${g.plays || 0} игр</div>
       </div>
     `;
@@ -100,9 +114,13 @@ function renderCommunityGames() {
 }
 
 // ============================================
-// ЗАПУСК ИГРЫ ИЗ СООБЩЕСТВА
+// ЗАПУСК ИГРЫ ИЗ СООБЩЕСТВА · FIXED
 // ============================================
 async function openCommunityGame(game) {
+  const st = commGetState();
+  if (!st) return;
+
+  // Инкремент plays
   try {
     await fetch(`${COMMUNITY_URL}/rest/v1/games?id=eq.${game.id}`, {
       method: 'PATCH',
@@ -116,34 +134,57 @@ async function openCommunityGame(game) {
   const iframe = document.getElementById('gameIframe');
   if (!container || !iframe) return;
 
-  hideMascot();
+  if (typeof hideMascot === 'function') hideMascot();
   document.body.classList.add('game-active');
-  showGameSkeleton();
+  if (typeof showGameSkeleton === 'function') showGameSkeleton();
+
   try { iframe.src = 'about:blank'; } catch (e) {}
-  requestAnimationFrame(() => { iframe.src = game.url; });
-  container.style.display = 'block';
-  isGameOpen = true;
+
+  // ФИКС: сбрасываем старые обработчики
+  iframe.onload = null;
+  iframe.onerror = null;
 
   let loadHandled = false;
   const onLoad = () => {
     if (loadHandled) return;
     loadHandled = true;
-    hideGameSkeleton();
+    if (typeof hideGameSkeleton === 'function') hideGameSkeleton();
   };
   iframe.onload = onLoad;
   iframe.onerror = onLoad;
-  setTimeout(() => { if (isGameOpen) hideGameSkeleton(); }, 4000);
 
-  currentGameStartTime = Date.now();
-  sessionStartTotalTime = state.totalTime;
-  sessionXpStart = state.totalXp;
-  sessionAchEarned = [];
-  addGameMenuListeners();
+  requestAnimationFrame(() => { iframe.src = game.url; });
+  container.style.display = 'block';
 
-  // Сохраняем название игры для post-game
-  state.lastGameId = 'community_' + game.id;
-  state.lastGameTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  saveState();
+  // ФИКС: экспортируем флаг через window, чтобы избежать проблем с let-скоупом
+  if (typeof isGameOpen !== 'undefined') {
+    try { window.isGameOpen = true; } catch (e) {}
+  }
+
+  setTimeout(() => { if (typeof hideGameSkeleton === 'function') hideGameSkeleton(); }, 4000);
+
+  // ФИКС: стартуем таймер через безопасный вызов
+  if (typeof startTimeTicker === 'function') {
+    try { startTimeTicker('community_' + game.id); } catch (e) { console.warn('[Community] startTimeTicker:', e); }
+  } else if (typeof window.startTimeTicker === 'function') {
+    window.startTimeTicker('community_' + game.id);
+  }
+
+  // ФИКС: добавляем меню
+  if (typeof addGameMenuListeners === 'function') {
+    try { addGameMenuListeners(); } catch (e) {}
+  } else if (typeof window.addGameMenuListeners === 'function') {
+    window.addGameMenuListeners();
+  }
+
+  st.lastGameId = 'community_' + game.id;
+  st.lastGameTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  commSaveState();
+
+  // ФИКС: обновляем last-game-bar
+  if (typeof updateLastGameBar === 'function') {
+    try { updateLastGameBar(); } catch (e) {}
+  }
 }
 
 // ============================================
@@ -158,12 +199,16 @@ function openUploadModal() {
   document.getElementById('uploadDescription').value = '';
   document.getElementById('uploadFile').value = '';
   document.getElementById('uploadFileName').textContent = 'Файл не выбран';
-  document.getElementById('uploadHint').textContent = '';
-  document.getElementById('uploadHint').className = 'upload-hint';
+  const hint = document.getElementById('uploadHint');
+  hint.textContent = '';
+  hint.className = 'upload-hint';
   modal.classList.add('show');
 }
 
 async function handleUploadSubmit() {
+  const st = commGetState();
+  if (!st) return;
+
   const nameEl = document.getElementById('uploadName');
   const iconEl = document.getElementById('uploadIcon');
   const genreEl = document.getElementById('uploadGenre');
@@ -193,7 +238,7 @@ async function handleUploadSubmit() {
     hint.className = 'upload-hint error';
     return;
   }
-  if (!state.nickname || state.nickname === 'Игрок') {
+  if (!st.nickname || st.nickname === 'Игрок') {
     hint.textContent = '❌ Установи ник в профиле';
     hint.className = 'upload-hint error';
     return;
@@ -205,7 +250,7 @@ async function handleUploadSubmit() {
   hint.className = 'upload-hint';
 
   try {
-    const fileName = `${state.nickname}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const fileName = `${st.nickname}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const uploadUrl = `${COMMUNITY_URL}/storage/v1/object/${COMMUNITY_BUCKET}/${fileName}`;
 
     const uploadRes = await fetch(uploadUrl, {
@@ -242,7 +287,7 @@ async function handleUploadSubmit() {
         genre,
         description,
         url: publicUrl,
-        author_nick: state.nickname,
+        author_nick: st.nickname,
         approved: true,
       }),
     });
@@ -260,6 +305,18 @@ async function handleUploadSubmit() {
     hint.textContent = '✅ Игра загружена!';
     hint.className = 'upload-hint success';
     btn.textContent = '✅ Готово';
+
+    // ФИКС: учёт в ачивках
+    if (typeof state !== 'undefined' && state) {
+      state.myCommunityGames = (state.myCommunityGames || 0) + 1;
+      if (state.todayStats) state.todayStats.communityUploaded = true;
+      if (typeof unlockAch === 'function') {
+        unlockAch('first_community');
+        if (state.myCommunityGames >= 5) unlockAch('community_5');
+      }
+      if (typeof updateQuestProgress === 'function') updateQuestProgress();
+      commSaveState();
+    }
 
     setTimeout(() => {
       document.getElementById('uploadModal').classList.remove('show');
@@ -281,7 +338,8 @@ async function handleUploadSubmit() {
 // УДАЛЕНИЕ ИГРЫ
 // ============================================
 async function deleteCommunityGame(game) {
-  if (game.author_nick !== state.nickname) return;
+  const st = commGetState();
+  if (!st || game.author_nick !== st.nickname) return;
   if (!confirm(`Удалить игру "${game.name}"?`)) return;
 
   try {
@@ -311,7 +369,7 @@ function initCommunity() {
   const uploadSubmit = document.getElementById('uploadSubmitBtn');
 
   if (uploadBtn) uploadBtn.addEventListener('click', openUploadModal);
-  if (uploadFileBtn) {
+  if (uploadFileBtn && uploadFile) {
     uploadFileBtn.addEventListener('click', () => uploadFile.click());
   }
   if (uploadFile) {
@@ -338,3 +396,4 @@ function initCommunity() {
 
 window.initCommunity = initCommunity;
 window.loadCommunityGames = loadCommunityGames;
+window.openCommunityGame = openCommunityGame;

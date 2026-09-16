@@ -1438,6 +1438,40 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ============================================
 (async function init(){
+    // ============================================
+// ЭКСПОРТ для messenger.js / community.js
+// ============================================
+
+// Синхронизируем window.isGameOpen с let isGameOpen через getter/setter
+Object.defineProperty(window, 'isGameOpen', {
+  get() { return isGameOpen; },
+  set(v) { isGameOpen = v; },
+  configurable: true
+});
+
+window.playTone = playTone;
+window.saveState = saveState;
+window.getLevelFromTotalXp = getLevelFromTotalXp;
+window.getTitleForLevel = getTitleForLevel;
+window.unlockAch = unlockAch;
+window.updateQuestProgress = updateQuestProgress;
+window.renderProfile = renderProfile;
+window.renderAchievements = renderAchievements;
+window.renderRecords = renderRecords;
+window.updateLevelDisplay = updateLevelDisplay;
+window.hideMascot = hideMascot;
+window.showMascot = showMascot;
+window.showGameSkeleton = showGameSkeleton;
+window.hideGameSkeleton = hideGameSkeleton;
+window.addGameMenuListeners = addGameMenuListeners;
+window.removeGameMenuListeners = removeGameMenuListeners;
+window.closeGame = closeGame;
+window.startTimeTicker = startTimeTicker;
+window.stopTimeTicker = stopTimeTicker;
+window.updateLastGameBar = updateLastGameBar;
+window.SOUNDS = SOUNDS;
+window.showPostGameScreen = showPostGameScreen;
+
     applyDeviceMode();
     await loadState();
     state.selectedGameId=null;

@@ -1,6 +1,5 @@
 // ============================================
-// FireLand Leaderboard · Supabase v17
-// Только Publishable key
+// FireLand Leaderboard · Supabase v18 · FIXED
 // ============================================
 
 const SUPABASE_URL = 'https://syfkmrjdrxphtxcpwgyy.supabase.co';
@@ -14,17 +13,47 @@ const LB = {
   isSaving: false,
 };
 
+// ФИКС #2: единый escapeHtml в window
+window.escapeHtml = window.escapeHtml || function (text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+};
+const escapeHtml = window.escapeHtml;
+
+// ФИКС #5: безопасный saveState (не падает, если script.js ещё не загрузился)
+function lbSafeSaveState(immediate = false) {
+  if (typeof saveState === 'function') {
+    try { saveState(immediate); } catch (e) { console.warn('[LB] saveState:', e); }
+  }
+}
+
+// ФИКС #4: безопасные геттеры из script.js
+function lbGetLevelFromTotalXp(totalXp) {
+  if (typeof getLevelFromTotalXp === 'function') return getLevelFromTotalXp(totalXp);
+  return { level: 1, currentXp: 0, neededXp: 100 };
+}
+function lbGetTitleForLevel(level) {
+  if (typeof getTitleForLevel === 'function') return getTitleForLevel(level);
+  return '🌱 Новичок';
+}
+function lbGetState() {
+  if (typeof state !== 'undefined' && state) return state;
+  return null;
+}
+
 async function submitScore() {
-  if (!state.nickname || state.nickname === 'Игрок') {
+  const st = lbGetState();
+  if (!st || !st.nickname || st.nickname === 'Игрок') {
     console.log('[LB] Не отправляю: ник не установлен');
     return false;
   }
-  const lvlInfo = getLevelFromTotalXp(state.totalXp);
+  const lvlInfo = lbGetLevelFromTotalXp(st.totalXp);
   const payload = {
-    p_nickname: state.nickname,
+    p_nickname: st.nickname,
     p_level: lvlInfo.level,
-    p_total_xp: state.totalXp,
-    p_achievements_count: state.achievements.length,
+    p_total_xp: st.totalXp,
+    p_achievements_count: st.achievements.length,
   };
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score`, {
@@ -41,8 +70,9 @@ async function submitScore() {
       console.warn('[LB] Ошибка отправки:', res.status, err);
       return false;
     }
-    state.lastSubmittedNick = state.nickname;
-    console.log('[LB] ✅ Отправлено:', state.nickname, 'Lvl', lvlInfo.level, state.totalXp, 'XP');
+    st.lastSubmittedNick = st.nickname;
+    lbSafeSaveState();
+    console.log('[LB] ✅ Отправлено:', st.nickname, 'Lvl', lvlInfo.level, st.totalXp, 'XP');
     return true;
   } catch (e) {
     console.warn('[LB] Сеть недоступна:', e.message);
@@ -52,19 +82,21 @@ async function submitScore() {
 
 async function saveNickname() {
   if (LB.isSaving) return { ok: false, message: 'Уже сохраняется' };
+  const st = lbGetState();
+  if (!st) return { ok: false, message: 'Состояние не загружено' };
   LB.isSaving = true;
-  const newNick = state.nickname;
-  const oldNick = state.lastSubmittedNick;
+  const newNick = st.nickname;
+  const oldNick = st.lastSubmittedNick;
   if (!newNick || newNick === 'Игрок') {
     LB.isSaving = false;
     return { ok: false, message: 'Введи ник' };
   }
-  const lvlInfo = getLevelFromTotalXp(state.totalXp);
+  const lvlInfo = lbGetLevelFromTotalXp(st.totalXp);
   const payload = {
     p_nickname: newNick,
     p_level: lvlInfo.level,
-    p_total_xp: state.totalXp,
-    p_achievements_count: state.achievements.length,
+    p_total_xp: st.totalXp,
+    p_achievements_count: st.achievements.length,
   };
   try {
     if (oldNick && oldNick !== newNick) {
@@ -82,8 +114,8 @@ async function saveNickname() {
           body: JSON.stringify({
             nickname: newNick,
             level: lvlInfo.level,
-            total_xp: state.totalXp,
-            achievements_count: state.achievements.length,
+            total_xp: st.totalXp,
+            achievements_count: st.achievements.length,
             updated_at: new Date().toISOString(),
           }),
         }
@@ -108,8 +140,8 @@ async function saveNickname() {
       LB.isSaving = false;
       return { ok: false, message: 'Ошибка сервера: ' + res.status };
     }
-    state.lastSubmittedNick = newNick;
-    saveState(true);
+    st.lastSubmittedNick = newNick;
+    lbSafeSaveState(true);
     console.log('[LB] ✅ Ник сохранён:', newNick);
     LB.isSaving = false;
     return { ok: true, message: 'Ник сохранён!' };
@@ -165,13 +197,14 @@ function renderLeaderboard(data) {
       </div>`;
     return;
   }
-  const myNick = state.nickname || 'Игрок';
+  const st = lbGetState();
+  const myNick = (st && st.nickname) || 'Игрок';
   const myIndex = data.findIndex(r => r.nickname === myNick);
   const rows = data.map((row, i) => {
     const place = i + 1;
     const isMe = row.nickname === myNick;
     const medal = place === 1 ? '👑' : place === 2 ? '🥈' : place === 3 ? '🥉' : `#${place}`;
-    const titleFull = getTitleForLevel(row.level);
+    const titleFull = lbGetTitleForLevel(row.level);
     const title = titleFull.replace(/^[^\s]+\s/, '');
     return `
       <div class="lb-row ${isMe ? 'lb-me' : ''} ${place <= 3 ? 'lb-top' : ''}">
@@ -252,14 +285,19 @@ function formatXp(xp) {
   return xp.toLocaleString('ru-RU');
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 async function initLeaderboard() {
   const data = await fetchLeaderboard(true);
   renderLeaderboard(data);
   console.log('[LB] Лидерборд инициализирован, записей:', data.length);
 }
+
+// Экспорт в window
+window.submitScore = submitScore;
+window.saveNickname = saveNickname;
+window.fetchLeaderboard = fetchLeaderboard;
+window.renderLeaderboard = renderLeaderboard;
+window.refreshLeaderboard = refreshLeaderboard;
+window.startLeaderboardAutoRefresh = startLeaderboardAutoRefresh;
+window.stopLeaderboardAutoRefresh = stopLeaderboardAutoRefresh;
+window.formatXp = formatXp;
+window.initLeaderboard = initLeaderboard;
