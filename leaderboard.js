@@ -2,8 +2,8 @@
 // FireLand Leaderboard · Supabase v19 · TOKEN PROTECTED
 // ============================================
 
-const SUPABASE_URL = 'https://syfkmrjdrxphtxcpwgyy.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_aDqkosVM7drGfLHRLtgmog_TwVwd-MS';
+const SUPABASE_URL = 'https://brqlmsbvwmycyhiluuui.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_4l9kEORimlt8FthVCRb28w_wwhWbXEJ';
 
 const LB = {
   cache: [],
@@ -13,9 +13,6 @@ const LB = {
   isSaving: false,
 };
 
-// ============================================
-// БЕЗОПАСНЫЕ ОБЁРТКИ
-// ============================================
 window.escapeHtml = window.escapeHtml || function (text) {
   const div = document.createElement('div');
   div.textContent = text == null ? '' : String(text);
@@ -42,7 +39,7 @@ function lbGetTitleForLevel(level) {
 }
 
 // ============================================
-// ОТПРАВКА СЧЁТА (с токеном)
+// ОТПРАВКА СЧЁТА
 // ============================================
 async function submitScore() {
   const st = lbGetState();
@@ -79,9 +76,6 @@ async function submitScore() {
     const data = await res.json();
     if (!data.ok) {
       console.warn('[LB] Отклонено:', data.error);
-      if (data.error === 'NICK_TAKEN') {
-        console.warn('[LB] Ник занят другим устройством');
-      }
       return false;
     }
     st.lastSubmittedNick = st.nickname;
@@ -95,7 +89,7 @@ async function submitScore() {
 }
 
 // ============================================
-// СОХРАНЕНИЕ НИКА (с токеном)
+// СОХРАНЕНИЕ НИКА
 // ============================================
 async function saveNickname() {
   if (LB.isSaving) return { ok: false, message: 'Уже сохраняется' };
@@ -292,7 +286,7 @@ function stopLeaderboardAutoRefresh() {
 }
 
 // ============================================
-// ФОРМАТИРОВАНИЕ
+// ФОРМАТ
 // ============================================
 function formatXp(xp) {
   if (xp >= 1000000) return (xp / 1000000).toFixed(2) + 'M';
