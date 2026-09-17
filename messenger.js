@@ -787,11 +787,53 @@ async function handleCreateRoom() {
   const display = (displayInput && displayInput.value.trim()) || name;
   if (!validateRoomName()) return;
   const room = `room_${name}`;
-  if (!st.myRooms) st.myRooms = [];
-  if (!st.myRooms.find(r => r.room === room)) {
-    st.myRooms.push({ room, name, display, created: Date.now() });
-    chatSaveState();
+  if (!st.nickname || st.nickname === 'Игрок') {
+    alert('Сначала установи ник');
+    return;
   }
+
+  // Проверяем, что комната не занята
+  try {
+    const checkRes = await fetch(
+      `${CHAT_URL}/rest/v1/rooms?room=eq.${encodeURIComponent(room)}&select=room,author_nick&limit=1`,
+      { headers: chatHeaders() }
+    );
+    if (checkRes.ok) {
+      const rows = await checkRes.json();
+      if (rows.length > 0) {
+        alert(`Комната «${display}» уже существует. Выбери другое имя.`);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  // Создаём в БД
+  try {
+    const res = await fetch(`${CHAT_URL}/rest/v1/rooms`, {
+      method: 'POST',
+      headers: chatHeaders({
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      }),
+      body: JSON.stringify({
+        room,
+        name,
+        display,
+        author_nick: st.nickname,
+        owner_token: st.ownerToken || '',
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('[Chat] create room:', res.status, err);
+      alert('Не удалось создать комнату');
+      return;
+    }
+  } catch (e) {
+    alert('Нет соединения');
+    return;
+  }
+
   const modal = document.getElementById('roomCreateModal');
   if (modal) modal.classList.remove('show');
   await loadMyRooms();
@@ -799,17 +841,40 @@ async function handleCreateRoom() {
   renderRoomsList();
 }
 
-function loadMyRooms() {
+async function loadMyRooms() {
   const st = chatGetState();
   if (!st) return;
-  if (!st.myRooms) st.myRooms = [];
-  CHAT.roomsList = [...st.myRooms];
-  renderRoomsList();
+  try {
+    const res = await fetch(
+      `${CHAT_URL}/rest/v1/rooms?select=*&order=created_at.desc&limit=100`,
+      { headers: chatHeaders() }
+    );
+    if (!res.ok) {
+      CHAT.roomsList = [];
+      renderRoomsList();
+      return;
+    }
+    const rows = await res.json();
+    CHAT.roomsList = rows.map(r => ({
+      room: r.room,
+      name: r.name,
+      display: r.display,
+      author: r.author_nick,
+      owner_token: r.owner_token,
+      isMine: r.author_nick === st.nickname,
+    }));
+    renderRoomsList();
+  } catch (e) {
+    console.warn('[Chat] loadMyRooms:', e);
+    CHAT.roomsList = [];
+    renderRoomsList();
+  }
 }
 
 function renderRoomsList() {
   const box = document.getElementById('roomsList');
   if (!box) return;
+  const st = chatGetState();
   const list = CHAT.roomsList || [];
   if (list.length === 0) {
     box.innerHTML = '<div class="chat-empty" style="padding:14px 10px;font-size:12px;">Нет комнат — создай первую!</div>';
@@ -817,20 +882,110 @@ function renderRoomsList() {
   }
   box.innerHTML = list.map(r => {
     const isActive = CHAT.currentRoom === r.room;
+    const isMine = st && r.author === st.nickname;
     const key = r.room.replace('room_', '');
     return `
       <div class="room-item ${isActive ? 'active' : ''}" data-room="${chatEscape(r.room)}">
         <div class="room-icon">🏠</div>
         <div class="room-info">
           <div class="room-name">${chatEscape(r.display || r.name)}</div>
-          <div class="room-key">#${chatEscape(key)}</div>
+          <div class="room-key">#${chatEscape(key)} · ${chatEscape(r.author || '?')}</div>
         </div>
+        ${isMine ? `<button class="room-del-btn" data-del-room="${chatEscape(r.room)}" title="Удалить комнату">✕</button>` : ''}
       </div>
     `;
   }).join('');
   box.querySelectorAll('.room-item').forEach(el => {
-    el.addEventListener('click', () => switchRoom(el.dataset.room));
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.room-del-btn')) return;
+      switchRoom(el.dataset.room);
+    });
   });
+  box.querySelectorAll('.room-del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteRoom(btn.dataset.delRoom);
+    });
+  });
+}
+
+// ГЛОБАЛЬНОЕ удаление комнаты
+async function deleteRoom(roomId) {
+  const st = chatGetState();
+  if (!st) return;
+  const room = (CHAT.roomsList || []).find(r => r.room === roomId);
+  if (!room) return;
+  if (!room.isMine) {
+    alert('Можно удалять только свои комнаты');
+    return;
+  }
+  const name = room.display || room.name || roomId;
+  if (!confirm(`Удалить комнату «${name}» у всех игроков?`)) return;
+
+  try {
+    const res = await fetch(`${CHAT_URL}/rest/v1/rpc/delete_room_secure`, {
+      method: 'POST',
+      headers: chatHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        p_room: roomId,
+        p_owner_token: st.ownerToken || '',
+      }),
+    });
+    if (!res.ok) {
+      alert('Не удалось удалить');
+      return;
+    }
+    const data = await res.json();
+    if (!data.ok) {
+      alert(data.error === 'NOT_OWNER' ? 'Не твоя комната' : 'Ошибка');
+      return;
+    }
+  } catch (e) {
+    alert('Нет соединения');
+    return;
+  }
+
+  // Убираем из UI
+  CHAT.roomsList = CHAT.roomsList.filter(r => r.room !== roomId);
+  if (CHAT.currentRoom === roomId) switchRoom('general');
+  delete CHAT.historyLoaded[roomId];
+  if (CHAT.subscribed[roomId]) {
+    try { CHAT.client.removeChannel(CHAT.subscribed[roomId]); } catch (e) {}
+    delete CHAT.subscribed[roomId];
+  }
+  renderRoomsList();
+  console.log('[Chat] Комната удалена глобально:', roomId);
+}
+
+// Удаление комнаты
+function deleteRoom(roomId) {
+  const st = chatGetState();
+  if (!st) return;
+  if (!st.myRooms) st.myRooms = [];
+  const room = st.myRooms.find(r => r.room === roomId);
+  if (!room) return;
+  const name = room.display || room.name || roomId;
+  if (!confirm(`Удалить комнату «${name}»?`)) return;
+
+  // Убираем из списка
+  st.myRooms = st.myRooms.filter(r => r.room !== roomId);
+
+  // Если были в этой комнате — уходим в general
+  if (CHAT.currentRoom === roomId) {
+    switchRoom('general');
+  }
+
+  // Очищаем кеш истории и подписки
+  delete CHAT.historyLoaded[roomId];
+  if (CHAT.subscribed[roomId]) {
+    try { CHAT.client.removeChannel(CHAT.subscribed[roomId]); } catch (e) {}
+    delete CHAT.subscribed[roomId];
+  }
+
+  chatSaveState(true);
+  CHAT.roomsList = [...st.myRooms];
+  renderRoomsList();
+  console.log('[Chat] Комната удалена:', roomId);
 }
 
 // ============================================
