@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Messenger v22 · FIXED
+// FireLand Messenger v23 · Realtime rooms
 // ============================================
 
 const CHAT = {
@@ -8,6 +8,7 @@ const CHAT = {
   historyLoaded: {},
   subscribed: {},
   reactionsSubscribed: false,
+  roomsSubscribed: false,
   presenceChannel: null,
   onlineUsers: [],
   onlineAvatars: {},
@@ -149,7 +150,7 @@ function initMessenger() {
   bindChatUI();
   initEmojiPanel();
   loadMyRooms();
-  console.log('[Chat] Мессенджер v22 · FIXED');
+  console.log('[Chat] Мессенджер v23 · Realtime rooms');
 }
 
 function bindChatUI() {
@@ -309,7 +310,7 @@ async function loadChatHistory(room, force = false) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const res = await fetch(
       `${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(room)}&select=id,nickname,text,created_at,reply_to_id,image_url,voice_url,voice_duration&order=created_at.asc&limit=150`,
@@ -374,7 +375,7 @@ async function loadChatHistory(room, force = false) {
 }
 
 // ============================================
-// ПОДПИСКА
+// ПОДПИСКИ
 // ============================================
 function subscribeToRoom(room) {
   if (CHAT.subscribed[room]) return;
@@ -466,6 +467,78 @@ function subscribeToReactions() {
       }
     )
     .subscribe();
+}
+
+// ============================================
+// REALTIME ROOMS
+// ============================================
+function subscribeToRooms() {
+  if (CHAT.roomsSubscribed) return;
+  CHAT.roomsSubscribed = true;
+  CHAT.client
+    .channel('fireland-rooms')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'rooms' },
+      (payload) => {
+        const st = chatGetState();
+        if (!st) return;
+        const r = payload.new;
+        if (!r) return;
+        if (CHAT.roomsList.find(x => x.room === r.room)) return;
+        CHAT.roomsList.unshift({
+          room: r.room,
+          name: r.name,
+          display: r.display,
+          author: r.author_nick,
+          owner_token: r.owner_token,
+          isMine: r.author_nick === st.nickname,
+        });
+        renderRoomsList();
+        console.log('[Chat] Realtime rooms INSERT:', r.room);
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'rooms' },
+      (payload) => {
+        const r = payload.old;
+        if (!r || !r.room) return;
+        CHAT.roomsList = (CHAT.roomsList || []).filter(x => x.room !== r.room);
+        renderRoomsList();
+        console.log('[Chat] Realtime rooms DELETE:', r.room);
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'rooms' },
+      (payload) => {
+        const r = payload.new;
+        if (!r) return;
+        const st = chatGetState();
+        if (!st) return;
+        const idx = (CHAT.roomsList || []).findIndex(x => x.room === r.room);
+        if (idx < 0) return;
+        CHAT.roomsList[idx] = {
+          room: r.room,
+          name: r.name,
+          display: r.display,
+          author: r.author_nick,
+          owner_token: r.owner_token,
+          isMine: r.author_nick === st.nickname,
+        };
+        renderRoomsList();
+        console.log('[Chat] Realtime rooms UPDATE:', r.room);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Chat] Realtime подписка на rooms активна');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('[Chat] Realtime rooms error:', status);
+        CHAT.roomsSubscribed = false;
+      }
+    });
 }
 
 // ============================================
@@ -792,7 +865,6 @@ async function handleCreateRoom() {
     return;
   }
 
-  // Проверяем, что комната не занята
   try {
     const checkRes = await fetch(
       `${CHAT_URL}/rest/v1/rooms?room=eq.${encodeURIComponent(room)}&select=room,author_nick&limit=1`,
@@ -807,7 +879,6 @@ async function handleCreateRoom() {
     }
   } catch (e) {}
 
-  // Создаём в БД
   try {
     const res = await fetch(`${CHAT_URL}/rest/v1/rooms`, {
       method: 'POST',
@@ -945,7 +1016,7 @@ async function deleteRoom(roomId) {
     return;
   }
 
-  // Убираем из UI
+  // Убираем из UI (realtime тоже подчистит у всех)
   CHAT.roomsList = CHAT.roomsList.filter(r => r.room !== roomId);
   if (CHAT.currentRoom === roomId) switchRoom('general');
   delete CHAT.historyLoaded[roomId];
@@ -954,7 +1025,7 @@ async function deleteRoom(roomId) {
     delete CHAT.subscribed[roomId];
   }
   renderRoomsList();
-  console.log('[Chat] Комната удалена глобально:', roomId);
+  console.log('[Chat] Комната удалена:', roomId);
 }
 
 // ============================================
@@ -1034,7 +1105,7 @@ async function handleSendClick() {
 }
 
 // ============================================
-// УДАЛЕНИЕ
+// УДАЛЕНИЕ СООБЩЕНИЯ
 // ============================================
 async function deleteMessage(messageId) {
   if (!confirm('Удалить сообщение?')) return;
@@ -1276,7 +1347,7 @@ function toggleEmojiPanel() {
 }
 
 // ============================================
-// РЕНДЕР
+// РЕНДЕР СООБЩЕНИЙ
 // ============================================
 const recentSelfMessages = new Set();
 function isRecentSelfMessage(msg) {
@@ -1651,6 +1722,7 @@ function onChatTabOpen() {
   if (!CHAT.client) return;
   if (!CHAT.presenceChannel) trackPresence();
   subscribeToReactions();
+  subscribeToRooms();
 
   const box = document.getElementById('chatMessages');
   const boxIsEmpty = !box || box.innerHTML.trim() === '' || box.querySelector('.chat-empty');
@@ -1907,7 +1979,7 @@ function closeLightbox() {
 }
 
 // ============================================
-// ГОЛОСОВЫЕ СООБЩЕНИЯ · FIXED
+// ГОЛОСОВЫЕ СООБЩЕНИЯ
 // ============================================
 let voiceRecorder = null;
 let voiceChunks = [];
@@ -2076,7 +2148,7 @@ async function uploadVoiceMessage() {
 }
 
 // ============================================
-// АВТОИНИЦИАЛИЗАЦИЯ · ждём state
+// АВТОИНИЦИАЛИЗАЦИЯ
 // ============================================
 function tryInitMessenger(attempt = 0) {
   if (typeof state !== 'undefined' && state) {
@@ -2116,5 +2188,6 @@ window.reinitializePresenceWithNewNick = reinitializePresenceWithNewNick;
 window.openDmWith = openDmWith;
 window.switchRoom = switchRoom;
 window.showUserProfile = showUserProfile;
-window.hasProfanity = hasProfanity;         // ← добавь
-window.censorProfanity = censorProfanity;   // ← добавь
+window.hasProfanity = hasProfanity;
+window.censorProfanity = censorProfanity;
+window.subscribeToRooms = subscribeToRooms;

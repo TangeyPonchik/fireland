@@ -1,113 +1,126 @@
-# 🔥 FireLand Launcher
+🔥 FireLand Launcher
+<p align="center"> <img src="fireek.mp4" alt="FireLand Mascot" width="200" /> </p><p align="center"> <strong>Игровая платформа в браузере — без установки, без фреймворков, без сборки.</strong> </p><p align="center"> <a href="https://tangeyponchik.github.io/fireland/"> <img src="https://img.shields.io/badge/🎮_Играть-tangeyponchik.github.io-6a8aff?style=for-the-badge" alt="Play" /> </a> </p><p align="center"> <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" /> <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" /> <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" /> <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" /> <img src="https://img.shields.io/badge/GitHub_Pages-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub Pages" /> </p>
+🎮 Что это?
+FireLand Launcher — это игровая платформа, которая работает прямо в браузере. Заходишь на сайт, выбираешь игру, играешь. Ничего устанавливать не надо.
 
-<p align="center">
-  <img src="fireek.mp4" alt="FireLand Mascot" width="200" />
-</p>
+Стек:
 
-<p align="center">
-  <strong>Игровая платформа в браузере — без установки, без фреймворков, без сборки.</strong>
-</p>
+Frontend: чистый HTML + CSS + JavaScript (без React/Vue/Svelte)
 
-<p align="center">
-  <a href="https://tangeyponchik.github.io/fireland/">
-    <img src="https://img.shields.io/badge/🎮_Играть-tangeyponchik.github.io-6a8aff?style=for-the-badge" alt="Play" />
-  </a>
-</p>
+Сборка: нет (без Webpack/Vite/npm)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" />
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" />
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
-  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/GitHub_Pages-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub Pages" />
-</p>
+База данных: Supabase (Postgres + REST + Realtime + Storage)
 
----
+Хостинг: GitHub Pages
 
-## 🎮 Что это?
+Реалтайм: WebSocket через Supabase Realtime
 
-**FireLand Launcher** — это игровая платформа, которая работает **прямо в браузере**. Заходишь на сайт, выбираешь игру, играешь. **Ничего устанавливать не надо.**
+⚠️ VPN не нужен. Сайт работает в России без VPN.
 
-**Стек:**
-- **Frontend:** чистый HTML + CSS + JavaScript (без React/Vue/Svelte)
-- **Сборка:** нет (без Webpack/Vite/npm)
-- **База данных:** Supabase (Postgres + REST + Realtime)
-- **Хостинг:** GitHub Pages
-- **Реалтайм:** WebSocket через Supabase Realtime
+✨ Что внутри?
+🎯 Игры
+12 игр в главной библиотеке: RPG, хоррор, симуляторы, кликеры, файтинги.
 
-**⚠️ VPN не нужен.** Сайт работает в России без VPN.
+4 эксперимента в отдельной вкладке — новые жанры, 3D-раннеры, ритм-платформеры.
 
----
+Запуск в один клик.
 
-## ✨ Что внутри?
+Полноэкранный режим и встроенное меню (пауза, перезапуск, настройки).
 
-### 🎯 Игры
-- **12 игр** в главной библиотеке: RPG, хоррор, симуляторы, кликеры, файтинги.
-- **4 эксперимента** в отдельной вкладке — новые жанры, 3D-раннеры, ритм-платформеры.
-- Запуск **в один клик**.
-- **Полноэкранный режим** и **встроенное меню** (пауза, перезапуск, настройки).
+🏆 Прогрессия
+Уровни и XP — 100 уровней с уникальными титулами от «🌱 Новичок» до «🔥🔥🔥 БОГ FireLand».
 
-### 🏆 Прогрессия
-- **Уровни и XP** — 100 уровней с уникальными титулами от «🌱 Новичок» до «🔥🔥🔥 БОГ FireLand».
-- **50+ достижений** — от первого запуска до легендарных (с редкостью: common / rare / epic / legendary).
-- **Избранное** — любимые игры всегда сверху.
+50+ достижений — от первого запуска до легендарных (с редкостью: common / rare / epic / legendary).
 
-### 📅 Ежедневные задания
-- **5 случайных заданий** каждый день.
-- **Стрик (серия дней)** — заходишь ежедневно → получаешь бонусы.
-- **Календарь активности** — видно, сколько дней подряд заходил.
+Избранное — любимые игры всегда сверху.
 
-### 💬 Мессенджер (полноценный чат)
-- **Общий чат FireLand** — realtime, все сообщения в БД.
-- **Личные сообщения** — клик по игроку → приватный чат.
-- **Приватные комнаты** — создай комнату, позови друзей.
-- **Список онлайн** — кто сейчас в сети.
-- **«Печатает...»** — видишь, когда кто-то набирает сообщение.
-- **Ответы (reply)** — цитируй сообщения.
-- **Реакции** — 👍❤️🔥 на любое сообщение.
-- **Поиск по чату** — находи любые сообщения.
-- **Эмодзи-палитра** — 40+ эмодзи в один клик.
-- **Удаление своих сообщений**.
-- **Фильтр мата** — автоматически цензурирует.
+Кейсы — ежедневные и недельные награды.
 
-### 🎨 Кастомизация
-- **4 темы:** системная, тёмная, светлая, умная (по времени суток).
-- **Аватарки** — загрузи своё фото (сжатие до 256px).
-- **Экспорт/импорт профиля** — перенеси прогресс между устройствами.
+📅 Ежедневные задания
+5 случайных заданий каждый день.
 
-### 🏆 Лидерборд
-- **Топ-100 игроков** по XP.
-- **Автообновление** каждую минуту.
-- **Твоя позиция** отдельно выделена.
+Стрик (серия дней) — заходишь ежедневно → получаешь бонусы.
 
-### 📱 Адаптив
-- **Desktop** — полный функционал.
-- **Mobile** — свайпы между вкладками, крупные тап-зоны.
-- **TV** — навигация пультом (стрелки + Enter), крупный шрифт.
+Календарь активности — видно, сколько дней подряд заходил.
 
-### ⏰ Прочее
-- **Будильник** — с вибрацией и повторами.
-- **Маскот** — 🔥 в углу экрана.
-- **Звуки** — клики, достижения, уведомления.
+💬 Мессенджер (полноценный чат)
+Общий чат FireLand — realtime, все сообщения в БД.
 
----
+Личные сообщения — клик по игроку → приватный чат.
 
-## 🚀 Как играть?
+Глобальные комнаты — создай комнату, она видна всем игрокам. Автор может удалить её у всех.
 
-1. Открой **[tangeyponchik.github.io/fireland](https://tangeyponchik.github.io/fireland/)**
-2. Введи **ник** (онбординг при первом заходе).
-3. Выбери игру → **Играть**.
-4. Зарабатывай XP, выполняй задания, общайся в чате.
+Realtime-обновления — новые комнаты и удаления приходят мгновенно, без обновления страницы.
 
-**Никаких регистраций, паролей, email.** Только ник.
+Список онлайн — кто сейчас в сети.
 
----
+«Печатает...» — видишь, когда кто-то набирает сообщение.
 
-## 🛠️ Как это работает?
+Ответы (reply) — цитируй сообщения.
 
-### Архитектура
+Реакции — 👍❤️🔥 на любое сообщение.
 
-```
+Поиск по чату — находи любые сообщения.
+
+Эмодзи-палитра — 40+ эмодзи в один клик.
+
+Удаление своих сообщений.
+
+Фильтр мата — автоматически цензурирует.
+
+📎 Картинки — загрузка через Supabase Storage (сжатие до 800px).
+
+🎤 Голосовые сообщения — запись через MediaRecorder API, до 60 секунд.
+
+👤 Профиль и защита ника
+Owner token — UUID, который защищает ник от подделки.
+
+Перенос прогресса при смене ника — все данные (чат, реакции, комнаты, лидерборд) переезжают на новый ник.
+
+Аватарки — загрузка фото со сжатием до 256px.
+
+Экспорт/импорт профиля — перенос прогресса между устройствами.
+
+🎨 Кастомизация
+4 темы: системная, тёмная, светлая, умная (по времени суток).
+
+Звуки интерфейса — клики, достижения, награды.
+
+🏆 Лидерборд
+Топ-100 игроков по XP.
+
+Автообновление каждую минуту.
+
+Твоя позиция отдельно выделена.
+
+📱 Адаптив
+Desktop — полный функционал.
+
+Mobile — свайпы между вкладками, крупные тап-зоны.
+
+TV — навигация пультом (стрелки + Enter), крупный шрифт.
+
+⏰ Прочее
+Будильник — с вибрацией, повторами и громкостью.
+
+Маскот — 🔥 в углу экрана.
+
+Звуки — клики, достижения, уведомления.
+
+🚀 Как играть?
+Открой tangeyponchik.github.io/fireland
+
+Введи ник (онбординг при первом заходе).
+
+Выбери игру → Играть.
+
+Зарабатывай XP, выполняй задания, общайся в чате.
+
+Никаких регистраций, паролей, email. Только ник.
+
+🛠️ Как это работает?
+Архитектура
+text
 ┌──────────────────────┐
 │   Браузер            │
 │   (index.html)       │
@@ -121,35 +134,53 @@
            ▼
 ┌──────────────────────┐
 │   Supabase           │
-│   (Postgres)         │
 │                      │
 │  • chat_messages     │ ← общий чат + ЛС + комнаты
 │  • chat_reactions    │ ← реакции на сообщения
 │  • leaderboard       │ ← XP и уровни игроков
+│  • rooms             │ ← глобальные комнаты
+│  • Storage           │ ← картинки, голосовые, игры
+│  • RPC               │ ← безопасные операции
 └──────────────────────┘
-```
+Без фреймворков
+Весь фронтенд — чистый HTML/CSS/JS. Это значит:
 
-### Без фреймворков
+Быстро загружается — нет бандлов по 500 КБ.
 
-**Весь фронтенд — чистый HTML/CSS/JS.** Это значит:
-- **Быстро загружается** — нет бандлов по 500 КБ.
-- **Просто хостить** — GitHub Pages отдаёт статику.
-- **Легко читать код** — открыл DevTools и разобрался.
+Просто хостить — GitHub Pages отдаёт статику.
 
-### Realtime через Supabase
+Легко читать код — открыл DevTools и разобрался.
 
-**Чат работает через WebSocket** (Supabase Realtime):
-- Отправил сообщение → оно в БД.
-- Supabase пушит событие **всем подписчикам**.
-- Все видят сообщение **мгновенно**.
+Realtime через Supabase
+Чат работает через WebSocket (Supabase Realtime):
 
-**Онлайн-список** работает через **Presence** — Supabase сам отслеживает, кто подключён.
+Отправил сообщение → оно в БД.
 
----
+Supabase пушит событие всем подписчикам.
 
-## 📂 Структура проекта
+Все видят сообщение мгновенно.
 
-```
+Онлайн-список работает через Presence — Supabase сам отслеживает, кто подключён.
+
+Глобальные комнаты — подписка на postgres_changes в таблице rooms. Создал комнату → все видят через 1-2 секунды.
+
+Безопасность
+owner_token (UUID) — защищает ник от подделки. Хранится в localStorage и БД.
+
+RPC-функции — все изменяющие операции через SECURITY DEFINER:
+
+upsert_score_secure — сохранение XP
+
+rename_nick_everywhere — перенос ника везде
+
+delete_room_secure — удаление комнаты
+
+RLS-политики + GRANT на всех таблицах.
+
+Sandbox на iframe для игр сообщества.
+
+📂 Структура проекта
+text
 FireLand/
 ├── index.html              ← главная страница
 ├── style.css               ← все стили (включая темы, адаптив, TV)
@@ -179,35 +210,26 @@ FireLand/
     ├── Ant Kolony.html
     ├── Кликер счастья.html
     └── ПРОШЛОЕ НАСТУПАЕТ (GD)/
-```
+🔧 Разработка
+Локальный запуск
+Просто открой index.html в браузере. Всё работает без сборки.
 
----
+Или подними локальный сервер (для теста чата через localhost):
 
-## 🔧 Разработка
-
-### Локальный запуск
-
-**Просто открой `index.html` в браузере.** Всё работает без сборки.
-
-**Или подними локальный сервер** (для теста чата через `localhost`):
-
-```bash
+bash
 # Python 3
 python -m http.server 8000
 
 # Или Node.js
 npx serve
-```
+Затем открой: http://localhost:8000
 
-Затем открой: `http://localhost:8000`
+База данных
+Используется Supabase (бесплатный тариф).
 
-### База данных
+Схема:
 
-**Используется Supabase** (бесплатный тариф).
-
-**Схема:**
-
-```sql
+sql
 -- Сообщения чата (общий + ЛС + комнаты)
 CREATE TABLE chat_messages (
   id BIGSERIAL PRIMARY KEY,
@@ -215,6 +237,9 @@ CREATE TABLE chat_messages (
   nickname TEXT NOT NULL,
   text TEXT NOT NULL,
   reply_to_id BIGINT,
+  image_url TEXT,
+  voice_url TEXT,
+  voice_duration INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -234,50 +259,52 @@ CREATE TABLE leaderboard (
   level INT DEFAULT 1,
   total_xp BIGINT DEFAULT 0,
   achievements_count INT DEFAULT 0,
+  owner_token TEXT DEFAULT '',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-```
 
-**RLS-политики:** чтение и запись разрешены всем (авторизация — по нику, без пароля).
+-- Глобальные комнаты
+CREATE TABLE rooms (
+  id BIGSERIAL PRIMARY KEY,
+  room TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  display TEXT NOT NULL,
+  author_nick TEXT NOT NULL,
+  owner_token TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+RLS-политики + GRANT: чтение и запись разрешены роли anon, авторизация — по нику, без пароля.
 
----
+Realtime: таблицы chat_messages, chat_reactions, rooms добавлены в публикацию supabase_realtime.
 
-## 🎯 Что дальше?
+🎯 Что дальше?
+Планы:
 
-**Планы:**
-- 📷 **Картинки в чате** — загрузка через Supabase Storage.
-- 🎤 **Голосовые сообщения** — MediaRecorder API.
-- 👥 **Друзья** — таблица friends, добавление по нику.
-- 🔔 **Push-уведомления** — Service Worker.
-- 🎮 **Мультиплеер** — realtime-игры (шахматы, крестики-нолики).
+👥 Друзья — таблица friends, добавление по нику.
 
----
+🔔 Push-уведомления — Service Worker + Web Push.
 
-## 👥 Команда
+🎮 Мультиплеер — realtime-игры (шахматы, крестики-нолики).
 
-- **Ronormav** — автор проекта, разработчик.
-- **FireLand Studio** — команда.
+📱 PWA — установка на телефон как приложение.
 
----
+🎨 Больше игр — 5-10 новых.
 
-## 📜 Лицензия
+⭐ Рейтинг игр — оценки и сортировка по популярности.
 
-**MIT** — используй, форкай, изменяй.
+👥 Команда
+Ronormav — автор проекта, разработчик.
 
----
+FireLand Studio — команда.
 
-## 🔗 Ссылки
+📜 Лицензия
+MIT — используй, форкай, изменяй.
 
-- 🌐 **Сайт (без VPN):** [tangeyponchik.github.io/fireland](https://tangeyponchik.github.io/fireland/)
-- 💻 **GitHub:** [github.com/TangeyPonchik/fireland](https://github.com/TangeyPonchik/fireland)
-- 📧 **Email:** ronormav@gmail.com
+🔗 Ссылки
+🌐 Сайт (без VPN): tangeyponchik.github.io/fireland
 
----
+💻 GitHub: github.com/TangeyPonchik/fireland
 
-<p align="center">
-  <strong>🔥 FireLand — не просто лаунчер. FireLand — платформа. 🔥</strong>
-</p>
+📧 Email: ronormav@gmail.com
 
-<p align="center">
-  Сделано с ❤️ на чистом HTML, CSS и JavaScript.
-</p>
+<p align="center"> <strong>🔥 FireLand — не просто лаунчер. FireLand — платформа. 🔥</strong> </p><p align="center"> Сделано с ❤️ на чистом HTML, CSS и JavaScript. </p>
