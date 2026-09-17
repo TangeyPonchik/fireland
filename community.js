@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Community v3 · Comments + Fav + Edit + Protect
+// FireLand Community v4 · Cache-busting + Comments + Fav + Edit
 // ============================================
 
 const COMM = {
@@ -180,7 +180,6 @@ async function openCommunityGame(game) {
     if (!confirm('⚠️ Это не HTML-файл. Возможно, игра не запустится. Продолжить?')) return;
   }
 
-  // Сначала показываем модалку с деталями и комментариями
   await showGameDetailModal(game);
 }
 
@@ -254,7 +253,6 @@ async function showGameDetailModal(game) {
     launchCommunityGame(game);
   };
 
-  // Привязка отправки комментария (один раз)
   const sendBtn = document.getElementById('commentSendBtn');
   const input = document.getElementById('commentInput');
   if (sendBtn && input) {
@@ -272,7 +270,7 @@ async function showGameDetailModal(game) {
 }
 
 // ============================================
-// ЗАПУСК (IFRAME)
+// ЗАПУСК (IFRAME) — с обходом кеша
 // ============================================
 async function launchCommunityGame(game) {
   const st = commGetState();
@@ -309,7 +307,13 @@ async function launchCommunityGame(game) {
   iframe.onload = onLoad;
   iframe.onerror = onLoad;
 
-  requestAnimationFrame(() => { iframe.src = game.url; });
+  // ============================================
+  // ФИКС: добавляем ?t=timestamp чтобы обойти кеш iframe
+  // ============================================
+  const cacheBustedUrl = game.url + (game.url.includes('?') ? '&' : '?') + 't=' + Date.now();
+  console.log('[Community] Запуск с обходом кеша:', cacheBustedUrl);
+
+  requestAnimationFrame(() => { iframe.src = cacheBustedUrl; });
   container.style.display = 'block';
 
   if (typeof window.isGameOpen !== 'undefined') window.isGameOpen = true;
@@ -532,7 +536,6 @@ async function handleUploadSubmit() {
     return;
   }
 
-  // Валидация bg
   if (bg && !/^(linear-gradient|radial-gradient|conic-gradient|#[0-9a-f]{3,8}|rgb|hsl)/i.test(bg)) {
     hint.textContent = '❌ Неверный формат. Пример: linear-gradient(135deg, #ff6b35, #e83040)';
     hint.className = 'upload-hint error';
@@ -544,7 +547,7 @@ async function handleUploadSubmit() {
     return;
   }
 
-  // ==== РЕДАКТИРОВАНИЕ ====
+  // РЕДАКТИРОВАНИЕ
   if (COMM.editingGameId) {
     btn.disabled = true;
     btn.textContent = '⏳ Сохранение...';
@@ -587,7 +590,7 @@ async function handleUploadSubmit() {
     return;
   }
 
-  // ==== ЗАГРУЗКА ====
+  // ЗАГРУЗКА
   const file = fileEl.files[0];
   if (!file) {
     hint.textContent = '❌ Выбери HTML-файл';
@@ -621,14 +624,20 @@ async function handleUploadSubmit() {
   hint.className = 'upload-hint';
 
   try {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    // Очищаем имя: убираем кириллицу и лишние символы
+    const safeName = file.name
+      .replace(/[а-яё]/gi, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .slice(-50) || 'game.html';
+
     const fileName = `${st.nickname}_${Date.now()}_${safeName}`;
     const uploadUrl = `${COMMUNITY_URL}/storage/v1/object/${COMMUNITY_BUCKET}/${fileName}`;
 
     const uploadRes = await fetch(uploadUrl, {
       method: 'POST',
       headers: commHeaders({
-        'Content-Type': 'text/html',
+        'Content-Type': 'text/html',           // ← жёстко text/html
+        'Cache-Control': 'no-cache',
         'x-upsert': 'true',
       }),
       body: file,
