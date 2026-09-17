@@ -163,7 +163,7 @@ function saveState(immediate=false){pendingSave=true;if(immediate){clearTimeout(
 async function doSaveState(){if(!pendingSave)return;pendingSave=false;try{state._savedAt=Date.now();await idbSet(STATE_KEY,state);const lightState={...state};delete lightState.avatar;try{localStorage.setItem('fireland_light',JSON.stringify(lightState))}catch(e){}}catch(e){console.warn('Save failed:',e)}}
 
 // ============================================
-// OWNER TOKEN · защита ника
+// OWNER TOKEN
 // ============================================
 function generateOwnerToken(){
   if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
@@ -200,7 +200,6 @@ async function loadState(){
         if(!state.myRooms) state.myRooms=[];
         if(state.myCommunityGames===undefined) state.myCommunityGames=0;
         if(state.theme==='dark'||state.theme==='blue') state.theme='system';
-        // OWNER TOKEN
         if(!state.ownerToken){
             state.ownerToken=generateOwnerToken();
             saveState(true);
@@ -651,7 +650,6 @@ function toggleFavorite(gameId,event){
     saveState();
     renderGames();
     renderExperiments();
-    if(typeof renderCommunityGames==='function')renderCommunityGames();}
 function selectGame(gameId){
     const game=GAMES.find(g=>g.id===gameId);
     if(!game)return;
@@ -812,10 +810,8 @@ function openGame(gameId){
     document.body.classList.add('game-active');
     showGameSkeleton();
     try{iframe.src='about:blank'}catch(e){}
-    // FIX: сбрасываем старые обработчики
     iframe.onload=null;
     iframe.onerror=null;
-    // FIX: снимаем sandbox для встроенных игр (они доверенные)
     iframe.removeAttribute('sandbox');
     let loadHandled=false;
     const onLoad=()=>{if(loadHandled)return;loadHandled=true;hideGameSkeleton()};
@@ -886,7 +882,35 @@ function updateLastGameBar(){
         if(!game && String(state.lastGameId).startsWith('community_')){
             game={icon:'🌍',name:'Игра из Сообщества',id:state.lastGameId};
         }
-        if(game){icon.textContent=game.icon;name.textContent=game.name;time.textContent=state.lastGameTime?`⏱️ ${state.lastGameTime}`:'';bar.classList.add('show');playBtn.onclick=()=>openGame(game.id);return}}
+        if(game){
+            icon.textContent=game.icon;
+            name.textContent=game.name;
+            time.textContent=state.lastGameTime?`⏱️ ${state.lastGameTime}`:'';
+            bar.classList.add('show');
+            playBtn.onclick=()=>{
+                const id = game.id;
+                if(String(id).startsWith('community_')){
+                    const gid = String(id).replace('community_', '');
+                    if(typeof COMM!=='undefined' && COMM.games){
+                        const g = COMM.games.find(x=>String(x.id)===gid);
+                        if(g && typeof openCommunityGame==='function'){
+                            openCommunityGame(g);
+                            return;
+                        }
+                    }
+                    if(typeof loadCommunityGames==='function'){
+                        loadCommunityGames().then(()=>{
+                            const g = (typeof COMM!=='undefined' && COMM.games) ? COMM.games.find(x=>String(x.id)===gid) : null;
+                            if(g && typeof openCommunityGame==='function') openCommunityGame(g);
+                        });
+                    }
+                    return;
+                }
+                openGame(id);
+            };
+            return;
+        }
+    }
     bar.classList.remove('show')}
 function renderProfile(){
     const nick=state.nickname||'Игрок';
@@ -1155,36 +1179,25 @@ profileNickInput.addEventListener('input',()=>{
         hint.textContent='Нажми 💾, чтобы сохранить ник в таблицу лидеров';
     }
 });
-
-// ============================================
-// СОХРАНЕНИЕ НИКА С ПЕРЕНОСОМ
-// ============================================
 document.getElementById('profileNickSaveBtn').addEventListener('click',async()=>{
     const btn=document.getElementById('profileNickSaveBtn');
     const hint=document.getElementById('profileNickHint');
     const newNick=(state.nickname||'').trim();
     const oldNick=state.lastSubmittedNick;
-
     if(!newNick||newNick==='Игрок'){
         if(hint){hint.textContent='Сначала введи ник';hint.classList.add('error')}
         return;
     }
-
     btn.disabled=true;
     btn.textContent='⏳';
-
     let result;
     if(oldNick && oldNick!==newNick){
-        // Переносим ник везде
         result=await renameNickEverywhere(oldNick,newNick,state.ownerToken);
     }else{
-        // Просто сохраняем
         result=await saveNickname();
     }
-
     btn.disabled=false;
     btn.textContent='💾';
-
     if(result && result.ok){
         btn.classList.add('saved');
         if(hint){
@@ -1204,7 +1217,6 @@ document.getElementById('profileNickSaveBtn').addEventListener('click',async()=>
         setTimeout(()=>btn.classList.remove('error'),4000);
     }
 });
-
 async function renameNickEverywhere(oldNick,newNick,token){
     try{
         const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/rename_nick_everywhere`,{
@@ -1230,29 +1242,24 @@ async function renameNickEverywhere(oldNick,newNick,token){
             if(data.error==='NICK_TAKEN')return {ok:false,message:'Этот ник занят другим игроком'};
             if(data.error==='NOT_OWNER')return {ok:false,message:'Не твой ник'};
             if(data.error==='OLD_NOT_FOUND'){
-                // старого нет — просто сохраняем новый
                 return await saveNickname();
             }
             return {ok:false,message:data.error||'Ошибка'};
         }
         state.lastSubmittedNick=newNick;
         saveState(true);
-        // Очищаем кеши чата, чтобы всё перерисовалось с новым ником
         if(typeof CHAT!=='undefined'){
             CHAT.dmList=[];
             CHAT.historyLoaded={};
             CHAT.reactions={};
             CHAT.subscribed={};
-            // Если были в ЛС — переключаемся в general
             if(CHAT.currentRoom && CHAT.currentRoom.startsWith('dm_')){
                 if(typeof switchRoom==='function')switchRoom('general');
             }else if(typeof renderDmList==='function'){
                 renderDmList();
             }
         }
-        // Перезагружаем лидерборд
         if(typeof refreshLeaderboard==='function')setTimeout(refreshLeaderboard,500);
-        // Перезагружаем community
         if(typeof loadCommunityGames==='function')setTimeout(loadCommunityGames,500);
         return {ok:true};
     }catch(e){
@@ -1260,7 +1267,6 @@ async function renameNickEverywhere(oldNick,newNick,token){
         return {ok:false,message:'Нет интернета'};
     }
 }
-
 profileBigAvatar.addEventListener('click',()=>avatarFileInput.click());
 avatarFileInput.addEventListener('change',async(e)=>{
     const file=e.target.files[0];
@@ -1391,11 +1397,29 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     });
 });
 document.getElementById('pgCloseBtn').addEventListener('click',()=>{document.getElementById('postGameModal').classList.remove('show')});
-document.getElementById('pgPlayAgainBtn').addEventListener('click',()=>{document.getElementById('postGameModal').classList.remove('show');if(lastPlayedGameId)openGame(lastPlayedGameId)});
+document.getElementById('pgPlayAgainBtn').addEventListener('click',()=>{
+    document.getElementById('postGameModal').classList.remove('show');
+    if(!lastPlayedGameId)return;
+    if(String(lastPlayedGameId).startsWith('community_')){
+        const gameId = String(lastPlayedGameId).replace('community_', '');
+        if(typeof COMM!=='undefined' && COMM.games){
+            const game = COMM.games.find(g => String(g.id) === gameId);
+            if(game && typeof openCommunityGame === 'function'){
+                openCommunityGame(game);
+                return;
+            }
+        }
+        if(typeof loadCommunityGames === 'function'){
+            loadCommunityGames().then(()=>{
+                const g = (typeof COMM!=='undefined' && COMM.games) ? COMM.games.find(x=>String(x.id)===gameId) : null;
+                if(g && typeof openCommunityGame === 'function') openCommunityGame(g);
+            });
+        }
+        return;
+    }
+    openGame(lastPlayedGameId);
+});
 document.getElementById('postGameModal').addEventListener('click',(e)=>{if(e.target.id==='postGameModal')document.getElementById('postGameModal').classList.remove('show')});
-// ============================================
-// DEVICE DETECTION · TV / Mobile / Desktop
-// ============================================
 function detectDevice() {
     const ua = navigator.userAgent;
     const isTV = /SmartTV|Tizen|WebOS|AppleTV|AndroidTV|HbbTV|NetCast|BRAVIA|VIDAA|Roku|Xbox|PlayStation/i.test(ua)
@@ -1408,9 +1432,6 @@ function applyDeviceMode() {
     document.body.dataset.device = device;
     console.log('[Device] Режим:', device);
 }
-// ============================================
-// TV NAVIGATION
-// ============================================
 let tvNavIndex = 0;
 function setupTVNavigation() {
     if (document.body.dataset.device !== 'tv') return;
@@ -1455,9 +1476,6 @@ function setupTVNavigation() {
     });
     console.log('[TV] Навигация пультом активна');
 }
-// ============================================
-// SWIPE NAVIGATION
-// ============================================
 function setupSwipeNavigation() {
     if (document.body.dataset.device === 'desktop') return;
     let touchStartX = 0;
@@ -1538,9 +1556,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-// ============================================
-// INIT
-// ============================================
 (async function init(){
     applyDeviceMode();
     await loadState();
@@ -1573,12 +1588,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     setupTVNavigation();
     setupSwipeNavigation();
-    if(typeof initCommunity==='function')initCommunity();
     if(typeof updateChatBadge==='function')setTimeout(updateChatBadge, 800);
 })();
 
 // ============================================
-// ЭКСПОРТ В WINDOW для messenger.js / community.js / leaderboard.js
+// ЭКСПОРТ В WINDOW
 // ============================================
 window.playTone = playTone;
 window.saveState = saveState;
@@ -1604,15 +1618,33 @@ window.SOUNDS = SOUNDS;
 window.showPostGameScreen = showPostGameScreen;
 window.generateOwnerToken = generateOwnerToken;
 window.renameNickEverywhere = renameNickEverywhere;
-// hasProfanity и censorProfanity определены в messenger.js (грузится ПОСЛЕ script.js)
-// Экспортируем безопасно — только если они уже есть, иначе пусть messenger.js сам экспортирует
-if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
-if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;
 window.openGame = openGame;
 
-// Синхронизируем window.isGameOpen с let-переменной isGameOpen
+if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
+if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;
+
 Object.defineProperty(window, 'isGameOpen', {
     get() { return isGameOpen; },
     set(v) { isGameOpen = v; },
+    configurable: true
+});
+Object.defineProperty(window, 'currentGameStartTime', {
+    get() { return currentGameStartTime; },
+    set(v) { currentGameStartTime = v; },
+    configurable: true
+});
+Object.defineProperty(window, 'sessionStartTotalTime', {
+    get() { return sessionStartTotalTime; },
+    set(v) { sessionStartTotalTime = v; },
+    configurable: true
+});
+Object.defineProperty(window, 'sessionXpStart', {
+    get() { return sessionXpStart; },
+    set(v) { sessionXpStart = v; },
+    configurable: true
+});
+Object.defineProperty(window, 'sessionAchEarned', {
+    get() { return sessionAchEarned; },
+    set(v) { sessionAchEarned = v; },
     configurable: true
 });

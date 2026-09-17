@@ -42,7 +42,10 @@ function isFav(gameId) {
 // СПИСОК ИГР
 // ============================================
 async function loadCommunityGames() {
-  if (COMM.loading) return;
+  if (COMM.loading) {
+    console.warn('[Community] Загрузка уже идёт, сбрасываю флаг');
+    COMM.loading = false;
+  }
   COMM.loading = true;
   const panel = document.getElementById('communityPanel');
   if (!panel) { COMM.loading = false; return; }
@@ -270,7 +273,7 @@ async function showGameDetailModal(game) {
 }
 
 // ============================================
-// ЗАПУСК (IFRAME) — с обходом кеша
+// ЗАПУСК (IFRAME) — с обходом кеша + правильной сессией
 // ============================================
 async function launchCommunityGame(game) {
   const st = commGetState();
@@ -307,9 +310,28 @@ async function launchCommunityGame(game) {
   iframe.onload = onLoad;
   iframe.onerror = onLoad;
 
-  // ============================================
-  // ФИКС: добавляем ?t=timestamp чтобы обойти кеш iframe
-  // ============================================
+  // ФИКС: инициализируем сессию для пост-гейм экрана
+  window.currentGameStartTime = Date.now();
+  window.sessionStartTotalTime = (typeof state !== 'undefined' && state.totalTime) || 0;
+  window.sessionXpStart = (typeof state !== 'undefined' && state.totalXp) || 0;
+  window.sessionAchEarned = [];
+
+  // ФИКС: отслеживаем достижения во время игры
+  const achBefore = new Set((typeof state !== 'undefined' && state.achievements) || []);
+  const achTrackInterval = setInterval(() => {
+    if (!window.isGameOpen) {
+      clearInterval(achTrackInterval);
+      return;
+    }
+    const current = (typeof state !== 'undefined' && state.achievements) || [];
+    current.forEach(id => {
+      if (!achBefore.has(id) && !window.sessionAchEarned.includes(id)) {
+        window.sessionAchEarned.push(id);
+      }
+    });
+  }, 1000);
+
+  // ФИКС: обход кеша iframe через ?t=timestamp
   const cacheBustedUrl = game.url + (game.url.includes('?') ? '&' : '?') + 't=' + Date.now();
   console.log('[Community] Запуск с обходом кеша:', cacheBustedUrl);
 
@@ -547,7 +569,7 @@ async function handleUploadSubmit() {
     return;
   }
 
-  // РЕДАКТИРОВАНИЕ
+  // ==== РЕДАКТИРОВАНИЕ ====
   if (COMM.editingGameId) {
     btn.disabled = true;
     btn.textContent = '⏳ Сохранение...';
@@ -590,7 +612,7 @@ async function handleUploadSubmit() {
     return;
   }
 
-  // ЗАГРУЗКА
+  // ==== ЗАГРУЗКА ====
   const file = fileEl.files[0];
   if (!file) {
     hint.textContent = '❌ Выбери HTML-файл';
@@ -624,7 +646,7 @@ async function handleUploadSubmit() {
   hint.className = 'upload-hint';
 
   try {
-    // Очищаем имя: убираем кириллицу и лишние символы
+    // Чистим имя: убираем кириллицу и недопустимые символы
     const safeName = file.name
       .replace(/[а-яё]/gi, '')
       .replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -636,7 +658,7 @@ async function handleUploadSubmit() {
     const uploadRes = await fetch(uploadUrl, {
       method: 'POST',
       headers: commHeaders({
-        'Content-Type': 'text/html',           // ← жёстко text/html
+        'Content-Type': 'text/html',           // жёстко text/html
         'Cache-Control': 'no-cache',
         'x-upsert': 'true',
       }),
@@ -794,3 +816,4 @@ window.initCommunity = initCommunity;
 window.loadCommunityGames = loadCommunityGames;
 window.openCommunityGame = openCommunityGame;
 window.renderCommunityGames = renderCommunityGames;
+window.launchCommunityGame = launchCommunityGame;
