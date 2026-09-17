@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="bg-particles" id="bgParticles"></div>
@@ -82,22 +82,6 @@
 <div class="hint">Нажмите на эксперимент слева, чтобы увидеть описание</div>
 </div>
 <div class="game-detail" id="expDetail" style="display:none;"></div>
-</div>
-</div>
-</div>
-<div id="tab-community" class="tab-content">
-<div class="community-header">
-<div class="community-title">
-<span>🌍 Сообщество FireLand</span>
-<span class="community-count" id="communityCount">0 игр</span>
-</div>
-<button class="community-upload-btn" id="communityUploadBtn">+ Загрузить игру</button>
-</div>
-<div class="community-panel" id="communityPanel">
-<div class="community-empty">
-<div style="font-size:80px;margin-bottom:16px;">🌍</div>
-<div style="font-size:22px;font-weight:800;margin-bottom:8px;">Пока нет игр от сообщества</div>
-<div style="color:var(--text-secondary);font-size:14px;">Стань первым! Загрузи свою игру.</div>
 </div>
 </div>
 </div>
@@ -224,58 +208,6 @@
 <div class="room-create-actions">
 <button class="room-create-btn" id="roomCreateConfirm">🏠 Создать</button>
 <button class="room-create-cancel" onclick="document.getElementById('roomCreateModal').classList.remove('show')">Отмена</button>
-</div>
-</div>
-</div>
-
-<div class="modal upload-modal" id="uploadModal">
-<div class="modal-content">
-<button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('show')">✕</button>
-<div class="modal-title">🚀 Загрузить игру</div>
-<div class="upload-info">
-Игра должна быть <b>одним HTML-файлом</b> (можно встроить CSS и JS внутрь).<br>
-Максимум <b>10 МБ</b>. Внешние CDN-библиотеки разрешены.
-</div>
-
-<label class="upload-label">Название игры</label>
-<input type="text" id="uploadName" class="upload-input" placeholder="Моя крутая игра" maxlength="60">
-
-<label class="upload-label">Иконка (1 эмодзи)</label>
-<input type="text" id="uploadIcon" class="upload-input" placeholder="🎮" maxlength="4">
-
-<label class="upload-label">Жанр</label>
-<select id="uploadGenre" class="upload-input">
-<option value="RPG">RPG</option>
-<option value="Экшен">Экшен</option>
-<option value="Хоррор">Хоррор</option>
-<option value="Стратегия">Стратегия</option>
-<option value="Кликер">Кликер</option>
-<option value="Головоломка">Головоломка</option>
-<option value="Симулятор">Симулятор</option>
-<option value="Разное">Разное</option>
-</select>
-
-<label class="upload-label">Описание (до 500 символов)</label>
-<textarea id="uploadDescription" class="upload-input upload-textarea" placeholder="О чём игра?" maxlength="500"></textarea>
-
-<label class="upload-label">Градиент карточки (CSS)</label>
-<input type="text" id="uploadBg" class="upload-input" placeholder="linear-gradient(135deg, #ff6b35, #e83040)" maxlength="200">
-<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Оставь пустым для стандартного фона. Пример: linear-gradient(135deg, #6a8aff, #a855f7)</div>
-
-<div id="uploadFileRow">
-<label class="upload-label">HTML-файл игры</label>
-<div class="upload-file-row">
-<input type="file" id="uploadFile" accept=".html,.htm" style="display:none;">
-<button class="upload-file-btn" id="uploadFileBtn">📁 Выбрать файл</button>
-<span class="upload-file-name" id="uploadFileName">Файл не выбран</span>
-</div>
-</div>
-
-<div class="upload-hint" id="uploadHint"></div>
-
-<div class="upload-actions">
-<button class="upload-submit" id="uploadSubmitBtn">🚀 Загрузить</button>
-<button class="upload-cancel" onclick="document.getElementById('uploadModal').classList.remove('show')">Отмена</button>
 </div>
 </div>
 </div>
@@ -444,7 +376,7 @@
 </div>
 <div class="support-info">
 <span>📧 <span class="email">ronormav@gmail.com</span></span>
-<span>⚡ <span class="version">v22.0</span></span>
+<span>⚡ <span class="version">v24.0</span></span>
 </div>
 <div class="fireland">🔥 <span>Создано студией FireLand!</span> 🔥</div>
 </div>
@@ -512,9 +444,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="leaderboard.js"></script>
-<script src="script.js"></script>
-<script src="messenger.js"></script>
+<script src="leaderboard.js?v=25"></script>
+<script src="script.js?v=25"></script>
+<script src="messenger.js?v=25"></script>
 <div class="chat-lightbox" id="chatLightbox" style="display:none;">
 <button class="chat-lightbox-close" id="chatLightboxClose">✕</button>
 <img id="chatLightboxImg" src="" alt="">
