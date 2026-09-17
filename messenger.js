@@ -957,37 +957,6 @@ async function deleteRoom(roomId) {
   console.log('[Chat] Комната удалена глобально:', roomId);
 }
 
-// Удаление комнаты
-function deleteRoom(roomId) {
-  const st = chatGetState();
-  if (!st) return;
-  if (!st.myRooms) st.myRooms = [];
-  const room = st.myRooms.find(r => r.room === roomId);
-  if (!room) return;
-  const name = room.display || room.name || roomId;
-  if (!confirm(`Удалить комнату «${name}»?`)) return;
-
-  // Убираем из списка
-  st.myRooms = st.myRooms.filter(r => r.room !== roomId);
-
-  // Если были в этой комнате — уходим в general
-  if (CHAT.currentRoom === roomId) {
-    switchRoom('general');
-  }
-
-  // Очищаем кеш истории и подписки
-  delete CHAT.historyLoaded[roomId];
-  if (CHAT.subscribed[roomId]) {
-    try { CHAT.client.removeChannel(CHAT.subscribed[roomId]); } catch (e) {}
-    delete CHAT.subscribed[roomId];
-  }
-
-  chatSaveState(true);
-  CHAT.roomsList = [...st.myRooms];
-  renderRoomsList();
-  console.log('[Chat] Комната удалена:', roomId);
-}
-
 // ============================================
 // ОТПРАВКА
 // ============================================
