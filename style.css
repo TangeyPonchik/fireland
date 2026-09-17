@@ -1681,15 +1681,27 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   display:flex;
   flex-direction:column;
   gap:10px;
+  isolation:isolate;
 }
 .community-card:hover{
   transform:translateY(-4px);
   border-color:var(--accent);
 }
+.community-card-bg{
+  position:absolute;
+  inset:0;
+  opacity:0.35;
+  z-index:-1;
+  pointer-events:none;
+  transition:opacity 0.25s;
+}
+.community-card:hover .community-card-bg{opacity:0.55}
 .community-card-icon{
   font-size:48px;
   text-align:center;
   line-height:1;
+  position:relative;
+  z-index:1;
 }
 .community-card-name{
   font-family:'Manrope',sans-serif;
@@ -1698,12 +1710,16 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   color:var(--text);
   text-align:center;
   word-break:break-word;
+  position:relative;
+  z-index:1;
 }
 .community-card-genre{
   font-size:12px;
   color:var(--text-secondary);
   text-align:center;
   font-weight:600;
+  position:relative;
+  z-index:1;
 }
 .community-card-author{
   font-size:11px;
@@ -1713,6 +1729,8 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   align-items:center;
   justify-content:center;
   gap:4px;
+  position:relative;
+  z-index:1;
 }
 .community-card-author b{color:var(--accent);font-weight:800}
 .community-card-plays{
@@ -1720,6 +1738,8 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   color:var(--accent-secondary);
   text-align:center;
   font-weight:700;
+  position:relative;
+  z-index:1;
 }
 .community-card-delete{
   position:absolute;
@@ -1737,8 +1757,242 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   align-items:center;
   justify-content:center;
   padding:0;
+  z-index:5;
 }
 .community-card:hover .community-card-delete{display:flex}
+.community-card-edit{
+  position:absolute;
+  top:8px;
+  right:40px;
+  background:rgba(106,138,255,0.9);
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  width:26px;
+  height:26px;
+  cursor:pointer;
+  font-size:13px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  z-index:5;
+}
+.community-card:hover .community-card-edit{display:flex}
+.community-card-fav{
+  position:absolute;
+  top:8px;
+  left:8px;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:rgba(10,18,40,0.85);
+  border:1px solid rgba(255,255,255,0.15);
+  color:var(--text-secondary);
+  cursor:pointer;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform 0.2s,background 0.2s;
+  padding:0;
+  font-size:14px;
+  opacity:0;
+}
+.community-card:hover .community-card-fav{opacity:1}
+.community-card-fav.active{
+  opacity:1;
+  background:rgba(251,191,36,0.95);
+  color:#060a1a;
+  border-color:var(--accent-secondary);
+}
+.community-card-fav:hover{transform:scale(1.15)}
+
+/* Модалка деталей игры + комментарии */
+.game-detail-modal-content{
+  max-width:600px;
+  padding:24px;
+}
+.game-detail-header{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:16px;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.game-detail-icon{
+  font-size:64px;
+  flex-shrink:0;
+  line-height:1;
+}
+.game-detail-info{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.game-detail-name{
+  font-family:'Manrope',sans-serif;
+  font-size:22px;
+  font-weight:900;
+  color:var(--text);
+  word-break:break-word;
+}
+.game-detail-genre{
+  font-size:13px;
+  color:var(--text-secondary);
+  font-weight:600;
+}
+.game-detail-author{
+  font-size:12px;
+  color:var(--text-secondary);
+  font-weight:500;
+}
+.game-detail-author b{color:var(--accent);font-weight:800}
+.game-detail-desc{
+  font-size:14px;
+  color:var(--text);
+  line-height:1.55;
+  margin-bottom:14px;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.game-detail-stats{
+  font-family:'Manrope',monospace;
+  font-size:13px;
+  color:var(--accent-secondary);
+  font-weight:700;
+  margin-bottom:14px;
+}
+.game-detail-actions{
+  display:flex;
+  gap:10px;
+  margin-bottom:16px;
+}
+.game-detail-play{
+  flex:1;
+  font-family:'Manrope',sans-serif;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:#fff;
+  border:none;
+  padding:12px 24px;
+  border-radius:14px;
+  font-weight:800;
+  font-size:15px;
+  cursor:pointer;
+  transition:transform 0.2s;
+}
+.game-detail-play:hover{transform:scale(1.03)}
+.game-detail-fav{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  color:var(--text);
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  font-size:22px;
+  cursor:pointer;
+  transition:transform 0.2s,background 0.2s;
+  flex-shrink:0;
+}
+.game-detail-fav:hover{transform:scale(1.1)}
+.game-detail-fav.active{
+  background:linear-gradient(135deg,#fbbf24,#f59e0b);
+  color:#060a1a;
+  border-color:var(--accent-secondary);
+}
+.comments-list{
+  max-height:280px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-right:4px;
+  margin-bottom:12px;
+}
+.comments-list::-webkit-scrollbar{width:5px}
+.comments-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.comment-item{
+  display:flex;
+  gap:10px;
+  padding:10px 12px;
+  background:var(--bg-secondary);
+  border:1px solid var(--border);
+  border-radius:12px;
+  transition:border-color 0.2s;
+}
+.comment-item:hover{border-color:var(--accent)}
+.comment-avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#6a8aff,#a78bfa);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Manrope',sans-serif;
+  font-weight:900;
+  font-size:14px;
+  flex-shrink:0;
+}
+.comment-body{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.comment-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.comment-nick{
+  font-family:'Manrope',sans-serif;
+  font-weight:800;
+  font-size:13px;
+  color:var(--accent);
+}
+.comment-date{
+  font-family:'Manrope',monospace;
+  font-size:10px;
+  color:var(--text-secondary);
+  font-weight:600;
+}
+.comment-del{
+  margin-left:auto;
+  background:transparent;
+  border:none;
+  color:var(--text-secondary);
+  font-size:12px;
+  cursor:pointer;
+  padding:2px 6px;
+  border-radius:6px;
+  transition:background 0.2s,color 0.2s;
+}
+.comment-del:hover{background:#ef4444;color:#fff}
+.comment-text{
+  font-size:13px;
+  color:var(--text);
+  line-height:1.5;
+  word-break:break-word;
+  white-space:pre-wrap;
+}
+.comment-input-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.comment-input-row .chat-input{
+  flex:1;
+  min-width:0;
+}
+
+/* Upload modal */
 .upload-modal .modal-content{max-width:520px}
 .upload-info{
   font-size:13px;
@@ -1840,6 +2094,7 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   transition:background 0.2s;
 }
 .upload-cancel:hover{background:var(--bg-hover)}
+
 @media (max-width:768px){
   .community-panel{grid-template-columns:repeat(2,1fr);gap:10px}
   .community-card{padding:12px}
@@ -1847,7 +2102,11 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   .community-card-name{font-size:13px}
   .community-header{padding:12px 14px}
   .community-title > span:first-child{font-size:17px}
+  .game-detail-icon{font-size:48px}
+  .game-detail-name{font-size:18px}
+  .game-detail-modal-content{padding:18px}
 }
+
 /* ============================================
    CHAT MEDIA · Images + Voice
    ============================================ */
@@ -1876,7 +2135,6 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   animation:pulse 1s infinite;
 }
 
-/* Картинки в чате */
 .chat-image-wrapper{
   max-width:100%;
   border-radius:14px;
@@ -1897,7 +2155,6 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   object-fit:cover;
 }
 
-/* Голосовые */
 .chat-voice-wrapper{
   display:flex;
   align-items:center;
@@ -1958,7 +2215,6 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   text-align:right;
 }
 
-/* Панель записи */
 .chat-recording-bar{
   display:flex;
   align-items:center;
@@ -2010,7 +2266,6 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
 }
 .chat-recording-send:hover{transform:scale(1.05)}
 
-/* Lightbox */
 .chat-lightbox{
   position:fixed;
   inset:0;

@@ -1176,10 +1176,8 @@ function renderDateDivider(iso, forceLabel = null) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
   const label = forceLabel || getDateLabel(iso);
-
   const lastDivider = box.querySelector('.chat-date-divider:last-of-type');
   if (lastDivider && lastDivider.textContent.trim() === label) return;
-
   const el = document.createElement('div');
   el.className = 'chat-date-divider';
   el.innerHTML = `<span>${chatEscape(label)}</span>`;
@@ -1204,9 +1202,7 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
     if (lastCreatedAt) {
       const lastDay = new Date(lastCreatedAt).toDateString();
       const thisDay = new Date(msg.created_at).toDateString();
-      if (lastDay !== thisDay) {
-        renderDateDivider(msg.created_at);
-      }
+      if (lastDay !== thisDay) renderDateDivider(msg.created_at);
     } else {
       renderDateDivider(msg.created_at);
     }
@@ -1990,7 +1986,9 @@ window.debouncedPresenceRefresh = function() {
   }, 1500);
 };
 
-// Экспорт
+// ============================================
+// ЭКСПОРТ
+// ============================================
 window.onChatTabOpen = onChatTabOpen;
 window.updateChatBadge = updateChatBadge;
 window.reinitializePresenceWithNewNick = reinitializePresenceWithNewNick;

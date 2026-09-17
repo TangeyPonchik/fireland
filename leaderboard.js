@@ -1,5 +1,5 @@
 // ============================================
-// FireLand Leaderboard · Supabase v18 · FIXED
+// FireLand Leaderboard · Supabase v19 · TOKEN PROTECTED
 // ============================================
 
 const SUPABASE_URL = 'https://syfkmrjdrxphtxcpwgyy.supabase.co';
@@ -13,7 +13,9 @@ const LB = {
   isSaving: false,
 };
 
-// ФИКС #2: единый escapeHtml в window
+// ============================================
+// БЕЗОПАСНЫЕ ОБЁРТКИ
+// ============================================
 window.escapeHtml = window.escapeHtml || function (text) {
   const div = document.createElement('div');
   div.textContent = text == null ? '' : String(text);
@@ -21,14 +23,15 @@ window.escapeHtml = window.escapeHtml || function (text) {
 };
 const escapeHtml = window.escapeHtml;
 
-// ФИКС #5: безопасный saveState (не падает, если script.js ещё не загрузился)
 function lbSafeSaveState(immediate = false) {
   if (typeof saveState === 'function') {
     try { saveState(immediate); } catch (e) { console.warn('[LB] saveState:', e); }
   }
 }
-
-// ФИКС #4: безопасные геттеры из script.js
+function lbGetState() {
+  if (typeof state !== 'undefined' && state) return state;
+  return null;
+}
 function lbGetLevelFromTotalXp(totalXp) {
   if (typeof getLevelFromTotalXp === 'function') return getLevelFromTotalXp(totalXp);
   return { level: 1, currentXp: 0, neededXp: 100 };
@@ -37,37 +40,48 @@ function lbGetTitleForLevel(level) {
   if (typeof getTitleForLevel === 'function') return getTitleForLevel(level);
   return '🌱 Новичок';
 }
-function lbGetState() {
-  if (typeof state !== 'undefined' && state) return state;
-  return null;
-}
 
+// ============================================
+// ОТПРАВКА СЧЁТА (с токеном)
+// ============================================
 async function submitScore() {
   const st = lbGetState();
   if (!st || !st.nickname || st.nickname === 'Игрок') {
     console.log('[LB] Не отправляю: ник не установлен');
     return false;
   }
-  const lvlInfo = lbGetLevelFromTotalXp(st.totalXp);
-  const payload = {
-    p_nickname: st.nickname,
-    p_level: lvlInfo.level,
-    p_total_xp: st.totalXp,
-    p_achievements_count: st.achievements.length,
-  };
+  if (typeof getLevelFromTotalXp !== 'function') {
+    console.warn('[LB] getLevelFromTotalXp не определена');
+    return false;
+  }
+  const lvlInfo = getLevelFromTotalXp(st.totalXp);
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score_secure`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        p_nickname: st.nickname,
+        p_level: lvlInfo.level,
+        p_total_xp: st.totalXp,
+        p_achievements_count: st.achievements.length,
+        p_owner_token: st.ownerToken || '',
+      }),
     });
     if (!res.ok) {
       const err = await res.text();
       console.warn('[LB] Ошибка отправки:', res.status, err);
+      return false;
+    }
+    const data = await res.json();
+    if (!data.ok) {
+      console.warn('[LB] Отклонено:', data.error);
+      if (data.error === 'NICK_TAKEN') {
+        console.warn('[LB] Ник занят другим устройством');
+      }
       return false;
     }
     st.lastSubmittedNick = st.nickname;
@@ -80,65 +94,51 @@ async function submitScore() {
   }
 }
 
+// ============================================
+// СОХРАНЕНИЕ НИКА (с токеном)
+// ============================================
 async function saveNickname() {
   if (LB.isSaving) return { ok: false, message: 'Уже сохраняется' };
   const st = lbGetState();
   if (!st) return { ok: false, message: 'Состояние не загружено' };
   LB.isSaving = true;
+
   const newNick = st.nickname;
-  const oldNick = st.lastSubmittedNick;
   if (!newNick || newNick === 'Игрок') {
     LB.isSaving = false;
     return { ok: false, message: 'Введи ник' };
   }
+
   const lvlInfo = lbGetLevelFromTotalXp(st.totalXp);
-  const payload = {
-    p_nickname: newNick,
-    p_level: lvlInfo.level,
-    p_total_xp: st.totalXp,
-    p_achievements_count: st.achievements.length,
-  };
   try {
-    if (oldNick && oldNick !== newNick) {
-      console.log('[LB] Переименование:', oldNick, '→', newNick);
-      const renameRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/leaderboard?nickname=eq.${encodeURIComponent(oldNick)}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Prefer': 'return=minimal',
-          },
-          body: JSON.stringify({
-            nickname: newNick,
-            level: lvlInfo.level,
-            total_xp: st.totalXp,
-            achievements_count: st.achievements.length,
-            updated_at: new Date().toISOString(),
-          }),
-        }
-      );
-      if (!renameRes.ok) {
-        const err = await renameRes.text();
-        console.warn('[LB] Ошибка переименования:', renameRes.status, err);
-      }
-    }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score_secure`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        p_nickname: newNick,
+        p_level: lvlInfo.level,
+        p_total_xp: st.totalXp,
+        p_achievements_count: st.achievements.length,
+        p_owner_token: st.ownerToken || '',
+      }),
     });
     if (!res.ok) {
       const err = await res.text();
       console.warn('[LB] Ошибка сохранения:', res.status, err);
       LB.isSaving = false;
       return { ok: false, message: 'Ошибка сервера: ' + res.status };
+    }
+    const data = await res.json();
+    if (!data.ok) {
+      LB.isSaving = false;
+      if (data.error === 'NICK_TAKEN') {
+        return { ok: false, message: 'Этот ник занят другим игроком' };
+      }
+      return { ok: false, message: data.error || 'Ошибка' };
     }
     st.lastSubmittedNick = newNick;
     lbSafeSaveState(true);
@@ -152,6 +152,9 @@ async function saveNickname() {
   }
 }
 
+// ============================================
+// ЗАГРУЗКА ЛИДЕРБОРДА
+// ============================================
 async function fetchLeaderboard(force = false) {
   if (LB.isFetching) return LB.cache;
   if (!force && Date.now() - LB.lastFetch < 30000) return LB.cache;
@@ -183,6 +186,9 @@ async function fetchLeaderboard(force = false) {
   }
 }
 
+// ============================================
+// РЕНДЕР
+// ============================================
 function renderLeaderboard(data) {
   const container = document.getElementById('leaderboardContainer');
   if (!container) return;
@@ -200,6 +206,7 @@ function renderLeaderboard(data) {
   const st = lbGetState();
   const myNick = (st && st.nickname) || 'Игрок';
   const myIndex = data.findIndex(r => r.nickname === myNick);
+
   const rows = data.map((row, i) => {
     const place = i + 1;
     const isMe = row.nickname === myNick;
@@ -216,6 +223,7 @@ function renderLeaderboard(data) {
         <div class="lb-xp">${formatXp(row.total_xp)} XP</div>
       </div>`;
   }).join('');
+
   const myRow = myIndex >= 0 ? `
     <div class="lb-my-position">
       <div style="font-size:12px;opacity:0.7;font-weight:700;letter-spacing:1px;">ТВОЯ ПОЗИЦИЯ</div>
@@ -230,6 +238,7 @@ function renderLeaderboard(data) {
     <div class="lb-my-position" style="text-align:center;">
       <div style="font-size:13px;opacity:0.7;">Тебя пока нет в топе — сохрани ник и заработай XP!</div>
     </div>`;
+
   container.innerHTML = `
     <div class="lb-header">
       <div class="lb-title-main">🏆 Топ-100 игроков</div>
@@ -254,6 +263,9 @@ function renderLeaderboard(data) {
   }
 }
 
+// ============================================
+// ОБНОВЛЕНИЕ
+// ============================================
 async function refreshLeaderboard() {
   const btn = document.querySelector('.lb-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Загрузка...'; }
@@ -279,19 +291,27 @@ function stopLeaderboardAutoRefresh() {
   }
 }
 
+// ============================================
+// ФОРМАТИРОВАНИЕ
+// ============================================
 function formatXp(xp) {
   if (xp >= 1000000) return (xp / 1000000).toFixed(2) + 'M';
   if (xp >= 1000) return (xp / 1000).toFixed(1) + 'k';
   return xp.toLocaleString('ru-RU');
 }
 
+// ============================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================
 async function initLeaderboard() {
   const data = await fetchLeaderboard(true);
   renderLeaderboard(data);
   console.log('[LB] Лидерборд инициализирован, записей:', data.length);
 }
 
-// Экспорт в window
+// ============================================
+// ЭКСПОРТ В WINDOW
+// ============================================
 window.submitScore = submitScore;
 window.saveNickname = saveNickname;
 window.fetchLeaderboard = fetchLeaderboard;

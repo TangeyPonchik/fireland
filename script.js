@@ -148,6 +148,7 @@ unreadChatCount:0,
 onboardingDone:false,
 myRooms:[],
 myCommunityGames:0,
+ownerToken:null,
 _savedAt:0};
 let state=JSON.parse(JSON.stringify(DEFAULT_STATE));
 let isGameOpen=false;
@@ -160,6 +161,15 @@ async function idbDelete(key){const db=await openDB();return new Promise((resolv
 let saveTimeout=null,pendingSave=false;
 function saveState(immediate=false){pendingSave=true;if(immediate){clearTimeout(saveTimeout);doSaveState();return}clearTimeout(saveTimeout);saveTimeout=setTimeout(doSaveState,500)}
 async function doSaveState(){if(!pendingSave)return;pendingSave=false;try{state._savedAt=Date.now();await idbSet(STATE_KEY,state);const lightState={...state};delete lightState.avatar;try{localStorage.setItem('fireland_light',JSON.stringify(lightState))}catch(e){}}catch(e){console.warn('Save failed:',e)}}
+
+// ============================================
+// OWNER TOKEN · защита ника
+// ============================================
+function generateOwnerToken(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();
+  return 'tok_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);
+}
+
 async function loadState(){
     try{
         const full=await idbGet(STATE_KEY);
@@ -190,6 +200,12 @@ async function loadState(){
         if(!state.myRooms) state.myRooms=[];
         if(state.myCommunityGames===undefined) state.myCommunityGames=0;
         if(state.theme==='dark'||state.theme==='blue') state.theme='system';
+        // OWNER TOKEN
+        if(!state.ownerToken){
+            state.ownerToken=generateOwnerToken();
+            saveState(true);
+            console.log('[Owner] Токен создан:', state.ownerToken);
+        }
     }catch(e){console.warn('Load failed:',e)}
 }
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -634,7 +650,8 @@ function toggleFavorite(gameId,event){
     else{state.favorites.push(gameId);unlockAch('favorite_add');if(state.todayStats)state.todayStats.favAdded=(state.todayStats.favAdded||0)+1;updateQuestProgress()}
     saveState();
     renderGames();
-    renderExperiments()}
+    renderExperiments();
+    if(typeof renderCommunityGames==='function')renderCommunityGames();}
 function selectGame(gameId){
     const game=GAMES.find(g=>g.id===gameId);
     if(!game)return;
@@ -795,13 +812,18 @@ function openGame(gameId){
     document.body.classList.add('game-active');
     showGameSkeleton();
     try{iframe.src='about:blank'}catch(e){}
-    requestAnimationFrame(()=>{iframe.src=file});
-    container.style.display='block';
-    isGameOpen=true;
+    // FIX: сбрасываем старые обработчики
+    iframe.onload=null;
+    iframe.onerror=null;
+    // FIX: снимаем sandbox для встроенных игр (они доверенные)
+    iframe.removeAttribute('sandbox');
     let loadHandled=false;
     const onLoad=()=>{if(loadHandled)return;loadHandled=true;hideGameSkeleton()};
     iframe.onload=onLoad;
     iframe.onerror=onLoad;
+    requestAnimationFrame(()=>{iframe.src=file});
+    container.style.display='block';
+    isGameOpen=true;
     setTimeout(()=>{if(isGameOpen)hideGameSkeleton()},4000);
     startTimeTicker(gameId);
     addGameMenuListeners();
@@ -1133,21 +1155,43 @@ profileNickInput.addEventListener('input',()=>{
         hint.textContent='Нажми 💾, чтобы сохранить ник в таблицу лидеров';
     }
 });
+
+// ============================================
+// СОХРАНЕНИЕ НИКА С ПЕРЕНОСОМ
+// ============================================
 document.getElementById('profileNickSaveBtn').addEventListener('click',async()=>{
     const btn=document.getElementById('profileNickSaveBtn');
     const hint=document.getElementById('profileNickHint');
-    if(!state.nickname||state.nickname==='Игрок'){
+    const newNick=(state.nickname||'').trim();
+    const oldNick=state.lastSubmittedNick;
+
+    if(!newNick||newNick==='Игрок'){
         if(hint){hint.textContent='Сначала введи ник';hint.classList.add('error')}
         return;
     }
+
     btn.disabled=true;
     btn.textContent='⏳';
-    const result=await saveNickname();
+
+    let result;
+    if(oldNick && oldNick!==newNick){
+        // Переносим ник везде
+        result=await renameNickEverywhere(oldNick,newNick,state.ownerToken);
+    }else{
+        // Просто сохраняем
+        result=await saveNickname();
+    }
+
     btn.disabled=false;
     btn.textContent='💾';
-    if(result.ok){
+
+    if(result && result.ok){
         btn.classList.add('saved');
-        if(hint){hint.textContent='✅ Ник сохранён в таблицу';hint.classList.remove('error');hint.classList.add('saved')}
+        if(hint){
+            hint.textContent='✅ Ник сохранён'+(oldNick&&oldNick!==newNick?' (прогресс перенесён)':'');
+            hint.classList.remove('error');
+            hint.classList.add('saved');
+        }
         setTimeout(()=>{
             if(hint){hint.textContent='Нажми 💾, чтобы сохранить ник в таблицу лидеров';hint.classList.remove('saved')}
             btn.classList.remove('saved');
@@ -1155,10 +1199,68 @@ document.getElementById('profileNickSaveBtn').addEventListener('click',async()=>
         if(typeof window.reinitializePresenceWithNewNick==='function')window.reinitializePresenceWithNewNick();
     }else{
         btn.classList.add('error');
-        if(hint){hint.textContent='❌ '+(result.message||'Ошибка');hint.classList.remove('saved');hint.classList.add('error')}
+        const msg=result&&result.message?result.message:'Ошибка';
+        if(hint){hint.textContent='❌ '+msg;hint.classList.remove('saved');hint.classList.add('error')}
         setTimeout(()=>btn.classList.remove('error'),4000);
     }
 });
+
+async function renameNickEverywhere(oldNick,newNick,token){
+    try{
+        const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/rename_nick_everywhere`,{
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json',
+                'apikey':SUPABASE_ANON_KEY,
+                'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body:JSON.stringify({
+                p_old_nick:oldNick,
+                p_new_nick:newNick,
+                p_owner_token:token||'',
+            }),
+        });
+        if(!res.ok){
+            const err=await res.text();
+            console.warn('[Rename] Ошибка:',res.status,err);
+            return {ok:false,message:'Ошибка сервера'};
+        }
+        const data=await res.json();
+        if(!data.ok){
+            if(data.error==='NICK_TAKEN')return {ok:false,message:'Этот ник занят другим игроком'};
+            if(data.error==='NOT_OWNER')return {ok:false,message:'Не твой ник'};
+            if(data.error==='OLD_NOT_FOUND'){
+                // старого нет — просто сохраняем новый
+                return await saveNickname();
+            }
+            return {ok:false,message:data.error||'Ошибка'};
+        }
+        state.lastSubmittedNick=newNick;
+        saveState(true);
+        // Очищаем кеши чата, чтобы всё перерисовалось с новым ником
+        if(typeof CHAT!=='undefined'){
+            CHAT.dmList=[];
+            CHAT.historyLoaded={};
+            CHAT.reactions={};
+            CHAT.subscribed={};
+            // Если были в ЛС — переключаемся в general
+            if(CHAT.currentRoom && CHAT.currentRoom.startsWith('dm_')){
+                if(typeof switchRoom==='function')switchRoom('general');
+            }else if(typeof renderDmList==='function'){
+                renderDmList();
+            }
+        }
+        // Перезагружаем лидерборд
+        if(typeof refreshLeaderboard==='function')setTimeout(refreshLeaderboard,500);
+        // Перезагружаем community
+        if(typeof loadCommunityGames==='function')setTimeout(loadCommunityGames,500);
+        return {ok:true};
+    }catch(e){
+        console.warn('[Rename] сеть:',e);
+        return {ok:false,message:'Нет интернета'};
+    }
+}
+
 profileBigAvatar.addEventListener('click',()=>avatarFileInput.click());
 avatarFileInput.addEventListener('change',async(e)=>{
     const file=e.target.files[0];
@@ -1204,6 +1306,7 @@ async function resetAllData(){
         localStorage.removeItem('fireland_light');
         localStorage.removeItem('abdulla_games_state_no_credits');
         state=JSON.parse(JSON.stringify(DEFAULT_STATE));
+        state.ownerToken=generateOwnerToken();
         state.unreadChatCount=0;
         await idbSet(STATE_KEY,state);
         renderGames();renderExperiments();updateLastGameBar();loadSettings();
@@ -1246,6 +1349,7 @@ document.addEventListener('keydown',(e)=>{
         else if(document.getElementById('userProfileModal').classList.contains('show'))document.getElementById('userProfileModal').classList.remove('show');
         else if(document.getElementById('roomCreateModal').classList.contains('show'))document.getElementById('roomCreateModal').classList.remove('show');
         else if(document.getElementById('uploadModal').classList.contains('show'))document.getElementById('uploadModal').classList.remove('show');
+        else if(document.getElementById('gameDetailModal')&&document.getElementById('gameDetailModal').classList.contains('show'))document.getElementById('gameDetailModal').classList.remove('show');
         else if(typeof CHAT!=='undefined'&&CHAT.currentRoom&&CHAT.currentRoom!=='general'){
             if(typeof switchRoom==='function')switchRoom('general');
         }
@@ -1438,40 +1542,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // INIT
 // ============================================
 (async function init(){
-    // ============================================
-// ЭКСПОРТ для messenger.js / community.js
-// ============================================
-
-// Синхронизируем window.isGameOpen с let isGameOpen через getter/setter
-Object.defineProperty(window, 'isGameOpen', {
-  get() { return isGameOpen; },
-  set(v) { isGameOpen = v; },
-  configurable: true
-});
-
-window.playTone = playTone;
-window.saveState = saveState;
-window.getLevelFromTotalXp = getLevelFromTotalXp;
-window.getTitleForLevel = getTitleForLevel;
-window.unlockAch = unlockAch;
-window.updateQuestProgress = updateQuestProgress;
-window.renderProfile = renderProfile;
-window.renderAchievements = renderAchievements;
-window.renderRecords = renderRecords;
-window.updateLevelDisplay = updateLevelDisplay;
-window.hideMascot = hideMascot;
-window.showMascot = showMascot;
-window.showGameSkeleton = showGameSkeleton;
-window.hideGameSkeleton = hideGameSkeleton;
-window.addGameMenuListeners = addGameMenuListeners;
-window.removeGameMenuListeners = removeGameMenuListeners;
-window.closeGame = closeGame;
-window.startTimeTicker = startTimeTicker;
-window.stopTimeTicker = stopTimeTicker;
-window.updateLastGameBar = updateLastGameBar;
-window.SOUNDS = SOUNDS;
-window.showPostGameScreen = showPostGameScreen;
-
     applyDeviceMode();
     await loadState();
     state.selectedGameId=null;
@@ -1494,7 +1564,7 @@ window.showPostGameScreen = showPostGameScreen;
     updateLastGameBar();
     updateClock();
     renderCases();
-    console.log('🔥 Лаунчер FireLand v22.0 · Community Edition · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
+    console.log('🔥 Лаунчер FireLand v23.0 · Community+ · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
     if(typeof initLeaderboard==='function')initLeaderboard();
     if(state.lastSubmittedNick){
         setTimeout(()=>{
@@ -1506,3 +1576,41 @@ window.showPostGameScreen = showPostGameScreen;
     if(typeof initCommunity==='function')initCommunity();
     if(typeof updateChatBadge==='function')setTimeout(updateChatBadge, 800);
 })();
+
+// ============================================
+// ЭКСПОРТ В WINDOW для messenger.js / community.js / leaderboard.js
+// ============================================
+window.playTone = playTone;
+window.saveState = saveState;
+window.getLevelFromTotalXp = getLevelFromTotalXp;
+window.getTitleForLevel = getTitleForLevel;
+window.unlockAch = unlockAch;
+window.updateQuestProgress = updateQuestProgress;
+window.renderProfile = renderProfile;
+window.renderAchievements = renderAchievements;
+window.renderRecords = renderRecords;
+window.updateLevelDisplay = updateLevelDisplay;
+window.hideMascot = hideMascot;
+window.showMascot = showMascot;
+window.showGameSkeleton = showGameSkeleton;
+window.hideGameSkeleton = hideGameSkeleton;
+window.addGameMenuListeners = addGameMenuListeners;
+window.removeGameMenuListeners = removeGameMenuListeners;
+window.closeGame = closeGame;
+window.startTimeTicker = startTimeTicker;
+window.stopTimeTicker = stopTimeTicker;
+window.updateLastGameBar = updateLastGameBar;
+window.SOUNDS = SOUNDS;
+window.showPostGameScreen = showPostGameScreen;
+window.generateOwnerToken = generateOwnerToken;
+window.renameNickEverywhere = renameNickEverywhere;
+window.hasProfanity = hasProfanity;
+window.censorProfanity = censorProfanity;
+window.openGame = openGame;
+
+// Синхронизируем window.isGameOpen с let-переменной isGameOpen
+Object.defineProperty(window, 'isGameOpen', {
+    get() { return isGameOpen; },
+    set(v) { isGameOpen = v; },
+    configurable: true
+});
