@@ -1986,12 +1986,11 @@ window.debouncedPresenceRefresh = function() {
   }, 1500);
 };
 
-// ============================================
-// ЭКСПОРТ
-// ============================================
 window.onChatTabOpen = onChatTabOpen;
 window.updateChatBadge = updateChatBadge;
 window.reinitializePresenceWithNewNick = reinitializePresenceWithNewNick;
 window.openDmWith = openDmWith;
 window.switchRoom = switchRoom;
 window.showUserProfile = showUserProfile;
+window.hasProfanity = hasProfanity;         // ← добавь
+window.censorProfanity = censorProfanity;   // ← добавь

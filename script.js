@@ -1604,8 +1604,10 @@ window.SOUNDS = SOUNDS;
 window.showPostGameScreen = showPostGameScreen;
 window.generateOwnerToken = generateOwnerToken;
 window.renameNickEverywhere = renameNickEverywhere;
-window.hasProfanity = hasProfanity;
-window.censorProfanity = censorProfanity;
+// hasProfanity и censorProfanity определены в messenger.js (грузится ПОСЛЕ script.js)
+// Экспортируем безопасно — только если они уже есть, иначе пусть messenger.js сам экспортирует
+if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
+if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;
 window.openGame = openGame;
 
 // Синхронизируем window.isGameOpen с let-переменной isGameOpen
