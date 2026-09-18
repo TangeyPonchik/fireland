@@ -1258,33 +1258,113 @@ const calendarCloseBtn=document.getElementById('calendarCloseBtn');
 document.getElementById('streakBadge').addEventListener('click',()=>{renderCalendar();calendarModal.classList.add('show')});
 calendarCloseBtn.addEventListener('click',()=>calendarModal.classList.remove('show'));
 calendarModal.addEventListener('click',(e)=>{if(e.target===calendarModal)calendarModal.classList.remove('show')});
+
+// ============================================
+// RESET (с удалением из БД)
+// ============================================
 async function resetAllData(){
-    if(confirm('🗑️ Сбросить ВСЁ?\n\nВесь прогресс вернётся к заводским!')){
-        try{await idbDelete(STATE_KEY)}catch(e){}
-        localStorage.removeItem('fireland_light');
-        localStorage.removeItem('abdulla_games_state_no_credits');
-        state=JSON.parse(JSON.stringify(DEFAULT_STATE));
-        state.ownerToken=generateOwnerToken();
-        state.unreadChatCount=0;
-        await idbSet(STATE_KEY,state);
-        renderGames();renderExperiments();updateLastGameBar();loadSettings();
-        renderProfile();renderStats();renderAchievements();renderRecords();
-        renderQuests();renderStreak();updateLevelDisplay();cancelAlarm();clearSelection();renderCases();
-        if(typeof updateChatBadge==='function')updateChatBadge();
-        document.getElementById('profileNickInput').value='Игрок';
-        const av=document.getElementById('profileBigAvatar');
-        av.innerHTML='👤';
-        av.style.background='linear-gradient(135deg, #6a8aff, #a78bfa)';
-        document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'));
-        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-        document.querySelector('.tab-btn[data-tab="games"]').classList.add('active');
-        document.getElementById('tab-games').classList.add('active');
-        applyTheme();
-        updateParticleColors();
-        alert('🔄 ВСЁ сброшено!')}}
+    const st = (typeof chatGetState === 'function') ? chatGetState() : state;
+    const oldNick = st && st.nickname && st.nickname !== 'Игрок' ? st.nickname : null;
+    const oldToken = st && st.ownerToken ? st.ownerToken : null;
+
+    let msg = '🗑️ Сбросить ВСЁ?\n\nВесь прогресс вернётся к заводским!';
+    if (oldNick && oldToken) {
+        msg += '\n\n⚠️ Твой ник «' + oldNick + '» также будет УДАЛЁН из:\n' +
+               '• Лидерборда\n' +
+               '• Чата (все сообщения)\n' +
+               '• Реакций\n' +
+               '• Комнат\n\n' +
+               'Восстановить нельзя.';
+    }
+    if (!confirm(msg)) return;
+
+    let dbDeleted = false;
+    if (oldNick && oldToken) {
+        try {
+            console.log('[Reset] Удаляю аккаунт из БД:', oldNick);
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/delete_my_account`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                },
+                body: JSON.stringify({
+                    p_nickname: oldNick,
+                    p_owner_token: oldToken,
+                }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.ok) {
+                    dbDeleted = true;
+                    console.log('[Reset] ✅ Удалено из БД:', data.deleted);
+                } else {
+                    console.warn('[Reset] Ошибка удаления из БД:', data.error);
+                    alert('⚠️ Не удалось удалить аккаунт из базы: ' + data.error + '\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
+                }
+            } else {
+                console.warn('[Reset] HTTP ошибка:', res.status);
+                alert('⚠️ Сервер не отвечает (' + res.status + ').\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
+            }
+        } catch (e) {
+            console.warn('[Reset] Сеть:', e);
+            alert('⚠️ Нет соединения.\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
+        }
+    }
+
+    try { await idbDelete(STATE_KEY); } catch(e) {}
+    localStorage.removeItem('fireland_light');
+    localStorage.removeItem('abdulla_games_state_no_credits');
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    state.ownerToken = generateOwnerToken();
+    state.unreadChatCount = 0;
+    await idbSet(STATE_KEY, state);
+    renderGames();
+    renderExperiments();
+    updateLastGameBar();
+    loadSettings();
+    renderProfile();
+    renderStats();
+    renderAchievements();
+    renderRecords();
+    renderQuests();
+    renderStreak();
+    updateLevelDisplay();
+    cancelAlarm();
+    clearSelection();
+    renderCases();
+    if (typeof updateChatBadge === 'function') updateChatBadge();
+    document.getElementById('profileNickInput').value = 'Игрок';
+    const av = document.getElementById('profileBigAvatar');
+    av.innerHTML = '👤';
+    av.style.background = 'linear-gradient(135deg, #6a8aff, #a78bfa)';
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector('.tab-btn[data-tab="games"]').classList.add('active');
+    document.getElementById('tab-games').classList.add('active');
+    applyTheme();
+    updateParticleColors();
+
+    if (typeof CHAT !== 'undefined') {
+        CHAT.dmList = [];
+        CHAT.historyLoaded = {};
+        CHAT.reactions = {};
+        CHAT.subscribed = {};
+        if (typeof loadMyRooms === 'function') loadMyRooms();
+    }
+    if (typeof refreshLeaderboard === 'function') setTimeout(refreshLeaderboard, 500);
+
+    if (dbDeleted) {
+        alert('🔄 Всё сброшено, аккаунт удалён из базы.');
+    } else {
+        alert('🔄 Локальный прогресс сброшен.');
+    }
+}
 document.getElementById('resetProgressBtn').addEventListener('click',resetAllData);
 document.getElementById('profileResetBtn').addEventListener('click',resetAllData);
+
 function renderStats(){
     document.getElementById('totalGames').textContent=GAMES.length+EXPERIMENTS.length;
     document.getElementById('totalTime').textContent=Math.floor(state.totalTime/60)+' мин';
@@ -1505,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLastGameBar();
     updateClock();
     renderCases();
-    console.log('🔥 Лаунчер FireLand v24.0 · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
+    console.log('🔥 Лаунчер FireLand v25.0 · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
     if(typeof initLeaderboard==='function')initLeaderboard();
     if(state.lastSubmittedNick){
         setTimeout(()=>{
@@ -1545,6 +1625,8 @@ window.showPostGameScreen = showPostGameScreen;
 window.generateOwnerToken = generateOwnerToken;
 window.renameNickEverywhere = renameNickEverywhere;
 window.openGame = openGame;
+window.resetAllData = resetAllData;
+window.deleteMyAccount = resetAllData;
 
 if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
 if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;
