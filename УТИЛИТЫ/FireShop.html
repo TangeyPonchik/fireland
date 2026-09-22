@@ -3,1694 +3,2450 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>FireLand Photoshop 3D v2</title>
+<title>FireLand — 2D + 3D редактор</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body {
-    font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-    background:#1a1a1a; color:#e0e0e0;
-    height:100vh; height:100dvh; overflow:hidden;
-    overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+  :root {
+    --accent: #ff6b35;
+    --accent-2: #f7931e;
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.5);
+    --text: #1c1c1e;
+    --text-2: #6e6e73;
+    --text-3: #8e8e93;
+    --bg-page: #f2f2f7;
+    --shadow-md: 0 4px 20px rgba(0,0,0,.08);
+    --radius: 14px;
   }
-  body { display:flex; flex-direction:column; }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --glass-bg: rgba(28,28,30,0.72);
+      --glass-border: rgba(255,255,255,0.08);
+      --text: #f2f2f7;
+      --text-2: #98989d;
+      --text-3: #636366;
+      --bg-page: #1c1c1e;
+    }
+  }
+  html, body {
+    font-family: -apple-system, 'SF Pro Display', 'Segoe UI Variable', 'Segoe UI', Roboto, Arial, sans-serif;
+    background: var(--bg-page); color: var(--text);
+    height: 100vh; height: 100dvh; overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none; -webkit-user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; }
+  
+  .bg-mesh { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .bg-mesh::before, .bg-mesh::after {
+    content: ''; position: absolute;
+    width: 70vmax; height: 70vmax; border-radius: 50%;
+    filter: blur(90px); opacity: .3;
+  }
+  .bg-mesh::before {
+    background: radial-gradient(circle, #ff6b35, transparent 70%);
+    top: -30vmax; left: -20vmax;
+    animation: float1 22s ease-in-out infinite;
+  }
+  .bg-mesh::after {
+    background: radial-gradient(circle, #7c5cff, transparent 70%);
+    bottom: -30vmax; right: -20vmax;
+    animation: float2 26s ease-in-out infinite;
+  }
+  @keyframes float1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(8vmax,6vmax) scale(1.15)} }
+  @keyframes float2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-10vmax,-8vmax) scale(1.2)} }
   
   .topbar {
-    background:linear-gradient(180deg,#2d2d2d 0%,#232323 100%);
-    padding:6px 10px; display:flex; align-items:center; gap:6px;
-    border-bottom:1px solid #111; overflow-x:auto; scrollbar-width:none;
-    flex-shrink:0; z-index:10;
+    position: relative; z-index: 50;
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex; align-items: center;
+    overflow-x: auto; scrollbar-width: none;
+    flex-shrink: 0; min-height: 62px;
+    padding: 0 6px;
   }
-  .topbar::-webkit-scrollbar { display:none; }
-  .logo {
-    font-weight:800; font-size:15px;
-    background:linear-gradient(90deg,#ff6b35,#f7931e,#ffcd3c);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    padding:0 10px 0 4px; white-space:nowrap; letter-spacing:0.5px;
-  }
-  .topbar button, .topbar label {
-    background:#3c3c3c; color:#ddd; border:1px solid #555;
-    padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px;
-    white-space:nowrap; flex-shrink:0; display:inline-flex; align-items:center; gap:4px;
-    transition:background 0.15s;
-  }
-  .topbar button:hover, .topbar label:hover { background:#4a4a4a; }
-  .topbar button:active, .topbar label:active { background:#ff6b35; }
-  .topbar button.active { background:#ff6b35; border-color:#ff8a5c; color:#fff; }
-  input[type="file"] { display:none; }
+  .topbar::-webkit-scrollbar { display: none; }
   
-  .mode-tabs {
-    display:flex; background:#1a1a1a; border:1px solid #444;
-    border-radius:6px; padding:2px; flex-shrink:0;
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 18px 0 12px;
+    font-weight: 800; font-size: 15px;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; white-space: nowrap;
+    height: 100%;
   }
-  .mode-tabs button {
-    background:transparent; border:none; padding:5px 12px;
-    border-radius:4px; color:#999; font-size:12px; font-weight:600; cursor:pointer;
-  }
-  .mode-tabs button.active { background:#ff6b35; color:#fff; }
-  
-  .workspace { flex:1; display:flex; overflow:hidden; min-height:0; position:relative; }
-  
-  .toolbar {
-    width:56px; background:#252525; padding:8px 6px;
-    display:flex; flex-direction:column; gap:6px;
-    border-right:1px solid #111; flex-shrink:0;
-    overflow-y:auto; scrollbar-width:none;
-  }
-  .toolbar::-webkit-scrollbar { display:none; }
-  .tool {
-    width:44px; height:44px; background:#3c3c3c; border:1px solid #555;
-    border-radius:8px; color:#ddd; cursor:pointer; font-size:20px;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0; transition:background .15s, transform .1s; touch-action:manipulation;
-  }
-  .tool:hover { background:#4a4a4a; }
-  .tool.active { background:#ff6b35; border-color:#ff8a5c; color:#fff; }
-  .tool:active { transform:scale(.95); }
-  .tool-sep { height:1px; background:#444; margin:4px 6px; flex-shrink:0; }
-  
-  .stage {
-    flex:1; position:relative; background:#151515; overflow:hidden;
-    min-width:0; min-height:0;
-  }
-  #canvas2d, #canvas3d {
-    position:absolute; inset:0; width:100%; height:100%;
-    touch-action:none; display:none;
-  }
-  #canvas2d.active, #canvas3d.active { display:block; }
-  #canvas2d { background:#fff; }
-  
-  .stage-info {
-    position:absolute; bottom:8px; left:8px;
-    background:rgba(0,0,0,.65); backdrop-filter:blur(8px);
-    padding:6px 10px; border-radius:6px; font-size:11px;
-    color:#ccc; pointer-events:none; z-index:5; max-width:calc(100% - 16px);
+  .brand-icon {
+    width: 30px; height: 30px; border-radius: 10px;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px;
+    box-shadow: 0 4px 14px rgba(255,107,53,.4);
   }
   
-  .panel-toggle {
-    position:absolute; top:10px; right:10px; width:44px; height:44px;
-    background:rgba(255,107,53,.9); border:none; border-radius:10px;
-    color:#fff; font-size:20px; cursor:pointer; z-index:20;
-    display:none; align-items:center; justify-content:center;
-    box-shadow:0 4px 12px rgba(0,0,0,.5);
+  .mode-switch {
+    display: flex; background: rgba(0,0,0,.06);
+    border-radius: 12px; padding: 3px; margin: 0 8px;
+    flex-shrink: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    .mode-switch { background: rgba(255,255,255,.08); }
+  }
+  .mode-switch button {
+    background: transparent; border: none;
+    padding: 8px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-2); cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-family: inherit;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .mode-switch button:hover { color: var(--text); }
+  .mode-switch button.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255,107,53,.4);
+    transform: scale(1.03);
   }
   
-  .sidebar {
-    width:280px; background:#252525; border-left:1px solid #111;
-    padding:12px; overflow-y:auto; display:flex; flex-direction:column;
-    gap:12px; flex-shrink:0; scrollbar-width:thin;
-    scrollbar-color:#555 #252525;
+  .tabs { display: flex; height: 100%; gap: 4px; padding: 8px 4px; }
+  .tab {
+    background: transparent; border: none;
+    padding: 0 14px; height: 44px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-2); cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    border-radius: 12px;
+    font-family: inherit;
+    transition: all .25s cubic-bezier(.4,0,.2,1);
   }
-  .sidebar::-webkit-scrollbar { width:6px; }
-  .sidebar::-webkit-scrollbar-thumb { background:#555; border-radius:3px; }
+  .tab:hover { background: rgba(255,107,53,.1); color: var(--text); }
+  .tab.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255,107,53,.35);
+  }
+  .tab .ico { font-size: 17px; }
   
-  .panel {
-    background:#2d2d2d; border-radius:8px; padding:10px;
-    border:1px solid #1a1a1a;
+  .topbar-right {
+    margin-left: auto; display: flex; align-items: center;
+    gap: 6px; padding-right: 12px;
+    position: sticky; right: 0;
   }
-  .panel-title {
-    font-size:11px; font-weight:700; color:#ff6b35;
-    text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
-    display:flex; justify-content:space-between; align-items:center;
+  .topbar-right button, .topbar-right label {
+    background: rgba(255,255,255,.5);
+    border: 1px solid rgba(0,0,0,.06);
+    color: var(--text);
+    padding: 9px 13px; border-radius: 12px;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit;
+    backdrop-filter: blur(10px);
+    transition: all .25s cubic-bezier(.4,0,.2,1);
   }
-  .panel-title .hint { font-size:9px; color:#777; font-weight:400; letter-spacing:0; text-transform:none; }
+  @media (prefers-color-scheme: dark) {
+    .topbar-right button, .topbar-right label {
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.1);
+    }
+  }
+  .topbar-right button:hover, .topbar-right label:hover {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff; border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255,107,53,.4);
+  }
+  .topbar-right button.primary {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(255,107,53,.35);
+  }
+  input[type="file"] { display: none; }
   
-  .panel label { display:block; font-size:12px; margin:8px 0 4px; color:#bbb; }
-  .panel input[type="range"] { width:100%; accent-color:#ff6b35; height:24px; }
-  .value-display { float:right; color:#ff6b35; font-weight:600; }
+  .workspace { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; z-index: 1; }
   
-  .panel input[type="color"] {
-    width:100%; height:40px; border:1px solid #555; border-radius:6px;
-    background:transparent; cursor:pointer; padding:2px;
-  }
-  .panel input[type="number"], .panel input[type="text"] {
-    width:100%; background:#1a1a1a; color:#ddd;
-    border:1px solid #555; border-radius:6px;
-    padding:8px; font-size:13px;
-  }
-  .row { display:flex; gap:6px; }
-  .row > * { flex:1; }
-  
-  .panel button.full {
-    width:100%; margin-top:8px; background:#3c3c3c; color:#ddd;
-    border:1px solid #555; padding:10px; border-radius:6px;
-    cursor:pointer; font-size:13px; transition:background .15s;
-  }
-  .panel button.full:hover { background:#ff6b35; border-color:#ff8a5c; }
-  
-  .panel button.small {
-    background:#3c3c3c; color:#ddd; border:1px solid #555;
-    padding:6px 8px; border-radius:6px; cursor:pointer; font-size:11px;
-  }
-  .panel button.small:hover { background:#ff6b35; }
-  .panel button.small.active { background:#ff6b35; border-color:#ff8a5c; color:#fff; }
-  
-  .prim-grid {
-    display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;
-  }
-  .prim-grid button {
-    background:#3c3c3c; border:1px solid #555; border-radius:6px;
-    color:#ddd; padding:8px 4px; cursor:grab;
-    font-size:20px; transition:background .15s;
-    touch-action:none;
-  }
-  .prim-grid button:hover { background:#ff6b35; border-color:#ff8a5c; }
-  .prim-grid button span {
-    display:block; font-size:10px; color:#aaa; margin-top:4px;
+  .stage-wrap {
+    flex: 1; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; padding: 20px;
+    min-width: 0; min-height: 0;
   }
   
-  .obj-list {
-    display:flex; flex-direction:column; gap:4px;
-    max-height:200px; overflow-y:auto;
+  .canvas-container {
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15), 0 4px 16px rgba(0,0,0,.08);
+    border-radius: 4px;
+    transition: transform .15s ease-out;
+    transform-origin: center;
   }
-  .obj-item {
-    display:flex; align-items:center; gap:6px;
-    padding:6px 8px; background:#1a1a1a; border-radius:6px;
-    font-size:12px; cursor:pointer;
-    border:1px solid transparent;
+  #canvas2d {
+    display: block;
+    background: #fff;
+    border-radius: 4px;
+    touch-action: none;
+    cursor: crosshair;
   }
-  .obj-item.selected { border-color:#ff6b35; background:#3a2420; }
-  .obj-item .eye {
-    background:transparent; border:none; color:#888;
-    cursor:pointer; font-size:12px; padding:0 4px;
+  .object-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
   }
-  .obj-item .eye.hidden { opacity:.3; }
-  .obj-item .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .obj-item .del {
-    background:transparent; border:none; color:#888;
-    cursor:pointer; font-size:14px; padding:0 4px;
+  .object-item {
+    position: absolute;
+    pointer-events: auto;
+    cursor: move;
+    user-select: none;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 2px;
+    white-space: nowrap;
   }
-  .obj-item .del:hover { color:#ff4444; }
+  .object-item.selected {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255,107,53,.25);
+  }
+  .object-item.text-object { font-weight: 700; line-height: 1; }
+  .object-item.sticker-object { font-size: 64px; line-height: 1; }
   
-  .light-item {
-    display:flex; align-items:center; gap:6px;
-    padding:6px 8px; background:#1a1a1a; border-radius:6px;
-    font-size:12px; cursor:pointer; border:1px solid transparent;
-    margin-bottom:4px;
+  #canvas3d3d {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    touch-action: none;
+    cursor: grab;
   }
-  .light-item.selected { border-color:#ff6b35; background:#3a2420; }
-  .light-item .name { flex:1; }
-  .light-item .del {
-    background:transparent; border:none; color:#888;
-    cursor:pointer; font-size:14px;
+  
+  .panel-right {
+    width: 320px;
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
+    border-left: 1px solid var(--glass-border);
+    display: flex; flex-direction: column;
+    flex-shrink: 0; overflow: hidden;
+    z-index: 20;
+    margin: 12px 12px 12px 0;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
   }
+  
+  .panel-content {
+    flex: 1; overflow-y: auto; padding: 16px;
+    scrollbar-width: thin;
+  }
+  .panel-content::-webkit-scrollbar { width: 6px; }
+  .panel-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+  
+  .section-title {
+    font-size: 11px; color: var(--text-3);
+    margin: 20px 0 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px;
+  }
+  .section-title:first-child { margin-top: 0; }
+  
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  
+  .tool-btn {
+    background: rgba(255,255,255,.6);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 14px;
+    padding: 12px 6px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    font-size: 10px; color: var(--text-2);
+    font-family: inherit;
+    transition: all .25s cubic-bezier(.34,1.56,.64,1);
+    touch-action: manipulation;
+  }
+  @media (prefers-color-scheme: dark) {
+    .tool-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); }
+  }
+  .tool-btn:hover {
+    background: rgba(255,107,53,.12);
+    border-color: rgba(255,107,53,.4);
+    color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255,107,53,.2);
+  }
+  .tool-btn:active { transform: scale(.95); }
+  .tool-btn.active {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(255,107,53,.4);
+  }
+  .tool-btn .icon { font-size: 22px; line-height: 1; }
+  .tool-btn span { font-size: 9px; text-align: center; line-height: 1.2; font-weight: 500; }
+  
+  .color-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    gap: 5px; margin-top: 8px;
+  }
+  .color-swatch {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .color-swatch:hover { transform: scale(1.15) rotate(-3deg); }
+  .color-swatch.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255,107,53,.3);
+    transform: scale(1.08);
+  }
+  .color-swatch.white { border: 1px solid rgba(0,0,0,.1); }
+  
+  .current-color {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 12px; padding: 10px;
+    background: rgba(255,255,255,.4);
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    .current-color { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+  }
+  .current-color .big {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,.6);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    flex-shrink: 0;
+  }
+  .current-color .info { flex: 1; min-width: 0; }
+  .current-color .info label {
+    font-size: 10px; color: var(--text-3);
+    display: block; margin-bottom: 4px;
+    font-weight: 500; text-transform: uppercase;
+  }
+  .current-color .info input {
+    width: 100%;
+    background: rgba(255,255,255,.6);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px; color: var(--text);
+    font-family: monospace;
+  }
+  .current-color .info input:focus {
+    outline: none; border-color: var(--accent);
+  }
+  
+  .slider-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px; padding: 8px 10px;
+    background: rgba(255,255,255,.4);
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    .slider-row { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.06); }
+  }
+  .slider-row label {
+    font-size: 12px; color: var(--text-2);
+    min-width: 70px; font-weight: 500;
+  }
+  .slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: rgba(0,0,0,.08);
+    border-radius: 3px;
+    outline: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    .slider-row input[type="range"] { background: rgba(255,255,255,.12); }
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    cursor: grab;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(255,107,53,.4);
+  }
+  .slider-row .val {
+    font-size: 12px; color: var(--accent);
+    font-weight: 700; min-width: 42px; text-align: right;
+  }
+  
+  .layers-list {
+    display: flex; flex-direction: column;
+    gap: 6px; max-height: 240px; overflow-y: auto;
+  }
+  .layer-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,.5);
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,.05);
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .layer-item { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.06); }
+  }
+  .layer-item:hover { background: rgba(255,107,53,.1); }
+  .layer-item.active {
+    background: rgba(255,107,53,.15);
+    border-color: rgba(255,107,53,.5);
+  }
+  .layer-item .eye {
+    background: transparent; border: none;
+    font-size: 14px; cursor: pointer;
+    opacity: .6; padding: 0 2px;
+  }
+  .layer-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer-item .del {
+    background: transparent; border: none;
+    color: #ff3b30; cursor: pointer;
+    font-size: 14px; padding: 0 4px;
+    opacity: 0;
+  }
+  .layer-item:hover .del { opacity: 1; }
+  
+  .sticker-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+  .sticker-btn {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,.6);
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 10px;
+    font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  @media (prefers-color-scheme: dark) {
+    .sticker-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); }
+  }
+  .sticker-btn:hover { transform: scale(1.15) rotate(-5deg); background: rgba(255,107,53,.15); }
   
   .statusbar {
-    background:#202020; padding:4px 12px; font-size:11px;
-    color:#888; border-top:1px solid #111;
-    display:flex; justify-content:space-between; flex-shrink:0;
+    position: relative; z-index: 5;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-border);
+    padding: 8px 18px; font-size: 11px;
+    color: var(--text-3);
+    display: flex; justify-content: space-between;
+    flex-shrink: 0; min-height: 32px; align-items: center;
+    font-weight: 500;
   }
-  .statusbar .brand { color:#ff6b35; font-weight:600; }
-  
-  .drop-hint {
-    position:absolute; inset:0; pointer-events:none;
-    border:3px dashed #ff6b35; border-radius:12px;
-    background:rgba(255,107,53,.08);
-    display:none; align-items:center; justify-content:center;
-    font-size:18px; color:#ff6b35; font-weight:600; z-index:30;
-    margin:8px;
+  .statusbar .brand {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; font-weight: 700;
+    padding: 0; font-size: 11px;
   }
-  .drop-hint.show { display:flex; }
-  
-  .error-banner {
-    position:absolute; top:10px; left:50%; transform:translateX(-50%);
-    background:#c0392b; color:#fff; padding:10px 16px;
-    border-radius:8px; font-size:13px; z-index:100;
-    max-width:90%; text-align:center; display:none;
-  }
-  .error-banner.show { display:block; }
   
   .modal-bg {
-    position:fixed; inset:0; background:rgba(0,0,0,.7);
-    display:none; align-items:center; justify-content:center;
-    z-index:2000; padding:20px;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(12px);
+    display: none; align-items: center;
+    justify-content: center;
+    z-index: 1000; padding: 20px;
+    opacity: 0; transition: opacity .3s;
   }
-  .modal-bg.show { display:flex; }
+  .modal-bg.show { display: flex; opacity: 1; }
   .modal {
-    background:#2d2d2d; border-radius:12px; padding:20px;
-    width:min(420px,100%); border:1px solid #555;
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px);
+    border-radius: 20px;
+    padding: 26px;
+    width: min(460px, 100%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 24px 80px rgba(0,0,0,.4);
+    animation: modalPop .35s cubic-bezier(.34,1.56,.64,1);
   }
-  .modal h3 { font-size:16px; margin-bottom:12px; color:#fff; }
-  .modal input {
-    width:100%; background:#1a1a1a; border:1px solid #555;
-    color:#fff; padding:10px; border-radius:6px;
-    font-size:16px; margin-bottom:12px;
+  @keyframes modalPop { from { transform: scale(.9) translateY(20px); opacity: 0 } to { transform: scale(1) translateY(0); opacity: 1 } }
+  .modal h3 { font-size: 18px; margin-bottom: 16px; font-weight: 700; }
+  .modal input[type="text"] {
+    width: 100%;
+    background: rgba(255,255,255,.6);
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 16px; color: var(--text);
+    margin-bottom: 16px;
+    font-family: inherit;
   }
-  .modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+  @media (prefers-color-scheme: dark) {
+    .modal input[type="text"] {
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.1);
+    }
+  }
+  .modal input:focus { outline: none; border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
   .modal-btns button {
-    padding:8px 16px; border-radius:6px; border:1px solid #555;
-    background:#3c3c3c; color:#ddd; cursor:pointer; font-size:14px;
+    padding: 11px 22px; border-radius: 12px;
+    border: 1px solid rgba(0,0,0,.08);
+    background: rgba(255,255,255,.6);
+    color: var(--text); cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    font-family: inherit;
   }
-  .modal-btns button.primary { background:#ff6b35; border-color:#ff8a5c; color:#fff; }
+  @media (prefers-color-scheme: dark) {
+    .modal-btns button { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.12); }
+  }
+  .modal-btns button.primary {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff; border-color: transparent;
+    font-weight: 600;
+  }
   
-  @media (max-width:900px) {
-    .workspace { flex-direction:column; }
-    .toolbar {
-      width:100%; height:58px; flex-direction:row;
-      border-right:none; border-top:1px solid #111;
-      order:3; padding:6px 8px; gap:6px;
-      overflow-x:auto; overflow-y:hidden;
-    }
-    .tool-sep { width:1px; height:40px; margin:0 2px; }
-    .tool { width:44px; height:44px; font-size:20px; }
-    .stage { order:1; flex:1; min-height:0; }
+  .toast-container {
+    position: fixed; bottom: 44px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    display: flex; flex-direction: column;
+    gap: 8px; align-items: center;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 12px 20px;
+    font-size: 13px; color: var(--text);
+    box-shadow: 0 12px 40px rgba(0,0,0,.15);
+    font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    animation: toastIn .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(.9) } to { opacity: 1; transform: translateY(0) scale(1) } }
+  .toast.out { animation: toastOut .3s ease forwards; }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(.95) } }
+  
+  .panel-tab { display: none; }
+  .panel-tab.active { display: block; animation: panelFade .3s ease; }
+  @keyframes panelFade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+  
+  .mobile-toggle {
+    position: absolute; top: 16px; right: 16px;
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    border: none; border-radius: 16px;
+    color: #fff; font-size: 24px;
+    cursor: pointer; z-index: 30;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(255,107,53,.5);
+  }
+  
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(4px);
+    z-index: 200; opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  
+  @media (max-width: 900px) {
+    .brand span { display: none; }
+    .tab { padding: 0 10px; height: 42px; font-size: 11px; }
+    .tab span:not(.ico) { display: none; }
+    .mode-switch button { padding: 6px 10px; font-size: 11px; }
+    .topbar-right button, .topbar-right label { padding: 7px 10px; font-size: 11px; }
+    .topbar-right span:not(.ico) { display: none; }
     
-    .sidebar {
-      position:fixed; top:0; right:0; bottom:0;
-      width:min(320px,88vw); z-index:1000;
-      transform:translateX(100%);
-      transition:transform .25s ease;
-      box-shadow:-6px 0 24px rgba(0,0,0,.7);
-      padding-top:12px;
+    .panel-right {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(340px, 90vw);
+      margin: 0;
+      border-radius: 20px 0 0 20px;
+      transform: translateX(100%);
+      transition: transform .35s cubic-bezier(.32,.72,0,1);
+      z-index: 300;
     }
-    .sidebar.open { transform:translateX(0); }
-    .panel-toggle { display:flex; }
-    .sidebar-close {
-      position:absolute; top:10px; right:10px; width:40px; height:40px;
-      background:#3c3c3c; border:1px solid #555; border-radius:8px;
-      color:#ddd; font-size:20px; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
+    .panel-right.open { transform: translateX(0); }
+    .mobile-toggle { display: flex; }
+    
+    .panel-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 40px; height: 40px;
+      background: rgba(0,0,0,.06); border: none;
+      border-radius: 12px; font-size: 18px;
+      cursor: pointer; color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
     }
-    .overlay {
-      position:fixed; inset:0; background:rgba(0,0,0,.5);
-      z-index:999; opacity:0; pointer-events:none; transition:opacity .25s;
-    }
-    .overlay.show { opacity:1; pointer-events:auto; }
-    .logo { font-size:13px; padding:0 6px 0 2px; }
-    .topbar button, .topbar label { padding:6px 8px; font-size:12px; }
-    .mode-tabs button { padding:5px 8px; font-size:11px; }
+    .panel-content { padding-top: 60px; }
+    .stage-wrap { padding: 8px; }
   }
-  @media (min-width:901px) {
-    .sidebar-close { display:none; }
-    .overlay { display:none; }
+  @media (min-width: 901px) {
+    .panel-close { display: none; }
+    .overlay { display: none; }
   }
-  @media (max-width:1100px) and (min-width:901px) {
-    .sidebar { width:240px; }
-  }
-  .hide-mobile { display:inline; }
-  @media (max-width:900px) { .hide-mobile { display:none; } }
 </style>
 </head>
 <body>
 
+<div class="bg-mesh"></div>
+
 <div class="topbar">
-  <div class="logo">🔥 FireLand 3D</div>
-  <div class="mode-tabs">
-    <button id="tab2d">✏️ 2D</button>
-    <button id="tab3d" class="active">🧊 3D</button>
+  <div class="brand">
+    <div class="brand-icon">🔥</div>
+    <span>FireLand</span>
   </div>
-  <label title="Открыть 2D-изображение">📁<span class="hide-mobile"> Открыть</span><input type="file" id="fileInput" accept="image/*"></label>
-  <label title="Импорт 3D-модели">📦<span class="hide-mobile"> Импорт 3D</span><input type="file" id="file3dInput" accept=".obj,.gltf,.glb,.stl"></label>
-  <button id="btnExport3d">🎬<span class="hide-mobile"> GLB</span></button>
-  <button id="btnSave">💾<span class="hide-mobile"> PNG</span></button>
-  <button id="btnUndo">↶</button>
-  <button id="btnRedo">↷</button>
+  
+  <div class="mode-switch">
+    <button class="active" data-mode="2d"><span>🎨</span> 2D</button>
+    <button data-mode="3d"><span>🧊</span> 3D</button>
+  </div>
+  
+  <!-- 2D вкладки -->
+  <div class="tabs" id="tabs2d">
+    <button class="tab active" data-tab="tools"><span class="ico">🖌️</span><span>Инструменты</span></button>
+    <button class="tab" data-tab="shapes"><span class="ico">▭</span><span>Фигуры</span></button>
+    <button class="tab" data-tab="stickers"><span class="ico">🌟</span><span>Стикеры</span></button>
+    <button class="tab" data-tab="text"><span class="ico">T</span><span>Текст</span></button>
+    <button class="tab" data-tab="layers"><span class="ico">📚</span><span>Слои</span></button>
+    <button class="tab" data-tab="canvas"><span class="ico">🎨</span><span>Холст</span></button>
+  </div>
+  
+  <!-- 3D вкладки -->
+  <div class="tabs" id="tabs3d" style="display: none;">
+    <button class="tab active" data-tab="objects3d"><span class="ico">🧊</span><span>Объекты</span></button>
+    <button class="tab" data-tab="text3d"><span class="ico">T</span><span>3D-текст</span></button>
+    <button class="tab" data-tab="layers3d"><span class="ico">📚</span><span>Слои</span></button>
+    <button class="tab" data-tab="scene3d"><span class="ico">🎬</span><span>Сцена</span></button>
+  </div>
+  
+  <div class="topbar-right">
+    <label>📁<span class="hide-mobile"> Открыть</span><input type="file" id="fileInput" accept="image/*"></label>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <button id="btnSave" class="primary">💾<span class="hide-mobile"> PNG</span></button>
+  </div>
 </div>
 
 <div class="workspace">
-  
-  <div class="toolbar">
-    <button class="tool active" data-tool="brush" data-mode="2d" title="Кисть">🖌️</button>
-    <button class="tool" data-tool="eraser" data-mode="2d" title="Ластик">🧽</button>
-    <button class="tool" data-tool="picker" data-mode="2d" title="Пипетка">💧</button>
-    <button class="tool" data-tool="fill" data-mode="2d" title="Заливка">🪣</button>
-    <button class="tool" data-tool="text" data-mode="2d" title="Текст">T</button>
-    <div class="tool-sep" data-mode="2d"></div>
-    
-    <button class="tool active" data-tool="orbit" data-mode="3d" title="Орбита">🔄</button>
-    <button class="tool" data-tool="translate" data-mode="3d" title="Перемещение (W)">✥</button>
-    <button class="tool" data-tool="rotate" data-mode="3d" title="Вращение (E)">🔃</button>
-    <button class="tool" data-tool="scale" data-mode="3d" title="Масштаб (R)">⤢</button>
-    <button class="tool" data-tool="paint3d" data-mode="3d" title="Покрасить">🎨</button>
-    <button class="tool" data-tool="texture3d" data-mode="3d" title="Кисть-текстура">🖍️</button>
-  </div>
-  
-  <div class="stage" id="stage">
-    <canvas id="canvas2d"></canvas>
-    <canvas id="canvas3d" class="active"></canvas>
-    
-    <div class="drop-hint" id="dropHint">Отпусти здесь</div>
-    <div class="error-banner" id="errorBanner"></div>
-    
-    <button class="panel-toggle" id="btnTogglePanel">⚙️</button>
-    
-    <div class="stage-info" id="stageInfo">Загрузка 3D…</div>
+  <div class="stage-wrap" id="stageWrap">
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="canvas2d"></canvas>
+      <div class="object-layer" id="objectLayer"></div>
+    </div>
+    <canvas id="canvas3d3d"></canvas>
+    <button class="mobile-toggle" id="btnMobilePanel">⚙️</button>
   </div>
   
   <div class="overlay" id="overlay"></div>
   
-  <div class="sidebar" id="sidebar">
-    <button class="sidebar-close" id="btnClosePanel">✕</button>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">3D-примитивы <span class="hint">перетащи в сцену</span></div>
-      <div class="prim-grid" id="primGrid">
-        <button data-prim="box" draggable="true">📦<span>Куб</span></button>
-        <button data-prim="sphere" draggable="true">⚪<span>Сфера</span></button>
-        <button data-prim="cylinder" draggable="true">🥫<span>Цилиндр</span></button>
-        <button data-prim="cone" draggable="true">🔺<span>Конус</span></button>
-        <button data-prim="torus" draggable="true">🍩<span>Тор</span></button>
-        <button data-prim="plane" draggable="true">▭<span>Плоскость</span></button>
+  <div class="panel-right" id="panelRight">
+    <button class="panel-close" id="btnPanelClose">✕</button>
+    <div class="panel-content">
+      
+      <!-- ========== 2D: Инструменты ========== -->
+      <div class="panel-tab active" data-tab-content="tools">
+        <div class="section-title">Инструменты</div>
+        <div class="grid-3">
+          <button class="tool-btn active" data-tool="brush"><div class="icon">🖌️</div><span>Кисть</span></button>
+          <button class="tool-btn" data-tool="pencil"><div class="icon">✏️</div><span>Карандаш</span></button>
+          <button class="tool-btn" data-tool="marker"><div class="icon">🖍️</div><span>Маркер</span></button>
+          <button class="tool-btn" data-tool="spray"><div class="icon">💨</div><span>Спрей</span></button>
+          <button class="tool-btn" data-tool="eraser"><div class="icon">🧽</div><span>Ластик</span></button>
+          <button class="tool-btn" data-tool="fill"><div class="icon">🪣</div><span>Заливка</span></button>
+          <button class="tool-btn" data-tool="picker"><div class="icon">💧</div><span>Пипетка</span></button>
+        </div>
+        <div class="section-title">Кисть</div>
+        <div class="slider-row">
+          <label>Размер</label>
+          <input type="range" id="brushSize" min="1" max="100" value="6">
+          <span class="val" id="brushSizeVal">6</span>
+        </div>
+        <div class="slider-row">
+          <label>Прозрач.</label>
+          <input type="range" id="brushOpacity" min="1" max="100" value="100">
+          <span class="val" id="brushOpacityVal">100%</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Слои сцены</div>
-      <div class="obj-list" id="objList"></div>
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Свет</div>
-      <div id="lightList"></div>
-      <div class="row" style="margin-top:6px">
-        <button class="small" id="addPointLight">+ Точка</button>
-        <button class="small" id="addSpotLight">+ Прожектор</button>
-        <button class="small" id="addDirLight">+ Солнце</button>
+      
+      <!-- ========== 2D: Фигуры ========== -->
+      <div class="panel-tab" data-tab-content="shapes">
+        <div class="section-title">2D Фигуры</div>
+        <div class="grid-3">
+          <button class="tool-btn" data-shape="line"><div class="icon">📏</div><span>Линия</span></button>
+          <button class="tool-btn" data-shape="rect"><div class="icon">▭</div><span>Прямоуг.</span></button>
+          <button class="tool-btn" data-shape="circle"><div class="icon">⬤</div><span>Круг</span></button>
+          <button class="tool-btn" data-shape="ellipse"><div class="icon">⬭</div><span>Эллипс</span></button>
+          <button class="tool-btn" data-shape="triangle"><div class="icon">🔺</div><span>Треуг.</span></button>
+          <button class="tool-btn" data-shape="star"><div class="icon">⭐</div><span>Звезда</span></button>
+          <button class="tool-btn" data-shape="arrow"><div class="icon">➡️</div><span>Стрелка</span></button>
+          <button class="tool-btn" data-shape="heart"><div class="icon">❤️</div><span>Сердце</span></button>
+          <button class="tool-btn" data-shape="pentagon"><div class="icon">⬟</div><span>Пятиуг.</span></button>
+        </div>
+        <div class="section-title">Настройки</div>
+        <div class="slider-row">
+          <label>Толщина</label>
+          <input type="range" id="shapeSize" min="1" max="50" value="4">
+          <span class="val" id="shapeSizeVal">4</span>
+        </div>
+        <div class="grid-2">
+          <button class="tool-btn active" id="shapeOutline"><div class="icon">□</div><span>Контур</span></button>
+          <button class="tool-btn" id="shapeFilled"><div class="icon">■</div><span>Залить</span></button>
+        </div>
       </div>
-      <label style="margin-top:10px">Яркость выбранного <span class="value-display" id="lightVal">1.0</span></label>
-      <input type="range" id="lightIntensity" min="0" max="500" value="100">
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Окружение (HDRI)</div>
-      <div class="row">
-        <button class="small active" data-env="none">Нет</button>
-        <button class="small" data-env="studio">Студия</button>
-        <button class="small" data-env="sunset">Закат</button>
-        <button class="small" data-env="night">Ночь</button>
+      
+      <!-- ========== 2D: Стикеры ========== -->
+      <div class="panel-tab" data-tab-content="stickers">
+        <div class="section-title">Стикеры (тап → на холст)</div>
+        <div class="sticker-grid" id="stickerGrid"></div>
       </div>
-      <label style="margin-top:10px">Интенсивность <span class="value-display" id="envVal">1.0</span></label>
-      <input type="range" id="envIntensity" min="0" max="300" value="100">
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Свойства объекта</div>
-      <div class="row">
-        <div><label>X</label><input type="number" id="posX" step="0.1" value="0"></div>
-        <div><label>Y</label><input type="number" id="posY" step="0.1" value="0"></div>
-        <div><label>Z</label><input type="number" id="posZ" step="0.1" value="0"></div>
+      
+      <!-- ========== 2D: Текст ========== -->
+      <div class="panel-tab" data-tab-content="text">
+        <div class="section-title">Текст</div>
+        <button class="tool-btn" id="btnAddText" style="width: 100%; padding: 20px;">
+          <div class="icon">➕</div><span>Добавить текст</span>
+        </button>
+        <div class="section-title">Шрифт</div>
+        <div class="slider-row">
+          <label>Размер</label>
+          <input type="range" id="textSize" min="12" max="200" value="64">
+          <span class="val" id="textSizeVal">64</span>
+        </div>
+        <div class="grid-2">
+          <button class="tool-btn" data-font="sans"><div class="icon">Aa</div><span>Без засечек</span></button>
+          <button class="tool-btn" data-font="serif"><div class="icon">Aα</div><span>С засечками</span></button>
+          <button class="tool-btn" data-font="mono"><div class="icon">A_</div><span>Моно</span></button>
+          <button class="tool-btn active" data-font="bold"><div class="icon"><b>Ab</b></div><span>Жирный</span></button>
+        </div>
       </div>
-      <div class="row" style="margin-top:6px">
-        <div><label>Пов. X</label><input type="number" id="rotX" step="5" value="0"></div>
-        <div><label>Пов. Y</label><input type="number" id="rotY" step="5" value="0"></div>
-        <div><label>Пов. Z</label><input type="number" id="rotZ" step="5" value="0"></div>
+      
+      <!-- ========== 2D: Слои ========== -->
+      <div class="panel-tab" data-tab-content="layers">
+        <div class="section-title">Слои</div>
+        <div class="layers-list" id="layersList"></div>
+        <div class="grid-2" style="margin-top: 10px;">
+          <button class="tool-btn" id="btnNewLayer"><div class="icon">➕</div><span>Слой</span></button>
+          <button class="tool-btn" id="btnMergeLayers"><div class="icon">🔗</div><span>Объединить</span></button>
+        </div>
       </div>
-      <label>Масштаб <span class="value-display" id="scaleVal">1.0</span></label>
-      <input type="range" id="scaleRange" min="10" max="300" value="100">
-      <label>Металличность <span class="value-display" id="metalVal">0.2</span></label>
-      <input type="range" id="metalness" min="0" max="100" value="20">
-      <label>Шероховатость <span class="value-display" id="roughVal">0.6</span></label>
-      <input type="range" id="roughness" min="0" max="100" value="60">
-      <label>Прозрачность <span class="value-display" id="alphaVal">100</span>%</label>
-      <input type="range" id="alpha3d" min="0" max="100" value="100">
-      <label style="margin-top:8px">Цвет материала</label>
-      <input type="color" id="objColor" value="#ff6b35">
-      <button class="full" id="btnDeleteObj">🗑 Удалить объект</button>
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Камера</div>
-      <div class="row">
-        <button class="small cam-type active" data-cam="persp">Перспектива</button>
-        <button class="small cam-type" data-cam="ortho">Орто</button>
+      
+      <!-- ========== 2D: Холст ========== -->
+      <div class="panel-tab" data-tab-content="canvas">
+        <div class="section-title">Размер холста</div>
+        <div class="slider-row">
+          <label>Ширина</label>
+          <input type="number" id="canvasW" value="1200" min="100" max="5000" style="flex:1; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.08); border-radius:8px; padding:8px; color:var(--text); font-size:13px; font-family:inherit;">
+        </div>
+        <div class="slider-row">
+          <label>Высота</label>
+          <input type="number" id="canvasH" value="800" min="100" max="5000" style="flex:1; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.08); border-radius:8px; padding:8px; color:var(--text); font-size:13px; font-family:inherit;">
+        </div>
+        <button class="tool-btn" id="btnResizeCanvas" style="width: 100%;">
+          <div class="icon">📐</div><span>Применить</span>
+        </button>
+        
+        <div class="section-title">Операции</div>
+        <button class="tool-btn" id="btnFlipH" style="width: 100%;"><div class="icon">⇄</div><span>Отразить по горизонтали</span></button>
+        <button class="tool-btn" id="btnFlipV" style="width: 100%;"><div class="icon">⇅</div><span>Отразить по вертикали</span></button>
+        <button class="tool-btn" id="btnRotate90" style="width: 100%;"><div class="icon">↻</div><span>Повернуть на 90°</span></button>
+        <button class="tool-btn" id="btnClearCanvas" style="width: 100%;"><div class="icon">🧹</div><span>Очистить холст</span></button>
+        
+        <div class="section-title">Цвет</div>
+        <div class="current-color">
+          <div class="big" id="currentColorBig" style="background:#ff6b35;"></div>
+          <div class="info">
+            <label>Основной</label>
+            <input type="text" id="currentColorHex" value="#ff6b35">
+          </div>
+        </div>
+        <div class="color-grid" id="colorGrid"></div>
       </div>
-      <button class="full" id="btnResetCamera">🎯 Сбросить камеру</button>
-    </div>
-    
-    <div class="panel">
-      <div class="panel-title">Цвета</div>
-      <label>Основной</label>
-      <input type="color" id="colorPicker" value="#ff6b35">
-      <label>Фон сцены (3D)</label>
-      <input type="color" id="bg3dColor" value="#1a1a1a">
-    </div>
-    
-    <div class="panel" data-panel="2d">
-      <div class="panel-title">Кисть</div>
-      <label>Размер <span class="value-display" id="sizeVal">5</span></label>
-      <input type="range" id="brushSize" min="1" max="100" value="5">
-      <label>Прозрачность <span class="value-display" id="opacityVal">100</span>%</label>
-      <input type="range" id="opacity" min="1" max="100" value="100">
-    </div>
-    
-    <div class="panel" data-panel="2d">
-      <div class="panel-title">Фильтры (2D)</div>
-      <div class="prim-grid" style="grid-template-columns:1fr 1fr">
-        <button data-filter="grayscale">Ч/Б</button>
-        <button data-filter="invert">Инверсия</button>
-        <button data-filter="sepia">Сепия</button>
-        <button data-filter="blur">Размытие</button>
-        <button data-filter="brightness">Ярче</button>
-        <button data-filter="darken">Темнее</button>
-        <button data-filter="contrast">Контраст</button>
-        <button data-filter="reset">Сброс</button>
+      
+      <!-- ========== 3D: Объекты ========== -->
+      <div class="panel-tab" data-tab-content="objects3d">
+        <div class="section-title">3D-примитивы</div>
+        <div class="grid-3">
+          <button class="tool-btn" data-3dprim="box"><div class="icon">📦</div><span>Куб</span></button>
+          <button class="tool-btn" data-3dprim="sphere"><div class="icon">⚪</div><span>Сфера</span></button>
+          <button class="tool-btn" data-3dprim="cylinder"><div class="icon">🥫</div><span>Цилиндр</span></button>
+          <button class="tool-btn" data-3dprim="cone"><div class="icon">🔺</div><span>Конус</span></button>
+          <button class="tool-btn" data-3dprim="torus"><div class="icon">🍩</div><span>Тор</span></button>
+          <button class="tool-btn" data-3dprim="pyramid"><div class="icon">🔻</div><span>Пирамида</span></button>
+          <button class="tool-btn" data-3dprim="capsule"><div class="icon">💊</div><span>Капсула</span></button>
+          <button class="tool-btn" data-3dprim="hemisphere"><div class="icon">🌗</div><span>Полусфера</span></button>
+          <button class="tool-btn" data-3dprim="tetra"><div class="icon">🔶</div><span>Тетраэдр</span></button>
+        </div>
+        
+        <div class="section-title">Выделено <span id="sel3dCount" style="color: var(--accent); font-size: 11px;"></span></div>
+        <div id="objProps3d" style="display: none;">
+          <div class="slider-row">
+            <label>Поворот</label>
+            <input type="range" id="objRotY3d" min="-180" max="180" value="0">
+            <span class="val" id="objRotY3dVal">0°</span>
+          </div>
+          <div class="slider-row">
+            <label>Размер</label>
+            <input type="range" id="objScale3d" min="30" max="300" value="100">
+            <span class="val" id="objScale3dVal">1.0×</span>
+          </div>
+          <div class="slider-row">
+            <label>Высота</label>
+            <input type="range" id="objY3d" min="-20" max="40" value="6">
+            <span class="val" id="objY3dVal">0.6</span>
+          </div>
+          <div class="grid-2" style="margin-top: 10px;">
+            <button class="tool-btn" id="btnDup3d"><div class="icon">📋</div><span>Копия</span></button>
+            <button class="tool-btn" id="btnDel3d"><div class="icon">🗑️</div><span>Удалить</span></button>
+          </div>
+        </div>
+        <div id="noSel3d" style="font-size: 12px; color: var(--text-3); text-align: center; padding: 16px; background: rgba(255,255,255,0.4); border-radius: 12px;">
+          Тапни по объекту<br><span style="font-size: 10px; opacity: .7;">Shift+клик = мультивыделение</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="panel" data-panel="3d">
-      <div class="panel-title">Сцена</div>
-      <button class="full" id="btnClearScene">🧹 Очистить сцену</button>
+      
+      <!-- ========== 3D: Текст ========== -->
+      <div class="panel-tab" data-tab-content="text3d">
+        <div class="section-title">3D-текст</div>
+        <button class="tool-btn" id="btnAdd3dText" style="width: 100%; padding: 20px;">
+          <div class="icon">➕</div><span>Добавить 3D-текст</span>
+        </button>
+        <div class="section-title">Цвет</div>
+        <div class="current-color">
+          <div class="big" id="currentColorBig3d" style="background:#ff6b35;"></div>
+          <div class="info">
+            <label>Основной</label>
+            <input type="text" id="currentColorHex3d" value="#ff6b35">
+          </div>
+        </div>
+        <div class="color-grid" id="colorGrid3d"></div>
+      </div>
+      
+      <!-- ========== 3D: Слои ========== -->
+      <div class="panel-tab" data-tab-content="layers3d">
+        <div class="section-title">Объекты сцены</div>
+        <div class="layers-list" id="layersList3d"></div>
+      </div>
+      
+      <!-- ========== 3D: Сцена ========== -->
+      <div class="panel-tab" data-tab-content="scene3d">
+        <div class="section-title">Сцена</div>
+        <button class="tool-btn" id="btnToggleGrid3d" style="width: 100%;">
+          <div class="icon">▦</div><span>Сетка: вкл</span>
+        </button>
+        <button class="tool-btn" id="btnToggleSnap3d" style="width: 100%;">
+          <div class="icon">📐</div><span>Снап: вкл</span>
+        </button>
+        <button class="tool-btn" id="btnResetCam3d" style="width: 100%;">
+          <div class="icon">🎯</div><span>Сбросить камеру</span>
+        </button>
+        <button class="tool-btn" id="btnClearScene3d" style="width: 100%;">
+          <div class="icon">🧹</div><span>Очистить сцену</span>
+        </button>
+      </div>
+      
     </div>
   </div>
 </div>
 
 <div class="statusbar">
-  <span id="status">Готово · FireLand Photoshop 3D v2</span>
+  <span id="status">Готово</span>
   <span class="brand">🔥 FireLand</span>
 </div>
 
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Модалка текста 2D -->
 <div class="modal-bg" id="textModal">
   <div class="modal">
     <h3>Введите текст</h3>
     <input type="text" id="textInput" placeholder="Текст..." autocomplete="off">
     <div class="modal-btns">
       <button id="textCancel">Отмена</button>
-      <button class="primary" id="textOk">OK</button>
+      <button class="primary" id="textOk">Добавить</button>
     </div>
   </div>
 </div>
 
-<!-- Three.js r128 + все аддоны с ОДНОГО CDN (unpkg) -->
+<!-- Модалка текста 3D -->
+<div class="modal-bg" id="text3dModal">
+  <div class="modal">
+    <h3>Текст для 3D</h3>
+    <input type="text" id="text3dInput" placeholder="Текст..." autocomplete="off">
+    <div class="modal-btns">
+      <button id="text3dCancel">Отмена</button>
+      <button class="primary" id="text3dOk">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js -->
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
 
 <script>
-// Проверка загрузки Three.js
 window.addEventListener('DOMContentLoaded', () => {
-  const banner = document.getElementById('errorBanner');
-  const info = document.getElementById('stageInfo');
-  
   if (typeof THREE === 'undefined') {
-    banner.textContent = '❌ Three.js не загрузился. Проверь интернет или VPN (CDN может быть заблокирован).';
-    banner.classList.add('show');
-    info.textContent = 'Ошибка загрузки Three.js';
+    document.getElementById('status').textContent = '❌ Three.js не загрузился';
     return;
   }
-  
-  const missing = [];
-  if (!THREE.OrbitControls) missing.push('OrbitControls');
-  if (!THREE.TransformControls) missing.push('TransformControls');
-  if (missing.length) {
-    banner.textContent = '❌ Не загружены модули: ' + missing.join(', ');
-    banner.classList.add('show');
-    info.textContent = 'Ошибка модулей';
-    return;
-  }
-  
-  try {
-    initApp();
-  } catch (err) {
-    console.error(err);
-    banner.textContent = '❌ Ошибка инициализации: ' + err.message;
-    banner.classList.add('show');
-    info.textContent = 'Ошибка';
-  }
+  try { initApp(); }
+  catch (err) { console.error(err); document.getElementById('status').textContent = 'Ошибка: ' + err.message; }
 });
 
 function initApp() {
-  // ===================== ОБЩИЕ =====================
-  const status = document.getElementById('status');
-  const stage = document.getElementById('stage');
-  const stageInfo = document.getElementById('stageInfo');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('overlay');
-  const objList = document.getElementById('objList');
-  const lightList = document.getElementById('lightList');
-  const colorPicker = document.getElementById('colorPicker');
-  const bg3dColor = document.getElementById('bg3dColor');
-  const dropHint = document.getElementById('dropHint');
-  const primGrid = document.getElementById('primGrid');
+  const $ = id => document.getElementById(id);
+  const status = $('status');
+  const toastContainer = $('toastContainer');
+  const panelRight = $('panelRight');
+  const overlay = $('overlay');
+  const stageWrap = $('stageWrap');
+  const canvasContainer = $('canvasContainer');
   
-  let currentMode = '3d';
-  let currentTool = 'orbit';
+  let currentMode = '2d';
   
-  // ===================== 3D СЦЕНА =====================
-  const canvas3d = document.getElementById('canvas3d');
-  let renderer, scene, camera, perspCam, orthoCam, controls;
-  let meshObjects = [];
-  let lights = [];
-  let selectedObject = null;
-  let selectedLight = null;
-  let transformControls = null;
-  let gridHelper, groundPlane;
-  let pmremGenerator, envMap = null, envMapRT = null;
-  let envIntensity = 1.0;
-  
-  // Кисть-текстура
-  let paintTexture = null, paintCtx = null, paintCanvas = null;
-  let painting = false, paintTargetMesh = null;
-  
-  // ==== ИНИЦИАЛИЗАЦИЯ 3D ====
-  function init3D() {
-    renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias:true, preserveDrawingBuffer:true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
-    if (THREE.ACESFilmicToneMapping !== undefined) renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(bg3dColor.value);
-    scene.fog = new THREE.Fog(bg3dColor.value, 25, 70);
-    
-    const rect = stage.getBoundingClientRect();
-    const aspect = (rect.width || 1) / (rect.height || 1);
-    
-    perspCam = new THREE.PerspectiveCamera(50, aspect, 0.1, 500);
-    perspCam.position.set(5, 5, 7);
-    
-    orthoCam = new THREE.OrthographicCamera(-5*aspect, 5*aspect, 5, -5, 0.1, 500);
-    orthoCam.position.set(5, 5, 7);
-    
-    camera = perspCam;
-    
-    // OrbitControls
-    controls = new THREE.OrbitControls(camera, canvas3d);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.target.set(0, 0, 0);
-    controls.minDistance = 1.5;
-    controls.maxDistance = 60;
-    controls.screenSpacePanning = true;
-    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-    
-    // TransformControls (гизмо)
-    if (THREE.TransformControls) {
-      transformControls = new THREE.TransformControls(camera, canvas3d);
-      transformControls.size = 0.8;
-      transformControls.addEventListener('dragging-changed', (e) => {
-        controls.enabled = !e.value;
-        if (!e.value && selectedObject) syncPropsFromObject();
-      });
-      transformControls.addEventListener('objectChange', () => {
-        if (selectedObject) syncPropsFromObject();
-      });
-      scene.add(transformControls);
-    }
-    
-    // Свет
-    addLight('dir', { position:[5,10,7], intensity:1.0, color:'#ffffff', name:'Солнце' });
-    addLight('ambient', { intensity:0.45, color:'#ffffff', name:'Ambient' });
-    
-    // Сетка
-    gridHelper = new THREE.GridHelper(30, 30, 0x555555, 0x2a2a2a);
-    gridHelper.position.y = -1.5;
-    scene.add(gridHelper);
-    
-    groundPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 60),
-      new THREE.ShadowMaterial({ opacity:0.35 })
-    );
-    groundPlane.rotation.x = -Math.PI/2;
-    groundPlane.position.y = -1.5;
-    groundPlane.receiveShadow = true;
-    groundPlane.userData.isGround = true;
-    scene.add(groundPlane);
-    meshObjects.push(groundPlane);
-    
-    pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-    
-    window.addEventListener('resize', resize3D);
-    window.addEventListener('orientationchange', () => setTimeout(resize3D, 300));
-    resize3D();
-    animate3D();
-    
-    // Стартовые объекты
-    createPrimitive('box', { x:-1.5, y:0, z:0 });
-    createPrimitive('sphere', { x:0, y:0, z:0 });
-    createPrimitive('torus', { x:1.5, y:0, z:0 });
-    const first = meshObjects.find(o => o.userData.primType === 'sphere');
-    if (first) selectObject(first);
+  // ===== TOAST =====
+  function toast(msg, icon = '✓') {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+    toastContainer.appendChild(t);
+    setTimeout(() => {
+      t.classList.add('out');
+      setTimeout(() => t.remove(), 300);
+    }, 1800);
   }
   
-  function resize3D() {
-    if (!renderer) return;
-    const rect = stage.getBoundingClientRect();
-    const w = rect.width, h = rect.height;
-    if (w === 0 || h === 0) return;
-    const aspect = w / h;
-    renderer.setSize(w, h, false);
-    canvas3d.width = Math.round(w * renderer.getPixelRatio());
-    canvas3d.height = Math.round(h * renderer.getPixelRatio());
-    canvas3d.style.width = w + 'px';
-    canvas3d.style.height = h + 'px';
-    
-    if (perspCam) { perspCam.aspect = aspect; perspCam.updateProjectionMatrix(); }
-    if (orthoCam) {
-      const size = 5;
-      orthoCam.left = -size * aspect;
-      orthoCam.right = size * aspect;
-      orthoCam.top = size;
-      orthoCam.bottom = -size;
-      orthoCam.updateProjectionMatrix();
-    }
-  }
-  
-  // ==== ПРИМИТИВЫ ====
-  function createGeometry(type) {
-    switch(type) {
-      case 'box': return new THREE.BoxGeometry(1.2, 1.2, 1.2);
-      case 'sphere': return new THREE.SphereGeometry(0.8, 32, 24);
-      case 'cylinder': return new THREE.CylinderGeometry(0.6, 0.6, 1.4, 32);
-      case 'cone': return new THREE.ConeGeometry(0.8, 1.6, 32);
-      case 'torus': return new THREE.TorusGeometry(0.7, 0.28, 20, 40);
-      case 'plane': return new THREE.PlaneGeometry(1.6, 1.6, 1, 1);
-      default: return new THREE.BoxGeometry(1, 1, 1);
-    }
-  }
-  
-  function createPrimitive(type, position) {
-    const geo = createGeometry(type);
-    const mat = new THREE.MeshStandardMaterial({
-      color: colorPicker.value,
-      metalness: 0.2,
-      roughness: 0.6,
-      side: THREE.DoubleSide
-    });
-    if (envMap) { mat.envMap = envMap; mat.envMapIntensity = envIntensity; }
-    
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    if (position) mesh.position.set(position.x, position.y || 0, position.z || 0);
-    
-    mesh.userData.primType = type;
-    mesh.userData.name = typeLabel(type) + ' ' + (meshObjects.length + 1);
-    mesh.userData.visible = true;
-    
-    scene.add(mesh);
-    meshObjects.push(mesh);
-    selectObject(mesh);
-    renderLayerList();
-    status.textContent = 'Добавлено: ' + mesh.userData.name;
-    return mesh;
-  }
-  
-  function typeLabel(t) {
-    return { box:'Куб', sphere:'Сфера', cylinder:'Цилиндр', cone:'Конус', torus:'Тор', plane:'Плоскость' }[t] || 'Объект';
-  }
-  
-  function removeObject(mesh) {
-    if (!mesh || mesh.userData.isGround) return;
-    if (transformControls && transformControls.object === mesh) transformControls.detach();
-    scene.remove(mesh);
-    if (mesh.geometry) mesh.geometry.dispose();
-    if (mesh.material) {
-      if (Array.isArray(mesh.material)) mesh.material.forEach(m => m.dispose());
-      else mesh.material.dispose();
-    }
-    meshObjects = meshObjects.filter(o => o !== mesh);
-    if (selectedObject === mesh) selectedObject = null;
-    renderLayerList();
-    syncPropsFromObject();
-    status.textContent = 'Объект удалён';
-  }
-  
-  function selectObject(mesh) {
-    selectedObject = mesh;
-    if (mesh && transformControls) {
-      transformControls.attach(mesh);
-      transformControls.visible = (currentTool === 'translate' || currentTool === 'rotate' || currentTool === 'scale');
-    } else if (transformControls) {
-      transformControls.detach();
-      transformControls.visible = false;
-    }
-    renderLayerList();
-    syncPropsFromObject();
-  }
-  
-  function syncPropsFromObject() {
-    if (!selectedObject) return;
-    const o = selectedObject;
-    document.getElementById('posX').value = o.position.x.toFixed(2);
-    document.getElementById('posY').value = o.position.y.toFixed(2);
-    document.getElementById('posZ').value = o.position.z.toFixed(2);
-    document.getElementById('rotX').value = Math.round(THREE.MathUtils.radToDeg(o.rotation.x));
-    document.getElementById('rotY').value = Math.round(THREE.MathUtils.radToDeg(o.rotation.y));
-    document.getElementById('rotZ').value = Math.round(THREE.MathUtils.radToDeg(o.rotation.z));
-    const s = (o.scale.x + o.scale.y + o.scale.z) / 3;
-    document.getElementById('scaleRange').value = Math.round(s * 100);
-    document.getElementById('scaleVal').textContent = s.toFixed(2);
-    if (o.material && o.material.isMeshStandardMaterial) {
-      document.getElementById('metalness').value = Math.round((o.material.metalness || 0) * 100);
-      document.getElementById('roughness').value = Math.round((o.material.roughness || 0.6) * 100);
-      document.getElementById('alpha3d').value = Math.round((o.material.opacity ?? 1) * 100);
-      document.getElementById('metalVal').textContent = (o.material.metalness ?? 0).toFixed(2);
-      document.getElementById('roughVal').textContent = (o.material.roughness ?? 0.6).toFixed(2);
-      document.getElementById('alphaVal').textContent = Math.round((o.material.opacity ?? 1) * 100);
-      if (o.material.color) {
-        document.getElementById('objColor').value = '#' + o.material.color.getHexString();
-      }
-    }
-  }
-  
-  // ==== СВЕТ ====
-  function addLight(kind, opts={}) {
-    let light;
-    if (kind === 'ambient') light = new THREE.AmbientLight(opts.color || 0xffffff, opts.intensity || 0.5);
-    else if (kind === 'dir') {
-      light = new THREE.DirectionalLight(opts.color || 0xffffff, opts.intensity || 1);
-      light.castShadow = true;
-      light.shadow.mapSize.set(1024, 1024);
-      light.shadow.camera.near = 0.5;
-      light.shadow.camera.far = 60;
-      light.shadow.camera.left = -15;
-      light.shadow.camera.right = 15;
-      light.shadow.camera.top = 15;
-      light.shadow.camera.bottom = -15;
-      const p = opts.position || [5,10,7];
-      light.position.set(p[0], p[1], p[2]);
-    } else if (kind === 'point') {
-      light = new THREE.PointLight(opts.color || 0xffffff, opts.intensity || 1, 30, 2);
-      const p = opts.position || [3,3,3];
-      light.position.set(p[0], p[1], p[2]);
-      light.castShadow = true;
-    } else if (kind === 'spot') {
-      light = new THREE.SpotLight(opts.color || 0xffffff, opts.intensity || 1, 30, Math.PI/6, 0.4, 1.5);
-      const p = opts.position || [4,6,4];
-      light.position.set(p[0], p[1], p[2]);
-      light.castShadow = true;
-    }
-    if (!light) return null;
-    light.userData.name = opts.name || (kind + ' light');
-    light.userData.kind = kind;
-    scene.add(light);
-    lights.push(light);
-    selectedLight = light;
-    renderLightList();
-    updateLightIntensityUI();
-    return light;
-  }
-  
-  function removeLight(light) {
-    scene.remove(light);
-    lights = lights.filter(l => l !== light);
-    if (selectedLight === light) selectedLight = lights[0] || null;
-    renderLightList();
-    updateLightIntensityUI();
-  }
-  
-  function renderLightList() {
-    lightList.innerHTML = '';
-    lights.forEach(l => {
-      const div = document.createElement('div');
-      div.className = 'light-item' + (l === selectedLight ? ' selected' : '');
-      const name = document.createElement('span');
-      name.className = 'name';
-      name.textContent = '💡 ' + (l.userData.name || l.type);
-      const del = document.createElement('button');
-      del.className = 'del';
-      del.textContent = '✕';
-      del.addEventListener('click', (e) => { e.stopPropagation(); removeLight(l); });
-      div.appendChild(name);
-      div.appendChild(del);
-      div.addEventListener('click', () => { selectedLight = l; renderLightList(); updateLightIntensityUI(); });
-      lightList.appendChild(div);
-    });
-  }
-  
-  function updateLightIntensityUI() {
-    if (!selectedLight) return;
-    document.getElementById('lightIntensity').value = Math.round(selectedLight.intensity * 100);
-    document.getElementById('lightVal').textContent = selectedLight.intensity.toFixed(2);
-  }
-  
-  document.getElementById('addPointLight').addEventListener('click', () => addLight('point', { position:[0,3,0], intensity:1 }));
-  document.getElementById('addSpotLight').addEventListener('click', () => addLight('spot', { position:[3,5,2], intensity:1 }));
-  document.getElementById('addDirLight').addEventListener('click', () => addLight('dir', { position:[6,8,5], intensity:0.8 }));
-  
-  document.getElementById('lightIntensity').addEventListener('input', e => {
-    if (!selectedLight) return;
-    const v = e.target.value / 100;
-    document.getElementById('lightVal').textContent = v.toFixed(2);
-    selectedLight.intensity = v;
-  });
-  
-  // ==== ОКРУЖЕНИЕ ====
-  const ENV_PRESETS = {
-    none: null,
-    studio: () => makeGradientEnv('#ffffff', '#bbbbbb', '#f0f0f0'),
-    sunset: () => makeGradientEnv('#ff8866', '#ffcc88', '#6644aa'),
-    night:  () => makeGradientEnv('#0a0a2a', '#1a1a4a', '#000010'),
+  // =================================================================
+  // ОБЩЕЕ СОСТОЯНИЕ
+  // =================================================================
+  const state = {
+    color: '#ff6b35',
+    // 2D
+    logicalW: 1200, logicalH: 800,
+    dpr: Math.max(window.devicePixelRatio || 1, 1),
+    tool: 'brush',
+    brushSize: 6, brushOpacity: 1,
+    shapeSize: 4, shapeFilled: false,
+    textSize: 64, textFont: 'bold',
+    layers: [], activeLayerId: null, layerCounter: 0,
+    objects: [], selectedObjectId: null,
+    undoStack: [], redoStack: []
   };
   
-  function makeGradientEnv(top, mid, bottom) {
-    const c = document.createElement('canvas');
-    c.width = 512; c.height = 256;
-    const g = c.getContext('2d');
-    const grad = g.createLinearGradient(0, 0, 0, 256);
-    grad.addColorStop(0, top);
-    grad.addColorStop(0.5, mid);
-    grad.addColorStop(1, bottom);
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 512, 256);
-    const sun = g.createRadialGradient(380, 70, 5, 380, 70, 90);
-    sun.addColorStop(0, 'rgba(255,255,255,0.9)');
-    sun.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = sun;
-    g.fillRect(0, 0, 512, 256);
-    return c;
-  }
+  const PALETTE = [
+    '#ffffff','#e5e5ea','#c7c7cc','#8e8e93','#48484a','#1c1c1e','#000000','#ff6b35',
+    '#f7931e','#ffcc00','#34c759','#30d158','#00c7be','#32ade6','#007aff','#5856d6',
+    '#af52de','#ff2d55','#ff3b30','#ff9500','#ffd60a','#a2845e','#8b5a2b','#654321',
+    '#ffb6c1','#ff9fce','#e0b0ff','#b0c4ff','#b0e0ff','#b0ffe0','#d0ffb0','#ffe0b0'
+  ];
   
-  document.querySelectorAll('[data-env]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-env]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      setEnv(btn.dataset.env);
-    });
-  });
+  const STICKERS = ['😀','😍','😂','🥳','😎','🤔','😴','🤩','🥰','🤗','😇','🥺',
+                    '❤️','⭐','✨','🔥','🌈','☀️','🌙','⚡','💎','🎉','🎨','🎯',
+                    '🌸','🌺','🌻','🍀','🌹','🌴','🍁','🍄','🌷','💐','🌵','🍃',
+                    '🐶','🐱','🐼','🦊','🐸','🐝','🦋','🐙','🦄','🐢','🐧','🐨'];
   
-  function setEnv(name) {
-    if (envMapRT) { envMapRT.dispose(); envMapRT = null; }
-    if (envMap) { envMap.dispose(); envMap = null; }
-    
-    const preset = ENV_PRESETS[name];
-    if (!preset) {
-      meshObjects.forEach(o => {
-        if (o.material && o.material.isMeshStandardMaterial) {
-          o.material.envMap = null;
-          o.material.needsUpdate = true;
-        }
-      });
-      status.textContent = 'Окружение: нет';
-      return;
-    }
-    
-    const cvs = preset();
-    const tex = new THREE.CanvasTexture(cvs);
-    tex.mapping = THREE.EquirectangularReflectionMapping;
-    envMapRT = pmremGenerator.fromEquirectangular(tex);
-    envMap = envMapRT.texture;
-    tex.dispose();
-    
-    meshObjects.forEach(o => {
-      if (o.material && o.material.isMeshStandardMaterial) {
-        o.material.envMap = envMap;
-        o.material.envMapIntensity = envIntensity;
-        o.material.needsUpdate = true;
-      }
-    });
-    status.textContent = 'Окружение: ' + name;
-  }
+  // =================================================================
+  // =================== 2D РЕДАКТОР =================================
+  // =================================================================
+  const canvas = $('canvas2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const objectLayer = $('objectLayer');
+  const layersList = $('layersList');
   
-  document.getElementById('envIntensity').addEventListener('input', e => {
-    envIntensity = e.target.value / 100;
-    document.getElementById('envVal').textContent = envIntensity.toFixed(1);
-    meshObjects.forEach(o => {
-      if (o.material && o.material.isMeshStandardMaterial) {
-        o.material.envMapIntensity = envIntensity;
-      }
-    });
-  });
-  
-  // ==== ГИЗМО ====
-  document.querySelectorAll('.tool[data-mode="3d"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tool').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentTool = btn.dataset.tool;
-      
-      if (!transformControls) return;
-      if (currentTool === 'translate') { transformControls.setMode('translate'); transformControls.visible = !!selectedObject; }
-      else if (currentTool === 'rotate') { transformControls.setMode('rotate'); transformControls.visible = !!selectedObject; }
-      else if (currentTool === 'scale') { transformControls.setMode('scale'); transformControls.visible = !!selectedObject; }
-      else { transformControls.visible = false; }
-      status.textContent = 'Инструмент: ' + currentTool;
-    });
-  });
-  
-  // ==== DRAG&DROP ПРИМИТИВОВ ====
-  let draggingPrim = null;
-  let dragStartX = 0, dragStartY = 0, dragActive = false;
-  
-  primGrid.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      draggingPrim = btn.dataset.prim;
-      dragStartX = e.clientX;
-      dragStartY = e.clientY;
-      dragActive = true;
-      try { btn.setPointerCapture(e.pointerId); } catch(err){}
-      status.textContent = 'Тяни в сцену: ' + draggingPrim;
-    });
-    
-    btn.addEventListener('pointermove', (e) => {
-      if (!dragActive) return;
-      const dx = e.clientX - dragStartX;
-      const dy = e.clientY - dragStartY;
-      if (Math.hypot(dx, dy) < 8) return;
-      const rect = canvas3d.getBoundingClientRect();
-      const over = e.clientX >= rect.left && e.clientX <= rect.right &&
-                    e.clientY >= rect.top && e.clientY <= rect.bottom;
-      dropHint.classList.toggle('show', over);
-    });
-    
-    btn.addEventListener('pointerup', (e) => {
-      if (!dragActive) return;
-      dragActive = false;
-      dropHint.classList.remove('show');
-      const rect = canvas3d.getBoundingClientRect();
-      const over = e.clientX >= rect.left && e.clientX <= rect.right &&
-                    e.clientY >= rect.top && e.clientY <= rect.bottom;
-      if (over) {
-        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        const ray = new THREE.Raycaster();
-        ray.setFromCamera({ x:nx, y:ny }, camera);
-        const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
-        const hit = new THREE.Vector3();
-        ray.ray.intersectPlane(plane, hit);
-        const pos = hit ? { x: hit.x, y: 0, z: hit.z } : { x:0, y:0, z:0 };
-        createPrimitive(draggingPrim, pos);
-      }
-      draggingPrim = null;
-    });
-    
-    btn.addEventListener('pointercancel', () => {
-      dragActive = false;
-      dropHint.classList.remove('show');
-      draggingPrim = null;
-    });
-    
-    btn.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/prim', btn.dataset.prim);
-    });
-  });
-  
-  canvas3d.addEventListener('dragover', (e) => {
-    if (e.dataTransfer.types.includes('text/prim')) {
-      e.preventDefault();
-      dropHint.classList.add('show');
-    }
-  });
-  canvas3d.addEventListener('dragleave', () => dropHint.classList.remove('show'));
-  canvas3d.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropHint.classList.remove('show');
-    const type = e.dataTransfer.getData('text/prim');
-    if (!type) return;
-    const rect = canvas3d.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera({ x:nx, y:ny }, camera);
-    const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
-    const hit = new THREE.Vector3();
-    ray.ray.intersectPlane(plane, hit);
-    const pos = hit ? { x: hit.x, y: 0, z: hit.z } : { x:0, y:0, z:0 };
-    createPrimitive(type, pos);
-  });
-  
-  // ==== КЛИК ПО СЦЕНЕ ====
-  const raycaster = new THREE.Raycaster();
-  
-  canvas3d.addEventListener('pointerdown', (e) => {
-    if (transformControls && transformControls.axis) return;
-    
-    const rect = canvas3d.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera({ x:nx, y:ny }, camera);
-    
-    const meshes = meshObjects.filter(o => !o.userData.isGround);
-    const hits = raycaster.intersectObjects(meshes, false);
-    
-    if (hits.length) {
-      const mesh = hits[0].object;
-      
-      if (currentTool === 'paint3d') {
-        if (mesh.material && mesh.material.color) {
-          mesh.material.color.set(colorPicker.value);
-          mesh.material.needsUpdate = true;
-        }
-        selectObject(mesh);
-        return;
-      }
-      if (currentTool === 'texture3d') {
-        startTexturePaint(mesh, hits[0].uv);
-        return;
-      }
-      if (currentTool === 'orbit') {
-        selectObject(mesh);
-        status.textContent = 'Выбрано: ' + mesh.userData.name;
-      }
-    } else {
-      if (currentTool === 'orbit') selectObject(null);
-    }
-  });
-  
-  // ==== КИСТЬ-ТЕКСТУРА ====
-  function startTexturePaint(mesh, uv) {
-    if (!mesh.material) return;
-    if (!paintCanvas) {
-      paintCanvas = document.createElement('canvas');
-      paintCanvas.width = 512;
-      paintCanvas.height = 512;
-      paintCtx = paintCanvas.getContext('2d');
-      paintCtx.fillStyle = mesh.material.color ? '#' + mesh.material.color.getHexString() : '#ff6b35';
-      paintCtx.fillRect(0, 0, 512, 512);
-      paintTexture = new THREE.CanvasTexture(paintCanvas);
-    }
-    
-    mesh.material.map = paintTexture;
-    if (mesh.material.color) mesh.material.color.set('#ffffff');
-    mesh.material.needsUpdate = true;
-    paintTargetMesh = mesh;
-    painting = true;
-    
-    if (uv) drawOnTexture(uv.x, uv.y);
-    
-    const onMove = (e) => {
-      if (!painting || !paintTargetMesh) return;
-      const rect = canvas3d.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera({ x:nx, y:ny }, camera);
-      const hits = raycaster.intersectObject(paintTargetMesh, false);
-      if (hits.length && hits[0].uv) drawOnTexture(hits[0].uv.x, hits[0].uv.y);
+  // Слои
+  function createLayer(name = null) {
+    state.layerCounter++;
+    const lc = document.createElement('canvas');
+    lc.width = Math.round(state.logicalW * state.dpr);
+    lc.height = Math.round(state.logicalH * state.dpr);
+    const lctx = lc.getContext('2d', { willReadFrequently: true });
+    lctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    const layer = {
+      id: 'layer_' + state.layerCounter,
+      name: name || ('Слой ' + state.layerCounter),
+      canvas: lc, ctx: lctx, visible: true
     };
-    const onUp = () => {
-      painting = false;
-      canvas3d.removeEventListener('pointermove', onMove);
-      canvas3d.removeEventListener('pointerup', onUp);
-      status.textContent = 'Текстура применена';
-    };
-    canvas3d.addEventListener('pointermove', onMove);
-    canvas3d.addEventListener('pointerup', onUp);
+    state.layers.push(layer);
+    state.activeLayerId = layer.id;
+    renderLayersList();
+    composite();
+    return layer;
   }
   
-  function drawOnTexture(u, v) {
-    if (!paintCtx) return;
-    const x = u * paintCanvas.width;
-    const y = (1 - v) * paintCanvas.height;
-    paintCtx.beginPath();
-    paintCtx.arc(x, y, 15, 0, Math.PI * 2);
-    paintCtx.fillStyle = colorPicker.value;
-    paintCtx.fill();
-    paintTexture.needsUpdate = true;
+  function getActiveLayer() {
+    return state.layers.find(l => l.id === state.activeLayerId);
   }
   
-  // ==== СЛОИ ====
-  function renderLayerList() {
-    objList.innerHTML = '';
-    [...meshObjects].filter(o => !o.userData.isGround).reverse().forEach(obj => {
+  function removeLayer(id) {
+    if (state.layers.length <= 1) { toast('Нельзя удалить единственный слой', '⚠️'); return; }
+    state.layers = state.layers.filter(l => l.id !== id);
+    if (state.activeLayerId === id) state.activeLayerId = state.layers[state.layers.length - 1].id;
+    renderLayersList();
+    composite();
+  }
+  
+  function renderLayersList() {
+    layersList.innerHTML = '';
+    [...state.layers].reverse().forEach(layer => {
       const div = document.createElement('div');
-      div.className = 'obj-item' + (obj === selectedObject ? ' selected' : '');
-      
+      div.className = 'layer-item' + (layer.id === state.activeLayerId ? ' active' : '');
       const eye = document.createElement('button');
-      eye.className = 'eye' + (obj.visible ? '' : ' hidden');
-      eye.textContent = obj.visible ? '👁' : '🚫';
+      eye.className = 'eye';
+      eye.textContent = layer.visible ? '👁' : '🚫';
       eye.addEventListener('click', (e) => {
         e.stopPropagation();
-        obj.visible = !obj.visible;
-        renderLayerList();
+        layer.visible = !layer.visible;
+        renderLayersList();
+        composite();
       });
-      
       const name = document.createElement('span');
       name.className = 'name';
-      name.textContent = obj.userData.name;
-      
+      name.textContent = layer.name;
       const del = document.createElement('button');
       del.className = 'del';
       del.textContent = '✕';
-      del.addEventListener('click', (e) => { e.stopPropagation(); removeObject(obj); });
-      
-      div.appendChild(eye);
-      div.appendChild(name);
-      div.appendChild(del);
-      div.addEventListener('click', () => selectObject(obj));
-      objList.appendChild(div);
-    });
-  }
-  
-  // ==== ПОЛЯ СВОЙСТВ ====
-  ['posX','posY','posZ'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => {
-      if (!selectedObject) return;
-      selectedObject.position.set(
-        parseFloat(document.getElementById('posX').value) || 0,
-        parseFloat(document.getElementById('posY').value) || 0,
-        parseFloat(document.getElementById('posZ').value) || 0
-      );
-    });
-  });
-  ['rotX','rotY','rotZ'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => {
-      if (!selectedObject) return;
-      selectedObject.rotation.set(
-        THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotX').value) || 0),
-        THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotY').value) || 0),
-        THREE.MathUtils.degToRad(parseFloat(document.getElementById('rotZ').value) || 0)
-      );
-    });
-  });
-  document.getElementById('scaleRange').addEventListener('input', e => {
-    const s = e.target.value / 100;
-    document.getElementById('scaleVal').textContent = s.toFixed(2);
-    if (selectedObject) selectedObject.scale.set(s, s, s);
-  });
-  document.getElementById('metalness').addEventListener('input', e => {
-    const v = e.target.value / 100;
-    document.getElementById('metalVal').textContent = v.toFixed(2);
-    if (selectedObject && selectedObject.material) selectedObject.material.metalness = v;
-  });
-  document.getElementById('roughness').addEventListener('input', e => {
-    const v = e.target.value / 100;
-    document.getElementById('roughVal').textContent = v.toFixed(2);
-    if (selectedObject && selectedObject.material) selectedObject.material.roughness = v;
-  });
-  document.getElementById('alpha3d').addEventListener('input', e => {
-    const v = e.target.value / 100;
-    document.getElementById('alphaVal').textContent = e.target.value;
-    if (selectedObject && selectedObject.material) {
-      selectedObject.material.opacity = v;
-      selectedObject.material.transparent = v < 1;
-      selectedObject.material.needsUpdate = true;
-    }
-  });
-  document.getElementById('objColor').addEventListener('input', e => {
-    if (selectedObject && selectedObject.material && selectedObject.material.color) {
-      selectedObject.material.color.set(e.target.value);
-    }
-  });
-  document.getElementById('btnDeleteObj').addEventListener('click', () => {
-    if (selectedObject) removeObject(selectedObject);
-  });
-  
-  // ==== КАМЕРА ====
-  document.querySelectorAll('.cam-type').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.cam-type').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const type = btn.dataset.cam;
-      const oldPos = camera.position.clone();
-      const oldTarget = controls.target.clone();
-      
-      camera = (type === 'persp') ? perspCam : orthoCam;
-      camera.position.copy(oldPos);
-      camera.lookAt(oldTarget);
-      
-      controls.dispose();
-      controls = new THREE.OrbitControls(camera, canvas3d);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
-      controls.target.copy(oldTarget);
-      controls.minDistance = 1.5;
-      controls.maxDistance = 60;
-      controls.screenSpacePanning = true;
-      
-      if (transformControls) {
-        transformControls.camera = camera;
-        transformControls.updateMatrixWorld();
-      }
-      
-      resize3D();
-      status.textContent = 'Камера: ' + (type === 'persp' ? 'перспектива' : 'орто');
-    });
-  });
-  document.getElementById('btnResetCamera').addEventListener('click', () => {
-    camera.position.set(5, 5, 7);
-    controls.target.set(0, 0, 0);
-    controls.update();
-    status.textContent = 'Камера сброшена';
-  });
-  
-  // ==== ОЧИСТКА ====
-  document.getElementById('btnClearScene').addEventListener('click', () => {
-    if (!confirm('Удалить все объекты?')) return;
-    [...meshObjects].filter(o => !o.userData.isGround).forEach(o => removeObject(o));
-    status.textContent = 'Сцена очищена';
-  });
-  
-  // ==== ИМПОРТ 3D ====
-  document.getElementById('file3dInput').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const ext = file.name.split('.').pop().toLowerCase();
-    const url = URL.createObjectURL(file);
-    
-    const onLoaded = (root) => {
-      const group = new THREE.Group();
-      group.add(root);
-      root.traverse(o => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
-          if (o.material && envMap) {
-            o.material.envMap = envMap;
-            o.material.envMapIntensity = envIntensity;
-            o.material.needsUpdate = true;
-          }
-        }
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeLayer(layer.id);
       });
-      
-      const box = new THREE.Box3().setFromObject(group);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale = 2 / maxDim;
-      group.scale.setScalar(scale);
-      group.position.sub(center.multiplyScalar(scale));
-      group.position.y += (size.y * scale) / 2;
-      
-      group.userData.name = file.name;
-      group.userData.primType = 'imported';
-      scene.add(group);
-      meshObjects.push(group);
-      selectObject(group);
-      renderLayerList();
-      status.textContent = 'Импортировано: ' + file.name;
-      URL.revokeObjectURL(url);
+      div.appendChild(eye); div.appendChild(name); div.appendChild(del);
+      div.addEventListener('click', () => {
+        state.activeLayerId = layer.id;
+        renderLayersList();
+      });
+      layersList.appendChild(div);
+    });
+  }
+  
+  function composite() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    state.layers.forEach(layer => {
+      if (!layer.visible) return;
+      ctx.drawImage(layer.canvas, 0, 0);
+    });
+  }
+  
+  // Undo/Redo 2D
+  function pushUndo2D() {
+    const snapshot = {
+      layers: state.layers.map(l => ({
+        id: l.id, name: l.name, visible: l.visible, data: l.canvas.toDataURL()
+      })),
+      objects: JSON.parse(JSON.stringify(state.objects)),
+      activeId: state.activeLayerId
     };
-    
-    if (ext === 'obj' && THREE.OBJLoader) {
-      new THREE.OBJLoader().load(url, onLoaded, undefined, () => status.textContent = 'Ошибка OBJ');
-    } else if ((ext === 'gltf' || ext === 'glb') && THREE.GLTFLoader) {
-      new THREE.GLTFLoader().load(url, (g) => onLoaded(g.scene), undefined, () => status.textContent = 'Ошибка GLTF');
-    } else if (ext === 'stl' && THREE.STLLoader) {
-      new THREE.STLLoader().load(url, (geo) => {
-        const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colorPicker.value, metalness:0.2, roughness:0.6 }));
-        onLoaded(mesh);
-      }, undefined, () => status.textContent = 'Ошибка STL');
-    } else {
-      status.textContent = 'Формат не поддерживается';
-    }
-    e.target.value = '';
-  });
+    state.undoStack.push(snapshot);
+    if (state.undoStack.length > 20) state.undoStack.shift();
+    state.redoStack = [];
+  }
   
-  // ==== ЭКСПОРТ GLB ====
-  document.getElementById('btnExport3d').addEventListener('click', () => {
-    if (!THREE.GLTFExporter) { status.textContent = 'GLTFExporter не загружен'; return; }
-    const exporter = new THREE.GLTFExporter();
-    const toExport = new THREE.Group();
-    meshObjects.filter(o => !o.userData.isGround).forEach(o => toExport.add(o.clone()));
-    exporter.parse(toExport, (result) => {
-      const blob = new Blob([result], { type: 'model/gltf-binary' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'fireland_' + Date.now() + '.glb';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      status.textContent = 'GLB сохранён';
-    }, { binary: true });
-  });
+  function applySnapshot2D(snap) {
+    state.layers.forEach((l, i) => {
+      const s = snap.layers[i];
+      if (!s) return;
+      l.visible = s.visible;
+      const img = new Image();
+      img.onload = () => {
+        l.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        l.ctx.clearRect(0, 0, l.canvas.width, l.canvas.height);
+        l.ctx.drawImage(img, 0, 0);
+        l.ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        composite();
+      };
+      img.src = s.data;
+    });
+    state.objects = JSON.parse(JSON.stringify(snap.objects));
+    state.activeLayerId = snap.activeId;
+    renderLayersList();
+    renderObjects();
+  }
   
-  // ==== СОХРАНИТЬ PNG ====
-  document.getElementById('btnSave').addEventListener('click', () => {
+  function undo() {
     if (currentMode === '2d') {
-      const link = document.createElement('a');
-      link.download = 'fireland_2d_' + Date.now() + '.png';
-      link.href = document.getElementById('canvas2d').toDataURL('image/png');
-      link.click();
+      if (!state.undoStack.length) { toast('Нечего отменять', '↶'); return; }
+      const current = {
+        layers: state.layers.map(l => ({
+          id: l.id, name: l.name, visible: l.visible, data: l.canvas.toDataURL()
+        })),
+        objects: JSON.parse(JSON.stringify(state.objects)),
+        activeId: state.activeLayerId
+      };
+      state.redoStack.push(current);
+      const snap = state.undoStack.pop();
+      applySnapshot2D(snap);
+      toast('Отменено', '↶');
     } else {
-      const prevSize = new THREE.Vector2();
-      renderer.getSize(prevSize);
-      const prevPR = renderer.getPixelRatio();
-      renderer.setPixelRatio(1);
-      renderer.setSize(1920, 1080, false);
-      if (camera.isPerspectiveCamera) { camera.aspect = 1920/1080; camera.updateProjectionMatrix(); }
-      if (transformControls) transformControls.visible = false;
-      renderer.render(scene, camera);
-      
-      const link = document.createElement('a');
-      link.download = 'fireland_3d_' + Date.now() + '.png';
-      link.href = renderer.domElement.toDataURL('image/png');
-      link.click();
-      
-      renderer.setPixelRatio(prevPR);
-      renderer.setSize(prevSize.x, prevSize.y, false);
-      resize3D();
-      if (transformControls) transformControls.visible = !!selectedObject && (currentTool !== 'orbit' && currentTool !== 'paint3d' && currentTool !== 'texture3d');
+      toast('Undo в 3D пока не поддерживается', '↶');
     }
-    status.textContent = 'Сохранено';
-  });
-  
-  // ==== АНИМАЦИЯ ====
-  function animate3D() {
-    requestAnimationFrame(animate3D);
-    if (currentMode !== '3d') return;
-    controls.update();
-    renderer.render(scene, camera);
   }
   
-  // ===================== 2D РЕЖИМ =====================
-  const canvas = document.getElementById('canvas2d');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  let logicalW = 1200, logicalH = 800;
-  let dpr = window.devicePixelRatio || 1;
-  
-  function setup2D(w, h) {
-    logicalW = w; logicalH = h;
-    dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
+  function redo() {
+    if (currentMode === '2d') {
+      if (!state.redoStack.length) { toast('Нечего возвращать', '↷'); return; }
+      const current = {
+        layers: state.layers.map(l => ({
+          id: l.id, name: l.name, visible: l.visible, data: l.canvas.toDataURL()
+        })),
+        objects: JSON.parse(JSON.stringify(state.objects)),
+        activeId: state.activeLayerId
+      };
+      state.undoStack.push(current);
+      const snap = state.redoStack.pop();
+      applySnapshot2D(snap);
+      toast('Возвращено', '↷');
+    } else {
+      toast('Redo в 3D пока не поддерживается', '↷');
+    }
   }
-  setup2D(1200, 800);
   
-  let history2d = [], historyIndex2d = -1;
-  function saveHistory2D() {
-    history2d = history2d.slice(0, historyIndex2d + 1);
-    history2d.push(canvas.toDataURL());
-    historyIndex2d++;
-    if (history2d.length > 25) { history2d.shift(); historyIndex2d--; }
+  // Инициализация холста
+  function initCanvas2D() {
+    canvas.width = Math.round(state.logicalW * state.dpr);
+    canvas.height = Math.round(state.logicalH * state.dpr);
+    canvas.style.width = state.logicalW + 'px';
+    canvas.style.height = state.logicalH + 'px';
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    
+    createLayer('Фон');
+    const active = getActiveLayer();
+    active.ctx.fillStyle = '#fff';
+    active.ctx.fillRect(0, 0, state.logicalW, state.logicalH);
+    composite();
+    fitToStage();
   }
-  function restoreHistory2D(index) {
-    if (index < 0 || index >= history2d.length) return;
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.drawImage(img, 0, 0);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      logicalW = img.width / dpr; logicalH = img.height / dpr;
-    };
-    img.src = history2d[index];
-    historyIndex2d = index;
+  
+  function fitToStage() {
+    const rect = stageWrap.getBoundingClientRect();
+    const pad = 40;
+    const scale = Math.min(
+      (rect.width - pad) / state.logicalW,
+      (rect.height - pad) / state.logicalH,
+      1
+    );
+    canvasContainer.style.transform = `scale(${scale})`;
+    canvasContainer.dataset.scale = scale;
   }
-  saveHistory2D();
   
-  let tool2d = 'brush', isDrawing2D = false;
-  let lastX2D = 0, lastY2D = 0, textPosPending = null;
-  const textModal = document.getElementById('textModal');
-  const textInput = document.getElementById('textInput');
-  
+  // Координаты
   function getCanvasPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const sx = logicalW / rect.width;
-    const sy = logicalH / rect.height;
-    return { x:(e.clientX - rect.left)*sx, y:(e.clientY - rect.top)*sy };
+    const scale = parseFloat(canvasContainer.dataset.scale) || 1;
+    const sx = state.logicalW / (state.logicalW * scale);
+    const sy = state.logicalH / (state.logicalH * scale);
+    return {
+      x: (e.clientX - rect.left) * (1 / scale),
+      y: (e.clientY - rect.top) * (1 / scale)
+    };
   }
+  
+  // Рисование 2D
+  let drawing2D = false;
+  let last2D = { x: 0, y: 0 };
+  let start2D = { x: 0, y: 0 };
+  let savedSnap2D = null;
   
   canvas.addEventListener('pointerdown', e => {
     if (currentMode !== '2d') return;
-    e.preventDefault();
-    try { canvas.setPointerCapture(e.pointerId); } catch(err){}
-    const p = getCanvasPos(e);
-    lastX2D = p.x; lastY2D = p.y;
-    isDrawing2D = true;
-    const size = parseInt(document.getElementById('brushSize').value);
-    const alpha = parseInt(document.getElementById('opacity').value) / 100;
     
-    if (tool2d === 'brush' || tool2d === 'eraser') {
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = tool2d === 'eraser' ? '#ffffff' : colorPicker.value;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x+0.01, p.y+0.01);
-      ctx.stroke();
-    } else if (tool2d === 'picker') {
-      const px = ctx.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data;
-      const hex = '#' + [px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
-      colorPicker.value = hex;
-      isDrawing2D = false;
-    } else if (tool2d === 'fill') {
-      floodFill(Math.round(p.x), Math.round(p.y), colorPicker.value);
-      isDrawing2D = false;
-      saveHistory2D();
-    } else if (tool2d === 'text') {
-      textPosPending = p;
-      textInput.value = '';
-      textModal.classList.add('show');
-      setTimeout(() => textInput.focus(), 100);
-      isDrawing2D = false;
+    const tool = state.tool;
+    
+    if (tool === 'picker') {
+      const p = getCanvasPos(e);
+      const px = ctx.getImageData(Math.round(p.x * state.dpr), Math.round(p.y * state.dpr), 1, 1).data;
+      const hex = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+      setColor(hex);
+      toast('Взято: ' + hex, '💧');
+      return;
+    }
+    
+    if (tool === 'fill') {
+      const p = getCanvasPos(e);
+      floodFill2D(p.x, p.y, state.color);
+      pushUndo2D();
+      return;
+    }
+    
+    const isBrush = ['brush','pencil','marker','spray','eraser'].includes(tool);
+    const isShape = tool.startsWith('shape_');
+    if (!isBrush && !isShape) return;
+    
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    drawing2D = true;
+    const p = getCanvasPos(e);
+    last2D = p; start2D = p;
+    
+    if (isShape) {
+      const layer = getActiveLayer();
+      savedSnap2D = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+    } else {
+      drawLine2D(p, p, true);
     }
   });
   
   canvas.addEventListener('pointermove', e => {
-    if (!isDrawing2D || currentMode !== '2d') return;
+    if (!drawing2D) return;
     e.preventDefault();
     const p = getCanvasPos(e);
-    const size = parseInt(document.getElementById('brushSize').value);
-    const alpha = parseInt(document.getElementById('opacity').value) / 100;
-    if (tool2d === 'brush' || tool2d === 'eraser') {
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = tool2d === 'eraser' ? '#ffffff' : colorPicker.value;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(lastX2D, lastY2D);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      lastX2D = p.x; lastY2D = p.y;
+    const tool = state.tool;
+    const isShape = tool.startsWith('shape_');
+    
+    if (isShape) {
+      const layer = getActiveLayer();
+      if (!layer || !savedSnap2D) return;
+      layer.ctx.putImageData(savedSnap2D, 0, 0);
+      drawShape2D(layer.ctx, start2D, p, tool.replace('shape_', ''));
+    } else {
+      drawLine2D(last2D, p, false);
     }
+    last2D = p;
   });
   
-  function end2D() { if (isDrawing2D) saveHistory2D(); isDrawing2D = false; ctx.globalAlpha = 1; }
-  canvas.addEventListener('pointerup', end2D);
-  canvas.addEventListener('pointercancel', end2D);
-  canvas.addEventListener('pointerleave', end2D);
+  canvas.addEventListener('pointerup', e => {
+    if (!drawing2D) return;
+    drawing2D = false;
+    savedSnap2D = null;
+    pushUndo2D();   // ← фикс бага! Undo работает и для фигур
+    composite();
+  });
   
-  document.getElementById('textOk').addEventListener('click', () => {
-    const t = textInput.value.trim();
-    if (t && textPosPending) {
-      const size = parseInt(document.getElementById('brushSize').value);
-      const alpha = parseInt(document.getElementById('opacity').value) / 100;
-      ctx.globalAlpha = alpha;
-      ctx.font = `${Math.max(16, size*3)}px Arial`;
-      ctx.fillStyle = colorPicker.value;
-      ctx.fillText(t, textPosPending.x, textPosPending.y);
-      ctx.globalAlpha = 1;
-      saveHistory2D();
+  canvas.addEventListener('pointercancel', () => {
+    drawing2D = false;
+    savedSnap2D = null;
+  });
+  
+  function drawLine2D(from, to, isDot) {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    const opacity = state.brushOpacity;
+    const color = state.tool === 'eraser' ? '#ffffff' : state.color;
+    const size = state.brushSize;
+    const lc = layer.ctx;
+    
+    lc.save();
+    lc.globalAlpha = opacity;
+    lc.strokeStyle = color;
+    lc.fillStyle = color;
+    lc.lineWidth = size;
+    lc.lineCap = 'round';
+    lc.lineJoin = 'round';
+    
+    if (state.tool === 'spray') {
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * size;
+        lc.fillRect(to.x + Math.cos(a) * r, to.y + Math.sin(a) * r, 1.5, 1.5);
+      }
+    } else if (state.tool === 'marker') {
+      lc.globalAlpha = opacity * 0.5;
+      lc.lineWidth = size * 2;
+      lc.beginPath();
+      lc.moveTo(from.x, from.y);
+      lc.lineTo(to.x, to.y);
+      lc.stroke();
+    } else if (state.tool === 'pencil') {
+      lc.lineWidth = Math.max(1, size * 0.5);
+      lc.beginPath();
+      lc.moveTo(from.x, from.y);
+      lc.lineTo(to.x, to.y);
+      lc.stroke();
+    } else if (isDot) {
+      lc.beginPath();
+      lc.arc(to.x, to.y, size / 2, 0, Math.PI * 2);
+      lc.fill();
+    } else {
+      lc.beginPath();
+      lc.moveTo(from.x, from.y);
+      lc.lineTo(to.x, to.y);
+      lc.stroke();
     }
-    textModal.classList.remove('show');
-    textPosPending = null;
-  });
-  document.getElementById('textCancel').addEventListener('click', () => {
-    textModal.classList.remove('show');
-    textPosPending = null;
-  });
-  textInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('textOk').click(); });
+    lc.restore();
+    composite();
+  }
   
-  function floodFill(x, y, hexColor) {
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  function drawShape2D(lc, start, end, shape) {
+    lc.save();
+    lc.strokeStyle = state.color;
+    lc.fillStyle = state.color;
+    lc.lineWidth = state.shapeSize;
+    lc.lineCap = 'round';
+    lc.lineJoin = 'round';
+    
+    const x = Math.min(start.x, end.x), y = Math.min(start.y, end.y);
+    const w = Math.abs(end.x - start.x), h = Math.abs(end.y - start.y);
+    const cx = (start.x + end.x) / 2, cy = (start.y + end.y) / 2;
+    
+    lc.beginPath();
+    
+    switch (shape) {
+      case 'line':
+        lc.moveTo(start.x, start.y);
+        lc.lineTo(end.x, end.y);
+        lc.stroke();
+        break;
+      case 'rect':
+        if (state.shapeFilled) lc.fillRect(x, y, w, h);
+        else lc.strokeRect(x, y, w, h);
+        break;
+      case 'circle':
+        const r = Math.min(w, h) / 2;
+        lc.arc(cx, cy, r, 0, Math.PI * 2);
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+      case 'ellipse':
+        lc.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+      case 'triangle':
+        lc.moveTo(cx, y);
+        lc.lineTo(x + w, y + h);
+        lc.lineTo(x, y + h);
+        lc.closePath();
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+      case 'star':
+        drawStarPath(lc, cx, cy, Math.max(w, h) / 2, Math.max(w, h) / 5, 5);
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+      case 'arrow':
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const len = Math.hypot(end.x - start.x, end.y - start.y);
+        const headLen = Math.min(30, len * 0.3);
+        lc.moveTo(start.x, start.y);
+        lc.lineTo(end.x, end.y);
+        lc.moveTo(end.x, end.y);
+        lc.lineTo(end.x - headLen * Math.cos(angle - Math.PI / 7), end.y - headLen * Math.sin(angle - Math.PI / 7));
+        lc.moveTo(end.x, end.y);
+        lc.lineTo(end.x - headLen * Math.cos(angle + Math.PI / 7), end.y - headLen * Math.sin(angle + Math.PI / 7));
+        lc.stroke();
+        break;
+      case 'heart':
+        const sz = Math.max(w, h) / 2;
+        lc.moveTo(cx, cy - sz * 0.3);
+        lc.bezierCurveTo(cx, cy - sz * 0.7, cx - sz, cy - sz * 0.7, cx - sz, cy);
+        lc.bezierCurveTo(cx - sz, cy + sz * 0.4, cx, cy + sz * 0.7, cx, cy + sz);
+        lc.bezierCurveTo(cx, cy + sz * 0.7, cx + sz, cy + sz * 0.4, cx + sz, cy);
+        lc.bezierCurveTo(cx + sz, cy - sz * 0.7, cx, cy - sz * 0.7, cx, cy - sz * 0.3);
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+      case 'pentagon':
+        drawPolygonPath(lc, cx, cy, Math.min(w, h) / 2, 5);
+        if (state.shapeFilled) lc.fill(); else lc.stroke();
+        break;
+    }
+    lc.restore();
+    composite();
+  }
+  
+  function drawStarPath(c, cx, cy, outer, inner, points) {
+    c.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r = i % 2 === 0 ? outer : inner;
+      const a = (i * Math.PI) / points - Math.PI / 2;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+    }
+    c.closePath();
+  }
+  
+  function drawPolygonPath(c, cx, cy, r, sides) {
+    c.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+    }
+    c.closePath();
+  }
+  
+  function floodFill2D(x, y, hexColor) {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    const px = Math.round(x * state.dpr);
+    const py = Math.round(y * state.dpr);
+    const imgData = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
     const data = imgData.data;
-    const W = canvas.width, H = canvas.height;
-    if (x<0||y<0||x>=W||y>=H) return;
-    const ti = (y*W+x)*4;
-    const tr=data[ti], tg=data[ti+1], tb=data[ti+2], ta=data[ti+3];
-    const m = hexColor.replace('#','').match(/.{2}/g);
-    const rgb = { r:parseInt(m[0],16), g:parseInt(m[1],16), b:parseInt(m[2],16) };
+    const W = layer.canvas.width, H = layer.canvas.height;
+    if (px < 0 || py < 0 || px >= W || py >= H) return;
+    
+    const ti = (py * W + px) * 4;
+    const tr = data[ti], tg = data[ti + 1], tb = data[ti + 2], ta = data[ti + 3];
+    const m = hexColor.replace('#', '').match(/.{2}/g);
+    const nr = parseInt(m[0], 16), ng = parseInt(m[1], 16), nb = parseInt(m[2], 16);
+    if (tr === nr && tg === ng && tb === nb && ta === 255) return;
+    
     const tol = 30;
-    const stack = [[x,y]];
-    const visited = new Uint8Array(W*H);
+    const stack = [[px, py]];
+    const visited = new Uint8Array(W * H);
+    
     while (stack.length) {
       const [cx, cy] = stack.pop();
-      if (cx<0||cy<0||cx>=W||cy>=H) continue;
-      const idx = cy*W+cx;
+      if (cx < 0 || cy < 0 || cx >= W || cy >= H) continue;
+      const idx = cy * W + cx;
       if (visited[idx]) continue;
-      const i = idx*4;
-      if (Math.abs(data[i]-tr)>tol || Math.abs(data[i+1]-tg)>tol ||
-          Math.abs(data[i+2]-tb)>tol || Math.abs(data[i+3]-ta)>tol) continue;
+      const i = idx * 4;
+      if (Math.abs(data[i] - tr) > tol || Math.abs(data[i + 1] - tg) > tol ||
+          Math.abs(data[i + 2] - tb) > tol || Math.abs(data[i + 3] - ta) > tol) continue;
       visited[idx] = 1;
-      data[i]=rgb.r; data[i+1]=rgb.g; data[i+2]=rgb.b; data[i+3]=255;
-      stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+      data[i] = nr; data[i + 1] = ng; data[i + 2] = nb; data[i + 3] = 255;
+      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
     }
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.putImageData(imgData, 0, 0);
-    ctx.restore();
+    layer.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    layer.ctx.putImageData(imgData, 0, 0);
+    layer.ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    composite();
   }
   
-  document.querySelectorAll('[data-filter]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      applyFilter2D(btn.dataset.filter);
-      saveHistory2D();
+  // Объекты 2D (текст, стикеры)
+  function addTextObject(text, x, y) {
+    pushUndo2D();
+    const obj = {
+      id: 'obj_' + Date.now() + Math.random(),
+      type: 'text', text, x, y,
+      fontSize: state.textSize,
+      font: state.textFont,
+      color: state.color,
+      rotation: 0, scale: 1
+    };
+    state.objects.push(obj);
+    renderObjects();
+    selectObject(obj.id);
+    toast('Текст добавлен', 'T');
+  }
+  
+  function addStickerObject(sticker, x, y) {
+    pushUndo2D();
+    const obj = {
+      id: 'obj_' + Date.now() + Math.random(),
+      type: 'sticker', text: sticker, x, y,
+      fontSize: 64, color: '#000', rotation: 0, scale: 1
+    };
+    state.objects.push(obj);
+    renderObjects();
+    selectObject(obj.id);
+    toast('Стикер добавлен', '🌟');
+  }
+  
+  function renderObjects() {
+    objectLayer.innerHTML = '';
+    state.objects.forEach(obj => {
+      const el = document.createElement('div');
+      el.className = 'object-item ' + (obj.type === 'text' ? 'text-object' : 'sticker-object');
+      el.dataset.id = obj.id;
+      el.textContent = obj.text;
+      el.style.left = obj.x + 'px';
+      el.style.top = obj.y + 'px';
+      el.style.fontSize = obj.fontSize + 'px';
+      el.style.color = obj.color;
+      el.style.transform = `rotate(${obj.rotation}deg) scale(${obj.scale})`;
+      el.style.transformOrigin = 'top left';
+      if (obj.type === 'text') {
+        if (obj.font === 'bold') el.style.fontWeight = '700';
+        else if (obj.font === 'serif') el.style.fontFamily = 'Georgia, serif';
+        else if (obj.font === 'mono') el.style.fontFamily = 'monospace';
+      }
+      if (obj.id === state.selectedObjectId) el.classList.add('selected');
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        startObjectDrag(e, obj);
+      });
+      objectLayer.appendChild(el);
     });
+  }
+  
+  function selectObject(id) {
+    state.selectedObjectId = id;
+    renderObjects();
+  }
+  
+  function startObjectDrag(e, obj) {
+    selectObject(obj.id);
+    e.preventDefault();
+    const startX = e.clientX, startY = e.clientY;
+    const origX = obj.x, origY = obj.y;
+    const scale = parseFloat(canvasContainer.dataset.scale) || 1;
+    function onMove(ev) {
+      obj.x = origX + (ev.clientX - startX) / scale;
+      obj.y = origY + (ev.clientY - startY) / scale;
+      renderObjects();
+    }
+    function onUp() {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      pushUndo2D();
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+  
+  // Удаление объектов клавишей Delete
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (currentMode === '2d' && (e.key === 'Delete' || e.key === 'Backspace') && state.selectedObjectId) {
+      e.preventDefault();
+      pushUndo2D();
+      state.objects = state.objects.filter(o => o.id !== state.selectedObjectId);
+      state.selectedObjectId = null;
+      renderObjects();
+      toast('Удалено', '🗑️');
+    }
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+      if (e.key === 's') { e.preventDefault(); savePNG(); }
+    }
   });
   
-  function applyFilter2D(type) {
-    if (type === 'reset') { if (history2d.length) restoreHistory2D(0); return; }
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
-    switch(type) {
-      case 'grayscale':
-        for (let i=0;i<data.length;i+=4) {
-          const g = 0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
-          data[i]=data[i+1]=data[i+2]=g;
-        }
-        break;
-      case 'invert':
-        for (let i=0;i<data.length;i+=4) {
-          data[i]=255-data[i]; data[i+1]=255-data[i+1]; data[i+2]=255-data[i+2];
-        }
-        break;
-      case 'sepia':
-        for (let i=0;i<data.length;i+=4) {
-          const r=data[i],g=data[i+1],b=data[i+2];
-          data[i]=Math.min(255,0.393*r+0.769*g+0.189*b);
-          data[i+1]=Math.min(255,0.349*r+0.686*g+0.168*b);
-          data[i+2]=Math.min(255,0.272*r+0.534*g+0.131*b);
-        }
-        break;
-      case 'brightness':
-        for (let i=0;i<data.length;i+=4) {
-          data[i]=Math.min(255,data[i]+30);
-          data[i+1]=Math.min(255,data[i+1]+30);
-          data[i+2]=Math.min(255,data[i+2]+30);
-        }
-        break;
-      case 'darken':
-        for (let i=0;i<data.length;i+=4) {
-          data[i]=Math.max(0,data[i]-30);
-          data[i+1]=Math.max(0,data[i+1]-30);
-          data[i+2]=Math.max(0,data[i+2]-30);
-        }
-        break;
-      case 'contrast': {
-        const c = 1.5;
-        for (let i=0;i<data.length;i+=4) {
-          data[i]=Math.min(255,Math.max(0,(data[i]-128)*c+128));
-          data[i+1]=Math.min(255,Math.max(0,(data[i+1]-128)*c+128));
-          data[i+2]=Math.min(255,Math.max(0,(data[i+2]-128)*c+128));
-        }
-        break;
-      }
-      case 'blur':
-        ctx.save();
-        ctx.setTransform(1,0,0,1,0,0);
-        ctx.putImageData(imgData, 0, 0);
-        ctx.filter = 'blur(3px)';
-        ctx.drawImage(canvas, 0, 0);
-        ctx.filter = 'none';
-        ctx.restore();
-        return;
-    }
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.putImageData(imgData, 0, 0);
-    ctx.restore();
+  // Палитра
+  function setColor(hex) {
+    state.color = hex;
+    $('currentColorBig').style.background = hex;
+    $('currentColorHex').value = hex;
+    const big3d = $('currentColorBig3d');
+    if (big3d) big3d.style.background = hex;
+    const hex3d = $('currentColorHex3d');
+    if (hex3d) hex3d.value = hex;
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.color === hex);
+    });
   }
   
-  document.getElementById('brushSize').addEventListener('input', e => document.getElementById('sizeVal').textContent = e.target.value);
-  document.getElementById('opacity').addEventListener('input', e => document.getElementById('opacityVal').textContent = e.target.value);
+  const colorGrid = $('colorGrid');
+  PALETTE.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c === '#ffffff' ? ' white' : '');
+    sw.style.background = c;
+    sw.dataset.color = c;
+    if (c === state.color) sw.classList.add('active');
+    sw.addEventListener('click', () => setColor(c));
+    colorGrid.appendChild(sw);
+  });
   
-  // ===================== ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ =====================
-  document.getElementById('tab2d').addEventListener('click', () => switchMode('2d'));
-  document.getElementById('tab3d').addEventListener('click', () => switchMode('3d'));
-  
-  function switchMode(mode) {
-    currentMode = mode;
-    document.getElementById('tab2d').classList.toggle('active', mode === '2d');
-    document.getElementById('tab3d').classList.toggle('active', mode === '3d');
-    canvas.classList.toggle('active', mode === '2d');
-    canvas3d.classList.toggle('active', mode === '3d');
-    document.querySelectorAll('[data-panel]').forEach(p => {
-      p.style.display = (p.dataset.panel === mode) ? '' : 'none';
+  const colorGrid3d = $('colorGrid3d');
+  if (colorGrid3d) {
+    PALETTE.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (c === '#ffffff' ? ' white' : '');
+      sw.style.background = c;
+      sw.dataset.color = c;
+      if (c === state.color) sw.classList.add('active');
+      sw.addEventListener('click', () => {
+        setColor(c);
+        // Покраска выбранных 3D-объектов
+        S3D.selected.forEach(o => paint3DObject(o, c));
+      });
+      colorGrid3d.appendChild(sw);
     });
-    document.querySelectorAll('.tool[data-mode]').forEach(t => {
-      t.style.display = (t.dataset.mode === mode) ? '' : 'none';
-    });
-    document.querySelectorAll('.tool-sep').forEach(s => {
-      s.style.display = (s.dataset.mode === mode) ? '' : 'none';
-    });
-    
-    const firstTool = document.querySelector(`.tool[data-mode="${mode}"]`);
-    document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
-    if (firstTool) firstTool.classList.add('active');
-    
-    if (mode === '3d') {
-      currentTool = 'orbit';
-      if (transformControls) transformControls.visible = false;
-      stageInfo.textContent = 'Перетащи примитив из панели → в сцену · W/E/R — гизмо · клик — выбрать';
-      setTimeout(resize3D, 50);
-    } else {
-      tool2d = 'brush';
-      stageInfo.textContent = 'Рисуй мышью или пальцем · инструменты слева';
-    }
-    status.textContent = 'Режим: ' + (mode === '3d' ? '3D' : '2D');
   }
+  
+  $('currentColorHex').addEventListener('change', e => {
+    const v = e.target.value;
+    if (/^#[0-9a-f]{6}$/i.test(v)) setColor(v);
+  });
+  if ($('currentColorHex3d')) {
+    $('currentColorHex3d').addEventListener('change', e => {
+      const v = e.target.value;
+      if (/^#[0-9a-f]{6}$/i.test(v)) setColor(v);
+    });
+  }
+  
+  // Стикеры
+  const stickerGrid = $('stickerGrid');
+  STICKERS.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'sticker-btn';
+    b.textContent = s;
+    b.addEventListener('click', () => {
+      addStickerObject(s, state.logicalW / 2 - 32, state.logicalH / 2 - 32);
+    });
+    stickerGrid.appendChild(b);
+  });
+  
+  // Текст 2D
+  $('btnAddText').addEventListener('click', () => {
+    $('textInput').value = '';
+    $('textModal').classList.add('show');
+    setTimeout(() => $('textInput').focus(), 150);
+  });
+  $('textOk').addEventListener('click', () => {
+    const t = $('textInput').value.trim();
+    if (t) addTextObject(t, state.logicalW / 2 - 100, state.logicalH / 2 - 30);
+    $('textModal').classList.remove('show');
+  });
+  $('textCancel').addEventListener('click', () => $('textModal').classList.remove('show'));
+  $('textInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('textOk').click();
+  });
+  
+  // Управление 2D вкладками
+  document.querySelectorAll('#tabs2d .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#tabs2d .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.panel-tab').forEach(p => {
+        p.classList.toggle('active', p.dataset.tabContent === tab.dataset.tab);
+      });
+    });
+  });
   
   // Инструменты 2D
-  document.querySelectorAll('.tool[data-mode="2d"]').forEach(btn => {
+  document.querySelectorAll('[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tool').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      tool2d = btn.dataset.tool;
-      status.textContent = 'Инструмент: ' + tool2d;
+      state.tool = btn.dataset.tool;
+      toast('Инструмент: ' + state.tool, '🖌️');
     });
   });
   
-  // ===================== ТОПБАР =====================
-  document.getElementById('btnUndo').addEventListener('click', () => {
-    if (currentMode === '2d' && historyIndex2d > 0) restoreHistory2D(historyIndex2d - 1);
-  });
-  document.getElementById('btnRedo').addEventListener('click', () => {
-    if (currentMode === '2d' && historyIndex2d < history2d.length - 1) restoreHistory2D(historyIndex2d + 1);
+  document.querySelectorAll('[data-shape]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.tool = 'shape_' + btn.dataset.shape;
+      toast('Фигура: ' + btn.dataset.shape, '▭');
+    });
   });
   
-  document.getElementById('fileInput').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
+  $('brushSize').addEventListener('input', e => {
+    state.brushSize = parseInt(e.target.value);
+    $('brushSizeVal').textContent = e.target.value;
+  });
+  $('brushOpacity').addEventListener('input', e => {
+    state.brushOpacity = parseInt(e.target.value) / 100;
+    $('brushOpacityVal').textContent = e.target.value + '%';
+  });
+  $('shapeSize').addEventListener('input', e => {
+    state.shapeSize = parseInt(e.target.value);
+    $('shapeSizeVal').textContent = e.target.value;
+  });
+  $('shapeFilled').addEventListener('click', () => {
+    state.shapeFilled = true;
+    $('shapeFilled').classList.add('active');
+    $('shapeOutline').classList.remove('active');
+  });
+  $('shapeOutline').addEventListener('click', () => {
+    state.shapeFilled = false;
+    $('shapeOutline').classList.add('active');
+    $('shapeFilled').classList.remove('active');
+  });
+  $('textSize').addEventListener('input', e => {
+    state.textSize = parseInt(e.target.value);
+    $('textSizeVal').textContent = e.target.value;
+  });
+  document.querySelectorAll('[data-font]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-font]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.textFont = btn.dataset.font;
+    });
+  });
+  
+  // Слои 2D
+  $('btnNewLayer').addEventListener('click', () => {
+    pushUndo2D();
+    createLayer();
+    toast('Новый слой', '📚');
+  });
+  $('btnMergeLayers').addEventListener('click', () => {
+    pushUndo2D();
+    const visible = state.layers.filter(l => l.visible);
+    if (visible.length < 2) { toast('Нечего объединять', '⚠️'); return; }
+    const base = visible[0];
+    for (let i = 1; i < visible.length; i++) base.ctx.drawImage(visible[i].canvas, 0, 0);
+    state.layers = state.layers.filter(l => !visible.includes(l) || l === base);
+    base.name = 'Объединённый';
+    state.activeLayerId = base.id;
+    renderLayersList();
+    composite();
+    toast('Слои объединены', '🔗');
+  });
+  
+  // Холст 2D
+  $('btnResizeCanvas').addEventListener('click', () => {
+    const w = Math.max(100, Math.min(5000, parseInt($('canvasW').value) || 1200));
+    const h = Math.max(100, Math.min(5000, parseInt($('canvasH').value) || 800));
+    pushUndo2D();
+    state.logicalW = w; state.logicalH = h;
+    canvas.width = Math.round(w * state.dpr);
+    canvas.height = Math.round(h * state.dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    state.layers.forEach(layer => {
+      const nc = document.createElement('canvas');
+      nc.width = Math.round(w * state.dpr);
+      nc.height = Math.round(h * state.dpr);
+      const nctx = nc.getContext('2d', { willReadFrequently: true });
+      nctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      nctx.drawImage(layer.canvas, 0, 0, layer.canvas.width, layer.canvas.height, 0, 0, w, h);
+      layer.canvas = nc;
+      layer.ctx = nctx;
+    });
+    composite();
+    fitToStage();
+    toast(`Холст: ${w}×${h}`, '📐');
+  });
+  
+  $('btnFlipH').addEventListener('click', () => {
+    pushUndo2D();
+    state.layers.forEach(layer => {
+      const tmp = document.createElement('canvas');
+      tmp.width = layer.canvas.width; tmp.height = layer.canvas.height;
+      const tc = tmp.getContext('2d');
+      tc.translate(tmp.width, 0); tc.scale(-1, 1);
+      tc.drawImage(layer.canvas, 0, 0);
+      layer.ctx.setTransform(1,0,0,1,0,0);
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.drawImage(tmp, 0, 0);
+      layer.ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+    });
+    composite();
+    toast('Отражено ⇄', '⇄');
+  });
+  
+  $('btnFlipV').addEventListener('click', () => {
+    pushUndo2D();
+    state.layers.forEach(layer => {
+      const tmp = document.createElement('canvas');
+      tmp.width = layer.canvas.width; tmp.height = layer.canvas.height;
+      const tc = tmp.getContext('2d');
+      tc.translate(0, tmp.height); tc.scale(1, -1);
+      tc.drawImage(layer.canvas, 0, 0);
+      layer.ctx.setTransform(1,0,0,1,0,0);
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.drawImage(tmp, 0, 0);
+      layer.ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+    });
+    composite();
+    toast('Отражено ⇅', '⇅');
+  });
+  
+  $('btnRotate90').addEventListener('click', () => {
+    pushUndo2D();
+    const w = state.logicalW, h = state.logicalH;
+    state.layers.forEach(layer => {
+      const tmp = document.createElement('canvas');
+      tmp.width = layer.canvas.height; tmp.height = layer.canvas.width;
+      const tc = tmp.getContext('2d');
+      tc.translate(tmp.width, 0); tc.rotate(Math.PI / 2);
+      tc.drawImage(layer.canvas, 0, 0);
+      layer.canvas = tmp;
+      layer.ctx = tmp.getContext('2d', { willReadFrequently: true });
+      layer.ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    });
+    state.logicalW = h; state.logicalH = w;
+    canvas.width = Math.round(h * state.dpr);
+    canvas.height = Math.round(w * state.dpr);
+    canvas.style.width = h + 'px';
+    canvas.style.height = w + 'px';
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    composite();
+    fitToStage();
+    toast('Повёрнуто на 90°', '↻');
+  });
+  
+  $('btnClearCanvas').addEventListener('click', () => {
+    if (!confirm('Очистить всё?')) return;
+    pushUndo2D();
+    state.layers.forEach(layer => {
+      layer.ctx.setTransform(1,0,0,1,0,0);
+      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+    });
+    if (state.layers[0]) {
+      state.layers[0].ctx.fillStyle = '#fff';
+      state.layers[0].ctx.fillRect(0, 0, state.logicalW, state.logicalH);
+    }
+    state.objects = [];
+    state.selectedObjectId = null;
+    renderObjects();
+    composite();
+    toast('Очищено', '🧹');
+  });
+  
+  // =================================================================
+  // =================== 3D РЕДАКТОР =================================
+  // =================================================================
+  const canvas3d = $('canvas3d3d');
+  const S3D = {
+    init: false, scene: null, camera: null, renderer: null, controls: null,
+    objects: [], selected: [], grid: null, ground: null,
+    raycaster: null,
+    drag: { active: false, plane: null, lastPoint: null },
+    snapEnabled: true, spawnAngle: 0
+  };
+  
+  function init3DIfNeeded() {
+    if (S3D.init) return true;
+    if (typeof THREE === 'undefined') { toast('Three.js не загрузился', '⚠️'); return false; }
+    
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas3d, antialias: true, preserveDrawingBuffer: true, alpha: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0x000000, 0);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.NoToneMapping;
+    
+    const scene = new THREE.Scene();
+    const rect = stageWrap.getBoundingClientRect();
+    const camera = new THREE.PerspectiveCamera(45, (rect.width || 1) / (rect.height || 1), 0.1, 500);
+    camera.position.set(0, 6, 11);
+    
+    const controls = new THREE.OrbitControls(camera, canvas3d);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 0.5, 0);
+    controls.minDistance = 3;
+    controls.maxDistance = 40;
+    controls.screenSpacePanning = true;
+    controls.maxPolarAngle = Math.PI / 2.05;
+    controls.minPolarAngle = 0.15;
+    
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(6, 12, 8);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 40;
+    key.shadow.camera.left = -15;
+    key.shadow.camera.right = 15;
+    key.shadow.camera.top = 15;
+    key.shadow.camera.bottom = -15;
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xb0c8ff, 0.4);
+    fill.position.set(-8, 5, -6);
+    scene.add(fill);
+    
+    const grid = new THREE.GridHelper(30, 30, 0xcccccc, 0xdddddd);
+    grid.material.opacity = 0.4;
+    grid.material.transparent = true;
+    scene.add(grid);
+    
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.ShadowMaterial({ opacity: 0.15 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.userData.isGround = true;
+    scene.add(ground);
+    
+    S3D.scene = scene;
+    S3D.camera = camera;
+    S3D.renderer = renderer;
+    S3D.controls = controls;
+    S3D.grid = grid;
+    S3D.ground = ground;
+    S3D.raycaster = new THREE.Raycaster();
+    S3D.init = true;
+    
+    window.addEventListener('resize', resize3D);
+    setup3DInput();
+    animate3D();
+    
+    // Стартовые
+    add3DPrimitive('box', { x: -2, y: 0.6, z: 1.5 });
+    add3DPrimitive('torus', { x: 2, y: 0.6, z: 1.5 });
+    add3DText('FireLand', { x: 0, y: 1.2, z: -1.5 });
+    S3D.selected = [];
+    render3DLayers();
+    update3DPropsPanel();
+    
+    return true;
+  }
+  
+  function resize3D() {
+    if (!S3D.renderer) return;
+    const rect = stageWrap.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    if (w < 2 || h < 2) return;
+    S3D.renderer.setSize(w, h, false);
+    canvas3d.width = Math.round(w * S3D.renderer.getPixelRatio());
+    canvas3d.height = Math.round(h * S3D.renderer.getPixelRatio());
+    S3D.camera.aspect = w / h;
+    S3D.camera.updateProjectionMatrix();
+  }
+  
+  function makeGeometry3D(type) {
+    switch(type) {
+      case 'box': return new THREE.BoxGeometry(1.2, 1.2, 1.2);
+      case 'sphere': return new THREE.SphereGeometry(0.7, 32, 24);
+      case 'cylinder': return new THREE.CylinderGeometry(0.55, 0.55, 1.3, 32);
+      case 'cone': return new THREE.ConeGeometry(0.7, 1.4, 32);
+      case 'torus': return new THREE.TorusGeometry(0.6, 0.24, 20, 40);
+      case 'pyramid': return new THREE.ConeGeometry(0.85, 1.3, 4);
+      case 'capsule': return new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.45, 0.9, 8, 16) : new THREE.CylinderGeometry(0.45, 0.45, 1.5, 16);
+      case 'hemisphere': return new THREE.SphereGeometry(0.75, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+      case 'tetra': return new THREE.TetrahedronGeometry(0.85);
+      default: return new THREE.BoxGeometry(1, 1, 1);
+    }
+  }
+  
+  function nextSpawn3D() {
+    S3D.spawnAngle += 0.9;
+    const r = 1.5 + (S3D.objects.length % 4) * 0.7;
+    return { x: Math.cos(S3D.spawnAngle) * r, y: 0.6, z: Math.sin(S3D.spawnAngle) * r };
+  }
+  
+  function labelPrim3D(t) {
+    return {
+      box:'Куб', sphere:'Сфера', cylinder:'Цилиндр', cone:'Конус',
+      torus:'Тор', pyramid:'Пирамида', capsule:'Капсула',
+      hemisphere:'Полусфера', tetra:'Тетраэдр'
+    }[t] || 'Объект';
+  }
+  
+  function add3DPrimitive(type, position) {
+    const geo = makeGeometry3D(type);
+    const mat = new THREE.MeshStandardMaterial({
+      color: state.color, metalness: 0.15, roughness: 0.5
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    const pos = position || nextSpawn3D();
+    mesh.position.set(pos.x, pos.y ?? 0.6, pos.z ?? 0);
+    mesh.userData.type = 'prim';
+    mesh.userData.name = labelPrim3D(type);
+    mesh.userData.baseColor = state.color;
+    S3D.scene.add(mesh);
+    S3D.objects.push(mesh);
+    select3D(mesh, false);
+    render3DLayers();
+    toast('Добавлено: ' + mesh.userData.name, '📦');
+    return mesh;
+  }
+  
+  // 3D-текст через спрайт с псевдо-объёмом
+  function add3DText(text, position) {
+    const fontSize = 80;
+    const cv = document.createElement('canvas');
+    const tmp = cv.getContext('2d');
+    tmp.font = '700 ' + fontSize + 'px Arial, sans-serif';
+    const metrics = tmp.measureText(text);
+    cv.width = Math.ceil(metrics.width) + 40;
+    cv.height = fontSize * 1.5;
+    const c2 = cv.getContext('2d');
+    c2.font = '700 ' + fontSize + 'px Arial, sans-serif';
+    c2.fillStyle = state.color;
+    c2.textBaseline = 'middle';
+    c2.fillText(text, 20, cv.height / 2);
+    
+    const texture = new THREE.CanvasTexture(cv);
+    texture.minFilter = THREE.LinearFilter;
+    
+    const group = new THREE.Group();
+    const depthLayers = 8;
+    const depthStep = 0.04;
+    const baseColor = new THREE.Color(state.color);
+    
+    for (let i = depthLayers; i > 0; i--) {
+      const matBack = new THREE.MeshBasicMaterial({
+        map: texture, transparent: true,
+        color: baseColor.clone().multiplyScalar(0.4)
+      });
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(cv.width / 100, cv.height / 100),
+        matBack
+      );
+      mesh.position.z = -i * depthStep;
+      group.add(mesh);
+    }
+    const matFront = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+    const front = new THREE.Mesh(
+      new THREE.PlaneGeometry(cv.width / 100, cv.height / 100),
+      matFront
+    );
+    group.add(front);
+    
+    const pos = position || nextSpawn3D();
+    group.position.set(pos.x, pos.y ?? 1, pos.z ?? 0);
+    group.userData.type = 'text3d';
+    group.userData.name = 'Текст: ' + text;
+    group.userData.baseColor = state.color;
+    
+    S3D.scene.add(group);
+    S3D.objects.push(group);
+    select3D(group, false);
+    render3DLayers();
+    toast('3D-текст добавлен', 'T');
+    return group;
+  }
+  
+  // Мультивыделение
+  function select3D(obj, add) {
+    if (!obj) S3D.selected = [];
+    else if (add) {
+      const idx = S3D.selected.indexOf(obj);
+      if (idx >= 0) S3D.selected.splice(idx, 1);
+      else S3D.selected.push(obj);
+    } else {
+      S3D.selected = [obj];
+    }
+    render3DLayers();
+    update3DPropsPanel();
+  }
+  
+  function paint3DObject(obj, color) {
+    obj.traverse(c => {
+      if (c.isMesh && c.material && c.material.color) {
+        c.material.color.set(color);
+        if (c.material.map) { /* оставляем текстуру */ }
+        c.material.needsUpdate = true;
+      }
+    });
+    obj.userData.baseColor = color;
+    toast('Покрашено', '🎨');
+  }
+  
+  // Ввод 3D
+  function setup3DInput() {
+    canvas3d.addEventListener('pointerdown', e => {
+      const hit = pick3D(e.clientX, e.clientY);
+      if (hit) {
+        const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+        if (!S3D.selected.includes(hit) || additive) {
+          select3D(hit, additive);
+        }
+        startDrag3D(e);
+      } else {
+        if (!e.shiftKey) select3D(null);
+      }
+    });
+    canvas3d.addEventListener('pointermove', e => {
+      if (!S3D.drag.active) return;
+      updateDrag3D(e);
+    });
+    canvas3d.addEventListener('pointerup', endDrag3D);
+    canvas3d.addEventListener('pointercancel', endDrag3D);
+  }
+  
+  function pick3D(clientX, clientY) {
+    const rect = canvas3d.getBoundingClientRect();
+    const ndc = {
+      x: ((clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((clientY - rect.top) / rect.height) * 2 + 1
+    };
+    S3D.raycaster.setFromCamera(ndc, S3D.camera);
+    const meshes = [];
+    S3D.objects.forEach(o => {
+      if (o.isMesh) meshes.push(o);
+      else o.traverse(c => { if (c.isMesh) meshes.push(c); });
+    });
+    const hits = S3D.raycaster.intersectObjects(meshes, false);
+    if (hits.length === 0) return null;
+    let obj = hits[0].object;
+    while (obj.parent && obj.parent !== S3D.scene && !S3D.objects.includes(obj)) obj = obj.parent;
+    return S3D.objects.includes(obj) ? obj : hits[0].object;
+  }
+  
+  function startDrag3D(e) {
+    canvas3d.setPointerCapture(e.pointerId);
+    S3D.controls.enabled = false;
+    const y0 = S3D.selected[0]?.position.y ?? 0;
+    S3D.drag.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -y0);
+    const rect = canvas3d.getBoundingClientRect();
+    const ndc = {
+      x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+    };
+    S3D.raycaster.setFromCamera(ndc, S3D.camera);
+    const p = new THREE.Vector3();
+    S3D.raycaster.ray.intersectPlane(S3D.drag.plane, p);
+    S3D.drag.lastPoint = p;
+    S3D.drag.active = true;
+    canvas3d.style.cursor = 'grabbing';
+  }
+  
+  function updateDrag3D(e) {
+    const rect = canvas3d.getBoundingClientRect();
+    const ndc = {
+      x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+    };
+    S3D.raycaster.setFromCamera(ndc, S3D.camera);
+    const p = new THREE.Vector3();
+    if (!S3D.raycaster.ray.intersectPlane(S3D.drag.plane, p)) return;
+    const delta = p.clone().sub(S3D.drag.lastPoint);
+    S3D.selected.forEach(o => {
+      o.position.add(delta);
+      if (S3D.snapEnabled) {
+        o.position.x = Math.round(o.position.x * 2) / 2;
+        o.position.z = Math.round(o.position.z * 2) / 2;
+      }
+    });
+    S3D.drag.lastPoint = p;
+  }
+  
+  function endDrag3D() {
+    if (!S3D.drag.active) return;
+    S3D.drag.active = false;
+    S3D.controls.enabled = true;
+    canvas3d.style.cursor = 'grab';
+  }
+  
+  function animate3D() {
+    requestAnimationFrame(() => {
+      if (currentMode === '3d' && S3D.renderer) {
+        S3D.controls.update();
+        S3D.renderer.render(S3D.scene, S3D.camera);
+      }
+      animate3D();
+    });
+  }
+  
+  function render3DLayers() {
+    const list = $('layersList3d');
+    if (!list) return;
+    list.innerHTML = '';
+    [...S3D.objects].reverse().forEach(obj => {
+      const div = document.createElement('div');
+      div.className = 'layer-item' + (S3D.selected.includes(obj) ? ' active' : '');
+      const vis = document.createElement('button');
+      vis.className = 'eye';
+      vis.textContent = obj.visible ? '👁' : '🚫';
+      vis.addEventListener('click', (e) => {
+        e.stopPropagation();
+        obj.visible = !obj.visible;
+        render3DLayers();
+      });
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = obj.userData.name;
+      const del = document.createElement('button');
+      del.className = 'del';
+      del.textContent = '✕';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        remove3D(obj);
+      });
+      div.appendChild(vis); div.appendChild(name); div.appendChild(del);
+      div.addEventListener('click', (e) => select3D(obj, e.shiftKey));
+      list.appendChild(div);
+    });
+  }
+  
+  function remove3D(obj) {
+    S3D.scene.remove(obj);
+    obj.traverse(c => {
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) Array.isArray(c.material) ? c.material.forEach(m => m.dispose()) : c.material.dispose();
+    });
+    S3D.objects = S3D.objects.filter(o => o !== obj);
+    S3D.selected = S3D.selected.filter(o => o !== obj);
+    render3DLayers();
+    update3DPropsPanel();
+    toast('Удалено', '🗑️');
+  }
+  
+  function update3DPropsPanel() {
+    const panel = $('objProps3d');
+    const noSel = $('noSel3d');
+    const count = $('sel3dCount');
+    if (!panel) return;
+    if (S3D.selected.length === 0) {
+      panel.style.display = 'none';
+      noSel.style.display = 'block';
+      if (count) count.textContent = '';
+      return;
+    }
+    panel.style.display = 'block';
+    noSel.style.display = 'none';
+    if (count) count.textContent = S3D.selected.length > 1 ? `(${S3D.selected.length})` : '';
+    const o = S3D.selected[0];
+    $('objRotY3d').value = Math.round(THREE.MathUtils.radToDeg(o.rotation.y));
+    $('objRotY3dVal').textContent = Math.round(THREE.MathUtils.radToDeg(o.rotation.y)) + '°';
+    $('objScale3d').value = Math.round(o.scale.x * 100);
+    $('objScale3dVal').textContent = o.scale.x.toFixed(2) + '×';
+    $('objY3d').value = Math.round(o.position.y * 10);
+    $('objY3dVal').textContent = o.position.y.toFixed(1);
+  }
+  
+  $('objRotY3d').addEventListener('input', e => {
+    const deg = parseFloat(e.target.value);
+    S3D.selected.forEach(o => o.rotation.y = THREE.MathUtils.degToRad(deg));
+    $('objRotY3dVal').textContent = deg + '°';
+  });
+  $('objScale3d').addEventListener('input', e => {
+    const s = parseFloat(e.target.value) / 100;
+    S3D.selected.forEach(o => o.scale.setScalar(s));
+    $('objScale3dVal').textContent = s.toFixed(2) + '×';
+  });
+  $('objY3d').addEventListener('input', e => {
+    const y = parseFloat(e.target.value) / 10;
+    S3D.selected.forEach(o => o.position.y = y);
+    $('objY3dVal').textContent = y.toFixed(1);
+  });
+  $('btnDup3d').addEventListener('click', () => {
+    S3D.selected.forEach(o => {
+      const dup = o.clone(true);
+      dup.position.x += 0.8;
+      dup.position.z += 0.8;
+      dup.userData.name = o.userData.name + ' (копия)';
+      S3D.scene.add(dup);
+      S3D.objects.push(dup);
+    });
+    render3DLayers();
+    toast('Дублировано', '📋');
+  });
+  $('btnDel3d').addEventListener('click', () => {
+    [...S3D.selected].forEach(o => remove3D(o));
+  });
+  
+  // 3D примитивы
+  document.querySelectorAll('[data-3dprim]').forEach(btn => {
+    btn.addEventListener('click', () => add3DPrimitive(btn.dataset['3dprim']));
+  });
+  
+  // 3D текст
+  $('btnAdd3dText').addEventListener('click', () => {
+    $('text3dInput').value = '';
+    $('text3dModal').classList.add('show');
+    setTimeout(() => $('text3dInput').focus(), 150);
+  });
+  $('text3dOk').addEventListener('click', () => {
+    const t = $('text3dInput').value.trim();
+    if (t) add3DText(t);
+    $('text3dModal').classList.remove('show');
+  });
+  $('text3dCancel').addEventListener('click', () => $('text3dModal').classList.remove('show'));
+  $('text3dInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('text3dOk').click();
+  });
+  
+  // 3D вкладки
+  document.querySelectorAll('#tabs3d .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#tabs3d .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.panel-tab').forEach(p => {
+        p.classList.toggle('active', p.dataset.tabContent === tab.dataset.tab);
+      });
+    });
+  });
+  
+  // 3D сцена
+  $('btnToggleGrid3d').addEventListener('click', () => {
+    S3D.grid.visible = !S3D.grid.visible;
+    $('btnToggleGrid3d').querySelector('span').textContent = 'Сетка: ' + (S3D.grid.visible ? 'вкл' : 'выкл');
+  });
+  $('btnToggleSnap3d').addEventListener('click', () => {
+    S3D.snapEnabled = !S3D.snapEnabled;
+    $('btnToggleSnap3d').querySelector('span').textContent = 'Снап: ' + (S3D.snapEnabled ? 'вкл' : 'выкл');
+  });
+  $('btnResetCam3d').addEventListener('click', () => {
+    S3D.camera.position.set(0, 6, 11);
+    S3D.controls.target.set(0, 0.5, 0);
+    S3D.controls.update();
+    toast('Камера сброшена', '🎯');
+  });
+  $('btnClearScene3d').addEventListener('click', () => {
+    if (!confirm('Удалить все 3D-объекты?')) return;
+    [...S3D.objects].forEach(o => remove3D(o));
+    toast('Сцена очищена', '🧹');
+  });
+  
+  // =================================================================
+  // ПЕРЕКЛЮЧАТЕЛЬ 2D/3D
+  // =================================================================
+  document.querySelectorAll('.mode-switch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (mode === currentMode) return;
+      currentMode = mode;
+      
+      document.querySelectorAll('.mode-switch button').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
+      
+      if (mode === '3d') {
+        if (!init3DIfNeeded()) return;
+        canvasContainer.style.display = 'none';
+        canvas3d.style.display = 'block';
+        $('tabs2d').style.display = 'none';
+        $('tabs3d').style.display = 'flex';
+        status.textContent = '🧊 3D · клик = выбрать · Shift+клик = мульти · тяни = двигать';
+        setTimeout(resize3D, 50);
+        document.querySelectorAll('#tabs3d .tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+        document.querySelectorAll('.panel-tab').forEach(p => {
+          p.classList.toggle('active', p.dataset.tabContent === 'objects3d');
+        });
+      } else {
+        canvasContainer.style.display = 'block';
+        canvas3d.style.display = 'none';
+        $('tabs2d').style.display = 'flex';
+        $('tabs3d').style.display = 'none';
+        status.textContent = '🎨 2D · кисти, слои, объекты, текст';
+        document.querySelectorAll('#tabs2d .tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+        document.querySelectorAll('.panel-tab').forEach(p => {
+          p.classList.toggle('active', p.dataset.tabContent === 'tools');
+        });
+        setTimeout(fitToStage, 50);
+      }
+    });
+  });
+  
+  // =================================================================
+  // СОХРАНЕНИЕ PNG
+  // =================================================================
+  function savePNG() {
+    if (currentMode === '2d') {
+      const out = document.createElement('canvas');
+      out.width = Math.round(state.logicalW * state.dpr);
+      out.height = Math.round(state.logicalH * state.dpr);
+      const o = out.getContext('2d');
+      state.layers.forEach(layer => {
+        if (!layer.visible) return;
+        o.drawImage(layer.canvas, 0, 0);
+      });
+      state.objects.forEach(obj => {
+        o.save();
+        o.translate(obj.x * state.dpr, obj.y * state.dpr);
+        o.rotate(obj.rotation * Math.PI / 180);
+        o.scale(obj.scale, obj.scale);
+        o.font = (obj.font === 'bold' ? '700 ' : '') + obj.fontSize + 'px ' +
+                 (obj.font === 'serif' ? 'Georgia' : obj.font === 'mono' ? 'monospace' : 'Arial');
+        o.fillStyle = obj.color;
+        o.textBaseline = 'top';
+        o.fillText(obj.text, 0, 0);
+        o.restore();
+      });
+      const link = document.createElement('a');
+      link.download = 'fireland_' + Date.now() + '.png';
+      link.href = out.toDataURL('image/png');
+      link.click();
+      toast('Сохранено в PNG', '💾');
+    } else {
+      const prevW = canvas3d.width, prevH = canvas3d.height;
+      const prevPR = S3D.renderer.getPixelRatio();
+      const prevAspect = S3D.camera.aspect;
+      S3D.renderer.setPixelRatio(1);
+      S3D.renderer.setSize(1920, 1080, false);
+      S3D.camera.aspect = 1920 / 1080;
+      S3D.camera.updateProjectionMatrix();
+      S3D.renderer.render(S3D.scene, S3D.camera);
+      const link = document.createElement('a');
+      link.download = 'fireland_3d_' + Date.now() + '.png';
+      link.href = S3D.renderer.domElement.toDataURL('image/png');
+      link.click();
+      S3D.renderer.setPixelRatio(prevPR);
+      S3D.renderer.setSize(prevW / prevPR, prevH / prevPR, false);
+      S3D.camera.aspect = prevAspect;
+      S3D.camera.updateProjectionMatrix();
+      setTimeout(resize3D, 50);
+      toast('3D сохранено в PNG', '💾');
+    }
+  }
+  
+  // =================================================================
+  // ОБРАБОТЧИКИ ОБЩИЕ
+  // =================================================================
+  $('btnUndo').addEventListener('click', undo);
+  $('btnRedo').addEventListener('click', redo);
+  $('btnSave').addEventListener('click', savePNG);
+  
+  // Мобильная панель
+  $('btnMobilePanel').addEventListener('click', () => {
+    panelRight.classList.add('open');
+    overlay.classList.add('show');
+  });
+  $('btnPanelClose').addEventListener('click', () => {
+    panelRight.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  overlay.addEventListener('click', () => {
+    panelRight.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  
+  // Ресайз
+  window.addEventListener('resize', () => {
+    fitToStage();
+    if (currentMode === '3d') resize3D();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      fitToStage();
+      if (currentMode === '3d') resize3D();
+    }, 300);
+  });
+  
+  // Открытие картинки
+  $('fileInput').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        switchMode('2d');
-        setup2D(img.width, img.height);
-        ctx.drawImage(img, 0, 0);
-        saveHistory2D();
-        status.textContent = `${file.name} · ${img.width}×${img.height}`;
+        let w = img.width, h = img.height;
+        const maxDim = 3000;
+        if (w > maxDim || h > maxDim) {
+          const k = maxDim / Math.max(w, h);
+          w = Math.round(w * k);
+          h = Math.round(h * k);
+        }
+        // Переключимся в 2D и загрузим
+        if (currentMode !== '2d') {
+          document.querySelector('.mode-switch button[data-mode="2d"]').click();
+        }
+        pushUndo2D();
+        state.logicalW = w; state.logicalH = h;
+        canvas.width = Math.round(w * state.dpr);
+        canvas.height = Math.round(h * state.dpr);
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        state.layers.forEach(layer => {
+          const nc = document.createElement('canvas');
+          nc.width = Math.round(w * state.dpr);
+          nc.height = Math.round(h * state.dpr);
+          const nctx = nc.getContext('2d', { willReadFrequently: true });
+          nctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+          layer.canvas = nc;
+          layer.ctx = nctx;
+        });
+        state.layers[0].ctx.fillStyle = '#fff';
+        state.layers[0].ctx.fillRect(0, 0, w, h);
+        state.layers[0].ctx.drawImage(img, 0, 0, w, h);
+        composite();
+        fitToStage();
+        toast('Загружено', '📁');
       };
       img.src = ev.target.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(f);
     e.target.value = '';
   });
   
-  bg3dColor.addEventListener('input', e => {
-    if (scene) {
-      scene.background = new THREE.Color(e.target.value);
-      scene.fog.color = new THREE.Color(e.target.value);
-    }
-  });
-  
-  // Мобильная панель
-  document.getElementById('btnTogglePanel').addEventListener('click', () => {
-    sidebar.classList.add('open'); overlay.classList.add('show');
-  });
-  document.getElementById('btnClosePanel').addEventListener('click', () => {
-    sidebar.classList.remove('open'); overlay.classList.remove('show');
-  });
-  overlay.addEventListener('click', () => {
-    sidebar.classList.remove('open'); overlay.classList.remove('show');
-  });
-  
-  // Горячие клавиши
-  document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
-    if (currentMode === '3d') {
-      if (e.key.toLowerCase() === 'w') document.querySelector('.tool[data-tool="translate"]').click();
-      if (e.key.toLowerCase() === 'e') document.querySelector('.tool[data-tool="rotate"]').click();
-      if (e.key.toLowerCase() === 'r') document.querySelector('.tool[data-tool="scale"]').click();
-      if (e.key.toLowerCase() === 'q') document.querySelector('.tool[data-tool="orbit"]').click();
-      if (e.key === 'Delete' && selectedObject) removeObject(selectedObject);
-    }
-    if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'z') { e.preventDefault(); document.getElementById('btnUndo').click(); }
-      if (e.key === 'y') { e.preventDefault(); document.getElementById('btnRedo').click(); }
-      if (e.key === 's') { e.preventDefault(); document.getElementById('btnSave').click(); }
-    }
-  });
-  
-  // ===================== СТАРТ =====================
-  init3D();
-  switchMode('3d');
-  status.textContent = '🔥 FireLand Photoshop 3D v2 · перетащи примитив в сцену';
+  // =================================================================
+  // СТАРТ
+  // =================================================================
+  initCanvas2D();
+  status.textContent = '🔥 FireLand — 2D + 3D редактор';
+  toast('Добро пожаловать в FireLand!', '🔥');
 }
 </script>
 </body>
