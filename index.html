@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="bg-particles" id="bgParticles"></div>
@@ -41,7 +41,7 @@
 </div>
 <div class="tabs">
 <button class="tab-btn active" data-tab="games">🎮 Игры</button>
-<button class="tab-btn experiments-tab" data-tab="experiments">🧪 Эксперименты</button>
+<button class="tab-btn utilities-tab" data-tab="utilities">🛠️ Утилиты</button>
 <button class="tab-btn quests-tab" data-tab="quests">📅 Задания</button>
 <button class="tab-btn leaderboard-tab" data-tab="leaderboard">🏆 Лидеры</button>
 <button class="tab-btn chat-tab" data-tab="chat">💬 Чат</button>
@@ -70,18 +70,18 @@
 </div>
 </div>
 </div>
-<div id="tab-experiments" class="tab-content">
+<div id="tab-utilities" class="tab-content">
 <div class="games-layout">
 <div class="games-list-panel">
-<div class="games-list-title exp"><span>🧪 Эксперименты</span><span class="count" id="expCount">0</span></div>
-<div id="expGrid" class="game-grid"></div>
+<div class="games-list-title util"><span>🛠️ Утилиты</span><span class="count" id="utilCount">0</span></div>
+<div id="utilGrid" class="game-grid"></div>
 </div>
-<div class="game-detail-panel exp-panel" id="expDetailPanel">
-<div class="no-game-selected" id="noExpSelected">
-<div class="icon">🧪</div><div class="text">Выберите эксперимент</div>
-<div class="hint">Нажмите на эксперимент слева, чтобы увидеть описание</div>
+<div class="game-detail-panel util-panel" id="utilDetailPanel">
+<div class="no-game-selected" id="noUtilSelected">
+<div class="icon">🛠️</div><div class="text">Выберите утилиту</div>
+<div class="hint">Нажмите на утилиту слева, чтобы увидеть описание</div>
 </div>
-<div class="game-detail" id="expDetail" style="display:none;"></div>
+<div class="game-detail" id="utilDetail" style="display:none;"></div>
 </div>
 </div>
 </div>
@@ -376,7 +376,7 @@
 </div>
 <div class="support-info">
 <span>📧 <span class="email">ronormav@gmail.com</span></span>
-<span>⚡ <span class="version">v24.0</span></span>
+<span>⚡ <span class="version">v26.0</span></span>
 </div>
 <div class="fireland">🔥 <span>Создано студией FireLand!</span> 🔥</div>
 </div>
@@ -421,7 +421,7 @@
 <div class="game-menu-wrapper" id="gameMenuWrapper">
 <button class="game-menu-trigger" id="gameMenuTrigger" title="Меню"><span></span><span></span><span></span></button>
 <div class="game-menu-dropdown" id="gameMenuDropdown">
-<button class="game-menu-item" id="menuReloadBtn"><span class="menu-icon">🔄</span><span class="menu-text">Перезагрузить игру</span></button>
+<button class="game-menu-item" id="menuReloadBtn"><span class="menu-icon">🔄</span><span class="menu-text">Перезагрузить</span></button>
 <button class="game-menu-item" id="menuSettingsBtn"><span class="menu-icon">⚙️</span><span class="menu-text">Настройки</span></button>
 <button class="game-menu-item" id="menuFullscreenBtn"><span class="menu-icon">⛶</span><span class="menu-text">Полный экран</span></button>
 <div class="game-menu-divider"></div>
@@ -430,7 +430,7 @@
 </div>
 <div class="game-skeleton" id="gameSkeleton">
 <div class="spinner"></div>
-<div class="skeleton-text">🎮 Загрузка игры...</div>
+<div class="skeleton-text">🎮 Загрузка...</div>
 <div class="skeleton-bar"></div>
 </div>
 <iframe id="gameIframe" src="about:blank" loading="eager" allow="fullscreen; gamepad" allowfullscreen></iframe>
@@ -444,9 +444,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="leaderboard.js?v=25"></script>
-<script src="script.js?v=25"></script>
-<script src="messenger.js?v=25"></script>
+<script src="leaderboard.js?v=26"></script>
+<script src="script.js?v=26"></script>
+<script src="messenger.js?v=26"></script>
 <div class="chat-lightbox" id="chatLightbox" style="display:none;">
 <button class="chat-lightbox-close" id="chatLightboxClose">✕</button>
 <img id="chatLightboxImg" src="" alt="">

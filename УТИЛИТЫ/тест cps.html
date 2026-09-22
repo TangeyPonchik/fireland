@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест скорости автокликера</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .container {
+            background: #16213e;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center;
+            width: 400px;
+            max-width: 95%;
+            border: 1px solid #0f3460;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #e94560;
+            letter-spacing: 1px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-box {
+            background: #0f3460;
+            padding: 15px 10px;
+            border-radius: 12px;
+        }
+        .stat-box span {
+            display: block;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #aaa;
+        }
+        .click-zone {
+            background: #1a1a2e;
+            border: 3px dashed #e94560;
+            border-radius: 20px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.1s;
+            margin-bottom: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .click-zone:active {
+            background: #2a2a4e;
+            transform: scale(0.96);
+        }
+        .click-zone p {
+            font-size: 18px;
+            color: #ccc;
+            pointer-events: none;
+        }
+        .click-zone .big {
+            font-size: 42px;
+            color: #fff;
+            font-weight: bold;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            background: #0f3460;
+            border: none;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #e94560;
+            color: #fff;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #e94560;
+            min-height: 24px;
+        }
+        .green {
+            color: #4ecca3 !important;
+        }
+        .note {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ Тест автокликера</h1>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-label">Кликов</div>
+            <span id="clickCounter">0</span>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Скорость</div>
+            <span id="cpsDisplay">0.00</span>
+        </div>
+    </div>
+
+    <div class="click-zone" id="clickZone">
+        <p class="big">🎯</p>
+        <p>Кликай сюда или наведи автокликер</p>
+    </div>
+
+    <div class="controls">
+        <button id="startBtn">▶ Старт</button>
+        <button id="resetBtn">🔄 Сброс</button>
+    </div>
+
+    <div class="result" id="resultText">Нажми «Старт» и начни кликать</div>
+    <div class="note">Измерение происходит в реальном времени</div>
+</div>
+
+<script>
+    // === Игровые переменные ===
+    let clicks = 0;
+    let isRunning = false;
+    let lastTime = Date.now();
+    let timerId = null;
+    let cps = 0;
+
+    // === DOM ===
+    const clickZone = document.getElementById('clickZone');
+    const clickCounter = document.getElementById('clickCounter');
+    const cpsDisplay = document.getElementById('cpsDisplay');
+    const resultText = document.getElementById('resultText');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // === Функция обработки клика ===
+    function handleClick() {
+        if (!isRunning) {
+            resultText.textContent = '❌ Сначала нажми "Старт"!';
+            return;
+        }
+        clicks++;
+        clickCounter.textContent = clicks;
+        updateCPS();
+    }
+
+    // === Обновление CPS ===
+    function updateCPS() {
+        const now = Date.now();
+        const delta = (now - lastTime) / 1000; // секунды
+        if (delta > 0) {
+            // Вычисляем мгновенную скорость: 1 клик / прошедшее время с последнего клика
+            // Но чтобы не прыгало, используем среднюю за последние 0.5 сек через таймер
+        }
+    }
+
+    // === Главный цикл обновления (раз в 100мс) ===
+    function updateStats() {
+        if (!isRunning) return;
+        
+        // Считаем CPS за последние 2 секунды
+        // В данном случае мы просто показываем текущую скорость,
+        // которая обновляется при каждом клике через setInterval.
+        
+        // Для простоты и наглядности: каждый тик таймера пересчитываем CPS по общему времени
+        const now = Date.now();
+        const elapsedSeconds = (now - lastTime) / 1000;
+        
+        if (elapsedSeconds > 0.5) { // Обновляем только если прошло полсекунды (для стабильности)
+            // Если кликов нет, скорость падает
+            if (clicks === 0) {
+                cps = 0;
+            } else {
+                // CPS = общее количество кликов / общее время в секундах
+                const totalTimeSec = (now - lastTime) / 1000;
+                cps = clicks / totalTimeSec;
+            }
+            cpsDisplay.textContent = cps.toFixed(2);
+        }
+        
+        // Если скорость очень высокая (более 20), предупреждаем
+        if (cps > 20 && isRunning) {
+            resultText.textContent = '🔥 Супер-скорость! Это автокликер?';
+            resultText.classList.add('green');
+        } else if (cps > 10 && isRunning) {
+            resultText.textContent = '⚡ Очень быстро!';
+        } else if (isRunning) {
+            resultText.textContent = '🖱️ Кликай или используй автокликер...';
+            resultText.classList.remove('green');
+        }
+    }
+
+    // === Запуск теста ===
+    function startTest() {
+        if (isRunning) return;
+        
+        // Сброс данных перед стартом
+        clicks = 0;
+        clickCounter.textContent = '0';
+        cpsDisplay.textContent = '0.00';
+        cps = 0;
+        lastTime = Date.now(); // Обнуляем таймер
+        resultText.textContent = '⏳ Запуск...';
+        resultText.classList.remove('green');
+        
+        isRunning = true;
+        startBtn.textContent = '⏹ Стоп';
+        
+        // Запускаем обновление статистики раз в 100мс
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(updateStats, 100);
+        
+        resultText.textContent = '✅ Тест запущен! Кликай по зоне.';
+    }
+
+    // === Остановка теста ===
+    function stopTest() {
+        if (!isRunning) return;
+        isRunning = false;
+        clearInterval(timerId);
+        timerId = null;
+        startBtn.textContent = '▶ Старт';
+        
+        // Фиксируем финальную скорость
+        const now = Date.now();
+        const totalSec = (now - lastTime) / 1000;
+        if (totalSec > 0 && clicks > 0) {
+            cps = clicks / totalSec;
+        } else {
+            cps = 0;
+        }
+        cpsDisplay.textContent = cps.toFixed(2);
+        resultText.textContent = `🏁 Готово! Итоговая скорость: ${cps.toFixed(2)} кликов/сек`;
+        resultText.classList.add('green');
+    }
+
+    // === Полный сброс ===
+    function resetTest() {
+        // Если тест запущен, сначала остановим
+        if (isRunning) {
+            clearInterval(timerId);
+            timerId = null;
+            isRunning = false;
+            startBtn.textContent = '▶ Старт';
+        }
+        
+        clicks = 0;
+        cps = 0;
+        clickCounter.textContent = '0';
+        cpsDisplay.textContent = '0.00';
+        lastTime = Date.now();
+        resultText.textContent = '🔄 Сброшено. Нажми "Старт" для нового теста.';
+        resultText.classList.remove('green');
+    }
+
+    // === Обработчики кнопок ===
+    clickZone.addEventListener('click', handleClick);
+
+    startBtn.addEventListener('click', () => {
+        if (isRunning) {
+            stopTest();
+        } else {
+            startTest();
+        }
+    });
+
+    resetBtn.addEventListener('click', resetTest);
+
+    // === Поддержка автокликера (дополнительно) ===
+    // Если автокликер делает клики слишком часто, браузер может их не пропускать,
+    // поэтому этот инструмент покажет реальную скорость, которую видит браузер.
+
+    console.log('⚡ Тест автокликера загружен. Нажми Старт!');
+</script>
+</body>
+</html>

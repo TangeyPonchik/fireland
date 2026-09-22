@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🚀 Космический контрабандист v11</title>
+<title>🚀 Космический контрабандист v12</title>
 <style>
     :root {
         --bg-deep: #03060d;
@@ -295,6 +295,7 @@
     .trade-row .tr-info { min-width: 0; }
     .trade-row .tr-name { font-size: 14px; font-weight: 700; color: #cfe8ff; }
     .trade-row .tr-price { font-size: 12px; color: var(--gold); font-weight: 800; }
+    .trade-row .tr-price .have { color: #c084fc; font-weight: 700; }
     .trade-row .tr-price .badge { font-size: 10px; color: var(--red); margin-left: 6px; }
     .trade-row .tr-btns { display: flex; gap: 6px; }
     .trade-row .tr-btns .btn { padding: 8px 12px; font-size: 12.5px; }
@@ -361,7 +362,7 @@
     .switch::after { content: ''; position: absolute; top: 2px; left: 2px;
         width: 22px; height: 22px; border-radius: 50%; background: #fff;
         transition: .25s; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-    .switch.on::after { transform: translateX(24px); }
+    .switch.on::after { transform: translateX(26px); }
 
     .end-screen { position: fixed; inset: 0; z-index: 200;
         background: radial-gradient(ellipse at center, #0a1830, #02040a);
@@ -405,7 +406,12 @@
         color: #05080f; font-size: 11px; font-weight: 900;
         border-radius: 8px; margin-bottom: 8px; letter-spacing: .5px; }
 
-    /* Адаптив для карты на телефоне */
+    .cargo-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .cargo-line { display: flex; justify-content: space-between; font-size: 12.5px;
+        padding: 6px 10px; background: rgba(15,30,55,.4); border-radius: 8px; }
+    .cargo-line .cl-name { color: #cfe8ff; }
+    .cargo-line .cl-qty { color: #c084fc; font-weight: 800; }
+
     @media (max-width: 900px) {
         .main { grid-template-columns: 1fr; }
         .planet-card { padding: 18px; }
@@ -426,6 +432,7 @@
         .modal { padding: 18px; border-radius: 18px; }
         .modal-ico { width: 44px; height: 44px; font-size: 22px; }
         .modal-title { font-size: 17px; }
+        .toast-wrap { right: 8px; left: 8px; max-width: none; }
     }
 </style>
 </head>
@@ -574,18 +581,19 @@
 /* ============================================================
    ГЛОБАЛЬНАЯ ЗАЩИТА ОТ ПАДЕНИЙ
 ============================================================ */
-window.onerror = function(msg){
+window.onerror = function(msg, src, line, col, err){
     try {
+        var text = typeof msg === 'string' ? msg : (err && err.message) || 'Неизвестная ошибка';
         var wrap = document.getElementById('toastWrap');
         if(wrap){
             var t = document.createElement('div');
             t.className = 'toast danger';
-            t.textContent = '⚠ ' + msg;
+            t.textContent = '⚠ ' + text;
             wrap.appendChild(t);
-            setTimeout(function(){ t.remove(); }, 5000);
+            setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 5000);
         }
     } catch(e){}
-    console.error(msg);
+    if(window.console && console.error) console.error(msg, err);
     return false;
 };
 
@@ -601,28 +609,28 @@ var PLANETS = [
       risk:0.45, fuelCost:15 },
     { id:2, name:"Эдем", icon:"🌿", desc:"Исследовательский форпост. Наука превыше всего.",
       goods:{spice:50, tech:150, food:30, metal:110, meds:70, fuel:80, bio:90, jewels:180},
-      risk:0.1, fuelCost:12 },
+      risk:0.10, fuelCost:12 },
     { id:3, name:"Нексус", icon:"🔮", desc:"Чёрный рынок. Всё, что запрещено — здесь разрешено.",
       goods:{spice:150, tech:40, food:110, metal:60, meds:160, weapons:120, slaves:200, jewels:90},
       risk:0.55, fuelCost:18 },
     { id:4, name:"Вулкан", icon:"🌋", desc:"Опасная добыча. Рудники кипят, воздух жжёт лёгкие.",
       goods:{metal:25, fuel:50, tech:100, food:130, weapons:90, slaves:220, meds:150, bio:170},
-      risk:0.4, fuelCost:20 },
+      risk:0.40, fuelCost:20 },
     { id:5, name:"Ледяная", icon:"❄️", desc:"Контрабанда на льду. Холод хранит секреты.",
       goods:{food:150, fuel:40, tech:110, metal:80, meds:90, spice:100, jewels:140, bio:120},
-      risk:0.3, fuelCost:14 },
+      risk:0.30, fuelCost:14 },
     { id:6, name:"Пустошь", icon:"🏜️", desc:"Анархия. Никаких законов, только выживание.",
       goods:{metal:35, fuel:45, food:160, tech:130, weapons:80, slaves:180, meds:170, spice:140},
-      risk:0.6, fuelCost:16 },
+      risk:0.60, fuelCost:16 },
     { id:7, name:"Аномалия", icon:"🌌", desc:"Неизвестность. Здесь пропадают корабли.",
       goods:{jewels:60, bio:50, tech:140, spice:170, fuel:100, meds:180, weapons:150, slaves:280},
       risk:0.75, fuelCost:25 },
     { id:8, name:"Цитадель", icon:"🏛️", desc:"Столица торговли. Центр власти и интриг.",
       goods:{spice:90, tech:80, food:70, metal:100, meds:60, fuel:70, jewels:110, bio:100},
-      risk:0.2, fuelCost:12 },
+      risk:0.20, fuelCost:12 },
     { id:9, name:"Реликт", icon:"🗿", desc:"Руины древней цивилизации. Артефакты и проклятия.",
       goods:{jewels:40, bio:30, tech:160, spice:180, fuel:110, meds:190, weapons:170, slaves:300},
-      risk:0.7, fuelCost:22 }
+      risk:0.70, fuelCost:22 }
 ];
 
 var GOODS = [
@@ -639,17 +647,17 @@ var GOODS = [
 ];
 
 var CREW_MEMBERS = [
-    {id:"colleague", name:"Коллега", icon:"🤝", desc:"+20 кр/мин — пассивный доход (работает в оффлайне)", cost:200, income:20},
+    {id:"colleague", name:"Коллега", icon:"🤝", desc:"Пассивный доход (работает в оффлайне)", cost:200, income:20},
     {id:"mechanic", name:"Механик", icon:"🔧", desc:"Скидка 20% на заправку", cost:150},
     {id:"trader", name:"Торговый агент", icon:"💼", desc:"+15% к продажам", cost:200},
-    {id:"scanner", name:"Сканерщик", icon:"📡", desc:"−10% риска событий при перелёте", cost:250, effect:"scanner"},
-    {id:"cook", name:"Повар", icon:"🍳", desc:"+1 мораль (защита от бунта)", cost:120, effect:"cook"},
-    {id:"doctor", name:"Врач", icon:"⚕️", desc:"Защита от эпидемий", cost:220, effect:"doctor"},
-    {id:"gunner", name:"Стрелок", icon:"🔫", desc:"+1 к оружию в бою", cost:280, effect:"gunner"},
-    {id:"hacker", name:"Хакер", icon:"💻", desc:"Взлом систем (защита от вирусов)", cost:300, effect:"hacker"},
-    {id:"navigator", name:"Штурман", icon:"🧭", desc:"−20% топлива на перелёт", cost:180, effect:"navigator"},
-    {id:"psychologist", name:"Психолог", icon:"🧠", desc:"+2 морали (защита от бунта)", cost:160, effect:"psychologist"},
-    {id:"scout", name:"Разведчик", icon:"🔭", desc:"Показывает события заранее", cost:240, effect:"scout"}
+    {id:"scanner", name:"Сканерщик", icon:"📡", desc:"−10% риска событий при перелёте", cost:250},
+    {id:"cook", name:"Повар", icon:"🍳", desc:"+1 мораль (защита от бунта)", cost:120},
+    {id:"doctor", name:"Врач", icon:"⚕️", desc:"Защита от эпидемий", cost:220},
+    {id:"gunner", name:"Стрелок", icon:"🔫", desc:"+1 к оружию в бою", cost:280},
+    {id:"hacker", name:"Хакер", icon:"💻", desc:"Защита от вирусов", cost:300},
+    {id:"navigator", name:"Штурман", icon:"🧭", desc:"−20% топлива на перелёт", cost:180},
+    {id:"psychologist", name:"Психолог", icon:"🧠", desc:"+2 морали (защита от бунта)", cost:160},
+    {id:"scout", name:"Разведчик", icon:"🔭", desc:"Показывает события заранее", cost:240}
 ];
 
 var STORY = [
@@ -721,7 +729,7 @@ var STORY = [
       canAdvance: function(s){ return s.cargo >= 3 || s.money >= 100; },
       actionLabel: "Отдать часть груза (нужно 3 т или 100 кр)",
       action: function(s){
-        if(s.cargo >= 3){ s.cargo -= 3; return { success:true, text:"Ты отдаёшь 3 тонны груза. Дверь открывается.", log:"🎒 Отдано 3 т груза", nextChapter:11 }; }
+        if(s.cargo >= 3){ removeRandomCargo(3); return { success:true, text:"Ты отдаёшь 3 тонны груза. Дверь открывается.", log:"🎒 Отдано 3 т груза", nextChapter:11 }; }
         s.money -= 100; return { success:true, text:"Ты отдаёшь 100 кредитов. Дверь открывается.", log:"💰 Отдано 100 кр", nextChapter:11 }; } },
     { chapter:"Глава 12", title:"Встреча",
       text:"Ты у Аномалии. Войди и найди брата.",
@@ -735,11 +743,11 @@ var STORY = [
 ============================================================ */
 var EVENTS = [
     {id:"storm", icon:"🌀", title:"Космический шторм", text:"Твой корабль попал в шторм.", choices:[
-        {text:"🌀 Прорваться сквозь", effect:function(){ if(Math.random()<0.5){cargo=Math.max(0,cargo-3); log("🌀 Потеряно 3 т груза.","danger");} else log("🌀 Шторм пройден!","success"); }},
-        {text:"↩️ Обойти (топливо -10)", effect:function(){ fuel=Math.max(0,fuel-10); log("🌀 Топливо -10.","event"); }}
+        {text:"🌀 Прорваться сквозь", effect:function(){ if(Math.random()<0.5){ var r = removeRandomCargo(3); log("🌀 Потеряно " + r + " т груза.","danger"); } else log("🌀 Шторм пройден!","success"); }},
+        {text:"↩️ Обойти (топливо −10)", effect:function(){ fuel=Math.max(0,fuel-10); log("🌀 Топливо −10.","event"); }}
     ]},
     {id:"aliens", icon:"👽", title:"Инопланетяне", text:"Неизвестный корабль предлагает обмен.", choices:[
-        {text:"🤝 Обменять 5 т груза на 150 кр", effect:function(){ if(cargo>=5){cargo-=5;money+=150;log("👽 +150 кр.","success");} else log("👽 Мало груза.","danger"); }},
+        {text:"🤝 Обменять 5 т груза на 150 кр", effect:function(){ if(totalCargo()>=5){ removeRandomCargo(5); money+=150; log("👽 +150 кр.","success"); } else log("👽 Мало груза.","danger"); }},
         {text:"🚫 Отказаться", effect:function(){ log("👽 Улетели.","event"); }}
     ]},
     {id:"distress", icon:"📡", title:"Сигнал бедствия", text:"Корабль терпит крушение.", choices:[
@@ -747,72 +755,72 @@ var EVENTS = [
         {text:"➡️ Мимо", effect:function(){ factionPirate+=1; log("📡 Пираты запомнили.","event"); }}
     ]},
     {id:"derelict", icon:"💀", title:"Заброшенный корабль", text:"Дрейфующий корабль.", choices:[
-        {text:"🔍 Обыскать", effect:function(){ if(Math.random()<0.6){var g=GOODS[rand(0,GOODS.length-1)]; cargo=Math.min(maxCargo,cargo+2); log("💀 +2 т "+g.name+"!","success");} else {armor=Math.max(1,armor-1); log("💀 Броня -1.","danger");} }},
+        {text:"🔍 Обыскать", effect:function(){ if(Math.random()<0.6){ var added = addRandomCargo(2); log("💀 +" + added + " т груза!","success"); } else { armor=Math.max(1,armor-1); log("💀 Броня −1.","danger"); } }},
         {text:"↩️ Улететь", effect:function(){ log("💀 Мимо.","event"); }}
     ]},
     {id:"anomaly", icon:"🌟", title:"Аномалия", text:"Светящаяся сфера манит.", choices:[
-        {text:"🔬 Исследовать", effect:function(){ if(Math.random()<0.5){money+=200;log("🌟 +200 кр.","success");} else {fuel=Math.max(0,fuel-20);log("🌟 Топливо -20.","danger");} }},
+        {text:"🔬 Исследовать", effect:function(){ if(Math.random()<0.5){ money+=200; log("🌟 +200 кр.","success"); } else { fuel=Math.max(0,fuel-20); log("🌟 Топливо −20.","danger"); } }},
         {text:"↩️ Обойти", effect:function(){ log("🌟 Обошёл.","event"); }}
     ]},
     {id:"ambush", icon:"🏴‍☠️", title:"Пиратская засада", text:"Пираты требуют плату.", choices:[
-        {text:"💰 Откупиться (50 кр)", effect:function(){ if(money>=50){money-=50;log("🏴‍☠️ -50 кр.","event");} else {money=Math.max(0,money-30);log("🏴‍☠️ Ограбили!","danger");} }},
-        {text:"⚔️ Сражаться", effect:function(){ var w = weapon + (crew.some(function(c){return c.id==='gunner';})?1:0); if(w>=2){log("🏴‍☠️ Отбился!","success");factionPirate-=1;} else {money=Math.max(0,money-80);log("🏴‍☠️ -80 кр.","danger");} }},
-        {text:"💨 Убежать", effect:function(){ if(engine>=2){log("🏴‍☠️ Сбежал!","success");} else {cargo=Math.max(0,cargo-5);log("🏴‍☠️ -5 т.","danger");} }}
+        {text:"💰 Откупиться (50 кр)", effect:function(){ if(money>=50){ money-=50; log("🏴‍☠️ −50 кр.","event"); } else { var loss=Math.min(money,30); money-=loss; log("🏴‍☠️ Ограбили на " + loss + " кр!","danger"); } }},
+        {text:"⚔️ Сражаться", effect:function(){ var w = weapon + (hasCrew('gunner')?1:0); if(w>=2){ log("🏴‍☠️ Отбился!","success"); factionPirate-=1; } else { money=Math.max(0,money-80); log("🏴‍☠️ −80 кр.","danger"); } }},
+        {text:"💨 Убежать", effect:function(){ if(engine>=2){ log("🏴‍☠️ Сбежал!","success"); } else { var r = removeRandomCargo(5); log("🏴‍☠️ −" + r + " т.","danger"); } }}
     ]},
     {id:"supply", icon:"🎁", title:"Контейнер с припасами", text:"Дрейфующий контейнер.", choices:[
-        {text:"📦 Открыть", effect:function(){ var r=rand(1,3); if(r===1){money+=100;log("🎁 +100 кр.","success");} else if(r===2){fuel=Math.min(maxFuel,fuel+30);log("🎁 +30 топлива.","success");} else {cargo=Math.min(maxCargo,cargo+3);log("🎁 +3 т.","success");} }},
+        {text:"📦 Открыть", effect:function(){ var r=rand(1,3); if(r===1){ money+=100; log("🎁 +100 кр.","success"); } else if(r===2){ fuel=Math.min(maxFuel,fuel+30); log("🎁 +30 топлива.","success"); } else { var added = addRandomCargo(3); log("🎁 +" + added + " т.","success"); } }},
         {text:"↩️ Оставить", effect:function(){ log("🎁 Мимо.","event"); }}
     ]},
     {id:"epidemic", icon:"🦠", title:"Эпидемия", text:"Экипаж заболел.", choices:[
-        {text:"💊 Лекарства (100 кр)", effect:function(){ if(money>=100){money-=100;log("🦠 Остановлено.","success");} else {var idx=crew.findIndex(function(c){return c.id!=='colleague';}); if(idx>=0) crew.splice(idx,1); log("🦠 Потерян член экипажа.","danger");} }},
-        {text:"🚪 Изолировать", effect:function(){ var idx=crew.findIndex(function(c){return c.id!=='colleague';}); if(idx>=0){crew.splice(idx,1); log("🦠 Потерян.","danger");} else log("🦠 Некого.","event"); }}
+        {text:"💊 Лекарства (100 кр)", effect:function(){ if(hasCrew('doctor')){ log("🦠 Врач спас экипаж!","success"); return; } if(money>=100){ money-=100; log("🦠 Остановлено.","success"); } else { var idx=findHirableCrewIndex(); if(idx>=0) crew.splice(idx,1); log("🦠 Потерян член экипажа.","danger"); } }},
+        {text:"🚪 Изолировать", effect:function(){ var idx=findHirableCrewIndex(); if(idx>=0){ crew.splice(idx,1); log("🦠 Потерян член экипажа.","danger"); } else log("🦠 Некого терять.","event"); }}
     ]},
     {id:"smuggler", icon:"🕶️", title:"Тайная сделка", text:"Контрабандист предлагает нелегальный груз.", choices:[
-        {text:"💸 Купить (200 кр)", effect:function(){ if(money>=200 && cargo+5<=maxCargo){money-=200;cargo+=5;factionPirate+=2;log("🕶️ +5 т.","success");} else if(cargo+5>maxCargo){log("🕶️ Мало места!","danger");} else log("🕶️ Мало денег.","danger"); }},
+        {text:"💸 Купить (200 кр)", effect:function(){ if(money<200){ log("🕶️ Мало денег.","danger"); return; } if(totalCargo()+5>maxCargo){ log("🕶️ Мало места!","danger"); return; } money-=200; addRandomIllegalCargo(5); factionPirate+=2; log("🕶️ +5 т нелегального груза.","success"); }},
         {text:"🚫 Отказаться", effect:function(){ factionMerch+=1; log("🕶️ Торговцы довольны.","event"); }}
     ]},
     {id:"patrol", icon:"🚨", title:"Патруль торговцев", text:"Проверка груза.", choices:[
-        {text:"💵 Пошлина (30 кр)", effect:function(){ if(money>=30){money-=30;log("🚨 Уплачено.","event");} else {cargo=Math.max(0,cargo-2);log("🚨 -2 т.","danger");} }},
-        {text:"💨 Бежать", effect:function(){ if(engine>=2){log("🚨 Ушёл!","success");factionMerch-=1;} else {cargo=Math.max(0,cargo-5);log("🚨 -5 т.","danger");} }}
+        {text:"💵 Пошлина (30 кр)", effect:function(){ if(money>=30){ money-=30; log("🚨 Уплачено.","event"); } else { var r=removeRandomCargo(2); log("🚨 −" + r + " т.","danger"); } }},
+        {text:"💨 Бежать", effect:function(){ if(engine>=2){ log("🚨 Ушёл!","success"); factionMerch-=1; } else { var r=removeRandomCargo(5); log("🚨 −" + r + " т.","danger"); } }}
     ]},
     {id:"wormhole", icon:"🕳️", title:"Червоточина", text:"Может сократить путь.", choices:[
-        {text:"🌀 Войти", effect:function(){ if(Math.random()<0.5){day+=2;log("🕳️ Перенесло!","success");} else {fuel=Math.max(0,fuel-30);log("🕳️ -30 топлива.","danger");} }},
+        {text:"🌀 Войти", effect:function(){ if(Math.random()<0.5){ day+=2; log("🕳️ Перенесло на 2 дня вперёд!","success"); } else { fuel=Math.max(0,fuel-30); log("🕳️ −30 топлива.","danger"); } }},
         {text:"↩️ Обойти", effect:function(){ log("🕳️ Мимо.","event"); }}
     ]},
     {id:"artifact", icon:"🗝️", title:"Древний артефакт", text:"Странный предмет шепчет.", choices:[
-        {text:"✋ Взять", effect:function(){ if(inventory.some(function(i){return i.name.indexOf('Древний ключ')>=0;})){log("🗝️ Уже есть.","event");} else {inventory.push({name:"🗝️ Древний ключ", desc:"Открывает путь"}); log("🗝️ Получен!","success");} }},
+        {text:"✋ Взять", effect:function(){ if(inventory.some(function(i){return i.name.indexOf('Древний ключ')>=0;})){ log("🗝️ Уже есть.","event"); } else { inventory.push({name:"🗝️ Древний ключ", desc:"Открывает путь"}); log("🗝️ Получен!","success"); } }},
         {text:"↩️ Оставить", effect:function(){ log("🗝️ Оставил.","event"); }}
     ]},
     {id:"mutiny", icon:"⚔️", title:"Бунт", text:"Экипаж требует повышения.", choices:[
-        {text:"💸 Заплатить (100 кр)", effect:function(){ if(money>=100){money-=100;log("⚔️ Подавлен.","success");} else {var idx=crew.findIndex(function(c){return c.id!=='colleague';}); if(idx>=0) crew.splice(idx,1); log("⚔️ Потерян член.","danger");} }},
-        {text:"🔫 Угрожать", effect:function(){ var morale = (crew.some(function(c){return c.id==='psychologist';})?2:0) + (crew.some(function(c){return c.id==='cook';})?1:0); if(weapon+morale>=3){log("⚔️ Подчинились.","success");} else {var idx=crew.findIndex(function(c){return c.id!=='colleague';}); if(idx>=0) crew.splice(idx,1); log("⚔️ Потерян.","danger");} }}
+        {text:"💸 Заплатить (100 кр)", effect:function(){ if(money>=100){ money-=100; log("⚔️ Подавлен.","success"); } else { var idx=findHirableCrewIndex(); if(idx>=0){ crew.splice(idx,1); log("⚔️ Потерян член экипажа.","danger"); } else log("⚔️ Некого терять.","event"); } }},
+        {text:"🔫 Угрожать", effect:function(){ var morale = (hasCrew('psychologist')?2:0) + (hasCrew('cook')?1:0); if(weapon+morale>=3){ log("⚔️ Подчинились.","success"); } else { var idx=findHirableCrewIndex(); if(idx>=0){ crew.splice(idx,1); log("⚔️ Потерян член экипажа.","danger"); } else log("⚔️ Некого терять.","event"); } }}
     ]},
     {id:"treasure", icon:"🏴‍☠️", title:"Карта сокровищ", text:"Найдена карта.", choices:[
-        {text:"🗺️ Искать", effect:function(){ if(Math.random()<0.6){money+=100;log("🏴‍☠️ +100 кр.","success");} else {fuel=Math.max(0,fuel-20);log("🏴‍☠️ -20 топлива.","danger");} }},
+        {text:"🗺️ Искать", effect:function(){ if(Math.random()<0.6){ money+=100; log("🏴‍☠️ +100 кр.","success"); } else { fuel=Math.max(0,fuel-20); log("🏴‍☠️ −20 топлива.","danger"); } }},
         {text:"💸 Продать (80 кр)", effect:function(){ money+=80; log("🏴‍☠️ +80 кр.","event"); }}
     ]},
     {id:"love", icon:"💖", title:"Романтическая встреча", text:"Кто-то особенный.", choices:[
-        {text:"💕 Провести время", effect:function(){ if(crew.length<12 && !crew.some(function(c){return c.id==='companion';})){crew.push({id:"companion", name:"Компаньон", icon:"💖", desc:"+мораль"}); log("💖 Присоединился!","success");} else log("💖 Не сейчас.","event"); }},
+        {text:"💕 Провести время", effect:function(){ if(crew.length<12 && !hasCrew('companion')){ crew.push({id:"companion", name:"Компаньон", icon:"💖", desc:"+мораль"}); log("💖 Присоединился!","success"); } else log("💖 Не сейчас.","event"); }},
         {text:"🚀 Улететь", effect:function(){ log("💖 Дальше.","event"); }}
     ]},
     {id:"virus", icon:"🖥️", title:"Компьютерный вирус", text:"Системы заражены.", choices:[
-        {text:"💻 Взломать", effect:function(){ if(crew.some(function(c){return c.id==="hacker";})){log("🖥️ Удалён!","success");} else {money=Math.max(0,money-50);log("🖥️ -50 кр.","danger");} }},
-        {text:"🔄 Перезагрузить", effect:function(){ if(Math.random()<0.5){log("🖥️ Помогло.","success");} else {fuel=Math.max(0,fuel-10);log("🖥️ -10 топлива.","danger");} }}
+        {text:"💻 Взломать", effect:function(){ if(hasCrew('hacker')){ log("🖥️ Удалён!","success"); } else { money=Math.max(0,money-50); log("🖥️ −50 кр.","danger"); } }},
+        {text:"🔄 Перезагрузить", effect:function(){ if(Math.random()<0.5){ log("🖥️ Помогло.","success"); } else { fuel=Math.max(0,fuel-10); log("🖥️ −10 топлива.","danger"); } }}
     ]},
     {id:"refugee", icon:"🆘", title:"Беженцы", text:"Просят убежища.", choices:[
         {text:"🤝 Взять", effect:function(){ factionExplorer+=2; reputation+=1; log("🆘 +репутация.","success"); }},
         {text:"🚫 Отказать", effect:function(){ factionPirate+=1; log("🆘 Пираты одобряют.","event"); }}
     ]},
     {id:"blackmarket", icon:"🕳️", title:"Чёрный рынок", text:"Редкий товар.", choices:[
-        {text:"💎 Купить (150 кр)", effect:function(){ if(money>=150){money-=150;inventory.push({name:"💎 Кристалл вечности",desc:"+10 груза"});maxCargo+=10;log("💎 +10 груза!","success");} else log("🕳️ Мало денег.","danger"); }},
+        {text:"💎 Купить (150 кр)", effect:function(){ if(money>=150){ money-=150; inventory.push({name:"💎 Кристалл вечности",desc:"+10 груза"}); maxCargo+=10; log("💎 +10 груза!","success"); } else log("🕳️ Мало денег.","danger"); }},
         {text:"🚫 Отказаться", effect:function(){ log("🕳️ Ушёл.","event"); }}
     ]},
     {id:"signal", icon:"📶", title:"Загадочный сигнал", text:"Ведёт к неизвестной планете.", choices:[
-        {text:"📡 Следовать", effect:function(){ var newP = rand(0,PLANETS.length-1); if(newP === currentPlanet){log("📶 Сигнал с этой же планеты!","event");} else {currentPlanet=newP; day++; visitedPlanets[currentPlanet]=true; fuel=Math.max(0,fuel-5); log("📶 Прибыл на "+PLANETS[currentPlanet].name+"! (-5 топлива)","event");} }},
+        {text:"📡 Следовать", effect:function(){ var newP = rand(0,PLANETS.length-1); if(newP === currentPlanet){ log("📶 Сигнал ведёт на эту же планету!","event"); } else if(fuel < 5){ log("📶 Мало топлива для прыжка!","danger"); } else { fuel=Math.max(0,fuel-5); currentPlanet=newP; day++; visitedPlanets[currentPlanet]=true; log("📶 Прибыл на "+PLANETS[currentPlanet].name+"! (−5 топлива)","event"); updateUI(); } }},
         {text:"🚫 Игнорировать", effect:function(){ log("📶 Затих.","event"); }}
     ]},
     {id:"gift", icon:"🎀", title:"Тайный подарок", text:"Посылка с запиской: «От друга»", choices:[
-        {text:"🎁 Открыть", effect:function(){ var r=rand(1,3); if(r===1){money+=100;log("🎁 +100 кр!","success");} else if(r===2){fuel=Math.min(maxFuel,fuel+50);log("🎁 +50 топлива!","success");} else {reputation+=1;log("🎁 +1 репутация!","success");} }},
+        {text:"🎁 Открыть", effect:function(){ var r=rand(1,3); if(r===1){ money+=100; log("🎁 +100 кр!","success"); } else if(r===2){ fuel=Math.min(maxFuel,fuel+50); log("🎁 +50 топлива!","success"); } else { reputation+=1; log("🎁 +1 репутация!","success"); } }},
         {text:"🚫 Выбросить", effect:function(){ log("🎁 Выбросил.","event"); }}
     ]}
 ];
@@ -820,15 +828,19 @@ var EVENTS = [
 /* ============================================================
    СОСТОЯНИЕ
 ============================================================ */
-var SAVE_KEY = 'space_smuggler_save_v11';
-var SETTINGS_KEY = 'space_smuggler_settings_v11';
-var TICK_KEY = 'space_smuggler_tick_v11';
+var SAVE_KEY = 'space_smuggler_save_v12';
+var SETTINGS_KEY = 'space_smuggler_settings_v12';
+var TICK_KEY = 'space_smuggler_tick_v12';
 
-var money = 300, cargo = 0, maxCargo = 50, reputation = 0;
+var money = 300;
+var cargo = {};            // { goodId: quantity }
+var maxCargo = 50;
+var reputation = 0;
 var armor = 1, engine = 1, weapon = 1, scanner = 1;
 var fuel = 100, maxFuel = 100;
 var day = 1;
-var crew = [], inventory = [];
+var crew = [];
+var inventory = [];
 var factionMerch = 0, factionPirate = 0, factionExplorer = 0;
 var currentPlanet = 0;
 var visitedPlanets = {0:true};
@@ -842,11 +854,8 @@ var settings = { sound:true, autosave:true, anim:true };
 var logHistory = [];
 var lastIncomeTick = Date.now();
 var lastOfflineToastShown = false;
-
-/* Кэш для оптимизации */
 var _cachedHint = '';
-var _cachedMarketKey = '';
-var _lastUIUpdate = 0;
+var emergencyUsedDay = 0;
 
 /* ============================================================
    УТИЛИТЫ
@@ -860,16 +869,63 @@ function escapeHtml(s){
 function fmt(n){
     return String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
-
 function log(msg, type){
     type = type || '';
     logHistory.unshift({msg:msg, type:type, t:Date.now()});
     if(logHistory.length > 80) logHistory.pop();
 }
-
 function hasCrew(id){
     for(var i=0;i<crew.length;i++){ if(crew[i].id === id) return true; }
     return false;
+}
+function findHirableCrewIndex(){
+    for(var i=0;i<crew.length;i++){
+        if(crew[i].id !== 'colleague' && crew[i].id !== 'companion') return i;
+    }
+    return -1;
+}
+
+/* ---- Груз ---- */
+function totalCargo(){
+    var t = 0;
+    for(var k in cargo){ if(cargo.hasOwnProperty(k)) t += cargo[k]; }
+    return t;
+}
+function addCargoItem(id, n){
+    if(!n) return;
+    cargo[id] = (cargo[id]||0) + n;
+    if(cargo[id] <= 0) delete cargo[id];
+}
+function removeRandomCargo(n){
+    var removed = 0;
+    while(removed < n){
+        var keys = Object.keys(cargo);
+        if(keys.length === 0) break;
+        var k = keys[rand(0, keys.length-1)];
+        cargo[k]--;
+        if(cargo[k] <= 0) delete cargo[k];
+        removed++;
+    }
+    return removed;
+}
+function addRandomCargo(n){
+    var added = 0;
+    while(added < n && totalCargo() < maxCargo){
+        var g = GOODS[rand(0, GOODS.length-1)];
+        addCargoItem(g.id, 1);
+        added++;
+    }
+    return added;
+}
+function addRandomIllegalCargo(n){
+    var illegal = GOODS.filter(function(g){ return g.illegal; });
+    var added = 0;
+    while(added < n && totalCargo() < maxCargo){
+        var g = illegal[rand(0, illegal.length-1)];
+        addCargoItem(g.id, 1);
+        added++;
+    }
+    return added;
 }
 
 /* ============================================================
@@ -911,7 +967,7 @@ function toast(msg, type){
     if(type === 'success') sndGood();
     else if(type === 'danger') sndBad();
     else if(type === 'gold') sndGold();
-    setTimeout(function(){ if(t.parentNode) t.remove(); }, 3200);
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3200);
 }
 
 /* ============================================================
@@ -955,24 +1011,31 @@ function closeChoiceModal(){ $('choiceModal').classList.remove('show'); }
    СОХРАНЕНИЕ
 ============================================================ */
 function saveGame(){
+    if(gameOver) return;
     if(!settings.autosave && !window.__forceSave) return;
     try {
         var data = {
-            money:Math.floor(money), cargo:cargo, maxCargo:maxCargo, reputation:reputation,
-            armor:armor, engine:engine, weapon:weapon, scanner:scanner,
-            fuel:fuel, maxFuel:maxFuel, day:day,
-            crew:crew, inventory:inventory,
-            factionMerch:factionMerch, factionPirate:factionPirate, factionExplorer:factionExplorer,
-            currentPlanet:currentPlanet, visitedPlanets:visitedPlanets,
-            storyChapter:storyChapter, storyFlags:storyFlags, gameOver:gameOver,
-            incomePerMinute:incomePerMinute, lastIncomeTick:lastIncomeTick,
-            pendingIncome:pendingIncome,
-            logHistory: logHistory.slice(0,30),
+            v: 12,
+            money: Math.floor(money),
+            cargo: cargo,
+            maxCargo: maxCargo,
+            reputation: reputation,
+            armor: armor, engine: engine, weapon: weapon, scanner: scanner,
+            fuel: fuel, maxFuel: maxFuel, day: day,
+            crew: crew, inventory: inventory,
+            factionMerch: factionMerch, factionPirate: factionPirate, factionExplorer: factionExplorer,
+            currentPlanet: currentPlanet, visitedPlanets: visitedPlanets,
+            storyChapter: storyChapter, storyFlags: storyFlags,
+            incomePerMinute: incomePerMinute,
+            lastIncomeTick: lastIncomeTick,
+            pendingIncome: pendingIncome,
+            emergencyUsedDay: emergencyUsedDay,
+            logHistory: logHistory.slice(0, 30),
             savedAt: Date.now()
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(data));
         try { localStorage.setItem(TICK_KEY, String(lastIncomeTick)); } catch(e){}
-    } catch(e){ console.warn('Save failed', e); }
+    } catch(e){ if(window.console) console.warn('Save failed', e); }
 }
 
 function loadGame(){
@@ -981,32 +1044,42 @@ function loadGame(){
         if(!raw) return false;
         var d = JSON.parse(raw);
         if(typeof d.money !== 'number') return false;
-        money = Math.floor(d.money); cargo = d.cargo||0; maxCargo = d.maxCargo||50;
+        money = Math.floor(d.money);
+        // Миграция старого формата cargo (число) -> объект
+        if(d.cargo && typeof d.cargo === 'object' && !Array.isArray(d.cargo)){
+            cargo = {};
+            for(var k in d.cargo){ if(d.cargo.hasOwnProperty(k) && typeof d.cargo[k] === 'number') cargo[k] = d.cargo[k]; }
+        } else {
+            cargo = {};
+        }
+        maxCargo = Math.max(1, d.maxCargo||50);
         reputation = d.reputation||0;
         armor = clamp(d.armor||1,1,5); engine = clamp(d.engine||1,1,5);
         weapon = clamp(d.weapon||1,1,5); scanner = clamp(d.scanner||1,1,5);
-        fuel = clamp(d.fuel||100,0,d.maxFuel||100); maxFuel = d.maxFuel||100;
+        maxFuel = Math.max(10, d.maxFuel||100);
+        fuel = clamp(d.fuel||100, 0, maxFuel);
         day = Math.max(1, d.day||1);
         crew = Array.isArray(d.crew) ? d.crew.filter(function(c){ return c && c.id; }) : [];
         inventory = Array.isArray(d.inventory) ? d.inventory.filter(function(i){ return i && i.name; }) : [];
-        factionMerch = d.factionMerch||0; factionPirate = d.factionPirate||0; factionExplorer = d.factionExplorer||0;
+        factionMerch = d.factionMerch||0;
+        factionPirate = d.factionPirate||0;
+        factionExplorer = d.factionExplorer||0;
         currentPlanet = clamp(d.currentPlanet||0, 0, PLANETS.length-1);
         visitedPlanets = (d.visitedPlanets && typeof d.visitedPlanets === 'object') ? d.visitedPlanets : {0:true};
         storyChapter = clamp(d.storyChapter||0, 0, STORY.length-1);
         storyFlags = (d.storyFlags && typeof d.storyFlags === 'object') ? d.storyFlags : {};
-        gameOver = !!d.gameOver;
         incomePerMinute = d.incomePerMinute||0;
         pendingIncome = d.pendingIncome||0;
+        emergencyUsedDay = d.emergencyUsedDay||0;
         var restoredTick = parseInt(d.lastIncomeTick, 10);
         lastIncomeTick = isNaN(restoredTick) ? Date.now() : restoredTick;
-        // Точная метка из отдельного ключа (если свежее)
         try {
             var savedTick = parseInt(localStorage.getItem(TICK_KEY), 10);
             if(!isNaN(savedTick) && savedTick > lastIncomeTick) lastIncomeTick = savedTick;
         } catch(e){}
         if(Array.isArray(d.logHistory)) logHistory = d.logHistory.slice(0, 80);
         return true;
-    } catch(e){ console.warn('Load failed', e); return false; }
+    } catch(e){ if(window.console) console.warn('Load failed', e); return false; }
 }
 
 function resetGame(){
@@ -1073,7 +1146,6 @@ function tickIncome(){
         lastIncomeTick = now;
         return;
     }
-    // Ограничение офлайн-дохода 4 часами
     if(elapsedMs > 4 * 60 * 60 * 1000) elapsedMs = 4 * 60 * 60 * 1000;
     var earnedFloat = (elapsedMs / 60000) * incomePerMinute + pendingIncome;
     var earned = Math.floor(earnedFloat);
@@ -1097,7 +1169,6 @@ function applyOfflineIncome(){
     var now = Date.now();
     var elapsedMs = now - lastIncomeTick;
     if(elapsedMs <= 0) return 0;
-    // Максимум 4 часа офлайн-дохода
     if(elapsedMs > 4 * 60 * 60 * 1000) elapsedMs = 4 * 60 * 60 * 1000;
     var earned = Math.floor((elapsedMs / 60000) * incomePerMinute + pendingIncome);
     if(earned > 0){
@@ -1111,18 +1182,24 @@ function applyOfflineIncome(){
 }
 
 /* ============================================================
-   ЦЕНЫ (кэш)
+   ЦЕНЫ (детерминированные на планету+день)
 ============================================================ */
+function seededRandom(seed){
+    var x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);
+}
 function generatePrices(){
     var p = PLANETS[currentPlanet];
     var prices = {};
-    GOODS.forEach(function(g){
+    var seedBase = (currentPlanet + 1) * 31337 + day * 7919;
+    GOODS.forEach(function(g, i){
         var base = p.goods[g.id] || 100;
-        var fluct = rand(-20, 20);
+        var r = seededRandom(seedBase + i * 101);
+        var fluct = (r - 0.5) * 40; // −20..+20
         if(factionMerch > 3) fluct -= 10;
         if(factionPirate > 3 && g.illegal) fluct -= 15;
         if(factionExplorer > 3) fluct += 5;
-        prices[g.id] = Math.max(10, base + fluct);
+        prices[g.id] = Math.max(10, Math.round(base + fluct));
     });
     return prices;
 }
@@ -1134,7 +1211,7 @@ function updateUI(){
     if(gameOver) return;
     var el;
     el = $('moneyDisplay'); if(el) el.textContent = fmt(money);
-    el = $('cargoDisplay'); if(el) el.textContent = cargo + '/' + maxCargo;
+    el = $('cargoDisplay'); if(el) el.textContent = totalCargo() + '/' + maxCargo;
     el = $('fuelDisplay'); if(el) el.textContent = fuel;
     el = $('repDisplay'); if(el) el.textContent = reputation;
     el = $('crewDisplay'); if(el) el.textContent = crew.length;
@@ -1151,29 +1228,28 @@ function updateUI(){
     renderBadges();
     renderMap();
     recalcIncome();
-    marketPrices = generatePrices();
 }
 
 function renderHint(){
     var hint = $('nextStepHint');
     if(!hint) return;
     var ch = STORY[storyChapter];
-    if(!ch){ hint.innerHTML = ''; return; }
+    if(!ch){ hint.innerHTML = ''; _cachedHint = ''; return; }
     var can = false;
     try { can = ch.canAdvance ? ch.canAdvance(getState()) : true; } catch(e){ can = false; }
     var text = can
-        ? ch.chapter + ': ' + ch.title + ' — доступно новое действие в «Истории»'
+        ? ch.chapter + ': ' + ch.title + ' — доступно действие в «Истории»'
         : ch.chapter + ': ' + ch.title;
     var ico = can ? '⭐' : '📖';
     if(_cachedHint === text) return;
     _cachedHint = text;
-    hint.innerHTML = '<span class="hint-ico">'+ico+'</span><span><b>Сюжет:</b> '+text+'</span>';
+    hint.innerHTML = '<span class="hint-ico">'+ico+'</span><span><b>Сюжет:</b> '+escapeHtml(text)+'</span>';
 }
 
 function renderBadges(){
     var ch = STORY[storyChapter];
     var canStory = false;
-    try { canStory = ch && ch.canAdvance && ch.canAdvance(getState()); } catch(e){}
+    try { canStory = !!(ch && ch.canAdvance && ch.canAdvance(getState())); } catch(e){}
     var sb = $('storyBadge');
     if(sb) sb.style.display = canStory ? '' : 'none';
     var ts = $('tileStory');
@@ -1186,11 +1262,11 @@ function renderBadges(){
 
 function getState(){
     return {
-        money:money, cargo:cargo, maxCargo:maxCargo, fuel:fuel, maxFuel:maxFuel,
-        day:day, crew:crew, inventory:inventory,
-        factionMerch:factionMerch, factionPirate:factionPirate, factionExplorer:factionExplorer,
-        currentPlanet:currentPlanet, visitedPlanets:visitedPlanets, storyFlags:storyFlags,
-        armor:armor, engine:engine, weapon:weapon, scanner:scanner, reputation:reputation
+        money: money, cargo: totalCargo(), cargoItems: cargo, maxCargo: maxCargo,
+        fuel: fuel, maxFuel: maxFuel, day: day, crew: crew, inventory: inventory,
+        factionMerch: factionMerch, factionPirate: factionPirate, factionExplorer: factionExplorer,
+        currentPlanet: currentPlanet, visitedPlanets: visitedPlanets, storyFlags: storyFlags,
+        armor: armor, engine: engine, weapon: weapon, scanner: scanner, reputation: reputation
     };
 }
 
@@ -1200,16 +1276,18 @@ function renderMap(){
     mapDiv.innerHTML = '';
     PLANETS.forEach(function(p){
         var isCurrent = p.id === currentPlanet;
-        var canFly = !isCurrent && fuel >= p.fuelCost;
+        var cost = p.fuelCost;
+        if(hasCrew('navigator')) cost = Math.max(1, Math.round(cost * 0.8));
+        var canFly = !isCurrent && fuel >= cost;
         var div = document.createElement('div');
-        div.className = 'planet-mini' + (isCurrent ? ' current' : '') + (!canFly && !isCurrent ? ' locked' : '');
+        div.className = 'planet-mini' + (isCurrent ? ' current' : '') + ((!canFly && !isCurrent) ? ' locked' : '');
         div.title = p.desc;
         div.innerHTML =
             (visitedPlanets[p.id] && !isCurrent ? '<span class="pm-visit">✓</span>' : '') +
             '<span class="pm-icon">' + p.icon + '</span>' +
             '<span class="pm-name">' + p.name + '</span>' +
             '<div class="pm-info">' +
-                '<span class="pm-fuel">⛽' + p.fuelCost + '</span>' +
+                '<span class="pm-fuel">⛽' + cost + '</span>' +
                 '<span class="pm-risk">⚠' + Math.round(p.risk*100) + '%</span>' +
             '</div>';
         div.onclick = function(){ tryFly(p); };
@@ -1267,28 +1345,71 @@ function openTradeModal(){
     var html = '<div class="trade-list">';
     GOODS.forEach(function(g){
         var price = marketPrices[g.id];
+        var have = cargo[g.id] || 0;
+        var canBuy = money >= price && totalCargo() < maxCargo;
+        var canSell = have > 0;
         html += '<div class="trade-row' + (g.illegal ? ' illegal' : '') + '">' +
             '<div class="tr-ico">' + g.icon + '</div>' +
             '<div class="tr-info">' +
                 '<div class="tr-name">' + g.name + (g.illegal ? ' <span class="badge">⚠</span>' : '') + '</div>' +
-                '<div class="tr-price">' + price + ' кр</div>' +
+                '<div class="tr-price">' + price + ' кр · <span class="have">в трюме: ' + have + '</span></div>' +
             '</div>' +
             '<div class="tr-btns">' +
-                '<button class="btn btn-buy" data-buy="' + g.id + '">🛒 Купить</button>' +
-                '<button class="btn btn-sell" data-sell="' + g.id + '">💰 Продать</button>' +
+                '<button class="btn btn-buy" data-buy="' + g.id + '"' + (canBuy?'':' disabled') + '>🛒</button>' +
+                '<button class="btn btn-sell" data-sell="' + g.id + '"' + (canSell?'':' disabled') + '>💰</button>' +
             '</div>' +
         '</div>';
     });
     html += '</div>';
-    openContentModal('🛒', 'Торговля', 'Планета: ' + PLANETS[currentPlanet].icon + ' ' + PLANETS[currentPlanet].name, html, true);
+    openContentModal('🛒', 'Торговля',
+        'Планета: ' + PLANETS[currentPlanet].icon + ' ' + PLANETS[currentPlanet].name +
+        ' · Трюм: ' + totalCargo() + '/' + maxCargo,
+        html, true);
 
     var body = $('contentBody');
     body.querySelectorAll('[data-buy]').forEach(function(btn){
-        btn.onclick = function(){ trade(btn.getAttribute('data-buy'), marketPrices[btn.getAttribute('data-buy')], 'buy'); openTradeModal(); };
+        btn.onclick = function(){
+            var id = btn.getAttribute('data-buy');
+            trade(id, marketPrices[id], 'buy');
+            openTradeModal();
+        };
     });
     body.querySelectorAll('[data-sell]').forEach(function(btn){
-        btn.onclick = function(){ trade(btn.getAttribute('data-sell'), marketPrices[btn.getAttribute('data-sell')], 'sell'); openTradeModal(); };
+        btn.onclick = function(){
+            var id = btn.getAttribute('data-sell');
+            trade(id, marketPrices[id], 'sell');
+            openTradeModal();
+        };
     });
+}
+
+function trade(goodId, price, action){
+    if(gameOver) return;
+    var good = null;
+    for(var i=0;i<GOODS.length;i++){ if(GOODS[i].id === goodId){ good = GOODS[i]; break; } }
+    if(!good) return;
+
+    if(action === 'buy'){
+        if(money < price){ toast('❌ Недостаточно кредитов','danger'); return; }
+        if(totalCargo() + 1 > maxCargo){ toast('❌ Перегруз!','danger'); return; }
+        money -= price;
+        addCargoItem(goodId, 1);
+        log('🛒 Куплено 1 т ' + good.icon + ' ' + good.name + ' за ' + price + ' кр.','success');
+        if(good.illegal) factionPirate += 1;
+    } else {
+        if((cargo[goodId]||0) < 1){ toast('❌ Нет ' + good.name,'danger'); return; }
+        var bonus = hasCrew('trader') ? Math.floor(price*0.15) : 0;
+        money += price + bonus;
+        addCargoItem(goodId, -1);
+        log('💰 Продано 1 т ' + good.icon + ' ' + good.name + ' за ' + (price+bonus) + ' кр.','success');
+        if(good.illegal) factionPirate += 1; else factionMerch += 1;
+    }
+    if(totalCargo() === 0 && Math.random() < 0.15){
+        reputation += 1;
+        toast('⭐ +1 репутация','gold');
+    }
+    updateUI();
+    saveGame();
 }
 
 /* ============================================================
@@ -1306,12 +1427,14 @@ function openUpgradeModal(){
     var html = '<div class="card-list">';
     upgrades.forEach(function(u){
         if(u.val >= u.max){
+            var pipsMax = '';
+            for(var i=0;i<u.max;i++) pipsMax += '<span class="pip on"></span>';
             html += '<div class="upgrade-card">' +
                 '<div class="uc-ico">' + u.ico + '</div>' +
                 '<div class="uc-info">' +
                     '<div class="uc-name">' + u.name + '</div>' +
                     '<div class="uc-desc">Максимальный уровень</div>' +
-                    '<div class="uc-pips">' + Array.from({length:u.max}, function(){ return '<span class="pip on"></span>'; }).join('') + '</div>' +
+                    '<div class="uc-pips">' + pipsMax + '</div>' +
                 '</div>' +
                 '<div style="color:var(--green);font-weight:800">MAX</div>' +
             '</div>';
@@ -1319,7 +1442,8 @@ function openUpgradeModal(){
         }
         var c = u.base + u.val*u.step;
         var canBuy = money >= c;
-        var pips = Array.from({length:u.max}, function(_,i){ return '<span class="pip'+(i<u.val?' on':'')+'"></span>'; }).join('');
+        var pips = '';
+        for(var i=0;i<u.max;i++) pips += '<span class="pip' + (i<u.val?' on':'') + '"></span>';
         html += '<div class="upgrade-card">' +
             '<div class="uc-ico">' + u.ico + '</div>' +
             '<div class="uc-info">' +
@@ -1358,6 +1482,18 @@ function openUpgradeModal(){
         '</div>';
     }
 
+    // Экстренная помощь, если игрок застрял
+    if(fuel < 5 && money < 30 && totalCargo() === 0 && emergencyUsedDay !== day){
+        html += '<div class="upgrade-card" style="border-color:rgba(74,222,128,.5)">' +
+            '<div class="uc-ico">🆘</div>' +
+            '<div class="uc-info">' +
+                '<div class="uc-name">Экстренная помощь</div>' +
+                '<div class="uc-desc">Бесплатно +20 топлива (раз в день)</div>' +
+            '</div>' +
+            '<button class="btn btn-ok" data-upg="emergency">Получить</button>' +
+        '</div>';
+    }
+
     html += '</div>';
     openContentModal('⚙️', 'Улучшения', 'Деньги: ' + fmt(money) + ' кр', html);
 
@@ -1378,8 +1514,15 @@ function openUpgradeModal(){
                 money -= fcost2; fuel = Math.min(maxFuel, fuel + 30);
                 log('⛽ Топливо +30.','success');
                 toast('⛽ Топливо +30','success');
+            } else if(key === 'emergency'){
+                if(emergencyUsedDay === day) return;
+                emergencyUsedDay = day;
+                fuel = Math.min(maxFuel, fuel + 20);
+                log('🆘 Экстренная помощь: +20 топлива.','success');
+                toast('🆘 +20 топлива','success');
             } else {
-                var u = upgrades.filter(function(x){ return x.key === key; })[0];
+                var u = null;
+                for(var i=0;i<upgrades.length;i++){ if(upgrades[i].key === key){ u = upgrades[i]; break; } }
                 if(!u || u.val >= u.max) return;
                 var cost = u.base + u.val*u.step;
                 if(money < cost) return;
@@ -1469,7 +1612,7 @@ function openCrewModal(){
             if(crew.length >= 12){ toast('❌ Экипаж полон','danger'); return; }
             money -= m.cost;
             crew.push({id:m.id, name:m.name, icon:m.icon, desc:m.desc});
-            log('👤 ' + m.name + ' присоединился! (' + m.desc + ')','success');
+            log('👤 ' + m.name + ' присоединился!','success');
             toast('👤 ' + m.name + ' в экипаже','success');
             recalcIncome();
             updateUI();
@@ -1492,7 +1635,7 @@ function openStoryModal(){
 
     var html = '';
     html += '<div class="chapter-badge">' + ch.chapter + '</div>';
-    html += '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:12px">' + ch.title + '</div>';
+    html += '<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:12px">' + escapeHtml(ch.title) + '</div>';
     html += '<div style="font-size:13.5px;color:#b8d4ee;line-height:1.7;margin-bottom:20px;padding:14px 16px;background:rgba(124,92,255,.08);border-left:3px solid var(--accent-2);border-radius:10px">' + escapeHtml(ch.text) + '</div>';
 
     html += '<div style="display:flex;gap:4px;margin-bottom:18px">';
@@ -1508,7 +1651,7 @@ function openStoryModal(){
     try { canAct = ch.canAdvance ? ch.canAdvance(getState()) : true; } catch(e){}
     if(ch.actionLabel){
         if(canAct){
-            html += '<button class="btn btn-gold btn-pulse" style="width:100%;padding:16px;font-size:15px" id="storyActionBtn">✨ ' + ch.actionLabel + '</button>';
+            html += '<button class="btn btn-gold btn-pulse" style="width:100%;padding:16px;font-size:15px" id="storyActionBtn">✨ ' + escapeHtml(ch.actionLabel) + '</button>';
         } else {
             html += '<div style="padding:14px 16px;background:rgba(255,84,112,.08);border:1px solid rgba(255,84,112,.3);border-radius:12px;font-size:13px;color:#ffb8c4;text-align:center">🔒 Условие не выполнено: <b>' + escapeHtml(ch.actionLabel) + '</b></div>';
         }
@@ -1531,24 +1674,25 @@ function openStoryModal(){
             if(result.log) log(result.log, 'story');
             if(result.nextChapter !== undefined && result.nextChapter < STORY.length){
                 storyChapter = result.nextChapter;
-            } else if(result.nextChapter >= STORY.length){
+            } else if(result.nextChapter !== undefined && result.nextChapter >= STORY.length){
                 storyChapter = STORY.length - 1;
                 closeContentModal();
                 openEndingModal();
                 return;
             }
+            updateUI();
+            saveGame();
             openContentModal('📜', 'Успех!', ch.chapter + ' · ' + ch.title,
                 '<div style="font-size:14px;color:#b8d4ee;line-height:1.7;padding:14px 16px;background:rgba(74,222,128,.08);border-left:3px solid var(--green);border-radius:10px">' + escapeHtml(result.text) + '</div>' +
                 '<button class="btn btn-fly" style="width:100%;margin-top:16px;padding:14px" id="storyContinueBtn">Продолжить →</button>'
             );
-            $('storyContinueBtn').onclick = function(){
+            var cont = $('storyContinueBtn');
+            if(cont) cont.onclick = function(){
                 closeContentModal();
                 updateUI();
                 saveGame();
             };
             toast('📖 ' + ch.chapter + ' пройдена!', 'gold');
-            updateUI();
-            saveGame();
         };
     }
 }
@@ -1580,7 +1724,7 @@ function openLogModal(){
         html += '<div class="empty-state">Пока ничего не произошло</div>';
     } else {
         logHistory.slice(0, 60).forEach(function(e){
-            html += '<div class="log-entry ' + e.type + '">' + escapeHtml(e.msg) + '</div>';
+            html += '<div class="log-entry ' + (e.type||'') + '">' + escapeHtml(e.msg) + '</div>';
         });
     }
     html += '</div>';
@@ -1613,9 +1757,23 @@ function openShipModal(){
     '</div>';
 
     html += '<div style="margin-bottom:16px">' +
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;font-weight:700"><span>📦 ГРУЗ</span><span>' + cargo + '/' + maxCargo + '</span></div>' +
-        '<div style="height:10px;border-radius:6px;background:rgba(5,12,25,.9);overflow:hidden"><i style="display:block;height:100%;width:' + (cargo/maxCargo*100) + '%;background:linear-gradient(90deg,#7c3aed,#c084fc)"></i></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;font-weight:700"><span>📦 ГРУЗ</span><span>' + totalCargo() + '/' + maxCargo + '</span></div>' +
+        '<div style="height:10px;border-radius:6px;background:rgba(5,12,25,.9);overflow:hidden"><i style="display:block;height:100%;width:' + (totalCargo()/maxCargo*100) + '%;background:linear-gradient(90deg,#7c3aed,#c084fc)"></i></div>' +
     '</div>';
+
+    // Состав груза
+    var cargoKeys = Object.keys(cargo);
+    if(cargoKeys.length > 0){
+        html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:18px 0 8px">Состав трюма</div>';
+        html += '<div class="cargo-list">';
+        cargoKeys.sort().forEach(function(k){
+            var g = null;
+            for(var i=0;i<GOODS.length;i++){ if(GOODS[i].id === k){ g = GOODS[i]; break; } }
+            if(!g) return;
+            html += '<div class="cargo-line"><span class="cl-name">' + g.icon + ' ' + g.name + '</span><span class="cl-qty">' + cargo[k] + ' т</span></div>';
+        });
+        html += '</div>';
+    }
 
     html += '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:18px 0 8px">Фракции</div>';
     html += factionCard('🛒 Торговцы', 'merch', factionMerch);
@@ -1646,32 +1804,6 @@ function factionCard(name, key, val){
 }
 
 /* ============================================================
-   ТОРГОВЛЯ (логика)
-============================================================ */
-function trade(goodId, price, action){
-    if(gameOver) return;
-    var good = null;
-    for(var i=0;i<GOODS.length;i++){ if(GOODS[i].id === goodId){ good = GOODS[i]; break; } }
-    if(!good) return;
-    if(action === 'buy'){
-        if(money < price){ toast('❌ Недостаточно кредитов','danger'); return; }
-        if(cargo + 1 > maxCargo){ toast('❌ Перегруз!','danger'); return; }
-        money -= price; cargo += 1;
-        log('🛒 Куплено 1 т ' + good.icon + ' ' + good.name + ' за ' + price + ' кр.','success');
-        if(good.illegal) factionPirate += 1;
-    } else {
-        if(cargo < 1){ toast('❌ Нет ' + good.name,'danger'); return; }
-        var bonus = hasCrew('trader') ? Math.floor(price*0.15) : 0;
-        money += price + bonus; cargo -= 1;
-        log('💰 Продано 1 т ' + good.icon + ' ' + good.name + ' за ' + (price+bonus) + ' кр.','success');
-        if(good.illegal) factionPirate += 1; else factionMerch += 1;
-    }
-    if(cargo === 0 && Math.random() < 0.15){ reputation += 1; toast('⭐ +1 репутация','gold'); }
-    updateUI();
-    saveGame();
-}
-
-/* ============================================================
    СОБЫТИЯ
 ============================================================ */
 function randomEvent(){
@@ -1689,6 +1821,8 @@ function showEnd(icon, title, text){
     $('endText').textContent = text;
     $('endScreen').classList.add('show');
     gameOver = true;
+    closeContentModal();
+    closeChoiceModal();
     try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(TICK_KEY); } catch(e){}
 }
 
@@ -1703,9 +1837,9 @@ function closeSettings(){ var m = $('settingsModal'); if(m) m.classList.remove('
 ============================================================ */
 function bindUI(){
     var el;
-    el = $('shipBtn'); if(el) el.onclick = openShipModal;
+    el = $('shipBtn'); if(el) el.onclick = function(){ sndClick(); openShipModal(); };
     el = $('logBtn'); if(el) el.onclick = openLogModal;
-    el = $('soundBtn'); if(el) el.onclick = function(){ settings.sound = !settings.sound; saveSettings(); sndClick(); };
+    el = $('soundBtn'); if(el) el.onclick = function(){ settings.sound = !settings.sound; saveSettings(); if(settings.sound) sndClick(); };
     el = $('settingsBtn'); if(el) el.onclick = function(){ sndClick(); openSettings(); };
 
     el = $('tileTrade'); if(el) el.onclick = openTradeModal;
@@ -1727,13 +1861,12 @@ function bindUI(){
     el = $('settingsModal'); if(el) el.addEventListener('click', function(e){ if(e.target.id === 'settingsModal') closeSettings(); });
 
     document.addEventListener('keydown', function(e){
-        if(e.key === 'Escape'){ closeContentModal(); closeChoiceModal(); closeSettings(); }
-        // Горячие клавиши
-        if(e.target && e.target.tagName === 'INPUT') return;
-        if(e.key === 't' || e.key === 'T' || e.key === 'е' || e.key === 'Е') openTradeModal();
-        if(e.key === 'u' || e.key === 'U' || e.key === 'г' || e.key === 'Г') openUpgradeModal();
-        if(e.key === 'c' || e.key === 'C' || e.key === 'с' || e.key === 'С') openCrewModal();
-        if(e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') openStoryModal();
+        if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        if(e.key === 'Escape'){ closeContentModal(); closeChoiceModal(); closeSettings(); return; }
+        if(e.key === 't' || e.key === 'T' || e.key === 'е' || e.key === 'Е'){ openTradeModal(); }
+        else if(e.key === 'u' || e.key === 'U' || e.key === 'г' || e.key === 'Г'){ openUpgradeModal(); }
+        else if(e.key === 'c' || e.key === 'C' || e.key === 'с' || e.key === 'С'){ openCrewModal(); }
+        else if(e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы'){ openStoryModal(); }
     });
 }
 
@@ -1753,32 +1886,28 @@ function init(){
             log('🛸 Продолжаем путь. День ' + day + '.','story');
         }
 
-        // Пересчёт дохода на случай старого сейва
         recalcIncome();
-        // Начисляем офлайн-доход
         var offlineEarned = applyOfflineIncome();
         if(offlineEarned > 0 && !lastOfflineToastShown){
             lastOfflineToastShown = true;
             setTimeout(function(){ toast('📈 Коллега заработал ' + fmt(offlineEarned) + ' кр!', 'success'); }, 900);
         }
 
-        if(gameOver){
-            showEnd('🏆','Финал','Ты завершил историю. Начни заново.');
-        }
-
         bindUI();
         updateUI();
 
-        // Тик пассивного дохода
+        if(gameOver){
+            showEnd('🏆','Финал','Ты завершил историю. Начни заново.');
+            return;
+        }
+
         setInterval(tickIncome, 1000);
-        // Автосохранение каждые 5 секунд (было 20)
         setInterval(function(){ if(!gameOver) saveGame(); }, 5000);
-        // Пауза/возобновление
+
         document.addEventListener('visibilitychange', function(){
             if(document.hidden){
                 if(!gameOver) saveGame();
             } else {
-                // При возврате во вкладку — начисляем офлайн-доход
                 applyOfflineIncome();
                 updateUI();
             }
@@ -1790,13 +1919,13 @@ function init(){
             else toast('👋 С возвращением!','gold');
         }, 600);
     } catch(e){
-        console.error('Init error:', e);
+        if(window.console) console.error('Init error:', e);
         try {
             var wrap = document.getElementById('toastWrap');
             if(wrap){
                 var t = document.createElement('div');
                 t.className = 'toast danger';
-                t.textContent = '⚠ ' + e.message;
+                t.textContent = '⚠ ' + (e.message || 'Ошибка инициализации');
                 wrap.appendChild(t);
             }
         } catch(e2){}

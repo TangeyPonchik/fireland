@@ -26,20 +26,17 @@ const GAMES=[
 {id:'musibox',name:'Musibox',icon:'🎧',genre:'Музыка, Секвенсор',difficulty:2,description:'Создавай свою музыку! Множество треков — барабаны, басы, синты и вокал. Кликай по персонажам, комбинируй биты, лови бонусы за комбинации. Запиши и скачай свой микс, настоящая студия звукозаписи в браузере!',bg:'linear-gradient(135deg, #4dabf7, #9775fa, #f783ac)'},
 {id:'lastfrontier',name:'Последний рубеж',icon:'🧟',genre:'Автобаттлер, Карточная игра',difficulty:4,description:'Автобаттлер в мире зомби-апокалипсиса! Собирай карты зомби, сражайся в автоматических боях, зарабатывай монеты и гемы, покупай легендарных существ. Много уникальных карт с лором — от простого работяги до Зомби-бога.',bg:'linear-gradient(135deg, #2e4a2e, #0d1a0d, #66ff66)'},
 {id:'proryv3',name:'Прорыв 3',icon:'🌐',genre:'RPG, Стратегия, Финал',difficulty:5,description:'Финальная часть трилогии Прорыва! Выбери одну из четырёх фракций: Работник РКН, Хакер, Журналист или Инженер. Прокачивай VPN, сражайся с 25 уникальными врагами — от простого охранника до самого Максута Шадаева. Победи финального босса ЦЕНЗУРУ и освободи интернет!',bg:'linear-gradient(135deg, #c9418a, #a04ac9, #7a4ae0, #c9418a)'}];
-const EXPERIMENTS=[
-{id:'pastrunner',name:'ПРОШЛОЕ НАСТУПАЕТ (ПК)',icon:'🏃',genre:'Раннер, Киберпанк, 3D',difficulty:4,isExperimental:true,description:'Полноценный 3D-раннер на Three.js! Беги по киберпанк-улицам под дождём, уклоняйся от препятствий, прыгай через барьеры и скользи под блоками.',bg:'linear-gradient(135deg, #1a1a2e, #ff0044, #00ffff)'},
-{id:'antcolony',name:'Ant Kolony',icon:'🐜',genre:'Симулятор, Стратегия',difficulty:3,isExperimental:true,description:'Симулятор эволюции муравьиной колонии. Наблюдай, как 150 муравьёв добывают еду, размножаются и передают гены потомкам.',bg:'linear-gradient(135deg, #1a2a1a, #ff9f2e, #2d3b48)'},
-{id:'gd',name:'ПРОШЛОЕ НАСТУПАЕТ (GD)',icon:'🎵',genre:'Ритм-платформер, Киберпанк',difficulty:5,isExperimental:true,description:'Geometry Dash в мире «Прошлое наступает». Прыгай под динамичную киберпанк-музыку, уклоняйся от препятствий, собирай монеты.',bg:'linear-gradient(135deg, #8a2be2, #4a00e0, #2a008a)'},
-{id:'chest',name:'Кликер счастья',icon:'🗝️',genre:'Кликер, Инкрементал',difficulty:1,isExperimental:true,description:'Простой и увлекательный кликер. Кликай, получай предметы, собирай коллекции и наблюдай, как растёт твоё счастье с каждым кликом. Экспериментальная версия.',bg:'linear-gradient(135deg, #f9d423, #ff4e50, #e83030)'}];
+const UTILITIES=[
+{id:'fireshop',name:'FireShop 3D',icon:'🎨',genre:'3D-редактор · Photoshop',difficulty:5,description:'Полноценный 3D/2D-редактор прямо в браузере. 3D-примитивы, свет, HDRI-окружение, покраска объектов, кисть-текстура, экспорт в GLB и PNG. 2D-режим с кистью, заливкой, фильтрами и текстом. Работает на Three.js.',bg:'linear-gradient(135deg, #ff6b35, #f7931e, #ffcd3c)',file:'УТИЛИТЫ/FireShop.html'},
+{id:'cpstest',name:'Тест автокликера',icon:'⚡',genre:'Утилита · Тест',difficulty:1,description:'Проверь скорость своего автокликера или мыши. Показывает количество кликов и CPS (клики в секунду) в реальном времени. Оценивает скорость как «медленно / быстро / супер-скорость».',bg:'linear-gradient(135deg, #1a1a2e, #e94560, #0f3460)',file:'УТИЛИТЫ/тест cps.html'}];
 const GAME_FILES={
 proryv1:'ИГРЫ/Прорыв.html',cooking:'ИГРЫ/Великая кулинария.html',proryv2:'ИГРЫ/Прорыв 2.html',
 kontrabandist:'ИГРЫ/Космический контробандист.html',robo26:'ИГРЫ/Robo-cleaner2.0.html',
-chest:'ЭКСПЕРИМЕНТЫ/Кликер счастья.html',fight:'ИГРЫ/БИТВА СИЛЬНЕЙШИХ.html',
+fight:'ИГРЫ/БИТВА СИЛЬНЕЙШИХ.html',
 miner:'ИГРЫ/Шахтер/Шахтер.html',musibox:'ИГРЫ/Musibox.html',
 lastfrontier:'ИГРЫ/ПОСЛЕДНИЙ РУБЕЖ.html',proryv3:'ИГРЫ/Прорыв 3.html',
 dom:'ИГРЫ/ДОМ.html',dom2:'ИГРЫ/ДОМ 2.html',
-pastrunner:'ЭКСПЕРИМЕНТЫ/ПРОШЛОЕ НАСТУПАЕТ (пк).html',antcolony:'ЭКСПЕРИМЕНТЫ/Ant Kolony.html',
-gd:'ЭКСПЕРИМЕНТЫ/ПРОШЛОЕ НАСТУПАЕТ (GD)/ПРОШЛОЕ НАСТУПАЕТ (GD).html'};
+fireshop:'УТИЛИТЫ/FireShop.html',cpstest:'УТИЛИТЫ/тест cps.html'};
 const ACHIEVEMENTS=[
 {id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:50,rarity:'common'},
 {id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
@@ -51,7 +48,6 @@ const ACHIEVEMENTS=[
 {id:'proryv2_win',icon:'🛡️',name:'Двойной прорыв',desc:'Сыграть в Прорыв 2',xp:50,rarity:'common'},
 {id:'cosmo_pilot',icon:'🚀',name:'Космопилот',desc:'Сыграть в Контрабандиста',xp:50,rarity:'common'},
 {id:'robo_hunter',icon:'🤖',name:'Охотник на роботов',desc:'Сыграть в Robo-Cleaner',xp:50,rarity:'common'},
-{id:'chest_opener',icon:'🗝️',name:'Кладоискатель',desc:'Сыграть в Кликер счастья',xp:50,rarity:'common'},
 {id:'fighter',icon:'👊',name:'Боец',desc:'Сыграть в Битву',xp:50,rarity:'common'},
 {id:'miner_pro',icon:'⛏️',name:'Шахтёр-профи',desc:'Сыграть в Шахтёра',xp:50,rarity:'common'},
 {id:'musibox_dj',icon:'🎧',name:'Диджей',desc:'Сыграть в Musibox',xp:50,rarity:'common'},
@@ -59,10 +55,8 @@ const ACHIEVEMENTS=[
 {id:'zombie_survivor',icon:'🧟',name:'Выживший',desc:'Сыграть в Последний рубеж',xp:100,rarity:'rare'},
 {id:'proryv3_win',icon:'🌐',name:'Финал прорыва',desc:'Сыграть в Прорыв 3',xp:150,rarity:'epic'},
 {id:'proryv_trilogy',icon:'👑',name:'Хранитель трилогии',desc:'Сыграть во все три части Прорыва',xp:500,rarity:'legendary'},
-{id:'gd_master',icon:'🎵',name:'Ритм-мастер',desc:'Сыграть в GD',xp:50,rarity:'common'},
-{id:'first_exp',icon:'🧪',name:'Экспериментатор',desc:'Запустить первый эксперимент',xp:75,rarity:'rare'},
-{id:'speed_runner',icon:'🏃',name:'Скорость света',desc:'Сыграть в 3D-раннер',xp:100,rarity:'rare'},
-{id:'ant_keeper',icon:'🐜',name:'Муравьиный бог',desc:'Запустить Ant Kolony',xp:100,rarity:'rare'},
+{id:'first_util',icon:'🛠️',name:'Инструменталист',desc:'Запустить первую утилиту',xp:50,rarity:'common'},
+{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length)/2),progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length}/2`},
 {id:'first_community',icon:'🌍',name:'Первопроходец',desc:'Загрузить свою игру в Сообщество',xp:200,rarity:'epic'},
 {id:'community_5',icon:'🎨',name:'Творец',desc:'Загрузить 5 игр в Сообщество',xp:500,rarity:'legendary',progress:s=>Math.min(1,(s.myCommunityGames||0)/5),progressText:s=>`${s.myCommunityGames||0}/5`},
 {id:'play_community',icon:'🌐',name:'Исследователь',desc:'Сыграть в игру из Сообщества',xp:100,rarity:'rare'},
@@ -111,8 +105,7 @@ const QUEST_POOL=[
 {id:'q_time_10',icon:'⌚',name:'Десять минут',desc:'Проведи 10 минут в играх',xp:80,target:600,type:'time_today'},
 {id:'q_time_15',icon:'🕐',name:'Четверть часа',desc:'Проведи 15 минут в играх',xp:100,target:900,type:'time_today'},
 {id:'q_time_30',icon:'🕰️',name:'Полчаса',desc:'Проведи 30 минут в играх',xp:200,target:1800,type:'time_today'},
-{id:'q_exp',icon:'🧪',name:'Экспериментатор',desc:'Запусти 1 эксперимент',xp:75,target:1,type:'exp_today'},
-{id:'q_exp_2',icon:'🔬',name:'Лаборант',desc:'Запусти 2 эксперимента',xp:120,target:2,type:'exp_today'},
+{id:'q_util',icon:'🛠️',name:'Инструменталист',desc:'Запусти 1 утилиту',xp:50,target:1,type:'util_today'},
 {id:'q_fav',icon:'⭐',name:'Любимчик',desc:'Запусти игру из избранного',xp:50,target:1,type:'fav_today'},
 {id:'q_fav_2',icon:'💖',name:'Верный',desc:'Запусти 2 игры из избранного',xp:90,target:2,type:'fav_today'},
 {id:'q_ach',icon:'🏆',name:'Достигатор',desc:'Получи 1 достижение',xp:75,target:1,type:'ach_today'},
@@ -128,13 +121,13 @@ const QUEST_POOL=[
 {id:'q_case_open',icon:'📦',name:'Кейс-охотник',desc:'Открой кейс',xp:60,target:1,type:'case_today'},
 {id:'q_fav_time',icon:'💫',name:'Преданность',desc:'Играй в избранную игру 5 минут',xp:150,target:300,type:'fav_time_today'}];
 const DEFAULT_STATE={
-playTime:{},totalTime:0,lastGameId:null,lastGameTime:null,selectedGameId:null,selectedExpId:null,
+playTime:{},totalTime:0,lastGameId:null,lastGameTime:null,selectedGameId:null,selectedUtilityId:null,
 soundEnabled:true,uiSoundsEnabled:true,theme:'system',alarmVolume:0.8,alarmRepeats:5,alarmDelay:15,vibrationEnabled:true,
 nickname:'Игрок',avatar:null,achievements:[],playedGames:[],gamesOpened:0,gameOpenTimes:[],themesUsed:[],alarmUsed:false,
 totalXp:0,level:1,temporalParadox:{level:1,totalAccumulated:0},favorites:[],
 streak:{current:0,best:0,lastLogin:null,history:[]},
 dailyQuests:{date:null,quests:[],progress:{},completed:[]},questsCompletedTotal:0,
-todayStats:{date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0},
+todayStats:{date:null,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0},
 lastDailyReward:null,dailyRewardsClaimed:0,
 lastDailyCase:null,lastWeeklyCase:null,caseItems:[],
 lastSubmittedNick:null,
@@ -178,7 +171,8 @@ async function loadState(){
         if(!state.streak.history) state.streak.history=[];
         if(!state.favorites) state.favorites=[];
         if(!state.dailyQuests) state.dailyQuests={date:null,quests:[],progress:{},completed:[]};
-        if(!state.todayStats) state.todayStats={date:null,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
+        if(!state.todayStats) state.todayStats={date:null,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
+        if(!state.todayStats.utilPlayed) state.todayStats.utilPlayed=[];
         if(state.lastDailyReward===undefined) state.lastDailyReward=null;
         if(state.dailyRewardsClaimed===undefined) state.dailyRewardsClaimed=0;
         if(state.lastDailyCase===undefined) state.lastDailyCase=null;
@@ -363,11 +357,12 @@ function checkDailyQuests(){
     const shuffled=[...QUEST_POOL].sort(()=>Math.random()-0.5);
     const quests=shuffled.slice(0,5);
     state.dailyQuests={date:today,quests:quests.map(q=>q.id),progress:{},completed:[]};
-    state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
+    state.todayStats={date:today,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0};
     saveState()}
 function updateQuestProgress(){
     const today=todayStr();
-    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+    if(!state.todayStats.utilPlayed) state.todayStats.utilPlayed=[];
     let changed=false;
     state.dailyQuests.quests.forEach(qId=>{
         const quest=QUEST_POOL.find(q=>q.id===qId);
@@ -377,7 +372,7 @@ function updateQuestProgress(){
         switch(quest.type){
             case 'games_today':progress=state.todayStats.gamesPlayed.length;break;
             case 'time_today':progress=state.todayStats.timeSpent;break;
-            case 'exp_today':progress=state.todayStats.expPlayed.length;break;
+            case 'util_today':progress=state.todayStats.utilPlayed.length;break;
             case 'fav_today':progress=state.todayStats.favPlayed.length;break;
             case 'ach_today':progress=state.todayStats.achEarned;break;
             case 'fav_add_today':progress=state.todayStats.favAdded;break;
@@ -478,7 +473,7 @@ function startTimeTicker(gameId){
         state.temporalParadox.totalAccumulated+=cappedElapsed;
         checkParadox();
         const today=todayStr();
-        if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+        if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
         state.todayStats.timeSpent+=cappedElapsed;
         if(state.favorites.includes(gameId))state.todayStats.favTimeSpent=(state.todayStats.favTimeSpent||0)+cappedElapsed;
         const totalMin=Math.floor(state.totalTime/60);
@@ -581,22 +576,24 @@ function showLevelUpToast(level){
     document.body.appendChild(toast);
     setTimeout(()=>{toast.style.transition='all 0.4s ease';toast.style.opacity='0';setTimeout(()=>toast.remove(),400)},3000)}
 function checkGameAchievements(gameId){
-    const isExp=EXPERIMENTS.some(e=>e.id===gameId);
+    const isUtil=UTILITIES.some(u=>u.id===gameId);
     const today=todayStr();
-    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,expPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
-    if(isExp){
-        unlockAch('first_exp');
-        if(!state.todayStats.expPlayed.includes(gameId))state.todayStats.expPlayed.push(gameId);
-        if(gameId==='pastrunner')unlockAch('speed_runner');
-        if(gameId==='antcolony')unlockAch('ant_keeper')}
+    if(!state.todayStats||state.todayStats.date!==today){state.todayStats={date:today,gamesPlayed:[],timeSpent:0,utilPlayed:[],favPlayed:[],achEarned:0,favAdded:0,nickSet:false,themeChanged:false,fullscreenUsed:false,profileViewed:false,settingsViewed:false,questsViewed:false,favTimeSpent:0,caseOpened:0}}
+    if(!state.todayStats.utilPlayed) state.todayStats.utilPlayed=[];
+    if(isUtil){
+        unlockAch('first_util');
+        if(!state.todayStats.utilPlayed.includes(gameId))state.todayStats.utilPlayed.push(gameId);
+        const utilsPlayed=state.playedGames.filter(g=>UTILITIES.some(u=>u.id===g));
+        if(utilsPlayed.length>=UTILITIES.length)unlockAch('all_utils');
+    }
     if(state.favorites.includes(gameId)){if(!state.todayStats.favPlayed.includes(gameId))state.todayStats.favPlayed.push(gameId)}
     if(!state.todayStats.gamesPlayed.includes(gameId))state.todayStats.gamesPlayed.push(gameId);
     if(!state.playedGames.includes(gameId)){
         state.playedGames.push(gameId);
         unlockAch('first_game');
         if(state.playedGames.length>=5)unlockAch('five_games');
-        if(state.playedGames.length>=GAMES.length)unlockAch('all_games');
-        const gameAch={proryv1:'proryv1_win',dom:'dom_escape',dom2:'dom2_burner',cooking:'cooking_chef',proryv2:'proryv2_win',kontrabandist:'cosmo_pilot',robo26:'robo_hunter',chest:'chest_opener',fight:'fighter',miner:'miner_pro',gd:'gd_master',musibox:'musibox_dj',lastfrontier:'zombie_survivor',proryv3:'proryv3_win'};
+        if(state.playedGames.filter(g=>GAMES.some(x=>x.id===g)).length>=GAMES.length)unlockAch('all_games');
+        const gameAch={proryv1:'proryv1_win',dom:'dom_escape',dom2:'dom2_burner',cooking:'cooking_chef',proryv2:'proryv2_win',kontrabandist:'cosmo_pilot',robo26:'robo_hunter',fight:'fighter',miner:'miner_pro',gd:'gd_master',musibox:'musibox_dj',lastfrontier:'zombie_survivor',proryv3:'proryv3_win'};
         if(gameAch[gameId])unlockAch(gameAch[gameId]);
         if(state.playedGames.includes('proryv1')&&state.playedGames.includes('proryv2')&&state.playedGames.includes('proryv3'))unlockAch('proryv_trilogy');
     }
@@ -629,13 +626,15 @@ function toggleFavorite(gameId,event){
     else{state.favorites.push(gameId);unlockAch('favorite_add');if(state.todayStats)state.todayStats.favAdded=(state.todayStats.favAdded||0)+1;updateQuestProgress()}
     saveState();
     renderGames();
-    renderExperiments();}
+    renderUtilities();}
 function selectGame(gameId){
     const game=GAMES.find(g=>g.id===gameId);
     if(!game)return;
     state.selectedGameId=gameId;
+    state.selectedUtilityId=null;
     saveState();
     document.querySelectorAll('#gameGrid .game-card').forEach(card=>{card.classList.toggle('selected',card.dataset.gameId===gameId)});
+    document.querySelectorAll('#utilGrid .game-card').forEach(card=>{card.classList.remove('selected')});
     document.getElementById('noGameSelected').style.display='none';
     const detailEl=document.getElementById('gameDetail');
     detailEl.style.display='flex';
@@ -646,53 +645,70 @@ function selectGame(gameId){
     detailEl.innerHTML=`<div class="icon">${game.icon}</div><div class="name">${game.name}</div><div class="genre">🎭 ${game.genre}</div><div class="difficulty">${stars}</div><div class="description">${game.description}</div><div style="font-size:14px;color:var(--text-secondary);font-weight:600;margin-bottom:14px;">⏱️ Проведено времени: <span style="color:var(--accent-secondary)">${timeStr}</span></div><div style="display:flex;gap:10px;align-items:center;"><button class="play-btn" id="playFromDetail">🎮 Играть</button><button class="fav-btn-detail" id="favFromDetail" style="background:${isFav?'var(--accent-secondary)':'var(--bg-card)'};border:1px solid var(--border);color:${isFav?'#060a1a':'var(--text)'};padding:16px 20px;border-radius:40px;font-size:22px;cursor:pointer;">${isFav?'⭐':'☆'}</button></div>`;
     document.getElementById('playFromDetail').addEventListener('click',()=>openGame(gameId));
     document.getElementById('favFromDetail').addEventListener('click',(e)=>{toggleFavorite(gameId,e);selectGame(gameId)})}
-function selectExperiment(expId){
-    const exp=EXPERIMENTS.find(e=>e.id===expId);
-    if(!exp)return;
-    state.selectedExpId=expId;
+
+function selectUtility(utilId){
+    const util=UTILITIES.find(u=>u.id===utilId);
+    if(!util)return;
+    state.selectedUtilityId=utilId;
+    state.selectedGameId=null;
     saveState();
-    document.querySelectorAll('#expGrid .game-card').forEach(card=>{card.classList.toggle('selected',card.dataset.gameId===expId)});
-    document.getElementById('noExpSelected').style.display='none';
-    const detailEl=document.getElementById('expDetail');
+    document.querySelectorAll('#utilGrid .game-card').forEach(card=>{card.classList.toggle('selected',card.dataset.gameId===utilId)});
+    document.querySelectorAll('#gameGrid .game-card').forEach(card=>{card.classList.remove('selected')});
+    document.getElementById('noUtilSelected').style.display='none';
+    const detailEl=document.getElementById('utilDetail');
     detailEl.style.display='flex';
-    const stars='⭐'.repeat(exp.difficulty)+'☆'.repeat(5-exp.difficulty);
-    const playedTime=state.playTime[expId]||0;
-    const timeStr=playedTime>0?formatTime(playedTime):'не играл';
-    const isFav=state.favorites.includes(expId);
-    detailEl.innerHTML=`<div class="icon">${exp.icon}</div><div class="name">${exp.name}</div><div class="genre">🎭 ${exp.genre}</div><div class="difficulty">${stars}</div><div class="description">${exp.description}</div><div style="font-size:14px;color:var(--text-secondary);font-weight:600;margin-bottom:14px;">⏱️ Проведено времени: <span style="color:var(--accent-secondary)">${timeStr}</span></div><div style="display:flex;gap:10px;align-items:center;"><button class="play-btn exp-play-btn" id="playFromDetailExp">🧪 Запустить</button><button class="fav-btn-detail" id="favFromDetailExp" style="background:${isFav?'var(--accent-secondary)':'var(--bg-card)'};border:1px solid var(--border);color:${isFav?'#060a1a':'var(--text)'};padding:16px 20px;border-radius:40px;font-size:22px;cursor:pointer;">${isFav?'⭐':'☆'}</button></div>`;
-    document.getElementById('playFromDetailExp').addEventListener('click',()=>openGame(expId));
-    document.getElementById('favFromDetailExp').addEventListener('click',(e)=>{toggleFavorite(expId,e);selectExperiment(expId)})}
+    const stars='⭐'.repeat(util.difficulty)+'☆'.repeat(5-util.difficulty);
+    const playedTime=state.playTime[utilId]||0;
+    const timeStr=playedTime>0?formatTime(playedTime):'не использовал';
+    const isFav=state.favorites.includes(utilId);
+    detailEl.innerHTML=`<div class="icon">${util.icon}</div><div class="name">${util.name}</div><div class="genre">🎭 ${util.genre}</div><div class="difficulty">${stars}</div><div class="description">${util.description}</div><div style="font-size:14px;color:var(--text-secondary);font-weight:600;margin-bottom:14px;">⏱️ Проведено времени: <span style="color:var(--accent-secondary)">${timeStr}</span></div><div style="display:flex;gap:10px;align-items:center;"><button class="play-btn util-play-btn" id="playFromDetailUtil">🛠️ Открыть</button><button class="play-btn util-newtab-btn" id="newTabFromDetailUtil" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text);padding:16px 20px;border-radius:40px;font-size:16px;cursor:pointer;">↗ В новой вкладке</button><button class="fav-btn-detail" id="favFromDetailUtil" style="background:${isFav?'var(--accent-secondary)':'var(--bg-card)'};border:1px solid var(--border);color:${isFav?'#060a1a':'var(--text)'};padding:16px 20px;border-radius:40px;font-size:22px;cursor:pointer;">${isFav?'⭐':'☆'}</button></div>`;
+    document.getElementById('playFromDetailUtil').addEventListener('click',()=>openGame(utilId));
+    document.getElementById('newTabFromDetailUtil').addEventListener('click',()=>{window.open(util.file,'_blank','noopener');});
+    document.getElementById('favFromDetailUtil').addEventListener('click',(e)=>{toggleFavorite(utilId,e);selectUtility(utilId)})}
+
 function clearSelection(){
     state.selectedGameId=null;
-    state.selectedExpId=null;
+    state.selectedUtilityId=null;
     saveState();
     document.querySelectorAll('.game-card').forEach(card=>card.classList.remove('selected'));
-    document.getElementById('noGameSelected').style.display='flex';
-    document.getElementById('gameDetail').style.display='none';
-    document.getElementById('noExpSelected').style.display='flex';
-    document.getElementById('expDetail').style.display='none'}
+    const ng=document.getElementById('noGameSelected');if(ng)ng.style.display='flex';
+    const gd=document.getElementById('gameDetail');if(gd)gd.style.display='none';
+    const nu=document.getElementById('noUtilSelected');if(nu)nu.style.display='flex';
+    const ud=document.getElementById('utilDetail');if(ud)ud.style.display='none';}
 function renderGames(){
     const grid=document.getElementById('gameGrid');
     grid.innerHTML='';
     const filtered=[...GAMES].sort((a,b)=>{const af=state.favorites.includes(a.id)?0:1;const bf=state.favorites.includes(b.id)?0:1;return af-bf});
     document.getElementById('gamesCount').textContent=filtered.length;
     filtered.forEach(game=>{grid.appendChild(createGameCard(game,false))})}
-function renderExperiments(){
-    const grid=document.getElementById('expGrid');
+function renderUtilities(){
+    const grid=document.getElementById('utilGrid');
+    if(!grid)return;
     grid.innerHTML='';
-    const filtered=[...EXPERIMENTS].sort((a,b)=>{const af=state.favorites.includes(a.id)?0:1;const bf=state.favorites.includes(b.id)?0:1;return af-bf});
-    document.getElementById('expCount').textContent=filtered.length;
-    filtered.forEach(exp=>{grid.appendChild(createGameCard(exp,true))})}
-function createGameCard(game,isExp){
+    const filtered=[...UTILITIES].sort((a,b)=>{const af=state.favorites.includes(a.id)?0:1;const bf=state.favorites.includes(b.id)?0:1;return af-bf});
+    document.getElementById('utilCount').textContent=filtered.length;
+    filtered.forEach(util=>{grid.appendChild(createUtilityCard(util))})}
+function createGameCard(game){
     const card=document.createElement('div');
-    card.className='game-card'+(isExp?' exp-card':'');
+    card.className='game-card';
     card.dataset.gameId=game.id;
-    const isSelected=isExp?(state.selectedExpId===game.id):(state.selectedGameId===game.id);
+    const isSelected=state.selectedGameId===game.id;
     if(isSelected)card.classList.add('selected');
     const isFav=state.favorites.includes(game.id);
-    card.innerHTML=`${isExp?'<div class="exp-badge">ЭКСПЕРИМЕНТ</div>':''}<button class="fav-btn ${isFav?'active':''}" data-fav-id="${game.id}">${isFav?'⭐':'☆'}</button><div class="card-bg" style="background:${game.bg};"></div><div class="card-content"><span class="icon">${game.icon}</span><div class="name">${game.name}</div></div>`;
-    card.addEventListener('click',(e)=>{if(e.target.closest('.fav-btn'))return;isExp?selectExperiment(game.id):selectGame(game.id)});
+    card.innerHTML=`<button class="fav-btn ${isFav?'active':''}" data-fav-id="${game.id}">${isFav?'⭐':'☆'}</button><div class="card-bg" style="background:${game.bg};"></div><div class="card-content"><span class="icon">${game.icon}</span><div class="name">${game.name}</div></div>`;
+    card.addEventListener('click',(e)=>{if(e.target.closest('.fav-btn'))return;selectGame(game.id)});
     card.querySelector('.fav-btn').addEventListener('click',(e)=>{toggleFavorite(game.id,e)});
+    return card}
+function createUtilityCard(util){
+    const card=document.createElement('div');
+    card.className='game-card util-card';
+    card.dataset.gameId=util.id;
+    const isSelected=state.selectedUtilityId===util.id;
+    if(isSelected)card.classList.add('selected');
+    const isFav=state.favorites.includes(util.id);
+    card.innerHTML=`<div class="exp-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a);">УТИЛИТА</div><button class="fav-btn ${isFav?'active':''}" data-fav-id="${util.id}">${isFav?'⭐':'☆'}</button><div class="card-bg" style="background:${util.bg};"></div><div class="card-content"><span class="icon">${util.icon}</span><div class="name">${util.name}</div></div>`;
+    card.addEventListener('click',(e)=>{if(e.target.closest('.fav-btn'))return;selectUtility(util.id)});
+    card.querySelector('.fav-btn').addEventListener('click',(e)=>{toggleFavorite(util.id,e)});
     return card}
 let hoverTimer=null,menuHideTimer=null,backBtnListenersAdded=false,isMenuVisible=false,isMenuOpen=false;
 let currentGameStartTime=0,sessionXpStart=0,sessionAchEarned=[],sessionStartTotalTime=0;
@@ -775,7 +791,8 @@ function openGame(gameId){
     const container=document.getElementById('gameFrameContainer');
     const iframe=document.getElementById('gameIframe');
     const file=GAME_FILES[gameId];
-    if(!file){alert('❌ Файл игры не найден: '+gameId);return}
+    if(!file){alert('❌ Файл не найден: '+gameId);return}
+    const isUtil=UTILITIES.some(u=>u.id===gameId);
     state.lastGameId=gameId;
     state.lastGameTime=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     currentGameStartTime=Date.now();
@@ -792,12 +809,14 @@ function openGame(gameId){
     try{iframe.src='about:blank'}catch(e){}
     iframe.onload=null;
     iframe.onerror=null;
-    iframe.removeAttribute('sandbox');
+    if (isUtil) iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-modals allow-downloads');
+    else iframe.removeAttribute('sandbox');
     let loadHandled=false;
     const onLoad=()=>{if(loadHandled)return;loadHandled=true;hideGameSkeleton()};
     iframe.onload=onLoad;
     iframe.onerror=onLoad;
-    requestAnimationFrame(()=>{iframe.src=file});
+    const cacheBusted=file+(file.includes('?')?'&':'?')+'v='+Date.now();
+    requestAnimationFrame(()=>{iframe.src=cacheBusted});
     container.style.display='block';
     isGameOpen=true;
     setTimeout(()=>{if(isGameOpen)hideGameSkeleton()},4000);
@@ -807,6 +826,7 @@ function openGame(gameId){
         if(!isGameOpen){clearInterval(achTrackInterval);return}
         state.achievements.forEach(id=>{
             if(!achBefore.has(id)&&!sessionAchEarned.includes(id))sessionAchEarned.push(id)})},1000)}
+
 function closeGame(){
     if(!isGameOpen)return;
     document.body.classList.remove('game-active');
@@ -830,7 +850,7 @@ function closeGame(){
     saveState(true)}
 let lastPlayedGameId=null;
 function showPostGameScreen(gameId,sessionTime,xpGained,achEarned){
-    const ALL=[...GAMES,...EXPERIMENTS];
+    const ALL=[...GAMES,...UTILITIES];
     const game=ALL.find(g=>g.id===gameId);
     if(!game)return;
     lastPlayedGameId=gameId;
@@ -854,7 +874,7 @@ function updateLastGameBar(){
     const time=document.getElementById('lastGameTime');
     const playBtn=document.getElementById('lastGamePlayBtn');
     if(state.lastGameId){
-        const ALL=[...GAMES,...EXPERIMENTS];
+        const ALL=[...GAMES,...UTILITIES];
         const game=ALL.find(g=>g.id===state.lastGameId);
         if(game){
             icon.textContent=game.icon;
@@ -922,7 +942,7 @@ function renderRecords(){
     list.innerHTML='';
     const sorted=Object.entries(state.playTime).sort((a,b)=>b[1]-a[1]);
     if(sorted.length===0){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-secondary);font-weight:600;">Пока нет рекордов — сыграй в игру!</div>';return}
-    const ALL=[...GAMES,...EXPERIMENTS];
+    const ALL=[...GAMES,...UTILITIES];
     sorted.forEach(([gameId,seconds])=>{
         const game=ALL.find(g=>g.id===gameId);
         if(!game)return;
@@ -931,7 +951,7 @@ function renderRecords(){
         row.innerHTML=`<div class="rec-game"><span class="rec-icon">${game.icon}</span><span class="rec-name">${game.name}</span></div><span class="rec-time">${formatTime(seconds)}</span>`;
         list.appendChild(row)})}
 async function exportProfile(){
-    const data={version:24,exportedAt:new Date().toISOString(),state:state};
+    const data={version:25,exportedAt:new Date().toISOString(),state:state};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -953,8 +973,9 @@ document.getElementById('importProfileInput').addEventListener('change',async(e)
         if(!data.state)throw new Error('Неверный формат');
         if(!confirm(`📥 Импортировать профиль?\n\nТекущий прогресс будет ЗАМЕНЁН.`)){e.target.value='';return}
         state={...DEFAULT_STATE,...data.state};
+        if(!state.todayStats.utilPlayed) state.todayStats.utilPlayed=[];
         await idbSet(STATE_KEY,state);
-        renderGames();renderExperiments();updateLastGameBar();renderProfile();
+        renderGames();renderUtilities();updateLastGameBar();renderProfile();
         renderAchievements();renderRecords();renderStats();renderQuests();
         renderStreak();updateLevelDisplay();applyTheme();renderCases();
         if(typeof updateChatBadge==='function')updateChatBadge();
@@ -1259,9 +1280,6 @@ document.getElementById('streakBadge').addEventListener('click',()=>{renderCalen
 calendarCloseBtn.addEventListener('click',()=>calendarModal.classList.remove('show'));
 calendarModal.addEventListener('click',(e)=>{if(e.target===calendarModal)calendarModal.classList.remove('show')});
 
-// ============================================
-// RESET (с удалением из БД)
-// ============================================
 async function resetAllData(){
     const st = (typeof chatGetState === 'function') ? chatGetState() : state;
     const oldNick = st && st.nickname && st.nickname !== 'Игрок' ? st.nickname : null;
@@ -1301,15 +1319,10 @@ async function resetAllData(){
                     console.log('[Reset] ✅ Удалено из БД:', data.deleted);
                 } else {
                     console.warn('[Reset] Ошибка удаления из БД:', data.error);
-                    alert('⚠️ Не удалось удалить аккаунт из базы: ' + data.error + '\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
                 }
-            } else {
-                console.warn('[Reset] HTTP ошибка:', res.status);
-                alert('⚠️ Сервер не отвечает (' + res.status + ').\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
             }
         } catch (e) {
             console.warn('[Reset] Сеть:', e);
-            alert('⚠️ Нет соединения.\n\nЛокальный прогресс будет сброшен, но данные в БД останутся.');
         }
     }
 
@@ -1321,7 +1334,7 @@ async function resetAllData(){
     state.unreadChatCount = 0;
     await idbSet(STATE_KEY, state);
     renderGames();
-    renderExperiments();
+    renderUtilities();
     updateLastGameBar();
     loadSettings();
     renderProfile();
@@ -1356,17 +1369,13 @@ async function resetAllData(){
     }
     if (typeof refreshLeaderboard === 'function') setTimeout(refreshLeaderboard, 500);
 
-    if (dbDeleted) {
-        alert('🔄 Всё сброшено, аккаунт удалён из базы.');
-    } else {
-        alert('🔄 Локальный прогресс сброшен.');
-    }
+    alert(dbDeleted ? '🔄 Всё сброшено, аккаунт удалён из базы.' : '🔄 Локальный прогресс сброшен.');
 }
 document.getElementById('resetProgressBtn').addEventListener('click',resetAllData);
 document.getElementById('profileResetBtn').addEventListener('click',resetAllData);
 
 function renderStats(){
-    document.getElementById('totalGames').textContent=GAMES.length+EXPERIMENTS.length;
+    document.getElementById('totalGames').textContent=GAMES.length+UTILITIES.length;
     document.getElementById('totalTime').textContent=Math.floor(state.totalTime/60)+' мин';
     const totalNormal=ACHIEVEMENTS.filter(a=>!a.isParadox).length;
     const earnedNormal=state.achievements.filter(id=>id!=='temporal_paradox').length;
@@ -1418,6 +1427,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
         }
         if(btn.dataset.tab==='chat'){
             if(typeof onChatTabOpen==='function')onChatTabOpen();
+        }
+        if(btn.dataset.tab==='utilities'){
+            renderUtilities();
         }
     });
 });
@@ -1489,7 +1501,7 @@ function setupSwipeNavigation() {
     let touchStartTime = 0;
     const SWIPE_THRESHOLD = 80;
     const SWIPE_TIME = 500;
-    const tabsOrder = ['games', 'experiments', 'quests', 'leaderboard', 'chat'];
+    const tabsOrder = ['games', 'utilities', 'quests', 'leaderboard', 'chat'];
     function showSwipeIndicator(text) {
         let el = document.querySelector('.tab-swipe-indicator');
         if (!el) {
@@ -1566,14 +1578,14 @@ document.addEventListener('DOMContentLoaded', () => {
     applyDeviceMode();
     await loadState();
     state.selectedGameId=null;
-    state.selectedExpId=null;
+    state.selectedUtilityId=null;
     updateStreak();
     checkDailyQuests();
     createParticles();
     createStars();
     buildAnimatedLogo();
     renderGames();
-    renderExperiments();
+    renderUtilities();
     loadSettings();
     renderStats();
     renderAchievements();
@@ -1585,7 +1597,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLastGameBar();
     updateClock();
     renderCases();
-    console.log('🔥 Лаунчер FireLand v25.0 · Игр: '+GAMES.length+' · Экспериментов: '+EXPERIMENTS.length);
+    console.log('🔥 Лаунчер FireLand v26.0 · Игр: '+GAMES.length+' · Утилит: '+UTILITIES.length);
     if(typeof initLeaderboard==='function')initLeaderboard();
     if(state.lastSubmittedNick){
         setTimeout(()=>{
@@ -1597,9 +1609,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(typeof updateChatBadge==='function')setTimeout(updateChatBadge, 800);
 })();
 
-// ============================================
-// ЭКСПОРТ В WINDOW
-// ============================================
 window.playTone = playTone;
 window.saveState = saveState;
 window.getLevelFromTotalXp = getLevelFromTotalXp;
@@ -1627,6 +1636,8 @@ window.renameNickEverywhere = renameNickEverywhere;
 window.openGame = openGame;
 window.resetAllData = resetAllData;
 window.deleteMyAccount = resetAllData;
+window.selectUtility = selectUtility;
+window.renderUtilities = renderUtilities;
 
 if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
 if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;

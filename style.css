@@ -2336,3 +2336,13 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
   .chat-image-wrapper img{max-height:220px}
   .chat-voice-wrapper{min-width:180px}
 }
+/* Вкладка утилит */
+.tab-btn.utilities-tab.active {
+  background: linear-gradient(135deg, rgba(34,197,94,0.25), rgba(16,185,129,0.25));
+  border-color: #22c55e;
+}
+.games-list-title.util { color: #22c55e; }
+.game-card.util-card:hover { border-color: #22c55e; }
+.game-card.util-card.selected { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
+.util-play-btn { background: linear-gradient(135deg, #22c55e, #16a34a) !important; }
+.util-newtab-btn:hover { background: var(--bg-hover) !important; }
