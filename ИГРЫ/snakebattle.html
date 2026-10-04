@@ -54,12 +54,20 @@
     width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px;
     font-weight: 700; cursor: pointer; transition: all 0.2s;
     background: linear-gradient(135deg, #4d9eff, #7d5eff); color: #fff;
+    margin-bottom: 10px;
   }
   .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77,158,255,0.4); }
   .btn:active { transform: translateY(0); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn.secondary { background: rgba(255,255,255,0.08); font-size: 14px; padding: 12px; }
 
-  #match-status { margin-top: 20px; font-size: 14px; opacity: 0.7; min-height: 20px; }
+  #match-status { margin-top: 16px; font-size: 14px; opacity: 0.7; min-height: 20px; }
+  #timer-bar {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+    border-radius: 2px; margin-top: 10px; overflow: hidden; display: none;
+  }
+  #timer-bar.show { display: block; }
+  #timer-fill { height: 100%; background: linear-gradient(90deg, #4d9eff, #7d5eff); width: 0%; transition: width 0.1s linear; }
   #players-list { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
   .player-chip {
     padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 600;
@@ -122,7 +130,9 @@
       <h1>Snakes Battle</h1>
       <p>Командные бои · до 10 игроков</p>
       <button class="btn" id="play-btn">Найти матч</button>
+      <button class="btn secondary" id="bots-btn">🤖 Играть с ботами (1 vs 5)</button>
       <div id="match-status">Нажми «Найти матч», чтобы начать</div>
+      <div id="timer-bar"><div id="timer-fill"></div></div>
       <div id="players-list"></div>
     </div>
   </div>
@@ -132,7 +142,7 @@
       <h2>Вы погибли</h2>
       <p id="death-reason">Столкновение с врагом</p>
       <button class="btn" id="respawn-btn">Респавн</button>
-      <button class="btn secondary" id="leave-btn" style="background:rgba(255,255,255,0.08);margin-top:12px;font-size:14px;padding:12px;">Выйти в лобби</button>
+      <button class="btn secondary" id="leave-btn">Выйти в лобби</button>
     </div>
   </div>
 </div>
@@ -144,7 +154,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
    1. КОНФИГ SUPABASE
    ============================================================ */
 const SUPABASE_URL = 'https://brqlmsbvwmycyhiluuui.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJycWxtc2J2d215Y3loaWx1dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODQwMDYsImV4cCI6MjEwNTA2MDAwNn0.mIW8zji9P67qIFm8V8dFcMV2wzoI6GnRYg9prxKAxj8'; // anon JWT
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJycWxtc2J2d215Y3loaWx1dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODQwMDYsImV4cCI6MjEwNTA2MDAwNn0.mIW8zji9P67qIFm8V8dFcMV2wzoI6GnRYg9prxKAxj8';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   realtime: { params: { eventsPerSecond: 30 } }
 });
@@ -154,8 +164,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
    ============================================================ */
 const WORLD_SIZE = 3000;
 const MAX_PLAYERS = 10;
-const MIN_PLAYERS = 2;      // <-- минимум для старта
-const MATCH_WINDOW = 60000; // окно матчмейкинга (60 сек)
+const MATCH_WINDOW = 20000;   // автостарт через 20 сек после первого игрока
 const BASE_SPEED = 2.4;
 const BOOST_MULTIPLIER = 2.0;
 const BOOST_LENGTH_COST = 0.15;
@@ -164,6 +173,7 @@ const START_LENGTH = 10;
 const FOOD_COUNT = 400;
 const TICK_RATE = 33;
 const TURN_SPEED = 0.15;
+const BOT_COUNT = 5;
 
 const TEAM_RED = 'red';
 const TEAM_BLUE = 'blue';
@@ -182,15 +192,18 @@ let myTeam = TEAM_RED;
 let roomId = null;
 let channel = null;
 let gameState = 'lobby';
-let gameStartSent = false;   // защита от повторного старта
-let hostId = null;           // кто хост в текущей комнате
+let hostId = null;
+let matchStartAt = 0;
+let isBotMode = false;
 
 let players = new Map();
+let bots = [];
 let foods = [];
 let camera = { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
 let mySnake = null;
 let kills = 0;
 let lastBroadcast = 0;
+let timerInterval = null;
 
 let input = { targetAngle: 0, boosting: false, hasInput: false };
 
@@ -210,8 +223,9 @@ function lerpAngle(a, b, t) {
    5. КЛАСС ЗМЕЙКИ
    ============================================================ */
 class Snake {
-  constructor(id, name, team, x, y, isLocal = false) {
-    this.id = id; this.name = name; this.team = team; this.isLocal = isLocal;
+  constructor(id, name, team, x, y, isLocal = false, isBot = false) {
+    this.id = id; this.name = name; this.team = team;
+    this.isLocal = isLocal; this.isBot = isBot;
     this.x = x; this.y = y;
     this.angle = rand(0, Math.PI * 2);
     this.targetAngle = this.angle;
@@ -334,7 +348,84 @@ class Snake {
 }
 
 /* ============================================================
-   6. ЕДА
+   6. БОТЫ
+   ============================================================ */
+class Bot extends Snake {
+  constructor(id, x, y, team) {
+    super(id, 'Бот' + id.slice(-3), team, x, y, false, true);
+    this.aiTimer = 0;
+    this.targetFood = null;
+  }
+
+  update() {
+    if (!this.alive) return;
+
+    // Простой ИИ: ищем ближайшую еду и цель — врага рядом
+    this.aiTimer--;
+    if (this.aiTimer <= 0) {
+      this.aiTimer = 20 + Math.floor(rand(0, 20));
+      this.targetFood = this.findNearestFood();
+    }
+
+    // Угроза: проверяем врагов впереди
+    const threat = this.findThreat();
+    if (threat) {
+      // Уворачиваемся — поворачиваем от врага
+      const dx = this.x - threat.x;
+      const dy = this.y - threat.y;
+      this.targetAngle = Math.atan2(dy, dx);
+    } else if (this.targetFood) {
+      const dx = this.targetFood.x - this.x;
+      const dy = this.targetFood.y - this.y;
+      this.targetAngle = Math.atan2(dy, dx);
+    } else {
+      this.targetAngle += rand(-0.1, 0.1);
+    }
+
+    // Избегание стен
+    const margin = 150;
+    if (this.x < margin) this.targetAngle = 0;
+    else if (this.x > WORLD_SIZE - margin) this.targetAngle = Math.PI;
+    if (this.y < margin) this.targetAngle = Math.PI / 2;
+    else if (this.y > WORLD_SIZE - margin) this.targetAngle = -Math.PI / 2;
+
+    super.update();
+  }
+
+  findNearestFood() {
+    let best = null, bestD = Infinity;
+    for (const f of foods) {
+      const d = dist(this, f);
+      if (d < bestD && d < 600) { bestD = d; best = f; }
+    }
+    return best;
+  }
+
+  findThreat() {
+    // Своих игнорим
+    for (const p of players.values()) {
+      if (!p.alive || p.id === this.id) continue;
+      if (p.team === this.team) continue;
+      const head = p.segments[0];
+      if (!head) continue;
+      const dx = head.x - this.x;
+      const dy = head.y - this.y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 200) {
+        // Проверяем, движется ли враг в нашу сторону
+        const enemyDir = p.angle;
+        const toMe = Math.atan2(-dy, -dx);
+        let angleDiff = Math.abs(enemyDir - toMe);
+        while (angleDiff > Math.PI) angleDiff = Math.abs(angleDiff - Math.PI * 2);
+        if (angleDiff < Math.PI / 3) return p;
+      }
+    }
+    return null;
+  }
+}
+
+/* ============================================================
+   7. ЕДА
    ============================================================ */
 function spawnFood() {
   foods = [];
@@ -357,7 +448,7 @@ function spawnDeathFood(x, y, team) {
 }
 
 /* ============================================================
-   7. КОЛЛИЗИИ
+   8. КОЛЛИЗИИ
    ============================================================ */
 function checkCollisions() {
   if (!mySnake || !mySnake.alive) return;
@@ -387,23 +478,74 @@ function checkCollisions() {
   }
 }
 
-function die(reason, killerId = null) {
-  if (!mySnake || !mySnake.alive) return;
-  mySnake.alive = false;
-  gameState = 'dead';
-  document.getElementById('death-reason').textContent = reason;
-  document.getElementById('death-screen').classList.add('show');
-  if (channel) {
-    channel.send({
-      type: 'broadcast', event: 'player_died',
-      payload: { id: mySnake.id, x: mySnake.x, y: mySnake.y, team: mySnake.team, killer: killerId }
-    });
+function checkBotCollisions() {
+  for (const bot of bots) {
+    if (!bot.alive) continue;
+    const head = bot.segments[0];
+    if (!head) continue;
+
+    // Еда
+    for (let i = foods.length - 1; i >= 0; i--) {
+      const f = foods[i];
+      if (dist(head, f) < 15) {
+        bot.grow(f.value);
+        foods.splice(i, 1);
+        foods.push({
+          x: rand(50, WORLD_SIZE - 50), y: rand(50, WORLD_SIZE - 50),
+          r: rand(3, 5), color: `hsl(${rand(0, 360)}, 70%, 60%)`, value: 1
+        });
+      }
+    }
+
+    // Столкновения с врагами
+    for (const p of players.values()) {
+      if (p.id === bot.id || !p.alive) continue;
+      if (p.team === bot.team) continue;
+      for (let i = 0; i < p.segments.length; i += 2) {
+        const seg = p.segments[i];
+        if (!seg) continue;
+        if (dist(head, seg) < 14) {
+          killBot(bot, p.id);
+          break;
+        }
+      }
+      if (!bot.alive) break;
+    }
+
+    // Столкновения с другими ботами
+    if (bot.alive) {
+      for (const other of bots) {
+        if (other.id === bot.id || !other.alive) continue;
+        if (other.team === bot.team) continue;
+        for (let i = 0; i < other.segments.length; i += 2) {
+          const seg = other.segments[i];
+          if (!seg) continue;
+          if (dist(head, seg) < 14) { killBot(bot, other.id); break; }
+        }
+        if (!bot.alive) break;
+      }
+    }
+
+    // Столкновение с игроком (если игрок жив)
+    if (bot.alive && mySnake && mySnake.alive && mySnake.team !== bot.team) {
+      const myHead = mySnake.segments[0];
+      if (myHead && dist(myHead, head) < 14) {
+        // Игрок убил бота
+        killBot(bot, myId);
+        kills++;
+      }
+    }
   }
-  spawnDeathFood(mySnake.x, mySnake.y, mySnake.team);
+}
+
+function killBot(bot, killerId) {
+  bot.alive = false;
+  spawnDeathFood(bot.x, bot.y, bot.team);
+  if (killerId === myId) kills++;
 }
 
 /* ============================================================
-   8. ВВОД
+   9. ВВОД
    ============================================================ */
 function setupInput() {
   canvas.addEventListener('mousemove', (e) => {
@@ -462,7 +604,7 @@ function setupInput() {
 }
 
 /* ============================================================
-   9. РЕНДЕР
+   10. РЕНДЕР
    ============================================================ */
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 window.addEventListener('resize', resize);
@@ -506,6 +648,15 @@ function render() {
     ctx.fill();
   }
   ctx.shadowBlur = 0;
+
+  // Боты
+  for (const b of bots) {
+    if (!b.alive) continue;
+    if (Math.abs(b.x - camera.x) > canvas.width || Math.abs(b.y - camera.y) > canvas.height) continue;
+    b.draw(ctx);
+  }
+
+  // Другие игроки
   for (const p of players.values()) {
     if (p.id === mySnake?.id) continue;
     if (Math.abs(p.x - camera.x) > canvas.width || Math.abs(p.y - camera.y) > canvas.height) continue;
@@ -521,6 +672,13 @@ function renderMiniMap() {
   mmCtx.fillStyle = 'rgba(0,0,0,0.4)';
   mmCtx.fillRect(0, 0, miniMap.width, miniMap.height);
   const scale = miniMap.width / WORLD_SIZE;
+  for (const b of bots) {
+    if (!b.alive) continue;
+    mmCtx.beginPath();
+    mmCtx.arc(b.x * scale, b.y * scale, 2, 0, Math.PI * 2);
+    mmCtx.fillStyle = b.team === TEAM_RED ? '#ff4d5e' : '#4d9eff';
+    mmCtx.fill();
+  }
   for (const p of players.values()) {
     if (!p.alive) continue;
     mmCtx.beginPath();
@@ -536,19 +694,43 @@ function renderMiniMap() {
 }
 
 /* ============================================================
-   10. СЕТЬ И МАТЧМЕЙКИНГ
+   11. СЕТЬ
    ============================================================ */
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 5;
+
 async function findMatch() {
+  isBotMode = false;
   gameState = 'searching';
-  gameStartSent = false;
   document.getElementById('match-status').textContent = 'Поиск игроков...';
   document.getElementById('play-btn').disabled = true;
+  document.getElementById('bots-btn').disabled = true;
 
-  // Слот фиксированной длительности — все, кто попал, играют вместе
   const slot = Math.floor(Date.now() / MATCH_WINDOW);
   roomId = `match_${slot}`;
+  matchStartAt = (slot + 1) * MATCH_WINDOW; // старт в конце окна
 
+  startCountdown();
   await joinRoom(roomId);
+}
+
+function startCountdown() {
+  document.getElementById('timer-bar').classList.add('show');
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const left = Math.max(0, matchStartAt - Date.now());
+    const total = MATCH_WINDOW;
+    const pct = 100 - (left / total) * 100;
+    document.getElementById('timer-fill').style.width = pct + '%';
+    if (left <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      // Если мы хост — стартуем
+      if (hostId === myId && gameState === 'searching') {
+        channel.send({ type: 'broadcast', event: 'game_start', payload: { host: myId } });
+      }
+    }
+  }, 100);
 }
 
 async function joinRoom(rid) {
@@ -569,32 +751,32 @@ async function joinRoom(rid) {
       const p = state[key][0];
       if (p) list.push(p);
     }
+
+    // Сортируем и определяем хоста
+    list.sort((a, b) => a.id.localeCompare(b.id));
+    hostId = list[0]?.id || null;
     updatePlayersList(list);
 
-    // Обновляем хост — им становится игрок с наименьшим id в комнате
-    const sortedIds = list.map(p => p.id).sort();
-    hostId = sortedIds[0] || null;
-
     const count = list.length;
-    const need = Math.max(0, MIN_PLAYERS - count);
-    if (need > 0) {
-      document.getElementById('match-status').textContent =
-        `Ожидание игроков: ${count}/${MIN_PLAYERS} (нужно ещё ${need})`;
-    } else {
-      document.getElementById('match-status').textContent =
-        `Игроков: ${count}/${MAX_PLAYERS}. Старт...`;
+    if (count > MAX_PLAYERS) {
+      // Мы лишние — выходим
+      document.getElementById('match-status').textContent = 'Комната заполнена';
+      leaveRoom();
+      resetLobbyUI();
+      return;
     }
 
-    // Хост запускает игру, когда набралось MIN_PLAYERS и старт ещё не был отправлен
-    if (count >= MIN_PLAYERS && !gameStartSent && hostId === myId && gameState === 'searching') {
-      gameStartSent = true;
-      channel.send({ type: 'broadcast', event: 'game_start', payload: { host: myId } });
+    if (count < 2) {
+      document.getElementById('match-status').textContent =
+        `Ожидание игроков: ${count}/2 (старт через ${Math.ceil((matchStartAt - Date.now())/1000)}с)`;
+    } else {
+      document.getElementById('match-status').textContent =
+        `Игроков: ${count}/${MAX_PLAYERS}. Старт через ${Math.ceil((matchStartAt - Date.now())/1000)}с`;
     }
   });
 
-  channel.on('broadcast', { event: 'game_start' }, ({ payload }) => {
+  channel.on('broadcast', { event: 'game_start' }, () => {
     if (gameState === 'searching' || gameState === 'lobby') {
-      gameStartSent = true;
       startGame();
     }
   });
@@ -634,16 +816,34 @@ async function joinRoom(rid) {
   channel.subscribe(async (status) => {
     console.log('[Realtime] Status:', status);
     if (status === 'SUBSCRIBED') {
+      reconnectAttempts = 0;
       await channel.track({ id: myId, name: myName, team: myTeam });
       channel.send({
         type: 'broadcast', event: 'player_joined',
         payload: { id: myId, name: myName, team: myTeam, x: 0, y: 0 }
       });
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-      document.getElementById('match-status').textContent = 'Ошибка подключения. Смотри консоль.';
       console.error('[Realtime] Ошибка:', status);
+      scheduleReconnect();
+    } else if (status === 'CLOSED') {
+      if (gameState === 'searching' || gameState === 'playing') {
+        scheduleReconnect();
+      }
     }
   });
+}
+
+function scheduleReconnect() {
+  if (reconnectAttempts >= MAX_RECONNECT) {
+    document.getElementById('match-status').textContent = 'Не удалось подключиться. Обнови страницу.';
+    return;
+  }
+  reconnectAttempts++;
+  const delay = 2000 * reconnectAttempts;
+  document.getElementById('match-status').textContent = `Переподключение (${reconnectAttempts}/${MAX_RECONNECT})...`;
+  setTimeout(() => {
+    if (roomId) joinRoom(roomId);
+  }, delay);
 }
 
 function leaveRoom() {
@@ -651,18 +851,20 @@ function leaveRoom() {
   players.clear();
   mySnake = null;
   roomId = null;
-  gameStartSent = false;
   hostId = null;
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  document.getElementById('timer-bar').classList.remove('show');
 }
 
 /* ============================================================
-   11. ИГРА
+   12. ИГРА
    ============================================================ */
 function startGame() {
   gameState = 'playing';
   document.getElementById('lobby').classList.add('hidden');
   document.getElementById('death-screen').classList.remove('show');
 
+  // Балансировка команд
   let red = 0, blue = 0;
   for (const p of players.values()) {
     if (p.team === TEAM_RED) red++;
@@ -681,6 +883,29 @@ function startGame() {
   });
 }
 
+function startBotGame() {
+  isBotMode = true;
+  gameState = 'playing';
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('death-screen').classList.remove('show');
+
+  myTeam = TEAM_RED;
+  spawnMySnake();
+
+  // 5 ботов — все синие
+  bots = [];
+  for (let i = 0; i < BOT_COUNT; i++) {
+    const botId = 'bot_' + i + '_' + Math.random().toString(36).slice(2, 6);
+    const x = rand(WORLD_SIZE - 800, WORLD_SIZE - 200);
+    const y = rand(200, WORLD_SIZE - 200);
+    bots.push(new Bot(botId, x, y, TEAM_BLUE));
+  }
+
+  spawnFood();
+  kills = 0;
+  updateHUD();
+}
+
 function spawnMySnake() {
   const spawnX = myTeam === TEAM_RED ? rand(200, 800) : rand(WORLD_SIZE - 800, WORLD_SIZE - 200);
   const spawnY = rand(200, WORLD_SIZE - 200);
@@ -696,7 +921,7 @@ function respawn() {
   kills = 0;
   spawnMySnake();
   updateHUD();
-  if (channel) {
+  if (!isBotMode && channel) {
     channel.send({
       type: 'broadcast', event: 'player_joined',
       payload: { id: myId, name: myName, team: myTeam, x: mySnake.x, y: mySnake.y }
@@ -715,6 +940,12 @@ function updateHUD() {
     else blueCount++;
     if (p.team === myTeam && p.id !== myId) allies++;
   }
+  for (const b of bots) {
+    if (!b.alive) continue;
+    if (b.team === TEAM_RED) redCount++;
+    else blueCount++;
+    if (b.team === myTeam) allies++;
+  }
   document.getElementById('red-score').textContent = redCount;
   document.getElementById('blue-score').textContent = blueCount;
   document.getElementById('stat-allies').textContent = allies;
@@ -723,6 +954,12 @@ function updateHUD() {
 function gameLoop(now) {
   requestAnimationFrame(gameLoop);
   if (gameState === 'playing') {
+    // Боты
+    if (isBotMode) {
+      for (const b of bots) b.update();
+      checkBotCollisions();
+    }
+
     if (mySnake && mySnake.alive) {
       if (input.hasInput) mySnake.targetAngle = input.targetAngle;
       mySnake.boosting = input.boosting;
@@ -732,7 +969,8 @@ function gameLoop(now) {
       checkCollisions();
       updateHUD();
     }
-    if (now - lastBroadcast > TICK_RATE) {
+
+    if (!isBotMode && now - lastBroadcast > TICK_RATE) {
       lastBroadcast = now;
       if (mySnake && mySnake.alive && channel) {
         channel.send({ type: 'broadcast', event: 'state', payload: mySnake.toNet() });
@@ -745,7 +983,7 @@ function gameLoop(now) {
 }
 
 /* ============================================================
-   12. UI
+   13. UI
    ============================================================ */
 function updatePlayersList(list) {
   const el = document.getElementById('players-list');
@@ -758,20 +996,29 @@ function updatePlayersList(list) {
   });
 }
 
+function resetLobbyUI() {
+  document.getElementById('play-btn').disabled = false;
+  document.getElementById('bots-btn').disabled = false;
+  document.getElementById('match-status').textContent = 'Нажми «Найти матч», чтобы начать';
+  document.getElementById('players-list').innerHTML = '';
+  document.getElementById('timer-bar').classList.remove('show');
+}
+
 document.getElementById('play-btn').addEventListener('click', findMatch);
+document.getElementById('bots-btn').addEventListener('click', startBotGame);
 document.getElementById('respawn-btn').addEventListener('click', respawn);
 document.getElementById('leave-btn').addEventListener('click', () => {
   document.getElementById('death-screen').classList.remove('show');
   document.getElementById('lobby').classList.remove('hidden');
-  document.getElementById('play-btn').disabled = false;
-  document.getElementById('match-status').textContent = 'Нажми «Найти матч», чтобы начать';
   gameState = 'lobby';
+  bots = [];
   leaveRoom();
+  resetLobbyUI();
 });
 window.addEventListener('beforeunload', leaveRoom);
 
 /* ============================================================
-   13. СТАРТ
+   14. СТАРТ
    ============================================================ */
 setupInput();
 requestAnimationFrame(gameLoop);
