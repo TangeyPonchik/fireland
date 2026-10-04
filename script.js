@@ -1,16 +1,16 @@
 // ============================================
-// FireLand Launcher · script.js · v26.3.0
-// ES-модули: games.js, profile.js, sound.js (гибрид)
+// FireLand Launcher · script.js · v26.3.1
+// ES-модули: games.js, profile.js, sound.js (гибрид через window)
 // ============================================
 
 // ============================================
 // ВЕРСИЯ ПРИЛОЖЕНИЯ · МАЖ.МИН.ФИКС
 // ============================================
-const APP_VERSION = '26.3.0';
+const APP_VERSION = '26.3.1';
 
 // МАЖОРНАЯ (26) — новые разделы, breaking changes
 // МИНОРНАЯ (3) — profile.js + sound.js
-// ФИКС (0) — фиксы
+// ФИКС (1) — фикс export, vibrateDevice, allowfullscreen
 
 // ============================================
 // ПРОВЕРКА ЗАГРУЗКИ МОДУЛЕЙ
@@ -46,14 +46,17 @@ const getParadoxLevelInfo = window.getParadoxLevelInfo || function(level){return
 
 // ============================================
 // ЗВУКИ ИЗ sound.js
+// ВАЖНО: sound.js объявляет SOUNDS, playTone, playAlarmSound, vibrateDevice
+// как function/const в глобальной области.
+// Используем var — не конфликтует, перезапишет если надо.
 // ============================================
-const SOUNDS = window.SOUNDS || {
+var SOUNDS = window.SOUNDS || {
   click(){}, achievement(){}, quest(){}, levelup(){},
   reward(){}, caseOpen(){}, error(){}
 };
-const playTone = window.playTone || function(){};
-const playAlarmSound = window.playAlarmSound || function(){};
-const vibrateDevice = window.vibrateDevice || function(){};
+var playTone = window.playTone || function(){};
+var playAlarmSound = window.playAlarmSound || function(){};
+var vibrateDevice = window.vibrateDevice || function(){};
 
 // ============================================
 // DEFAULT_STATE
@@ -132,7 +135,8 @@ function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.get
 function dateStr(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
 function formatTime(sec){const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;if(h>0)return `${h}ч ${m}м`;if(m>0)return `${m}м ${s}с`;return `${s}с`}
 
-// playTone / SOUNDS / getAudioCtx — в sound.js (загружается до script.js)
+// playTone / SOUNDS / playAlarmSound / vibrateDevice — в sound.js (загружается до script.js)
+// Используем var-алиасы выше — не конфликтуют с function из sound.js
 
 const DAILY_REWARDS=[50,100,200,400,800,1500];
 function getDailyRewardAmount(streakDay){const idx=Math.min(streakDay-1,DAILY_REWARDS.length-1);return DAILY_REWARDS[idx]}
