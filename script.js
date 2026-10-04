@@ -1,130 +1,63 @@
-const LEVEL_TITLES=[
-{min:1,max:2,title:'🌱 Новичок'},{min:3,max:4,title:'🌿 Ученик'},{min:5,max:6,title:'🎯 Опытный'},{min:7,max:8,title:'⚔️ Ветеран'},
-{min:9,max:10,title:'🛡️ Мастер'},{min:11,max:12,title:'👑 Гроссмейстер'},{min:13,max:14,title:'🌟 Элита'},{min:15,max:16,title:'🔥 Легенда'},
-{min:17,max:18,title:'💎 Бриллиант'},{min:19,max:20,title:'🏆 Чемпион'},{min:21,max:22,title:'👊 Боец'},{min:23,max:24,title:'🎖️ Заслуженный'},
-{min:25,max:26,title:'🌠 Звёздный'},{min:27,max:28,title:'🦅 Ястреб'},{min:29,max:30,title:'🐉 Дракон'},{min:31,max:32,title:'⚡ Гром'},
-{min:33,max:34,title:'🌪️ Смерч'},{min:35,max:36,title:'🌊 Цунами'},{min:37,max:38,title:'☄️ Комета'},{min:39,max:40,title:'🌌 Галактика'},
-{min:41,max:42,title:'🔱 Посейдон'},{min:43,max:44,title:'⚔️ Арес'},{min:45,max:46,title:'🛡️ Афина'},{min:47,max:48,title:'🎭 Дионис'},
-{min:49,max:50,title:'🌞 Аполлон'},{min:51,max:52,title:'⚡ Зевс'},{min:53,max:54,title:'👑 Кронос'},{min:55,max:56,title:'🌑 Аид'},
-{min:57,max:58,title:'🌊 Тритон'},{min:59,max:60,title:'🦁 Леонид'},{min:61,max:62,title:'⚔️ Спартанец'},{min:63,max:64,title:'🏛️ Сенатор'},
-{min:65,max:66,title:'👑 Император'},{min:67,max:68,title:'🔮 Оракул'},{min:69,max:70,title:'🧙 Архимаг'},{min:71,max:72,title:'🐲 Драконоборец'},
-{min:73,max:74,title:'⚔️ Легендарный воин'},{min:75,max:76,title:'🌟 Полубог'},{min:77,max:78,title:'👁️ Провидение'},{min:79,max:80,title:'🌌 Хранитель'},
-{min:81,max:82,title:'⏳ Повелитель времени'},{min:83,max:84,title:'🌀 Архитектор'},{min:85,max:86,title:'👑 Владыка'},{min:87,max:88,title:'⚡ Громовержец'},
-{min:89,max:90,title:'🔥 Феникс'},{min:91,max:92,title:'💫 Астрал'},{min:93,max:94,title:'🌌 Вселенная'},{min:95,max:96,title:'♾️ Бесконечность'},
-{min:97,max:98,title:'👽 Космический разум'},{min:99,max:100,title:'🔴 АБСОЛЮТ'},{min:101,max:999,title:'🔥🔥🔥 БОГ FireLand'}];
-const PARADOX={BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
-const GAMES=[
-{id:'proryv1',name:'Прорыв 1',icon:'💻',genre:'RPG, Стратегия',difficulty:3,description:'Сражайся с 20 врагами, прокачивай ВПН и прорывайся через систему. Каждый враг уникален: от охранников РКН до самого Максута Шадаева. Покупай улучшения, ищи аптечки и докажи, что интернет — это свобода.',bg:'linear-gradient(135deg, #ff6b35, #e83040, #cc2244)'},
-{id:'dom',name:'ДОМ',icon:'🏚️',genre:'Хоррор, Текстовый квест',difficulty:4,description:'Атмосферный текстовый квест в старом доме. Исследуй комнаты, собирай предметы, разгадывай тайны прошлого. Три вещи нужны, чтобы выбраться: ключ, свеча и фотография. Настоящий ужас в каждом углу.',bg:'linear-gradient(135deg, #8a7f7a, #b5a89e, #d4c8bd, #9a8e85)'},
-{id:'cooking',name:'Великая кулинария',icon:'🍳',genre:'Симулятор, Крафт',difficulty:3,description:'Стань настоящим шеф-поваром! Смешивай ингредиенты, создавай новые рецепты, улучшай свою кухню и зарабатывай монеты. Чем сложнее рецепт — тем больше награда.',bg:'linear-gradient(135deg, #f7971e, #ffd200, #f9a825)'},
-{id:'dom2',name:'ДОМ 2',icon:'🩸',genre:'Хоррор, Выживание',difficulty:5,description:'10 лет спустя ты вернулся. Найди 3 якоря. Сожги их. Освободи детей, которых дом держит. 5 концовок, живой таймкод, система разрушения. Настоящий хоррор. Дом помнит тебя.',bg:'linear-gradient(135deg, #6a0f0f, #a81818, #d62828, #8a1010)'},
-{id:'proryv2',name:'Прорыв 2',icon:'🛡️',genre:'RPG, Стратегия',difficulty:4,description:'Продолжение легендарной RPG. Выбирай фракцию, сражайся с врагами, прокачивай персонажа и прорывайся через систему. Каждое решение влияет на сюжет.',bg:'linear-gradient(135deg, #7a4aff, #4a1a8a, #2a0a6a)'},
-{id:'kontrabandist',name:'Косм. контрабандист',icon:'🚀',genre:'Симулятор, Экономика',difficulty:4,description:'Стань капитаном космического корабля! Торгуй ресурсами, уклоняйся от пиратов, выполняй контракты и строй свою империю в открытом космосе.',bg:'linear-gradient(135deg, #0a1628, #1a3a6a, #0a2a5a)'},
-{id:'robo26',name:'Robo-Cleaner 2.6',icon:'🤖',genre:'Экшен, Боевик',difficulty:4,description:'Сражайся с роботами-захватчиками в пошаговых битвах. Улучшай оружие, броню, героев и очищай город от машин. Каждый бой — это вызов.',bg:'linear-gradient(135deg, #2a3a4a, #4a5a6a, #3a4a5a)'},
-{id:'fight',name:'БИТВА СИЛЬНЕЙШИХ',icon:'👊',genre:'Файтинг, Мультиплеер',difficulty:3,description:'Сражайся с друзьями на одном экране! Выбери персонажа и управляй им с геймпада. Докажи, кто достоин звания сильнейшего бойца.',bg:'linear-gradient(135deg, #cc2b5e, #753a88, #4a1a6a)'},
-{id:'miner',name:'Шахтёр',icon:'⛏️',genre:'Кликер, Экономика',difficulty:2,description:'Отправляйся в шахты разных планет! Добывай руду, улучшай кирку, плавь слитки и продавай ресурсы. Чем глубже — тем ценнее находки.',bg:'linear-gradient(135deg, #2c3e50, #4a6a3a, #3a5a2a)'},
-{id:'musibox',name:'Musibox',icon:'🎧',genre:'Музыка, Секвенсор',difficulty:2,description:'Создавай свою музыку! Множество треков — барабаны, басы, синты и вокал. Кликай по персонажам, комбинируй биты, лови бонусы за комбинации. Запиши и скачай свой микс, настоящая студия звукозаписи в браузере!',bg:'linear-gradient(135deg, #4dabf7, #9775fa, #f783ac)'},
-{id:'lastfrontier',name:'Последний рубеж',icon:'🧟',genre:'Автобаттлер, Карточная игра',difficulty:4,description:'Автобаттлер в мире зомби-апокалипсиса! Собирай карты зомби, сражайся в автоматических боях, зарабатывай монеты и гемы, покупай легендарных существ. Много уникальных карт с лором — от простого работяги до Зомби-бога.',bg:'linear-gradient(135deg, #2e4a2e, #0d1a0d, #66ff66)'},
-{id:'proryv3',name:'Прорыв 3',icon:'🌐',genre:'RPG, Стратегия, Финал',difficulty:5,description:'Финальная часть трилогии Прорыва! Выбери одну из четырёх фракций: Работник РКН, Хакер, Журналист или Инженер. Прокачивай VPN, сражайся с 25 уникальными врагами — от простого охранника до самого Максута Шадаева. Победи финального босса ЦЕНЗУРУ и освободи интернет!',bg:'linear-gradient(135deg, #c9418a, #a04ac9, #7a4ae0, #c9418a)'},
-{id:'snakebattle',name:'Snakes Battle',icon:'🐍',genre:'Онлайн, PvP, Командный',difficulty:4,description:'Командные бои змеек — до 10 игроков в реальном времени. Управляй своей змейкой, ешь еду, убивай врагов. Есть boost, мини-карта и командный счёт. Красные против синих!',bg:'linear-gradient(135deg, #05f138, #b8cf33, #05f138, #b8cf33)'}];
-const UTILITIES=[
-{id:'fireshop',name:'FireShop 3D',icon:'🎨',genre:'3D-редактор · Photoshop',difficulty:5,description:'Полноценный 3D/2D-редактор прямо в браузере. 3D-примитивы, свет, HDRI-окружение, покраска объектов, кисть-текстура, экспорт в GLB и PNG. 2D-режим с кистью, заливкой, фильтрами и текстом. Работает на Three.js.',bg:'linear-gradient(135deg, #ff6b35, #f7931e, #ffcd3c)',file:'УТИЛИТЫ/FireShop.html'},
-{id:'cpstest',name:'Тест автокликера',icon:'⚡',genre:'Утилита · Тест',difficulty:1,description:'Проверь скорость своего автокликера или мыши. Показывает количество кликов и CPS (клики в секунду) в реальном времени. Оценивает скорость как «медленно / быстро / супер-скорость».',bg:'linear-gradient(135deg, #1a1a2e, #e94560, #0f3460)',file:'УТИЛИТЫ/тест cps.html'}];
-const GAME_FILES={
-proryv1:'ИГРЫ/Прорыв.html',cooking:'ИГРЫ/Великая кулинария.html',proryv2:'ИГРЫ/Прорыв 2.html',
-kontrabandist:'ИГРЫ/Космический контробандист.html',robo26:'ИГРЫ/Robo-cleaner2.0.html',
-fight:'ИГРЫ/БИТВА СИЛЬНЕЙШИХ.html',
-miner:'ИГРЫ/Шахтер/Шахтер.html',musibox:'ИГРЫ/Musibox.html',
-lastfrontier:'ИГРЫ/ПОСЛЕДНИЙ РУБЕЖ.html',proryv3:'ИГРЫ/Прорыв 3.html',
-dom:'ИГРЫ/ДОМ.html',dom2:'ИГРЫ/ДОМ 2.html',
-snakebattle:'ИГРЫ/snakebattle.html',
-fireshop:'УТИЛИТЫ/FireShop.html',cpstest:'УТИЛИТЫ/тест cps.html'};
-const ACHIEVEMENTS=[
-{id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:50,rarity:'common'},
-{id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
-{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/GAMES.length),progressText:s=>`${s.playedGames.length}/${GAMES.length}`},
-{id:'proryv1_win',icon:'💻',name:'Прорыв совершен',desc:'Сыграть в Прорыв 1',xp:50,rarity:'common'},
-{id:'dom_escape',icon:'🏚️',name:'Выбрался из ДОМА',desc:'Пройти квест ДОМ',xp:150,rarity:'epic'},
-{id:'dom2_burner',icon:'🩸',name:'Сжигатель якорей',desc:'Сжечь 3 якоря в ДОМ 2',xp:300,rarity:'legendary'},
-{id:'cooking_chef',icon:'🍳',name:'Шеф-повар',desc:'Сыграть в Кулинарию',xp:50,rarity:'common'},
-{id:'proryv2_win',icon:'🛡️',name:'Двойной прорыв',desc:'Сыграть в Прорыв 2',xp:50,rarity:'common'},
-{id:'cosmo_pilot',icon:'🚀',name:'Космопилот',desc:'Сыграть в Контрабандиста',xp:50,rarity:'common'},
-{id:'robo_hunter',icon:'🤖',name:'Охотник на роботов',desc:'Сыграть в Robo-Cleaner',xp:50,rarity:'common'},
-{id:'fighter',icon:'👊',name:'Боец',desc:'Сыграть в Битву',xp:50,rarity:'common'},
-{id:'miner_pro',icon:'⛏️',name:'Шахтёр-профи',desc:'Сыграть в Шахтёра',xp:50,rarity:'common'},
-{id:'musibox_dj',icon:'🎧',name:'Диджей',desc:'Сыграть в Musibox',xp:50,rarity:'common'},
-{id:'musibox_all_tracks',icon:'🎛️',name:'Полный пульт',desc:'Сыграть в Musibox',xp:75,rarity:'rare'},
-{id:'zombie_survivor',icon:'🧟',name:'Выживший',desc:'Сыграть в Последний рубеж',xp:100,rarity:'rare'},
-{id:'proryv3_win',icon:'🌐',name:'Финал прорыва',desc:'Сыграть в Прорыв 3',xp:150,rarity:'epic'},
-{id:'proryv_trilogy',icon:'👑',name:'Хранитель трилогии',desc:'Сыграть во все три части Прорыва',xp:500,rarity:'legendary'},
-{id:'first_snake',icon:'🐍',name:'Первая змейка',desc:'Сыграть в Snakes Battle',xp:50,rarity:'common'},
-{id:'snake_win',icon:'🏆',name:'Король змеек',desc:'Победить в Snakes Battle',xp:200,rarity:'epic'},
-{id:'snake_killer',icon:'💀',name:'Убийца змей',desc:'Убить 10 змеек',xp:300,rarity:'epic'},
-{id:'first_util',icon:'🛠️',name:'Инструменталист',desc:'Запустить первую утилиту',xp:50,rarity:'common'},
-{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length)/2),progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length}/2`},
-{id:'first_community',icon:'🌍',name:'Первопроходец',desc:'Загрузить свою игру в Сообщество',xp:200,rarity:'epic'},
-{id:'community_5',icon:'🎨',name:'Творец',desc:'Загрузить 5 игр в Сообщество',xp:500,rarity:'legendary',progress:s=>Math.min(1,(s.myCommunityGames||0)/5),progressText:s=>`${s.myCommunityGames||0}/5`},
-{id:'play_community',icon:'🌐',name:'Исследователь',desc:'Сыграть в игру из Сообщества',xp:100,rarity:'rare'},
-{id:'time_1min',icon:'⏱️',name:'Минутка',desc:'Провести 1 минуту в играх',xp:25,rarity:'common',progress:s=>Math.min(1,s.totalTime/60),progressText:s=>`${Math.floor(s.totalTime/60)}м/1м`},
-{id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 мин в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
-{id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 мин в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
-{id:'time_1hour',icon:'🕰️',name:'Час за играми',desc:'Провести 1 час в играх',xp:250,rarity:'epic',progress:s=>Math.min(1,s.totalTime/3600),progressText:s=>`${Math.floor(s.totalTime/60)}м/60м`},
-{id:'time_5hours',icon:'⏰',name:'Марафонец',desc:'Провести 5 часов в играх',xp:500,rarity:'legendary',progress:s=>Math.min(1,s.totalTime/18000),progressText:s=>`${Math.floor(s.totalTime/60)}м/300м`},
-{id:'night_owl',icon:'🦉',name:'Полуночник',desc:'Играть после 00:00',xp:50,rarity:'common'},
-{id:'early_bird',icon:'🐦',name:'Ранняя пташка',desc:'Играть до 7:00',xp:50,rarity:'common'},
-{id:'lunch_time',icon:'🍽️',name:'Обеденный перерыв',desc:'Играть в 12:00-14:00',xp:50,rarity:'common'},
-{id:'repeat_5',icon:'🔁',name:'Повторюшка',desc:'Запустить игру 5 раз',xp:75,rarity:'common',progress:s=>Math.min(1,s.gamesOpened/5),progressText:s=>`${s.gamesOpened}/5`},
-{id:'repeat_25',icon:'🔄',name:'Верный фанат',desc:'Запустить игру 25 раз',xp:200,rarity:'epic',progress:s=>Math.min(1,s.gamesOpened/25),progressText:s=>`${s.gamesOpened}/25`},
-{id:'set_nick',icon:'✏️',name:'Именование',desc:'Установить никнейм',xp:25,rarity:'common'},
-{id:'set_avatar',icon:'🖼️',name:'Лицо с обложки',desc:'Установить аватарку',xp:50,rarity:'common'},
-{id:'all_themes',icon:'🎨',name:'Экспериментатор тем',desc:'Попробовать все 4 темы',xp:100,rarity:'rare',progress:s=>Math.min(1,s.themesUsed.length/4),progressText:s=>`${s.themesUsed.length}/4`},
-{id:'alarm_user',icon:'⏰',name:'По расписанию',desc:'Запустить будильник',xp:50,rarity:'common'},
-{id:'speedrun',icon:'⚡',name:'Спидран',desc:'Открыть 3 игры за 1 минуту',xp:150,rarity:'epic'},
-{id:'streak_3',icon:'🔥',name:'Три дня',desc:'Заходить 3 дня подряд',xp:75,rarity:'common',progress:s=>Math.min(1,s.streak.current/3),progressText:s=>`${s.streak.current}/3`},
-{id:'streak_7',icon:'🔥',name:'Неделя',desc:'Заходить 7 дней подряд',xp:200,rarity:'epic',progress:s=>Math.min(1,s.streak.current/7),progressText:s=>`${s.streak.current}/7`},
-{id:'streak_30',icon:'👑',name:'Месяц',desc:'Заходить 30 дней подряд',xp:1000,rarity:'legendary',progress:s=>Math.min(1,s.streak.current/30),progressText:s=>`${s.streak.current}/30`},
-{id:'streak_100',icon:'🔱',name:'Сотка',desc:'Заходить 100 дней подряд',xp:5000,rarity:'legendary',progress:s=>Math.min(1,s.streak.current/100),progressText:s=>`${s.streak.current}/100`},
-{id:'quest_first',icon:'📅',name:'Первое задание',desc:'Выполнить ежедневное задание',xp:50,rarity:'common'},
-{id:'quest_10',icon:'📆',name:'Трудяга',desc:'Выполнить 10 заданий',xp:300,rarity:'epic',progress:s=>Math.min(1,s.questsCompletedTotal/10),progressText:s=>`${s.questsCompletedTotal}/10`},
-{id:'quest_all_daily',icon:'🎁',name:'Отличник',desc:'Выполнить все 5 заданий за день',xp:250,rarity:'rare'},
-{id:'favorite_add',icon:'⭐',name:'Избранное',desc:'Добавить игру в избранное',xp:25,rarity:'common'},
-{id:'import_profile',icon:'📥',name:'Перенос',desc:'Импортировать профиль',xp:100,rarity:'rare'},
-{id:'fullscreen',icon:'⛶',name:'На весь экран',desc:'Открыть игру в полный экран',xp:50,rarity:'common'},
-{id:'case_first',icon:'📦',name:'Первая коробка',desc:'Открыть первый кейс',xp:50,rarity:'common'},
-{id:'case_10',icon:'🎁',name:'Коллекционер кейсов',desc:'Открыть 10 кейсов',xp:300,rarity:'epic',progress:s=>Math.min(1,(s.caseItems?s.caseItems.length:0)/10),progressText:s=>`${s.caseItems?s.caseItems.length:0}/10`},
-{id:'case_legendary',icon:'👑',name:'Легендарная находка',desc:'Получить легендарный кейс',xp:500,rarity:'legendary'},
-{id:'level_25',icon:'🎖️',name:'Четверть сотни',desc:'Достичь 25 уровня',xp:500,rarity:'epic'},
-{id:'level_50',icon:'🏆',name:'Полтинник',desc:'Достичь 50 уровня',xp:1500,rarity:'epic'},
-{id:'level_75',icon:'🌟',name:'Семидесятипятилетний',desc:'Достичь 75 уровня',xp:3000,rarity:'legendary'},
-{id:'level_100',icon:'🔴',name:'АБСОЛЮТ',desc:'Достичь 100 уровня',xp:10000,rarity:'legendary'},
-{id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
-{id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true}];
-const QUEST_POOL=[
-{id:'q_play_1',icon:'🎮',name:'Первый шаг',desc:'Запусти 1 игру',xp:30,target:1,type:'games_today'},
-{id:'q_play_2',icon:'🎯',name:'Игрок дня',desc:'Запусти 2 разные игры',xp:50,target:2,type:'games_today'},
-{id:'q_play_3',icon:'🎪',name:'Трио',desc:'Запусти 3 разные игры',xp:75,target:3,type:'games_today'},
-{id:'q_play_4',icon:'🚀',name:'Квартет',desc:'Запусти 4 разные игры',xp:100,target:4,type:'games_today'},
-{id:'q_play_5',icon:'👑',name:'Пятёрка',desc:'Запусти 5 разных игр',xp:150,target:5,type:'games_today'},
-{id:'q_time_3',icon:'⏱️',name:'Три минуты',desc:'Проведи 3 минуты в играх',xp:40,target:180,type:'time_today'},
-{id:'q_time_5',icon:'⏰',name:'Пять минут',desc:'Проведи 5 минут в играх',xp:50,target:300,type:'time_today'},
-{id:'q_time_10',icon:'⌚',name:'Десять минут',desc:'Проведи 10 минут в играх',xp:80,target:600,type:'time_today'},
-{id:'q_time_15',icon:'🕐',name:'Четверть часа',desc:'Проведи 15 минут в играх',xp:100,target:900,type:'time_today'},
-{id:'q_time_30',icon:'🕰️',name:'Полчаса',desc:'Проведи 30 минут в играх',xp:200,target:1800,type:'time_today'},
-{id:'q_util',icon:'🛠️',name:'Инструменталист',desc:'Запусти 1 утилиту',xp:50,target:1,type:'util_today'},
-{id:'q_fav',icon:'⭐',name:'Любимчик',desc:'Запусти игру из избранного',xp:50,target:1,type:'fav_today'},
-{id:'q_fav_2',icon:'💖',name:'Верный',desc:'Запусти 2 игры из избранного',xp:90,target:2,type:'fav_today'},
-{id:'q_ach',icon:'🏆',name:'Достигатор',desc:'Получи 1 достижение',xp:75,target:1,type:'ach_today'},
-{id:'q_ach_2',icon:'🎖️',name:'Коллекционер',desc:'Получи 2 достижения',xp:120,target:2,type:'ach_today'},
-{id:'q_ach_3',icon:'🥇',name:'Охотник за трофеями',desc:'Получи 3 достижения',xp:200,target:3,type:'ach_today'},
-{id:'q_fav_add',icon:'⭐',name:'Фаворит',desc:'Добавь игру в избранное',xp:40,target:1,type:'fav_add_today'},
-{id:'q_nick',icon:'✏️',name:'Самопрезентация',desc:'Установи никнейм',xp:30,target:1,type:'nick_set_today'},
-{id:'q_theme',icon:'🎨',name:'Стилист',desc:'Смени тему оформления',xp:40,target:1,type:'theme_change_today'},
-{id:'q_fullscreen',icon:'⛶',name:'Во весь рост',desc:'Запусти игру в полный экран',xp:60,target:1,type:'fullscreen_today'},
-{id:'q_profile_view',icon:'👤',name:'Самолюбование',desc:'Открой свой профиль',xp:25,target:1,type:'profile_view_today'},
-{id:'q_settings_view',icon:'⚙️',name:'Настройщик',desc:'Открой настройки',xp:25,target:1,type:'settings_view_today'},
-{id:'q_quests_view',icon:'📅',name:'Планировщик',desc:'Открой вкладку заданий',xp:25,target:1,type:'quests_view_today'},
-{id:'q_case_open',icon:'📦',name:'Кейс-охотник',desc:'Открой кейс',xp:60,target:1,type:'case_today'},
-{id:'q_fav_time',icon:'💫',name:'Преданность',desc:'Играй в избранную игру 5 минут',xp:150,target:300,type:'fav_time_today'}];
+// ============================================
+// FireLand Launcher · script.js · v26.3.0
+// ES-модули: games.js, profile.js, sound.js (гибрид)
+// ============================================
+
+// ============================================
+// ВЕРСИЯ ПРИЛОЖЕНИЯ · МАЖ.МИН.ФИКС
+// ============================================
+const APP_VERSION = '26.3.0';
+
+// МАЖОРНАЯ (26) — новые разделы, breaking changes
+// МИНОРНАЯ (3) — profile.js + sound.js
+// ФИКС (0) — фиксы
+
+// ============================================
+// ПРОВЕРКА ЗАГРУЗКИ МОДУЛЕЙ
+// ============================================
+(function checkModules() {
+  const missing = [];
+  if (typeof window.GAMES === 'undefined') missing.push('games.js');
+  if (typeof window.ACHIEVEMENTS === 'undefined') missing.push('profile.js');
+  if (typeof window.SOUNDS === 'undefined') missing.push('sound.js');
+  if (missing.length > 0) {
+    console.error('[script.js] Не загружены модули:', missing.join(', '));
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;padding:16px;background:#c0392b;color:#fff;font-weight:700;text-align:center;z-index:999999;';
+    banner.textContent = '❌ Не загружены модули: ' + missing.join(', ') + '. Обнови страницу (Ctrl+Shift+R).';
+    document.body.appendChild(banner);
+  }
+})();
+
+// ============================================
+// ДАННЫЕ ИЗ МОДУЛЕЙ (window.*)
+// ============================================
+const GAMES = window.GAMES || [];
+const UTILITIES = window.UTILITIES || [];
+const GAME_FILES = window.GAME_FILES || {};
+const ACHIEVEMENTS = window.ACHIEVEMENTS || [];
+const QUEST_POOL = window.QUEST_POOL || [];
+const LEVEL_TITLES = window.LEVEL_TITLES || [];
+const PARADOX = window.PARADOX || {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
+const getTitleForLevel = window.getTitleForLevel || function(level){return 'Игрок'};
+const getXpForLevel = window.getXpForLevel || function(level){return 100};
+const getLevelFromTotalXp = window.getLevelFromTotalXp || function(xp){return {level:1,currentXp:xp,neededXp:100}};
+const getParadoxLevelInfo = window.getParadoxLevelInfo || function(level){return {minutes:30,xp:100}};
+
+// ============================================
+// ЗВУКИ ИЗ sound.js
+// ============================================
+const SOUNDS = window.SOUNDS || {
+  click(){}, achievement(){}, quest(){}, levelup(){},
+  reward(){}, caseOpen(){}, error(){}
+};
+const playTone = window.playTone || function(){};
+const playAlarmSound = window.playAlarmSound || function(){};
+const vibrateDevice = window.vibrateDevice || function(){};
+
+// ============================================
+// DEFAULT_STATE
+// ============================================
 const DEFAULT_STATE={
 playTime:{},totalTime:0,lastGameId:null,lastGameTime:null,selectedGameId:null,selectedUtilityId:null,
 soundEnabled:true,uiSoundsEnabled:true,theme:'system',alarmVolume:0.8,alarmRepeats:5,alarmDelay:15,vibrationEnabled:true,
@@ -197,23 +130,10 @@ async function loadState(){
 }
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function dateStr(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
-function getTitleForLevel(level){const t=LEVEL_TITLES.find(t=>level>=t.min&&level<=t.max);return t?t.title:'🔥🔥🔥 БОГ FireLand'}
-function getXpForLevel(level){if(level<=20)return 100+(level-1)*50;if(level<=50)return 1050+(level-20)*100;if(level<=80)return 4050+(level-50)*200;if(level<=95)return 10050+(level-80)*500;return 17550+(level-95)*1000}
-function getLevelFromTotalXp(totalXp){let level=1,consumed=0;while(true){const needed=getXpForLevel(level);if(consumed+needed>totalXp)break;consumed+=needed;level++;if(level>1000)break}return {level,currentXp:totalXp-consumed,neededXp:getXpForLevel(level)}}
-function getParadoxLevelInfo(level){let neededMinutes=PARADOX.BASE_TIME;for(let i=0;i<level;i++){const mult=PARADOX.TIME_MULT_START+i*PARADOX.MULT_GROWTH;neededMinutes*=mult}const xp=Math.round(PARADOX.BASE_XP*Math.pow(PARADOX.XP_MULT,level-1));return {minutes:Math.round(neededMinutes),xp}}
 function formatTime(sec){const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;if(h>0)return `${h}ч ${m}м`;if(m>0)return `${m}м ${s}с`;return `${s}с`}
-let audioCtx=null;
-function getAudioCtx(){if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}
-function playTone(freq,duration,type='sine',volume=0.15,delay=0){if(!state.uiSoundsEnabled)return;if(!state.soundEnabled)return;const ctx=getAudioCtx();if(!ctx)return;try{const now=ctx.currentTime+delay;const osc=ctx.createOscillator();const gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type=type;osc.frequency.value=freq;gain.gain.setValueAtTime(0.001,now);gain.gain.exponentialRampToValueAtTime(volume,now+0.01);gain.gain.exponentialRampToValueAtTime(0.001,now+duration);osc.start(now);osc.stop(now+duration)}catch(e){}}
-const SOUNDS={
-click(){playTone(880,0.06,'sine',0.08)},
-achievement(){playTone(659,0.15,'sine',0.15,0);playTone(880,0.15,'sine',0.15,0.08);playTone(1175,0.25,'sine',0.15,0.16)},
-quest(){playTone(523,0.12,'sine',0.12,0);playTone(784,0.18,'sine',0.12,0.1)},
-levelup(){playTone(523,0.15,'triangle',0.15,0);playTone(659,0.15,'triangle',0.15,0.12);playTone(784,0.15,'triangle',0.15,0.24);playTone(1047,0.4,'triangle',0.18,0.36)},
-reward(){playTone(1047,0.1,'sine',0.15,0);playTone(1319,0.1,'sine',0.15,0.08);playTone(1568,0.3,'sine',0.15,0.16)},
-caseOpen(){playTone(200,0.3,'sawtooth',0.1,0);playTone(400,0.3,'sawtooth',0.08,0.15);playTone(800,0.5,'sawtooth',0.05,0.3)},
-error(){playTone(220,0.15,'square',0.1)}};
-document.addEventListener('click',(e)=>{if(e.target.closest('button')||e.target.closest('.game-card')||e.target.closest('.tab-btn')){SOUNDS.click()}},true);
+
+// playTone / SOUNDS / getAudioCtx — в sound.js (загружается до script.js)
+
 const DAILY_REWARDS=[50,100,200,400,800,1500];
 function getDailyRewardAmount(streakDay){const idx=Math.min(streakDay-1,DAILY_REWARDS.length-1);return DAILY_REWARDS[idx]}
 function checkDailyReward(){
@@ -595,7 +515,7 @@ function checkGameAchievements(gameId){
         unlockAch('first_game');
         if(state.playedGames.length>=5)unlockAch('five_games');
         if(state.playedGames.filter(g=>GAMES.some(x=>x.id===g)).length>=GAMES.length)unlockAch('all_games');
-        const gameAch={proryv1:'proryv1_win',dom:'dom_escape',dom2:'dom2_burner',cooking:'cooking_chef',proryv2:'proryv2_win',kontrabandist:'cosmo_pilot',robo26:'robo_hunter',fight:'fighter',miner:'miner_pro',gd:'gd_master',musibox:'musibox_dj',lastfrontier:'zombie_survivor',proryv3:'proryv3_win',snakebattle:'first_snake'};
+        const gameAch={proryv1:'proryv1_win',dom:'dom_escape',dom2:'dom2_burner',cooking:'cooking_chef',proryv2:'proryv2_win',kontrabandist:'cosmo_pilot',robo26:'robo_hunter',fight:'fighter',miner:'miner_pro',musibox:'musibox_dj',lastfrontier:'zombie_survivor',proryv3:'proryv3_win',snakebattle:'first_snake'};
         if(gameAch[gameId])unlockAch(gameAch[gameId]);
         if(state.playedGames.includes('proryv1')&&state.playedGames.includes('proryv2')&&state.playedGames.includes('proryv3'))unlockAch('proryv_trilogy');
     }
@@ -811,8 +731,14 @@ function openGame(gameId){
     try{iframe.src='about:blank'}catch(e){}
     iframe.onload=null;
     iframe.onerror=null;
-    if (isUtil) iframe.setAttribute('sandbox','allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-modals allow-downloads');
-    else iframe.removeAttribute('sandbox');
+    // Sandbox для утилит; для игр — без sandbox
+    if (isUtil) {
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-modals allow-downloads allow-orientation-lock allow-top-navigation-by-user-activation');
+    } else {
+        iframe.removeAttribute('sandbox');
+    }
+    // Разрешения для мобильных (камера, микрофон, датчики, автоплей)
+    iframe.setAttribute('allow', 'fullscreen; gamepad; autoplay; accelerometer; gyroscope; magnetometer; microphone; camera; clipboard-read; clipboard-write; picture-in-picture');
     let loadHandled=false;
     const onLoad=()=>{if(loadHandled)return;loadHandled=true;hideGameSkeleton()};
     iframe.onload=onLoad;
@@ -1037,21 +963,6 @@ function getAlarmTotalSeconds(){
     const m=parseInt(alarmMinutesSlider.value)||0;
     const s=parseInt(alarmSecondsSlider.value)||0;
     return h*3600+m*60+s}
-function playAlarmSound(){
-    if(!state.soundEnabled)return;
-    try{
-        const ctx=new (window.AudioContext||window.webkitAudioContext)();
-        const now=ctx.currentTime;
-        [523,659,784].forEach((freq,i)=>{
-            const osc=ctx.createOscillator();
-            const gain=ctx.createGain();
-            osc.connect(gain);gain.connect(ctx.destination);
-            osc.type='sine';osc.frequency.value=freq;
-            gain.gain.setValueAtTime(state.alarmVolume*0.3,now+i*0.15);
-            gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.15+0.2);
-            osc.start(now+i*0.15);osc.stop(now+i*0.15+0.2)})
-    }catch(e){}}
-function vibrateDevice(){if(!state.vibrationEnabled)return;try{if(navigator.vibrate)navigator.vibrate(200)}catch(e){}}
 function alarmRing(){
     if(alarmIsRinging)return;
     alarmIsRinging=true;
@@ -1120,6 +1031,9 @@ const settingsCloseBtn=document.getElementById('settingsCloseBtn');
 const soundToggle=document.getElementById('soundToggle');
 const uiSoundsToggle=document.getElementById('uiSoundsToggle');
 function loadSettings(){
+    // Обновляем версию в UI
+    const versionEl = document.getElementById('appVersion');
+    if (versionEl) versionEl.textContent = 'v' + APP_VERSION;
     soundToggle.checked=state.soundEnabled;
     if(uiSoundsToggle)uiSoundsToggle.checked=state.uiSoundsEnabled!==false;
     window.isSoundEnabled=state.soundEnabled;
@@ -1599,7 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLastGameBar();
     updateClock();
     renderCases();
-    console.log('🔥 Лаунчер FireLand v27.0 · Игр: '+GAMES.length+' · Утилит: '+UTILITIES.length);
+    console.log('🔥 Лаунчер FireLand v' + APP_VERSION + ' · Игр: '+GAMES.length+' · Утилит: '+UTILITIES.length);
     if(typeof initLeaderboard==='function')initLeaderboard();
     if(state.lastSubmittedNick){
         setTimeout(()=>{
@@ -1611,10 +1525,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(typeof updateChatBadge==='function')setTimeout(updateChatBadge, 800);
 })();
 
-window.playTone = playTone;
+// ============================================
+// ЭКСПОРТ В WINDOW
+// ============================================
+window.APP_VERSION = APP_VERSION;
 window.saveState = saveState;
-window.getLevelFromTotalXp = getLevelFromTotalXp;
-window.getTitleForLevel = getTitleForLevel;
 window.unlockAch = unlockAch;
 window.updateQuestProgress = updateQuestProgress;
 window.renderProfile = renderProfile;
@@ -1631,7 +1546,6 @@ window.closeGame = closeGame;
 window.startTimeTicker = startTimeTicker;
 window.stopTimeTicker = stopTimeTicker;
 window.updateLastGameBar = updateLastGameBar;
-window.SOUNDS = SOUNDS;
 window.showPostGameScreen = showPostGameScreen;
 window.generateOwnerToken = generateOwnerToken;
 window.renameNickEverywhere = renameNickEverywhere;
@@ -1640,6 +1554,7 @@ window.resetAllData = resetAllData;
 window.deleteMyAccount = resetAllData;
 window.selectUtility = selectUtility;
 window.renderUtilities = renderUtilities;
+window.state = state; // для messenger.js
 
 if (typeof hasProfanity !== 'undefined') window.hasProfanity = hasProfanity;
 if (typeof censorProfanity !== 'undefined') window.censorProfanity = censorProfanity;

@@ -2151,17 +2151,31 @@ async function uploadVoiceMessage() {
 // АВТОИНИЦИАЛИЗАЦИЯ
 // ============================================
 function tryInitMessenger(attempt = 0) {
-  if (typeof state !== 'undefined' && state) {
+  const hasState = (typeof state !== 'undefined' && state);
+  const hasSupabase = (typeof window.supabase !== 'undefined' && window.supabase && window.supabase.createClient);
+  
+  if (hasState && hasSupabase) {
     initMessenger();
     initNickOnboarding();
     return;
   }
-  if (attempt < 40) {
+  
+  // Ждём до 15 секунд (60 попыток × 250 мс)
+  if (attempt < 60) {
     setTimeout(() => tryInitMessenger(attempt + 1), 250);
   } else {
-    console.warn('[Chat] state так и не появился — инициализирую без него');
-    initMessenger();
-    initNickOnboarding();
+    if (!hasState) console.warn('[Chat] state так и не появился');
+    if (!hasSupabase) {
+      console.warn('[Chat] Supabase SDK так и не загрузился');
+      setChatStatus('SDK не загружен', 'error');
+    }
+    // Если state есть, но SDK не загрузился — не инициализируем
+    if (hasState && !hasSupabase) return;
+    // Если state нет — но всё остальное есть, пробуем
+    if (!hasState && hasSupabase) {
+      initMessenger();
+      initNickOnboarding();
+    }
   }
 }
 
