@@ -1,9 +1,9 @@
 // ============================================
-// FireLand · sound.js · v26.3.0
-// Звуки и вибрация
+// FireLand · sound.js · v26.3.2
+// БЕЗ export. Всё в window.
 // ============================================
 
-let audioCtx = null;
+var audioCtx = null;
 
 function getAudioCtx() {
   if (!audioCtx) {
@@ -39,7 +39,7 @@ function playTone(freq, duration, type = 'sine', volume = 0.15, delay = 0) {
   } catch (e) {}
 }
 
-const SOUNDS = {
+var SOUNDS = {
   click() { playTone(880, 0.06, 'sine', 0.08); },
   achievement() {
     playTone(659, 0.15, 'sine', 0.15, 0);
@@ -98,7 +98,6 @@ function vibrateDevice() {
   } catch (e) {}
 }
 
-// Глобальный клик по кнопкам
 document.addEventListener('click', (e) => {
   if (
     e.target.closest('button') ||
@@ -109,9 +108,6 @@ document.addEventListener('click', (e) => {
   }
 }, true);
 
-// ============================================
-// ЭКСПОРТ В WINDOW
-// ============================================
 window.getAudioCtx = getAudioCtx;
 window.playTone = playTone;
 window.SOUNDS = SOUNDS;

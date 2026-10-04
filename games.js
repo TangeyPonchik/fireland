@@ -1,7 +1,6 @@
 // ============================================
-// FireLand · games.js · v26.3.1
-// Список игр, утилит, путей, градиентов
-// БЕЗ export — обычный скрипт (для file:// и http://)
+// FireLand · games.js · v26.3.2
+// БЕЗ export. Всё в window.
 // ============================================
 
 const GAMES = [
@@ -43,7 +42,6 @@ fireshop:'УТИЛИТЫ/FireShop.html',
 cpstest:'УТИЛИТЫ/тест cps.html'
 };
 
-// Экспорт в window (для script.js)
 window.GAMES = GAMES;
 window.UTILITIES = UTILITIES;
 window.GAME_FILES = GAME_FILES;

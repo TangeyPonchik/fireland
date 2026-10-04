@@ -1,7 +1,6 @@
 // ============================================
-// FireLand · profile.js · v26.3.1
-// Уровни, титулы, XP, достижения, квесты
-// БЕЗ export — обычный скрипт (для file:// и http://)
+// FireLand · profile.js · v26.3.2
+// БЕЗ export. Всё в window.
 // ============================================
 
 const LEVEL_TITLES = [
@@ -146,7 +145,6 @@ function getParadoxLevelInfo(level) {
   return { minutes: Math.round(neededMinutes), xp };
 }
 
-// Экспорт в window (для script.js)
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
 window.ACHIEVEMENTS = ACHIEVEMENTS;

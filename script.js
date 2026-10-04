@@ -31,33 +31,23 @@ const APP_VERSION = '26.3.1';
 
 // ============================================
 // ДАННЫЕ ИЗ МОДУЛЕЙ (window.*)
+// ИСПОЛЬЗУЕМ var — чтобы не конфликтовать с games.js/profile.js/sound.js
 // ============================================
-const GAMES = window.GAMES || [];
-const UTILITIES = window.UTILITIES || [];
-const GAME_FILES = window.GAME_FILES || {};
-const ACHIEVEMENTS = window.ACHIEVEMENTS || [];
-const QUEST_POOL = window.QUEST_POOL || [];
-const LEVEL_TITLES = window.LEVEL_TITLES || [];
-const PARADOX = window.PARADOX || {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
-const getTitleForLevel = window.getTitleForLevel || function(level){return 'Игрок'};
-const getXpForLevel = window.getXpForLevel || function(level){return 100};
-const getLevelFromTotalXp = window.getLevelFromTotalXp || function(xp){return {level:1,currentXp:xp,neededXp:100}};
-const getParadoxLevelInfo = window.getParadoxLevelInfo || function(level){return {minutes:30,xp:100}};
-
-// ============================================
-// ЗВУКИ ИЗ sound.js
-// ВАЖНО: sound.js объявляет SOUNDS, playTone, playAlarmSound, vibrateDevice
-// как function/const в глобальной области.
-// Используем var — не конфликтует, перезапишет если надо.
-// ============================================
-var SOUNDS = window.SOUNDS || {
-  click(){}, achievement(){}, quest(){}, levelup(){},
-  reward(){}, caseOpen(){}, error(){}
-};
+var GAMES = window.GAMES || [];
+var UTILITIES = window.UTILITIES || [];
+var GAME_FILES = window.GAME_FILES || {};
+var ACHIEVEMENTS = window.ACHIEVEMENTS || [];
+var QUEST_POOL = window.QUEST_POOL || [];
+var LEVEL_TITLES = window.LEVEL_TITLES || [];
+var PARADOX = window.PARADOX || {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
+var getTitleForLevel = window.getTitleForLevel || function(level){return 'Игрок'};
+var getXpForLevel = window.getXpForLevel || function(level){return 100};
+var getLevelFromTotalXp = window.getLevelFromTotalXp || function(xp){return {level:1,currentXp:xp,neededXp:100}};
+var getParadoxLevelInfo = window.getParadoxLevelInfo || function(level){return {minutes:30,xp:100}};
+var SOUNDS = window.SOUNDS || {click(){},achievement(){},quest(){},levelup(){},reward(){},caseOpen(){},error(){}};
 var playTone = window.playTone || function(){};
 var playAlarmSound = window.playAlarmSound || function(){};
 var vibrateDevice = window.vibrateDevice || function(){};
-
 // ============================================
 // DEFAULT_STATE
 // ============================================
