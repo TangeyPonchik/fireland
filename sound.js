@@ -1,5 +1,5 @@
 // ============================================
-// FireLand · sound.js · v26.3.2
+// FireLand · sound.js · v26.3.4
 // БЕЗ export. Всё в window.
 // ============================================
 
@@ -9,9 +9,7 @@ function getAudioCtx() {
   if (!audioCtx) {
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;

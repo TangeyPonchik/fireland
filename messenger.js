@@ -1,5 +1,6 @@
 // ============================================
-// FireLand Messenger v23 · Realtime rooms
+// FireLand Messenger v26.3.4 · Realtime rooms
+// + фикс реакций (встроенный эмодзи-пикер)
 // ============================================
 
 const CHAT = {
@@ -36,6 +37,8 @@ const EMOJI_LIST = [
   '😅','🙃','😇','🤩','😱','🤗','🤫','🙄','😬','💀',
 ];
 
+const REACTION_EMOJIS = ['👍','❤️','🔥','😂','😮','😢','🎉','👀'];
+
 // ===== Безопасные обёртки =====
 function chatEscape(text) {
   return (window.escapeHtml || function(t){return t})(text);
@@ -46,12 +49,12 @@ function chatSafePlayTone(freq, duration, type, volume) {
   }
 }
 function chatGetState() {
-  if (typeof state !== 'undefined' && state) return state;
+  if (typeof window.state !== 'undefined' && window.state) return window.state;
   return null;
 }
 function chatSaveState(immediate = false) {
-  if (typeof saveState === 'function') {
-    try { saveState(immediate); } catch (e) {}
+  if (typeof window.saveState === 'function') {
+    try { window.saveState(immediate); } catch (e) {}
   }
 }
 
@@ -150,7 +153,7 @@ function initMessenger() {
   bindChatUI();
   initEmojiPanel();
   loadMyRooms();
-  console.log('[Chat] Мессенджер v23 · Realtime rooms');
+  console.log('[Chat] Мессенджер v26.3.4 · Realtime rooms + фикс реакций');
 }
 
 function bindChatUI() {
@@ -528,7 +531,6 @@ function subscribeToRooms() {
           isMine: r.author_nick === st.nickname,
         };
         renderRoomsList();
-        console.log('[Chat] Realtime rooms UPDATE:', r.room);
       }
     )
     .subscribe((status) => {
@@ -980,7 +982,6 @@ function renderRoomsList() {
   });
 }
 
-// ГЛОБАЛЬНОЕ удаление комнаты
 async function deleteRoom(roomId) {
   const st = chatGetState();
   if (!st) return;
@@ -1016,7 +1017,6 @@ async function deleteRoom(roomId) {
     return;
   }
 
-  // Убираем из UI (realtime тоже подчистит у всех)
   CHAT.roomsList = CHAT.roomsList.filter(r => r.room !== roomId);
   if (CHAT.currentRoom === roomId) switchRoom('general');
   delete CHAT.historyLoaded[roomId];
@@ -1164,7 +1164,7 @@ function hideReplyPreview() {
 }
 
 // ============================================
-// РЕАКЦИИ
+// РЕАКЦИИ (ФИКС 26.3.4)
 // ============================================
 async function loadReactionsForMessages(messageIds) {
   if (messageIds.length === 0) return;
@@ -1174,12 +1174,25 @@ async function loadReactionsForMessages(messageIds) {
       `${CHAT_URL}/rest/v1/chat_reactions?message_id=in.(${ids})&select=message_id,emoji,nickname`,
       { headers: chatHeaders() }
     );
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn('[Chat] loadReactions HTTP:', res.status);
+      return;
+    }
     const rows = await res.json();
-    CHAT.reactions = {};
+    const newReactions = {};
     rows.forEach(r => {
-      if (!CHAT.reactions[r.message_id]) CHAT.reactions[r.message_id] = [];
-      CHAT.reactions[r.message_id].push({ emoji: r.emoji, nickname: r.nickname });
+      if (!newReactions[r.message_id]) newReactions[r.message_id] = [];
+      newReactions[r.message_id].push({ emoji: r.emoji, nickname: r.nickname });
+    });
+    // НЕ перезаписываем полностью — мержим
+    Object.keys(newReactions).forEach(mid => {
+      CHAT.reactions[mid] = newReactions[mid];
+    });
+    // Удаляем реакции для сообщений, которых больше нет (опционально)
+    messageIds.forEach(mid => {
+      if (!newReactions[mid]) {
+        delete CHAT.reactions[mid];
+      }
     });
   } catch (e) {
     console.warn('[Chat] loadReactions:', e);
@@ -1190,20 +1203,41 @@ async function toggleReaction(messageId, emoji) {
   const st = chatGetState();
   if (!st) return;
   const myNick = st.nickname;
-  if (!myNick || myNick === 'Игрок') return;
+  if (!myNick || myNick === 'Игрок') {
+    alert('Сначала установи ник в профиле');
+    return;
+  }
   const list = CHAT.reactions[messageId] || [];
   const existing = list.find(r => r.emoji === emoji && r.nickname === myNick);
+
+  // Оптимистичное обновление UI
+  if (existing) {
+    CHAT.reactions[messageId] = list.filter(
+      r => !(r.emoji === emoji && r.nickname === myNick)
+    );
+  } else {
+    if (!CHAT.reactions[messageId]) CHAT.reactions[messageId] = [];
+    CHAT.reactions[messageId].push({ emoji, nickname: myNick });
+  }
+  updateMessageReactionsUI(messageId);
+
   try {
     if (existing) {
+      // DELETE
       const res = await fetch(
         `${CHAT_URL}/rest/v1/chat_reactions?message_id=eq.${messageId}&nickname=eq.${encodeURIComponent(myNick)}&emoji=eq.${encodeURIComponent(emoji)}`,
         { method: 'DELETE', headers: chatHeaders() }
       );
-      if (!res.ok) return;
-      CHAT.reactions[messageId] = list.filter(
-        r => !(r.emoji === emoji && r.nickname === myNick)
-      );
+      if (!res.ok) {
+        const err = await res.text();
+        console.warn('[Chat] toggleReaction DELETE:', res.status, err);
+        // Откат
+        if (!CHAT.reactions[messageId]) CHAT.reactions[messageId] = [];
+        CHAT.reactions[messageId].push({ emoji, nickname: myNick });
+        updateMessageReactionsUI(messageId);
+      }
     } else {
+      // INSERT
       const res = await fetch(`${CHAT_URL}/rest/v1/chat_reactions`, {
         method: 'POST',
         headers: chatHeaders({ 'Content-Type': 'application/json' }),
@@ -1211,24 +1245,31 @@ async function toggleReaction(messageId, emoji) {
       });
       if (!res.ok) {
         const err = await res.text();
-        console.warn('[Chat] toggleReaction:', res.status, err);
-        return;
+        console.warn('[Chat] toggleReaction INSERT:', res.status, err);
+        // Откат
+        CHAT.reactions[messageId] = (CHAT.reactions[messageId] || []).filter(
+          r => !(r.emoji === emoji && r.nickname === myNick)
+        );
+        updateMessageReactionsUI(messageId);
       }
-      if (!CHAT.reactions[messageId]) CHAT.reactions[messageId] = [];
-      CHAT.reactions[messageId].push({ emoji, nickname: myNick });
     }
-    updateMessageReactionsUI(messageId);
   } catch (e) {
     console.warn('[Chat] toggleReaction сеть:', e);
   }
 }
 
 function updateMessageReactionsUI(messageId) {
+  // Ищем сообщение
   const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!msgEl) return;
-  const st = chatGetState();
+  if (!msgEl) {
+    console.warn('[Chat] updateReactions: сообщение не найдено', messageId);
+    return;
+  }
   const bubble = msgEl.querySelector('.chat-bubble');
-  if (!bubble) return;
+  if (!bubble) {
+    console.warn('[Chat] updateReactions: .chat-bubble не найден');
+    return;
+  }
   let reactionsEl = bubble.querySelector('.chat-reactions');
   const list = CHAT.reactions[messageId] || [];
   if (list.length === 0) {
@@ -1240,6 +1281,7 @@ function updateMessageReactionsUI(messageId) {
     grouped[r.emoji] = grouped[r.emoji] || [];
     grouped[r.emoji].push(r.nickname);
   });
+  const st = chatGetState();
   const html = Object.entries(grouped).map(([emoji, nicks]) => {
     const mine = st && nicks.includes(st.nickname);
     return `<div class="chat-reaction ${mine ? 'mine' : ''}" data-emoji="${emoji}">
@@ -1260,12 +1302,45 @@ function updateMessageReactionsUI(messageId) {
   });
 }
 
-function showReactionPicker(messageId) {
-  const emoji = prompt('Реакция (1 эмодзи):', '👍');
-  if (!emoji) return;
-  const trimmed = emoji.trim().slice(0, 4);
-  if (!trimmed) return;
-  toggleReaction(messageId, trimmed);
+function showReactionPicker(messageId, anchorEl) {
+  // Удаляем старый пикер, если есть
+  const oldPicker = document.querySelector('.chat-reaction-picker');
+  if (oldPicker) oldPicker.remove();
+
+  const picker = document.createElement('div');
+  picker.className = 'chat-reaction-picker';
+  picker.innerHTML = REACTION_EMOJIS.map(e =>
+    `<button class="chat-reaction-picker-btn" data-emoji="${e}">${e}</button>`
+  ).join('');
+
+  // Позиционирование
+  const rect = anchorEl.getBoundingClientRect();
+  picker.style.position = 'fixed';
+  picker.style.top = (rect.top - 50) + 'px';
+  picker.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+  picker.style.zIndex = '10000';
+
+  document.body.appendChild(picker);
+
+  picker.querySelectorAll('.chat-reaction-picker-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const emoji = btn.dataset.emoji;
+      picker.remove();
+      toggleReaction(messageId, emoji);
+    });
+  });
+
+  // Закрытие по клику вне
+  setTimeout(() => {
+    const closeHandler = (e) => {
+      if (!picker.contains(e.target)) {
+        picker.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    document.addEventListener('click', closeHandler);
+  }, 50);
 }
 
 // ============================================
@@ -1516,7 +1591,7 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
       e.stopPropagation();
       const action = btn.dataset.action;
       if (action === 'reply') startReply(msg.id, msg.nickname, msg.text);
-      else if (action === 'react') showReactionPicker(msg.id);
+      else if (action === 'react') showReactionPicker(msg.id, btn);
       else if (action === 'delete') deleteMessage(msg.id);
     });
   });
@@ -1614,10 +1689,11 @@ async function showUserProfile(nick) {
   const st = chatGetState();
   if (!st) return;
   if (nick === st.nickname) {
-    if (typeof renderProfile === 'function') renderProfile();
-    if (typeof renderAchievements === 'function') renderAchievements();
-    if (typeof renderRecords === 'function') renderRecords();
-    if (typeof updateLevelDisplay === 'function') updateLevelDisplay();
+    if (typeof window.renderProfile === 'function') window.renderProfile();
+    if (typeof window.renderAchievements === 'function') window.renderAchievements();
+    if (typeof window.renderRecords === 'function') window.renderRecords();
+    if (typeof window.updateLevelDisplay === 'function') window.updateLevelDisplay();
+    if (typeof window.renderCases === 'function') window.renderCases();
     const modal = document.getElementById('profileModal');
     if (modal) modal.classList.add('show');
     return;
@@ -1651,8 +1727,8 @@ async function showUserProfile(nick) {
       if (titleEl) titleEl.textContent = 'Нет в лидерборде';
       return;
     }
-    const title = typeof getTitleForLevel === 'function'
-      ? getTitleForLevel(row.level) : 'Игрок';
+    const title = typeof window.getTitleForLevel === 'function'
+      ? window.getTitleForLevel(row.level) : 'Игрок';
     if (levelEl) levelEl.textContent = row.level;
     if (xpEl) xpEl.textContent = (row.total_xp || 0).toLocaleString('ru-RU');
     if (achEl) achEl.textContent = row.achievements_count || 0;
@@ -1833,15 +1909,15 @@ function initNickOnboarding() {
       const oldNick = st.nickname;
       st.nickname = nick.slice(0, 20);
       chatSaveState();
-      if (typeof saveNickname === 'function') {
+      if (typeof window.saveNickname === 'function') {
         btn.disabled = true;
         btn.textContent = '⏳';
-        try { await saveNickname(); } catch {}
+        try { await window.saveNickname(); } catch {}
         btn.disabled = false;
         btn.textContent = '🔥 Начать играть';
       }
-      if (typeof renderProfile === 'function') renderProfile();
-      if (typeof updateChatBadge === 'function') updateChatBadge();
+      if (typeof window.renderProfile === 'function') window.renderProfile();
+      if (typeof window.updateChatBadge === 'function') window.updateChatBadge();
       hideNickOnboarding();
       if (typeof SOUNDS !== 'undefined' && SOUNDS.quest) SOUNDS.quest();
       if (oldNick !== st.nickname) reinitializePresenceWithNewNick();
@@ -2151,16 +2227,15 @@ async function uploadVoiceMessage() {
 // АВТОИНИЦИАЛИЗАЦИЯ
 // ============================================
 function tryInitMessenger(attempt = 0) {
-  const hasState = (typeof state !== 'undefined' && state);
+  const hasState = (typeof window.state !== 'undefined' && window.state);
   const hasSupabase = (typeof window.supabase !== 'undefined' && window.supabase && window.supabase.createClient);
-  
+
   if (hasState && hasSupabase) {
     initMessenger();
     initNickOnboarding();
     return;
   }
-  
-  // Ждём до 15 секунд (60 попыток × 250 мс)
+
   if (attempt < 60) {
     setTimeout(() => tryInitMessenger(attempt + 1), 250);
   } else {
@@ -2169,9 +2244,7 @@ function tryInitMessenger(attempt = 0) {
       console.warn('[Chat] Supabase SDK так и не загрузился');
       setChatStatus('SDK не загружен', 'error');
     }
-    // Если state есть, но SDK не загрузился — не инициализируем
     if (hasState && !hasSupabase) return;
-    // Если state нет — но всё остальное есть, пробуем
     if (!hasState && hasSupabase) {
       initMessenger();
       initNickOnboarding();

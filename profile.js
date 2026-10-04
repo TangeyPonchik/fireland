@@ -1,8 +1,12 @@
 // ============================================
-// FireLand · profile.js · v26.3.2
+// FireLand · profile.js · v26.3.5
+// Данные XP + UI профиля + кейсы + задания + будильник
 // БЕЗ export. Всё в window.
 // ============================================
 
+// ============================================
+// ДАННЫЕ: ТИТУЛЫ УРОВНЕЙ
+// ============================================
 const LEVEL_TITLES = [
 {min:1,max:2,title:'🌱 Новичок'},{min:3,max:4,title:'🌿 Ученик'},{min:5,max:6,title:'🎯 Опытный'},{min:7,max:8,title:'⚔️ Ветеран'},
 {min:9,max:10,title:'🛡️ Мастер'},{min:11,max:12,title:'👑 Гроссмейстер'},{min:13,max:14,title:'🌟 Элита'},{min:15,max:16,title:'🔥 Легенда'},
@@ -21,10 +25,13 @@ const LEVEL_TITLES = [
 
 const PARADOX = {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
 
+// ============================================
+// ДАННЫЕ: ДОСТИЖЕНИЯ
+// ============================================
 const ACHIEVEMENTS = [
 {id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:50,rarity:'common'},
 {id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
-{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/GAMES.length),progressText:s=>`${s.playedGames.length}/${GAMES.length}`},
+{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/window.GAMES.length),progressText:s=>`${s.playedGames.length}/${window.GAMES.length}`},
 {id:'proryv1_win',icon:'💻',name:'Прорыв совершен',desc:'Сыграть в Прорыв 1',xp:50,rarity:'common'},
 {id:'dom_escape',icon:'🏚️',name:'Выбрался из ДОМА',desc:'Пройти квест ДОМ',xp:150,rarity:'epic'},
 {id:'dom2_burner',icon:'🩸',name:'Сжигатель якорей',desc:'Сжечь 3 якоря в ДОМ 2',xp:300,rarity:'legendary'},
@@ -82,6 +89,9 @@ const ACHIEVEMENTS = [
 {id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
 {id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true}];
 
+// ============================================
+// ДАННЫЕ: КВЕСТЫ
+// ============================================
 const QUEST_POOL = [
 {id:'q_play_1',icon:'🎮',name:'Первый шаг',desc:'Запусти 1 игру',xp:30,target:1,type:'games_today'},
 {id:'q_play_2',icon:'🎯',name:'Игрок дня',desc:'Запусти 2 разные игры',xp:50,target:2,type:'games_today'},
@@ -110,6 +120,9 @@ const QUEST_POOL = [
 {id:'q_fav_time',icon:'💫',name:'Преданность',desc:'Играй в избранную игру 5 минут',xp:150,target:300,type:'fav_time_today'}
 ];
 
+// ============================================
+// ФУНКЦИИ XP
+// ============================================
 function getTitleForLevel(level) {
   const t = LEVEL_TITLES.find(t => level >= t.min && level <= t.max);
   return t ? t.title : '🔥🔥🔥 БОГ FireLand';
@@ -145,6 +158,928 @@ function getParadoxLevelInfo(level) {
   return { minutes: Math.round(neededMinutes), xp };
 }
 
+// ============================================
+// УТИЛИТА: ФОРМАТ ВРЕМЕНИ
+// ============================================
+function profileFormatTime(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return `${h}ч ${m}м`;
+  if (m > 0) return `${m}м ${s}с`;
+  return `${s}с`;
+}
+
+// ============================================
+// UI ПРОФИЛЯ
+// ============================================
+function renderProfile() {
+  const s = window.state;
+  const nick = s.nickname || 'Игрок';
+  const input = document.getElementById('profileNickInput');
+  if (input) input.value = nick;
+  const avBig = document.getElementById('profileBigAvatar');
+  if (!avBig) return;
+  if (s.avatar) {
+    avBig.innerHTML = `<img src="${s.avatar}" alt="">`;
+  } else {
+    avBig.textContent = '👤';
+    avBig.style.background = 'linear-gradient(135deg, #6a8aff, #a78bfa)';
+  }
+}
+
+function updateLevelDisplay() {
+  const s = window.state;
+  const lvlInfo = getLevelFromTotalXp(s.totalXp);
+  const title = getTitleForLevel(lvlInfo.level);
+  const percent = (lvlInfo.currentXp / lvlInfo.neededXp) * 100;
+  const lnh = document.getElementById('levelNumHeader');
+  if (lnh) lnh.textContent = lvlInfo.level;
+  const lth = document.getElementById('levelTitleHeader');
+  if (lth) lth.textContent = title;
+  const lxh = document.getElementById('levelXpHeader');
+  if (lxh) lxh.textContent = `${lvlInfo.currentXp} / ${lvlInfo.neededXp} XP`;
+  const badge = document.getElementById('levelHeaderBadge');
+  if (badge) badge.style.setProperty('--xp-percent', percent + '%');
+  const lnb = document.getElementById('levelNumBig');
+  if (lnb) lnb.textContent = lvlInfo.level;
+  const ltb = document.getElementById('levelTitleBig');
+  if (ltb) ltb.textContent = title;
+  const lsb = document.getElementById('levelSubtitleBig');
+  if (lsb) lsb.textContent = `Следующий уровень: ${lvlInfo.neededXp - lvlInfo.currentXp} XP`;
+  const xpf = document.getElementById('xpBarFill');
+  if (xpf) xpf.style.width = percent + '%';
+  const xpt = document.getElementById('xpText');
+  if (xpt) xpt.textContent = `${lvlInfo.currentXp} / ${lvlInfo.neededXp} XP • Всего: ${s.totalXp}`;
+}
+
+function renderAchievements() {
+  const grid = document.getElementById('achievementsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const s = window.state;
+  ACHIEVEMENTS.forEach(ach => {
+    if (ach.isParadox) { renderParadoxCard(grid, ach); return; }
+    const earned = s.achievements.includes(ach.id);
+    const el = document.createElement('div');
+    el.className = 'achievement' + (earned ? ' earned' : '') + (ach.isVeteran ? ' veteran' : '');
+    el.dataset.rarity = ach.rarity || 'common';
+    let progressHtml = '';
+    if (!earned && ach.progress) {
+      const p = Math.min(1, ach.progress(s));
+      const txt = ach.progressText ? ach.progressText(s) : '';
+      progressHtml = `<div class="ach-progress"><div class="ach-progress-fill" style="width:${p * 100}%"></div></div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${txt}</div>`;
+    }
+    el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}</div><div class="ach-xp">+${ach.xp}</div>`;
+    grid.appendChild(el);
+  });
+  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox).length;
+  const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox').length;
+  const text = earnedNormal + '/' + totalNormal;
+  const ac = document.getElementById('achCount');
+  if (ac) ac.textContent = text;
+  const ach = document.getElementById('achCountHeader');
+  if (ach) ach.textContent = text;
+}
+
+function renderParadoxCard(grid, ach) {
+  const s = window.state;
+  const p = s.temporalParadox;
+  const info = getParadoxLevelInfo(p.level);
+  const neededSeconds = info.minutes * 60;
+  const percent = Math.min(100, (p.totalAccumulated / neededSeconds) * 100);
+  const el = document.createElement('div');
+  el.className = 'achievement paradox earned';
+  el.dataset.rarity = 'legendary';
+  el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name} — Уровень ${p.level}</div><div class="ach-desc">Прогресс: ${profileFormatTime(p.totalAccumulated)} / ${profileFormatTime(neededSeconds)}</div><div class="ach-progress"><div class="ach-progress-fill" style="width:${percent}%"></div></div></div><div class="ach-xp">+${info.xp}</div>`;
+  grid.appendChild(el);
+}
+
+function renderRecords() {
+  const list = document.getElementById('recordsList');
+  if (!list) return;
+  list.innerHTML = '';
+  const s = window.state;
+  const sorted = Object.entries(s.playTime).sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-weight:600;">Пока нет рекордов — сыграй в игру!</div>';
+    return;
+  }
+  const ALL = [...(window.GAMES || []), ...(window.UTILITIES || [])];
+  sorted.forEach(([gameId, seconds]) => {
+    const game = ALL.find(g => g.id === gameId);
+    if (!game) return;
+    const row = document.createElement('div');
+    row.className = 'record-row';
+    row.innerHTML = `<div class="rec-game"><span class="rec-icon">${game.icon}</span><span class="rec-name">${game.name}</span></div><span class="rec-time">${profileFormatTime(seconds)}</span>`;
+    list.appendChild(row);
+  });
+}
+
+function renderStats() {
+  const s = window.state;
+  const GAMES_LEN = (window.GAMES || []).length;
+  const UTILS_LEN = (window.UTILITIES || []).length;
+  const tg = document.getElementById('totalGames');
+  if (tg) tg.textContent = GAMES_LEN + UTILS_LEN;
+  const tt = document.getElementById('totalTime');
+  if (tt) tt.textContent = Math.floor(s.totalTime / 60) + ' мин';
+  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox).length;
+  const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox').length;
+  const text = earnedNormal + '/' + totalNormal;
+  const ac = document.getElementById('achCount');
+  if (ac) ac.textContent = text;
+  const ach = document.getElementById('achCountHeader');
+  if (ach) ach.textContent = text;
+}
+
+// ============================================
+// ДОСТИЖЕНИЯ
+// ============================================
+function checkLevelAchievements() {
+  const s = window.state;
+  if (s.level >= 25) unlockAch('level_25');
+  if (s.level >= 50) unlockAch('level_50');
+  if (s.level >= 75) unlockAch('level_75');
+  if (s.level >= 100) unlockAch('level_100');
+}
+
+function unlockAch(id) {
+  const s = window.state;
+  if (s.achievements.includes(id)) return;
+  if (id === 'veteran' || id === 'temporal_paradox') return;
+  s.achievements.push(id);
+  const ach = ACHIEVEMENTS.find(a => a.id === id);
+  if (ach && ach.xp) s.totalXp += ach.xp;
+  const today = typeof window.todayStr === 'function' ? window.todayStr() : new Date().toISOString().slice(0, 10);
+  if (s.todayStats && s.todayStats.date === today) {
+    s.todayStats.achEarned = (s.todayStats.achEarned || 0) + 1;
+  }
+  checkVeteran();
+  const lvlInfo = getLevelFromTotalXp(s.totalXp);
+  const oldLevel = s.level;
+  s.level = lvlInfo.level;
+  if (typeof window.saveState === 'function') window.saveState();
+  showAchToast(id);
+  if (s.level > oldLevel) setTimeout(() => showLevelUpToast(s.level), 500);
+  checkLevelAchievements();
+  const pm = document.getElementById('profileModal');
+  if (pm && pm.classList.contains('show')) renderAchievements();
+  renderStats();
+  updateLevelDisplay();
+  if (s.lastSubmittedNick && typeof window.submitScore === 'function') {
+    setTimeout(window.submitScore, 1000);
+  }
+}
+
+function checkVeteran() {
+  const s = window.state;
+  if (s.achievements.includes('veteran')) return;
+  const allOthers = ACHIEVEMENTS.filter(a => !a.isVeteran && !a.isParadox);
+  const allEarned = allOthers.every(a => s.achievements.includes(a.id));
+  if (allEarned) {
+    s.achievements.push('veteran');
+    s.totalXp += 1000;
+    setTimeout(() => showVeteranToast(), 1000);
+  }
+}
+
+function showAchToast(id) {
+  const ach = ACHIEVEMENTS.find(a => a.id === id);
+  if (!ach) return;
+  if (window.SOUNDS && window.SOUNDS.achievement) window.SOUNDS.achievement();
+  const rarity = ach.rarity || 'common';
+  const gradients = {
+    common: 'linear-gradient(135deg,#6a8aff,#4a6aff)',
+    rare: 'linear-gradient(135deg,#22b8cf,#0c8599)',
+    epic: 'linear-gradient(135deg,#a855f7,#7e22ce)',
+    legendary: 'linear-gradient(135deg,#fbbf24,#f59e0b,#fbbf24)'
+  };
+  const bg = ach.isVeteran ? 'linear-gradient(135deg,#ff00ff,#ff8c00,#6a8aff)' : (gradients[rarity] || gradients.common);
+  const rarityText = { common: 'ОБЫЧНОЕ', rare: 'РЕДКОЕ', epic: 'ЭПИЧЕСКОЕ', legendary: '🌟 ЛЕГЕНДАРНОЕ' };
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:14px 28px;border-radius:22px;font-weight:800;font-family:'Manrope',sans-serif;z-index:99999;box-shadow:0 10px 40px rgba(0,0,0,0.5);display:flex;align-items:center;gap:12px;animation:toastIn 0.4s ease;border:2px solid rgba(255,255,255,0.3);max-width:400px;`;
+  toast.innerHTML = `<span style="font-size:32px">${ach.icon}</span><div><div style="font-size:11px;opacity:0.85;letter-spacing:1px;font-weight:700">🏆 ${ach.isVeteran ? 'ЛЕГЕНДАРНОЕ' : rarityText[rarity]} ДОСТИЖЕНИЕ</div><div style="font-size:16px;margin-top:2px">${ach.name}</div><div style="font-size:11px;opacity:0.85;margin-top:2px">${ach.desc} <span style="color:#fff;font-weight:900">+${ach.xp} XP</span></div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.4s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, ach.isVeteran ? 5000 : 3500);
+}
+
+function showParadoxToast(level, xp) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#06b6d4,#8b5cf6);color:#ffffff;padding:16px 32px;border-radius:24px;font-weight:800;font-family:'Manrope',sans-serif;z-index:99999;box-shadow:0 10px 50px rgba(6,182,212,0.6);display:flex;align-items:center;gap:14px;border:2px solid rgba(255,255,255,0.4);animation:toastIn 0.4s ease;`;
+  toast.innerHTML = `<span style="font-size:36px">🌀</span><div><div style="font-size:11px;opacity:0.85;letter-spacing:1.5px;font-weight:800">⏳ ВРЕМЕННОЙ ПАРАДОКС</div><div style="font-size:17px;margin-top:2px">Уровень ${level} пройден!</div><div style="font-size:12px;opacity:0.9;margin-top:2px">Награда: <span style="color:#fbbf24;font-weight:900">+${xp} XP</span></div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.4s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, 5000);
+}
+
+function showVeteranToast() {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ff00ff,#ff8c00,#fbbf24,#6a8aff);color:#060a1a;padding:40px 60px;border-radius:32px;font-family:'Manrope',sans-serif;text-align:center;z-index:999999;box-shadow:0 0 100px rgba(255,0,255,0.8);border:4px solid #ffffff;max-width:90vw;animation:modalIn 0.5s ease;`;
+  toast.innerHTML = `<div style="font-size:80px;">🏅</div><div style="font-size:36px;font-weight:900;margin:16px 0 8px;letter-spacing:3px;">ВЕТЕРАН</div><div style="font-size:16px;font-weight:800;opacity:0.9;">Ты собрал ВСЕ достижения!</div><div style="font-size:22px;font-weight:900;margin-top:12px;">+1000 XP</div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.5s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 500);
+  }, 6000);
+}
+
+function showLevelUpToast(level) {
+  const title = getTitleForLevel(level);
+  if (window.SOUNDS && window.SOUNDS.levelup) window.SOUNDS.levelup();
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#fbbf24,#6a8aff);color:#060a1a;padding:24px 48px;border-radius:24px;font-family:'Manrope',sans-serif;text-align:center;z-index:999998;box-shadow:0 10px 60px rgba(251,191,36,0.6);border:3px solid rgba(255,255,255,0.4);animation:modalIn 0.5s ease;`;
+  toast.innerHTML = `<div style="font-size:48px;">⭐</div><div style="font-size:14px;font-weight:700;opacity:0.8;letter-spacing:2px;">НОВЫЙ УРОВЕНЬ</div><div style="font-size:48px;font-weight:900;margin:8px 0;">${level}</div><div style="font-size:18px;font-weight:800;">${title}</div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.4s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
+}
+
+// ============================================
+// ЭКСПОРТ / ИМПОРТ / СБРОС
+// ============================================
+async function exportProfile() {
+  const s = window.state;
+  const data = { version: 26, exportedAt: new Date().toISOString(), state: s };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fireland_profile_${s.nickname || 'player'}_${(typeof window.todayStr === 'function' ? window.todayStr() : new Date().toISOString().slice(0, 10))}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 28px;border-radius:22px;font-weight:800;font-family:'Manrope';z-index:99999;animation:toastIn 0.4s ease;`;
+  toast.textContent = '💾 Профиль экспортирован!';
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 2500);
+}
+
+function compressAvatar(file, maxSize) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        } catch (e) { resolve(ev.target.result); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function renameNickEverywhere(oldNick, newNick, token) {
+  const SUPABASE_URL = window.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/rename_nick_everywhere`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        p_old_nick: oldNick,
+        p_new_nick: newNick,
+        p_owner_token: token || '',
+      }),
+    });
+    if (!res.ok) {
+      console.warn('[Rename] Ошибка:', res.status);
+      return { ok: false, message: 'Ошибка сервера' };
+    }
+    const data = await res.json();
+    if (!data.ok) {
+      if (data.error === 'NICK_TAKEN') return { ok: false, message: 'Этот ник занят другим игроком' };
+      if (data.error === 'NOT_OWNER') return { ok: false, message: 'Не твой ник' };
+      if (data.error === 'OLD_NOT_FOUND') {
+        if (typeof window.saveNickname === 'function') return await window.saveNickname();
+        return { ok: false, message: 'Ошибка' };
+      }
+      return { ok: false, message: data.error || 'Ошибка' };
+    }
+    window.state.lastSubmittedNick = newNick;
+    if (typeof window.saveState === 'function') window.saveState(true);
+    if (typeof CHAT !== 'undefined') {
+      CHAT.dmList = [];
+      CHAT.historyLoaded = {};
+      CHAT.reactions = {};
+      CHAT.subscribed = {};
+      if (CHAT.currentRoom && CHAT.currentRoom.startsWith('dm_')) {
+        if (typeof window.switchRoom === 'function') window.switchRoom('general');
+      } else if (typeof window.renderDmList === 'function') {
+        window.renderDmList();
+      }
+    }
+    if (typeof window.refreshLeaderboard === 'function') setTimeout(window.refreshLeaderboard, 500);
+    return { ok: true };
+  } catch (e) {
+    console.warn('[Rename] сеть:', e);
+    return { ok: false, message: 'Нет интернета' };
+  }
+}
+
+async function resetAllData() {
+  const SUPABASE_URL = window.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  const s = window.state;
+  const oldNick = s && s.nickname && s.nickname !== 'Игрок' ? s.nickname : null;
+  const oldToken = s && s.ownerToken ? s.ownerToken : null;
+  let msg = '🗑️ Сбросить ВСЁ?\n\nВесь прогресс вернётся к заводским!';
+  if (oldNick && oldToken) {
+    msg += '\n\n⚠️ Твой ник «' + oldNick + '» также будет УДАЛЁН из:\n• Лидерборда\n• Чата\n• Реакций\n• Комнат\n\nВосстановить нельзя.';
+  }
+  if (!confirm(msg)) return;
+  let dbDeleted = false;
+  if (oldNick && oldToken) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/delete_my_account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ p_nickname: oldNick, p_owner_token: oldToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) dbDeleted = true;
+      }
+    } catch (e) { console.warn('[Reset] Сеть:', e); }
+  }
+  const STATE_KEY = window.STATE_KEY || 'main_state';
+  if (typeof window.idbDelete === 'function') {
+    try { await window.idbDelete(STATE_KEY); } catch (e) {}
+  }
+  localStorage.removeItem('fireland_light');
+  localStorage.removeItem('abdulla_games_state_no_credits');
+  window.state = JSON.parse(JSON.stringify(window.DEFAULT_STATE || {}));
+  window.state.ownerToken = typeof window.generateOwnerToken === 'function' ? window.generateOwnerToken() : 'tok_' + Date.now();
+  window.state.unreadChatCount = 0;
+  if (typeof window.idbSet === 'function') await window.idbSet(STATE_KEY, window.state);
+  if (typeof window.renderGames === 'function') window.renderGames();
+  if (typeof window.renderUtilities === 'function') window.renderUtilities();
+  if (typeof window.updateLastGameBar === 'function') window.updateLastGameBar();
+  if (typeof window.loadSettings === 'function') window.loadSettings();
+  renderProfile();
+  renderStats();
+  renderAchievements();
+  renderRecords();
+  if (typeof window.renderQuests === 'function') window.renderQuests();
+  if (typeof window.renderStreak === 'function') window.renderStreak();
+  updateLevelDisplay();
+  if (typeof window.cancelAlarm === 'function') window.cancelAlarm();
+  if (typeof window.clearSelection === 'function') window.clearSelection();
+  if (typeof window.renderCases === 'function') window.renderCases();
+  if (typeof window.updateChatBadge === 'function') window.updateChatBadge();
+  const ni = document.getElementById('profileNickInput');
+  if (ni) ni.value = 'Игрок';
+  const av = document.getElementById('profileBigAvatar');
+  if (av) {
+    av.innerHTML = '👤';
+    av.style.background = 'linear-gradient(135deg, #6a8aff, #a78bfa)';
+  }
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const gamesTab = document.querySelector('.tab-btn[data-tab="games"]');
+  if (gamesTab) gamesTab.classList.add('active');
+  const gamesContent = document.getElementById('tab-games');
+  if (gamesContent) gamesContent.classList.add('active');
+  if (typeof window.applyTheme === 'function') window.applyTheme();
+  if (typeof window.updateParticleColors === 'function') window.updateParticleColors();
+  if (typeof CHAT !== 'undefined') {
+    CHAT.dmList = [];
+    CHAT.historyLoaded = {};
+    CHAT.reactions = {};
+    CHAT.subscribed = {};
+    if (typeof window.loadMyRooms === 'function') window.loadMyRooms();
+  }
+  if (typeof window.refreshLeaderboard === 'function') setTimeout(window.refreshLeaderboard, 500);
+  alert(dbDeleted ? '🔄 Всё сброшено, аккаунт удалён из базы.' : '🔄 Локальный прогресс сброшен.');
+}
+
+// ============================================
+// КЕЙСЫ
+// ============================================
+const CASE_REWARDS = {
+  common: [
+    { icon: '💰', name: '+100 XP', type: 'xp', value: 100 },
+    { icon: '💵', name: '+150 XP', type: 'xp', value: 150 },
+    { icon: '💎', name: '+200 XP', type: 'xp', value: 200 }
+  ],
+  rare: [
+    { icon: '💠', name: '+400 XP', type: 'xp', value: 400 },
+    { icon: '🎯', name: '+500 XP', type: 'xp', value: 500 },
+    { icon: '📈', name: '+600 XP', type: 'xp', value: 600 }
+  ],
+  epic: [
+    { icon: '🌟', name: '+1000 XP', type: 'xp', value: 1000 },
+    { icon: '💫', name: '+1500 XP', type: 'xp', value: 1500 },
+    { icon: '🎆', name: '+2000 XP', type: 'xp', value: 2000 }
+  ],
+  legendary: [
+    { icon: '👑', name: '+3000 XP', type: 'xp', value: 3000 },
+    { icon: '🔥', name: '+4000 XP', type: 'xp', value: 4000 },
+    { icon: '💎', name: '+5000 XP', type: 'xp', value: 5000 }
+  ]
+};
+
+function getWeekStart() {
+  const now = new Date();
+  const dayOfWeek = (now.getDay() + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - dayOfWeek);
+  monday.setHours(0, 0, 0, 0);
+  const dStr = window.dateStr || function (d) { return d.toISOString().slice(0, 10); };
+  return dStr(monday);
+}
+
+function canOpenDailyCase() {
+  const todayStr = window.todayStr || function () { return new Date().toISOString().slice(0, 10); };
+  return window.state.lastDailyCase !== todayStr();
+}
+function canOpenWeeklyCase() {
+  return window.state.lastWeeklyCase !== getWeekStart();
+}
+
+function openCase(type) {
+  const s = window.state;
+  const todayStr = window.todayStr || function () { return new Date().toISOString().slice(0, 10); };
+  if (type === 'daily' && !canOpenDailyCase()) {
+    if (window.SOUNDS && window.SOUNDS.error) window.SOUNDS.error();
+    alert('📦 Ежедневный кейс уже открыт сегодня!\nВозвращайся завтра.');
+    return;
+  }
+  if (type === 'weekly' && !canOpenWeeklyCase()) {
+    if (window.SOUNDS && window.SOUNDS.error) window.SOUNDS.error();
+    alert('🎁 Недельный кейс уже открыт на этой неделе!\nЖди следующий понедельник.');
+    return;
+  }
+  let rarity;
+  if (type === 'weekly') {
+    rarity = Math.random() < 0.6 ? 'epic' : 'legendary';
+  } else {
+    const roll = Math.random();
+    if (roll < 0.6) rarity = 'common';
+    else if (roll < 0.9) rarity = 'rare';
+    else if (roll < 0.99) rarity = 'epic';
+    else rarity = 'legendary';
+  }
+  const pool = CASE_REWARDS[rarity];
+  const reward = pool[Math.floor(Math.random() * pool.length)];
+  const modal = document.getElementById('caseOpenModal');
+  const revealIcon = document.getElementById('caseRevealIcon');
+  const revealTitle = document.getElementById('caseRevealTitle');
+  const revealReward = document.getElementById('caseRevealReward');
+  const revealRarity = document.getElementById('caseRevealRarity');
+  modal.classList.add('show');
+  revealIcon.textContent = '📦';
+  revealTitle.textContent = 'Открываем...';
+  revealReward.textContent = '';
+  revealRarity.style.display = 'none';
+  if (window.SOUNDS && window.SOUNDS.caseOpen) window.SOUNDS.caseOpen();
+  setTimeout(() => {
+    revealIcon.textContent = reward.icon;
+    revealTitle.textContent = 'Ты получил:';
+    revealReward.textContent = reward.name;
+    revealRarity.className = 'case-reveal-rarity ' + rarity;
+    revealRarity.textContent = {
+      common: 'ОБЫЧНОЕ', rare: 'РЕДКОЕ',
+      epic: 'ЭПИЧЕСКОЕ', legendary: 'ЛЕГЕНДАРНОЕ'
+    }[rarity];
+    revealRarity.style.display = 'inline-block';
+    if (reward.type === 'xp') s.totalXp += reward.value;
+    s.caseItems = s.caseItems || [];
+    s.caseItems.push({
+      type, rarity, reward: reward.name,
+      date: todayStr(), timestamp: Date.now()
+    });
+    if (type === 'daily') s.lastDailyCase = todayStr();
+    else s.lastWeeklyCase = getWeekStart();
+    if (s.todayStats) s.todayStats.caseOpened = (s.todayStats.caseOpened || 0) + 1;
+    if (typeof window.saveState === 'function') window.saveState();
+    unlockAch('case_first');
+    if (s.caseItems.length >= 10) unlockAch('case_10');
+    if (rarity === 'legendary') unlockAch('case_legendary');
+    if (rarity === 'legendary') { if (window.SOUNDS && window.SOUNDS.levelup) window.SOUNDS.levelup(); }
+    else if (rarity === 'epic') { if (window.SOUNDS && window.SOUNDS.reward) window.SOUNDS.reward(); }
+    else { if (window.SOUNDS && window.SOUNDS.quest) window.SOUNDS.quest(); }
+    updateLevelDisplay();
+    renderStats();
+    if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
+    const lvlInfo = getLevelFromTotalXp(s.totalXp);
+    if (lvlInfo.level > s.level) {
+      s.level = lvlInfo.level;
+      setTimeout(() => { if (window.SOUNDS && window.SOUNDS.levelup) window.SOUNDS.levelup(); showLevelUpToast(s.level); }, 800);
+    }
+    checkLevelAchievements();
+    renderCases();
+  }, 1000);
+}
+
+function renderCases() {
+  const dailyBtn = document.getElementById('openDailyCaseBtn');
+  const weeklyBtn = document.getElementById('openWeeklyCaseBtn');
+  const dailyTimer = document.getElementById('dailyCaseTimer');
+  const weeklyTimer = document.getElementById('weeklyCaseTimer');
+  if (!dailyBtn) return;
+  if (canOpenDailyCase()) {
+    dailyBtn.disabled = false; dailyBtn.textContent = '✨ Открыть';
+    dailyTimer.textContent = '✅ Доступен';
+  } else {
+    dailyBtn.disabled = true; dailyBtn.textContent = '❌ Открыт';
+    dailyTimer.textContent = '⏰ Завтра';
+  }
+  if (canOpenWeeklyCase()) {
+    weeklyBtn.disabled = false; weeklyBtn.textContent = '✨ Открыть';
+    weeklyTimer.textContent = '✅ Доступен';
+  } else {
+    weeklyBtn.disabled = true; weeklyBtn.textContent = '❌ Открыт';
+    weeklyTimer.textContent = '⏰ В понедельник';
+  }
+}
+
+function initCasesUI() {
+  const closeBtn = document.getElementById('caseRevealCloseBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('caseOpenModal').classList.remove('show');
+      if (window.SOUNDS && window.SOUNDS.click) window.SOUNDS.click();
+    });
+  }
+  const dailyBtn = document.getElementById('openDailyCaseBtn');
+  const weeklyBtn = document.getElementById('openWeeklyCaseBtn');
+  if (dailyBtn) dailyBtn.addEventListener('click', () => openCase('daily'));
+  if (weeklyBtn) weeklyBtn.addEventListener('click', () => openCase('weekly'));
+}
+
+// ============================================
+// ЗАДАНИЯ
+// ============================================
+function checkDailyQuests() {
+  const s = window.state;
+  const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
+  if (s.dailyQuests.date === today) return;
+  const shuffled = [...QUEST_POOL].sort(() => Math.random() - 0.5);
+  const quests = shuffled.slice(0, 5);
+  s.dailyQuests = {
+    date: today,
+    quests: quests.map(q => q.id),
+    progress: {},
+    completed: []
+  };
+  s.todayStats = {
+    date: today, gamesPlayed: [], timeSpent: 0, utilPlayed: [], favPlayed: [],
+    achEarned: 0, favAdded: 0, nickSet: false, themeChanged: false,
+    fullscreenUsed: false, profileViewed: false, settingsViewed: false,
+    questsViewed: false, favTimeSpent: 0, caseOpened: 0
+  };
+  if (typeof window.saveState === 'function') window.saveState();
+}
+
+function updateQuestProgress() {
+  const s = window.state;
+  const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
+  if (!s.todayStats || s.todayStats.date !== today) {
+    s.todayStats = {
+      date: today, gamesPlayed: [], timeSpent: 0, utilPlayed: [], favPlayed: [],
+      achEarned: 0, favAdded: 0, nickSet: false, themeChanged: false,
+      fullscreenUsed: false, profileViewed: false, settingsViewed: false,
+      questsViewed: false, favTimeSpent: 0, caseOpened: 0
+    };
+  }
+  if (!s.todayStats.utilPlayed) s.todayStats.utilPlayed = [];
+  let changed = false;
+  s.dailyQuests.quests.forEach(qId => {
+    const quest = QUEST_POOL.find(q => q.id === qId);
+    if (!quest) return;
+    if (s.dailyQuests.completed.includes(qId)) return;
+    let progress = 0;
+    switch (quest.type) {
+      case 'games_today': progress = s.todayStats.gamesPlayed.length; break;
+      case 'time_today': progress = s.todayStats.timeSpent; break;
+      case 'util_today': progress = s.todayStats.utilPlayed.length; break;
+      case 'fav_today': progress = s.todayStats.favPlayed.length; break;
+      case 'ach_today': progress = s.todayStats.achEarned; break;
+      case 'fav_add_today': progress = s.todayStats.favAdded; break;
+      case 'nick_set_today': progress = s.todayStats.nickSet ? 1 : 0; break;
+      case 'theme_change_today': progress = s.todayStats.themeChanged ? 1 : 0; break;
+      case 'fullscreen_today': progress = s.todayStats.fullscreenUsed ? 1 : 0; break;
+      case 'profile_view_today': progress = s.todayStats.profileViewed ? 1 : 0; break;
+      case 'settings_view_today': progress = s.todayStats.settingsViewed ? 1 : 0; break;
+      case 'quests_view_today': progress = s.todayStats.questsViewed ? 1 : 0; break;
+      case 'fav_time_today': progress = s.todayStats.favTimeSpent; break;
+      case 'case_today': progress = s.todayStats.caseOpened || 0; break;
+    }
+    const oldProgress = s.dailyQuests.progress[qId] || 0;
+    if (oldProgress !== progress) {
+      s.dailyQuests.progress[qId] = progress;
+      changed = true;
+    }
+    if (progress >= quest.target) {
+      s.dailyQuests.completed.push(qId);
+      s.totalXp += quest.xp;
+      s.questsCompletedTotal = (s.questsCompletedTotal || 0) + 1;
+      unlockAch('quest_first');
+      if (s.questsCompletedTotal >= 10) unlockAch('quest_10');
+      showQuestCompleteToast(quest);
+      changed = true;
+      if (s.dailyQuests.completed.length === s.dailyQuests.quests.length) {
+        setTimeout(() => {
+          s.totalXp += 200;
+          unlockAch('quest_all_daily');
+          showDailyBonusToast();
+          if (typeof window.saveState === 'function') window.saveState();
+          checkVeteran();
+        }, 1000);
+      }
+    }
+  });
+  if (changed) {
+    if (typeof window.saveState === 'function') window.saveState();
+    checkVeteran();
+    const questsTab = document.getElementById('tab-quests');
+    if (questsTab && questsTab.classList.contains('active')) renderQuests();
+  }
+}
+
+function renderQuests() {
+  const panel = document.getElementById('questsPanel');
+  if (!panel) return;
+  panel.innerHTML = '';
+  const s = window.state;
+  const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
+  if (s.dailyQuests.date !== today) checkDailyQuests();
+  s.dailyQuests.quests.forEach(qId => {
+    const quest = QUEST_POOL.find(q => q.id === qId);
+    if (!quest) return;
+    const completed = s.dailyQuests.completed.includes(qId);
+    const progress = s.dailyQuests.progress[qId] || 0;
+    const percent = Math.min(100, (progress / quest.target) * 100);
+    const card = document.createElement('div');
+    card.className = 'quest-card' + (completed ? ' completed' : '');
+    card.innerHTML = `
+      <div class="quest-icon">${quest.icon}</div>
+      <div class="quest-info">
+        <div class="quest-name">${quest.name}</div>
+        <div class="quest-desc">${quest.desc}</div>
+        <div class="quest-progress-bg"><div class="quest-progress-fill" style="width:${percent}%"></div></div>
+      </div>
+      <div class="quest-xp">+${quest.xp}</div>`;
+    panel.appendChild(card);
+  });
+  const qcc = document.getElementById('questsCompletedCount');
+  if (qcc) qcc.textContent = s.dailyQuests.completed.length;
+}
+
+function renderQuestTimer() {
+  const el = document.getElementById('questResetTimer');
+  if (!el) return;
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  const diff = Math.floor((tomorrow - now) / 1000);
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const sec = diff % 60;
+  el.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function showQuestCompleteToast(quest) {
+  if (window.SOUNDS && window.SOUNDS.quest) window.SOUNDS.quest();
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;padding:14px 28px;border-radius:22px;font-weight:800;font-family:'Manrope',sans-serif;z-index:99999;box-shadow:0 10px 40px rgba(34,197,94,0.5);display:flex;align-items:center;gap:12px;animation:toastIn 0.4s ease;border:2px solid rgba(255,255,255,0.3);`;
+  toast.innerHTML = `<span style="font-size:32px">${quest.icon}</span><div><div style="font-size:11px;opacity:0.85;letter-spacing:1px;">📅 ЗАДАНИЕ ВЫПОЛНЕНО</div><div style="font-size:16px;margin-top:2px">${quest.name}</div><div style="font-size:11px;opacity:0.9;margin-top:2px">+${quest.xp} XP</div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.4s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
+function showDailyBonusToast() {
+  if (window.SOUNDS && window.SOUNDS.reward) window.SOUNDS.reward();
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#fbbf24,#f59e0b,#22c55e,#16a34a);color:#060a1a;padding:32px 56px;border-radius:28px;font-family:'Manrope',sans-serif;text-align:center;z-index:999999;box-shadow:0 0 80px rgba(251,191,36,0.8);border:4px solid #ffffff;animation:modalIn 0.6s ease;`;
+  toast.innerHTML = `<div style="font-size:70px;">🎁</div><div style="font-size:28px;font-weight:900;margin:12px 0 6px;">ВСЕ ЗАДАНИЯ ВЫПОЛНЕНЫ!</div><div style="font-size:16px;font-weight:800;opacity:0.9;">+200 XP бонусом</div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.5s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 500);
+  }, 4000);
+}
+
+// ============================================
+// БУДИЛЬНИК
+// ============================================
+const alarmModal = document.getElementById('alarmModal');
+const alarmCloseBtn = document.getElementById('alarmCloseBtn');
+const alarmToggleBtn = document.getElementById('alarmToggleBtn');
+const alarmIndicator = document.getElementById('alarmIndicator');
+const alarmSecondsSlider = document.getElementById('alarmSecondsSlider');
+const alarmSecondsValue = document.getElementById('alarmSecondsValue');
+const alarmMinutesSlider = document.getElementById('alarmMinutesSlider');
+const alarmMinutesValue = document.getElementById('alarmMinutesValue');
+const alarmHoursSlider = document.getElementById('alarmHoursSlider');
+const alarmHoursValue = document.getElementById('alarmHoursValue');
+const alarmStartBtn = document.getElementById('alarmStartBtn');
+const alarmCancelBtn = document.getElementById('alarmCancelBtn');
+const alarmStatus = document.getElementById('alarmStatus');
+const alarmVolumeSlider = document.getElementById('alarmVolumeSlider');
+const alarmVolumeValue = document.getElementById('alarmVolumeValue');
+const alarmRepeatsSlider = document.getElementById('alarmRepeatsSlider');
+const alarmRepeatsValue = document.getElementById('alarmRepeatsValue');
+const alarmDelaySlider = document.getElementById('alarmDelaySlider');
+const alarmDelayValue = document.getElementById('alarmDelayValue');
+const vibrationToggle = document.getElementById('vibrationToggle');
+
+let alarmEndTime = null;
+let alarmIntervalId = null;
+let alarmIsRinging = false;
+
+function loadAlarmSettings() {
+  const s = window.state;
+  if (alarmVolumeSlider) {
+    alarmVolumeSlider.value = s.alarmVolume;
+    alarmVolumeValue.textContent = Math.round(s.alarmVolume * 100) + '%';
+  }
+  if (alarmRepeatsSlider) {
+    alarmRepeatsSlider.value = s.alarmRepeats;
+    alarmRepeatsValue.textContent = s.alarmRepeats;
+  }
+  if (alarmDelaySlider) {
+    alarmDelaySlider.value = s.alarmDelay;
+    alarmDelayValue.textContent = s.alarmDelay + 'с';
+  }
+  if (vibrationToggle) vibrationToggle.checked = s.vibrationEnabled;
+}
+
+if (alarmVolumeSlider) alarmVolumeSlider.addEventListener('input', () => {
+  window.state.alarmVolume = parseFloat(alarmVolumeSlider.value);
+  alarmVolumeValue.textContent = Math.round(window.state.alarmVolume * 100) + '%';
+  if (typeof window.saveState === 'function') window.saveState();
+});
+if (alarmRepeatsSlider) alarmRepeatsSlider.addEventListener('input', () => {
+  window.state.alarmRepeats = parseInt(alarmRepeatsSlider.value);
+  alarmRepeatsValue.textContent = window.state.alarmRepeats;
+  if (typeof window.saveState === 'function') window.saveState();
+});
+if (alarmDelaySlider) alarmDelaySlider.addEventListener('input', () => {
+  window.state.alarmDelay = parseInt(alarmDelaySlider.value);
+  alarmDelayValue.textContent = window.state.alarmDelay + 'с';
+  if (typeof window.saveState === 'function') window.saveState();
+});
+if (vibrationToggle) vibrationToggle.addEventListener('change', () => {
+  window.state.vibrationEnabled = vibrationToggle.checked;
+  if (typeof window.saveState === 'function') window.saveState();
+});
+if (alarmSecondsSlider) alarmSecondsSlider.addEventListener('input', () => {
+  alarmSecondsValue.textContent = alarmSecondsSlider.value;
+  updateAlarmDisplay();
+});
+if (alarmMinutesSlider) alarmMinutesSlider.addEventListener('input', () => {
+  alarmMinutesValue.textContent = alarmMinutesSlider.value;
+  updateAlarmDisplay();
+});
+if (alarmHoursSlider) alarmHoursSlider.addEventListener('input', () => {
+  alarmHoursValue.textContent = alarmHoursSlider.value;
+  updateAlarmDisplay();
+});
+if (alarmToggleBtn) alarmToggleBtn.addEventListener('click', () => {
+  alarmModal.classList.add('show');
+  alarmHoursSlider.value = 0;
+  alarmMinutesSlider.value = 0;
+  alarmSecondsSlider.value = 5;
+  alarmHoursValue.textContent = '0';
+  alarmMinutesValue.textContent = '0';
+  alarmSecondsValue.textContent = '5';
+  updateAlarmDisplay();
+  loadAlarmSettings();
+});
+if (alarmCloseBtn) alarmCloseBtn.addEventListener('click', () => alarmModal.classList.remove('show'));
+if (alarmModal) alarmModal.addEventListener('click', (e) => {
+  if (e.target === alarmModal) alarmModal.classList.remove('show');
+});
+
+function getAlarmTotalSeconds() {
+  const h = parseInt(alarmHoursSlider.value) || 0;
+  const m = parseInt(alarmMinutesSlider.value) || 0;
+  const s = parseInt(alarmSecondsSlider.value) || 0;
+  return h * 3600 + m * 60 + s;
+}
+
+function alarmRing() {
+  if (alarmIsRinging) return;
+  alarmIsRinging = true;
+  alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
+  alarmStatus.classList.add('alarm-status-ringing');
+  alarmIndicator.classList.add('active');
+  if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
+  let ringCount = 0;
+  const totalRings = window.state.alarmRepeats;
+  const delayMs = window.state.alarmDelay * 1000;
+  let ringInterval = null;
+  function doRing() {
+    if (ringCount >= totalRings) {
+      if (ringInterval) clearInterval(ringInterval);
+      alarmStatus.classList.remove('alarm-status-ringing');
+      alarmIsRinging = false;
+      alarmIndicator.classList.remove('active');
+      return;
+    }
+    if (typeof window.playAlarmSound === 'function') window.playAlarmSound();
+    if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
+    ringCount++;
+  }
+  doRing();
+  ringInterval = setInterval(doRing, delayMs);
+}
+
+function updateAlarmDisplay() {
+  if (!alarmEndTime) {
+    const total = getAlarmTotalSeconds();
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+    alarmStatus.textContent = `⏳ ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return;
+  }
+  const diff = Math.max(0, Math.floor((alarmEndTime - Date.now()) / 1000));
+  if (diff <= 0) {
+    alarmRing();
+    alarmEndTime = null;
+    clearInterval(alarmIntervalId);
+    alarmIntervalId = null;
+    alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
+    return;
+  }
+  const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+  alarmStatus.textContent = `⏳ ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function startAlarm() {
+  const totalSecs = getAlarmTotalSeconds();
+  if (totalSecs < 1) { alert('❌ Минимум 1 секунда!'); return; }
+  if (alarmIntervalId) clearInterval(alarmIntervalId);
+  alarmEndTime = Date.now() + totalSecs * 1000;
+  alarmIsRinging = false;
+  alarmStatus.classList.remove('alarm-status-ringing');
+  alarmIndicator.classList.add('active');
+  alarmStartBtn.style.display = 'none';
+  alarmCancelBtn.style.display = 'inline-block';
+  alarmIntervalId = setInterval(updateAlarmDisplay, 1000);
+  updateAlarmDisplay();
+  if (!window.state.alarmUsed) {
+    window.state.alarmUsed = true;
+    if (typeof window.saveState === 'function') window.saveState();
+    unlockAch('alarm_user');
+  }
+}
+
+function cancelAlarm() {
+  if (alarmIntervalId) clearInterval(alarmIntervalId);
+  alarmIntervalId = null;
+  alarmEndTime = null;
+  alarmIsRinging = false;
+  if (alarmStatus) alarmStatus.classList.remove('alarm-status-ringing');
+  if (alarmIndicator) alarmIndicator.classList.remove('active');
+  if (alarmStartBtn) alarmStartBtn.style.display = 'inline-block';
+  if (alarmCancelBtn) alarmCancelBtn.style.display = 'none';
+  updateAlarmDisplay();
+}
+
+if (alarmStartBtn) alarmStartBtn.addEventListener('click', startAlarm);
+if (alarmCancelBtn) alarmCancelBtn.addEventListener('click', cancelAlarm);
+
+// ============================================
+// ЭКСПОРТ В window
+// ============================================
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
 window.ACHIEVEMENTS = ACHIEVEMENTS;
@@ -153,5 +1088,46 @@ window.getTitleForLevel = getTitleForLevel;
 window.getXpForLevel = getXpForLevel;
 window.getLevelFromTotalXp = getLevelFromTotalXp;
 window.getParadoxLevelInfo = getParadoxLevelInfo;
+window.profileFormatTime = profileFormatTime;
+window.renderProfile = renderProfile;
+window.updateLevelDisplay = updateLevelDisplay;
+window.renderAchievements = renderAchievements;
+window.renderParadoxCard = renderParadoxCard;
+window.renderRecords = renderRecords;
+window.renderStats = renderStats;
+window.checkLevelAchievements = checkLevelAchievements;
+window.unlockAch = unlockAch;
+window.checkVeteran = checkVeteran;
+window.showAchToast = showAchToast;
+window.showParadoxToast = showParadoxToast;
+window.showVeteranToast = showVeteranToast;
+window.showLevelUpToast = showLevelUpToast;
+window.exportProfile = exportProfile;
+window.importProfile = function () {
+  const inp = document.getElementById('importProfileInput');
+  if (inp) inp.click();
+};
+window.compressAvatar = compressAvatar;
+window.renameNickEverywhere = renameNickEverywhere;
+window.resetAllData = resetAllData;
+window.deleteMyAccount = resetAllData;
+window.CASE_REWARDS = CASE_REWARDS;
+window.getWeekStart = getWeekStart;
+window.canOpenDailyCase = canOpenDailyCase;
+window.canOpenWeeklyCase = canOpenWeeklyCase;
+window.openCase = openCase;
+window.renderCases = renderCases;
+window.initCasesUI = initCasesUI;
+window.checkDailyQuests = checkDailyQuests;
+window.updateQuestProgress = updateQuestProgress;
+window.renderQuests = renderQuests;
+window.renderQuestTimer = renderQuestTimer;
+window.showQuestCompleteToast = showQuestCompleteToast;
+window.showDailyBonusToast = showDailyBonusToast;
+window.loadAlarmSettings = loadAlarmSettings;
+window.startAlarm = startAlarm;
+window.cancelAlarm = cancelAlarm;
+window.updateAlarmDisplay = updateAlarmDisplay;
+window.alarmRing = alarmRing;
 
-console.log('[profile.js] Загружено:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов');
+console.log('[profile.js] Загружено:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');
