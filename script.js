@@ -8,7 +8,7 @@
 (function () {
 'use strict';
 
-const APP_VERSION = '26.3.6';
+const APP_VERSION = '26.3.7';
 
 // ============================================
 // ПРОВЕРКА МОДУЛЕЙ
