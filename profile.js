@@ -164,44 +164,7 @@ function getLevelFromTotalXp(totalXp) {
   }
   return { level, currentXp: totalXp - consumed, neededXp: getXpForLevel(level) };
 }
-  let level = 1, consumed = 0;
-  // Первые 20 уровней: 100 + (level-1)*50
-  while (level <= 20) {
-    const needed = 100 + (level - 1) * 50;
-    if (consumed + needed > totalXp) return { level, currentXp: totalXp - consumed, neededXp: needed };
-    consumed += needed;
-    level++;
-  }
-  // Уровни 21-50: 1050 + (level-20)*100
-  while (level <= 50) {
-    const needed = 1050 + (level - 20) * 100;
-    if (consumed + needed > totalXp) return { level, currentXp: totalXp - consumed, neededXp: needed };
-    consumed += needed;
-    level++;
-  }
-  // Уровни 51-80: 4050 + (level-50)*200
-  while (level <= 80) {
-    const needed = 4050 + (level - 50) * 200;
-    if (consumed + needed > totalXp) return { level, currentXp: totalXp - consumed, neededXp: needed };
-    consumed += needed;
-    level++;
-  }
-  // Уровни 81-95: 10050 + (level-80)*500
-  while (level <= 95) {
-    const needed = 10050 + (level - 80) * 500;
-    if (consumed + needed > totalXp) return { level, currentXp: totalXp - consumed, neededXp: needed };
-    consumed += needed;
-    level++;
-  }
-  // 96+
-  while (level <= 1000) {
-    const needed = 17550 + (level - 95) * 1000;
-    if (consumed + needed > totalXp) return { level, currentXp: totalXp - consumed, neededXp: needed };
-    consumed += needed;
-    level++;
-  }
-  return { level, currentXp: totalXp - consumed, neededXp: getXpForLevel(level) };
-}
+
 function getParadoxLevelInfo(level) {
   let neededMinutes = PARADOX.BASE_TIME;
   for (let i = 0; i < level; i++) {

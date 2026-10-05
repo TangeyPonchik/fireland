@@ -3,23 +3,23 @@
 // Кэширует ВСЁ: лаунчер, игры, утилиты, маскот
 // ============================================
 
-const CACHE_NAME = 'fireland-v26.4.0';
-const CACHE_VERSION = '26.4.0';
+const CACHE_NAME = 'fireland-v26.4.2';
+const CACHE_VERSION = '26.4.2';
 
 // Что кэшируем при установке
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './style.css?v=34',
-  './storage.js?v=34',
-  './games.js?v=34',
-  './profile.js?v=34',
-  './sound.js?v=34',
-  './streak.js?v=34',
-  './device.js?v=34',
-  './leaderboard.js?v=34',
-  './script.js?v=34',
-  './messenger.js?v=34',
+  './style.css?v=36',
+  './storage.js?v=36',
+  './games.js?v=36',
+  './profile.js?v=36',
+  './sound.js?v=36',
+  './streak.js?v=36',
+  './device.js?v=36',
+  './leaderboard.js?v=36',
+  './script.js?v=36',
+  './messenger.js?v=36',
   './manifest.json',
   './fireek.mp4'
 ];
@@ -107,7 +107,7 @@ self.addEventListener('fetch', (event) => {
       }
       // Нет в кэше — пробуем сеть
       return fetch(request).then(response => {
-        if (response.ok) {
+        if (response.ok && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         }

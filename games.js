@@ -216,18 +216,6 @@ function clearSelection() {
   const nu = document.getElementById('noUtilSelected'); if (nu) nu.style.display = 'flex';
   const ud = document.getElementById('utilDetail'); if (ud) { ud.style.display = 'none'; ud.innerHTML = ''; }
 }
-  const s = getState();
-  if (s) {
-    s.selectedGameId = null;
-    s.selectedUtilityId = null;
-    if (typeof window.saveState === 'function') window.saveState();
-  }
-  document.querySelectorAll('.game-card').forEach(card => card.classList.remove('selected'));
-  const ng = document.getElementById('noGameSelected'); if (ng) ng.style.display = 'flex';
-  const gd = document.getElementById('gameDetail'); if (gd) { gd.style.display = 'none'; gd.innerHTML = ''; }
-  const nu = document.getElementById('noUtilSelected'); if (nu) nu.style.display = 'flex';
-  const ud = document.getElementById('utilDetail'); if (ud) { ud.style.display = 'none'; ud.innerHTML = ''; }
-}
 
 function renderGames() {
   const grid = document.getElementById('gameGrid');
