@@ -1,20 +1,13 @@
 // ============================================
-// FireLand · script.js · v26.4.0
+// FireLand · script.js · v26.4.1
 // Ядро: темы, частицы, звёзды, часы, настройки, onboarding.
-// Модули: storage.js, games.js, profile.js, sound.js,
-// streak.js, device.js, leaderboard.js, messenger.js
-// Фиксы: #8 (DEFAULT_STATE), #9 (renameNick check),
-//        #25 (settingsModal check), #26 (nick input)
 // ============================================
 
 (function () {
 'use strict';
 
-const APP_VERSION = '26.4.0';
+const APP_VERSION = '26.4.1';
 
-// ============================================
-// ПРОВЕРКА МОДУЛЕЙ
-// ============================================
 (function checkModules() {
   const missing = [];
   if (typeof window.GAMES === 'undefined') missing.push('games.js');
@@ -32,9 +25,6 @@ const APP_VERSION = '26.4.0';
   }
 })();
 
-// ============================================
-// АЛИАСЫ ИЗ window
-// ============================================
 var saveState = window.saveState || function () {};
 var loadState = window.loadState || function () {};
 var todayStr = window.todayStr || function () { return new Date().toISOString().slice(0, 10); };
@@ -47,14 +37,8 @@ var DEFAULT_STATE = window.DEFAULT_STATE || {};
 var SOUNDS = window.SOUNDS || { click() {}, achievement() {}, quest() {}, levelup() {}, reward() {}, caseOpen() {}, error() {} };
 var playTone = window.playTone || function () {};
 
-// ============================================
-// ХЕЛПЕР
-// ============================================
 function getState() { return window.state || null; }
 
-// ============================================
-// ТЕМЫ
-// ============================================
 function getSmartTheme() {
   const h = new Date().getHours();
   return (h >= 7 && h < 19) ? 'light' : 'default';
@@ -65,7 +49,7 @@ function applyTheme() {
   if (!s) return;
   let theme = s.theme;
   if (theme === 'smart') theme = getSmartTheme();
-  document.body.className = '';
+  document.body.classList.remove('theme-system', 'theme-default', 'theme-light', 'theme-smart');
   if (theme === 'system') document.body.classList.add('theme-system');
   else if (theme === 'default') document.body.classList.add('theme-default');
   else document.body.classList.add('theme-' + theme);
@@ -88,9 +72,6 @@ setInterval(() => {
   if (s && s.theme === 'smart') applyTheme();
 }, 60000);
 
-// ============================================
-// ЧАСЫ
-// ============================================
 function updateClock() {
   const now = new Date();
   const h = document.getElementById('hours');
@@ -100,9 +81,6 @@ function updateClock() {
 }
 setInterval(updateClock, 10000);
 
-// ============================================
-// ЧАСТИЦЫ / ЗВЁЗДЫ
-// ============================================
 function createParticles() {
   const c = document.getElementById('bgParticles');
   if (!c) return;
@@ -153,9 +131,6 @@ function buildAnimatedLogo() {
   if (lf) lf.textContent = 'FireLand';
 }
 
-// ============================================
-// НАСТРОЙКИ
-// ============================================
 const settingsModal = document.getElementById('settingsModal');
 const settingsGearBtn = document.getElementById('settingsGearBtn');
 const settingsCloseBtn = document.getElementById('settingsCloseBtn');
@@ -209,9 +184,6 @@ if (settingsModal) settingsModal.addEventListener('click', (e) => {
   if (e.target === settingsModal) settingsModal.classList.remove('show');
 });
 
-// ============================================
-// ПРОФИЛЬ — UI + ФИКС НИКА
-// ============================================
 const profileModal = document.getElementById('profileModal');
 const profileCloseBtn = document.getElementById('profileCloseBtn');
 const profileNickInput = document.getElementById('profileNickInput');
@@ -236,7 +208,6 @@ if (profileModal) profileModal.addEventListener('click', (e) => {
   if (e.target === profileModal) profileModal.classList.remove('show');
 });
 
-// ФИКС НИКА
 if (profileNickInput) {
   profileNickInput.addEventListener('input', () => {
     const s = getState();
@@ -273,7 +244,6 @@ if (profileNickSaveBtn) {
       if (hint) { hint.textContent = 'Сначала введи ник'; hint.classList.add('error'); }
       return;
     }
-    // Фикс #9: проверка на существование функции
     if (typeof window.saveNickname !== 'function' && typeof window.renameNickEverywhere !== 'function') {
       if (hint) { hint.textContent = 'Лидерборд не загружен'; hint.classList.add('error'); }
       return;
@@ -341,7 +311,6 @@ if (avatarFileInput) avatarFileInput.addEventListener('change', async (e) => {
   }
 });
 
-// Фикс #8: импорт профиля с проверкой DEFAULT_STATE
 const importProfileInput = document.getElementById('importProfileInput');
 if (importProfileInput) {
   importProfileInput.addEventListener('change', async (e) => {
@@ -359,7 +328,6 @@ if (importProfileInput) {
         return;
       }
       const merged = { ...window.DEFAULT_STATE, ...data.state };
-      // Фикс #29: миграция полей
       if (!merged.temporalParadox) merged.temporalParadox = { level: 1, totalAccumulated: 0 };
       if (!merged.streak) merged.streak = { current: 0, best: 0, lastLogin: null, history: [] };
       if (!merged.streak.history) merged.streak.history = [];
@@ -418,9 +386,6 @@ if (profileResetBtn) profileResetBtn.addEventListener('click', () => {
   if (typeof window.resetAllData === 'function') window.resetAllData();
 });
 
-// ============================================
-// ESC
-// ============================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const isGameOpen = window.isGameOpen;
@@ -445,9 +410,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ============================================
-// КНОПКИ ИГРЫ
-// ============================================
 const gameMenuTrigger = document.getElementById('gameMenuTrigger');
 if (gameMenuTrigger) gameMenuTrigger.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -528,9 +490,6 @@ document.addEventListener('fullscreenchange', () => {
   if (menuText) menuText.textContent = isFull ? 'Выйти из полного экрана' : 'Полный экран';
 });
 
-// ============================================
-// POST-GAME МОДАЛКА
-// ============================================
 const pgCloseBtn = document.getElementById('pgCloseBtn');
 if (pgCloseBtn) pgCloseBtn.addEventListener('click', () => {
   document.getElementById('postGameModal').classList.remove('show');
@@ -548,9 +507,6 @@ if (postGameModal) postGameModal.addEventListener('click', (e) => {
   if (e.target.id === 'postGameModal') postGameModal.classList.remove('show');
 });
 
-// ============================================
-// INIT
-// ============================================
 (async function init() {
   if (typeof window.applyDeviceMode === 'function') window.applyDeviceMode();
   if (typeof window.loadState === 'function') {
@@ -577,7 +533,10 @@ if (postGameModal) postGameModal.addEventListener('click', (e) => {
   if (typeof window.renderProfile === 'function') window.renderProfile();
   if (typeof window.renderQuests === 'function') window.renderQuests();
   if (typeof window.renderStreak === 'function') window.renderStreak();
-  if (typeof window.renderQuestTimer === 'function') window.renderQuestTimer();
+  if (typeof window.renderQuestTimer === 'function') {
+    window.renderQuestTimer();
+    setInterval(window.renderQuestTimer, 1000);
+  }
   if (typeof window.updateLevelDisplay === 'function') window.updateLevelDisplay();
   if (typeof window.updateLastGameBar === 'function') window.updateLastGameBar();
   if (typeof window.renderCases === 'function') window.renderCases();
@@ -601,9 +560,6 @@ if (postGameModal) postGameModal.addEventListener('click', (e) => {
   if (typeof window.updateChatBadge === 'function') setTimeout(window.updateChatBadge, 800);
 })();
 
-// ============================================
-// ЭКСПОРТ
-// ============================================
 window.APP_VERSION = APP_VERSION;
 window.getSmartTheme = getSmartTheme;
 window.applyTheme = applyTheme;

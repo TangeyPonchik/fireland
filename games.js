@@ -212,9 +212,21 @@ function clearSelection() {
   }
   document.querySelectorAll('.game-card').forEach(card => card.classList.remove('selected'));
   const ng = document.getElementById('noGameSelected'); if (ng) ng.style.display = 'flex';
-  const gd = document.getElementById('gameDetail'); if (gd) gd.style.display = 'none';
+  const gd = document.getElementById('gameDetail'); if (gd) { gd.style.display = 'none'; gd.innerHTML = ''; }
   const nu = document.getElementById('noUtilSelected'); if (nu) nu.style.display = 'flex';
-  const ud = document.getElementById('utilDetail'); if (ud) ud.style.display = 'none';
+  const ud = document.getElementById('utilDetail'); if (ud) { ud.style.display = 'none'; ud.innerHTML = ''; }
+}
+  const s = getState();
+  if (s) {
+    s.selectedGameId = null;
+    s.selectedUtilityId = null;
+    if (typeof window.saveState === 'function') window.saveState();
+  }
+  document.querySelectorAll('.game-card').forEach(card => card.classList.remove('selected'));
+  const ng = document.getElementById('noGameSelected'); if (ng) ng.style.display = 'flex';
+  const gd = document.getElementById('gameDetail'); if (gd) { gd.style.display = 'none'; gd.innerHTML = ''; }
+  const nu = document.getElementById('noUtilSelected'); if (nu) nu.style.display = 'flex';
+  const ud = document.getElementById('utilDetail'); if (ud) { ud.style.display = 'none'; ud.innerHTML = ''; }
 }
 
 function renderGames() {
@@ -699,4 +711,6 @@ Object.defineProperty(window, 'sessionAchEarned', {
   configurable: true
 });
 
-console.log('[games.js] Загружено v26.4.0:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + UI игр');
+if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+  console.log('[games.js] Загружено v26.4.1:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + UI игр');
+}

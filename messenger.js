@@ -735,6 +735,7 @@ function openDmWith(peerNick) {
   const st = chatGetState();
   if (!st) return;
   if (!peerNick || peerNick === st.nickname) return;
+  peerNick = String(peerNick).trim().replace(/\s+/g, '_');
   const room = makeDmRoom(st.nickname, peerNick);
   const existing = CHAT.dmList.find(d => d.room === room);
   if (existing) existing.unread = 0;
@@ -778,7 +779,7 @@ function renderDmList() {
   box.innerHTML = visible.map(dm => {
     const isActive = CHAT.currentRoom === dm.room;
     const unread = dm.unread || 0;
-    const avatar = getAvatarForNick(dm.peer);
+    const avatar = getAvatarForNick(dm.peer || '?');
     return `
       <div class="dm-item ${isActive ? 'active' : ''}" data-room="${chatEscape(dm.room)}">
         <div class="dm-avatar">${avatar}</div>
