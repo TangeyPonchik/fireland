@@ -1,7 +1,12 @@
 // ============================================
-// FireLand Messenger v26.3.4 · Realtime rooms
-// + фикс реакций (встроенный эмодзи-пикер)
+// FireLand Messenger v26.4.0 · Realtime rooms
+// Фиксы: #3, #4, #5, #14, #15, #16, #17, #18, #19, #20,
+//        #56, #57, #58, #59, #60, #61
 // ============================================
+
+// Фикс #3: не объявляем SUPABASE_URL повторно — читаем из window
+const CHAT_URL = window.SUPABASE_URL;
+const CHAT_ANON_KEY = window.SUPABASE_ANON_KEY;
 
 const CHAT = {
   client: null,
@@ -27,9 +32,6 @@ const CHAT = {
   presenceHeartbeat: null,
 };
 
-const CHAT_URL = SUPABASE_URL;
-const CHAT_ANON_KEY = SUPABASE_ANON_KEY;
-
 const EMOJI_LIST = [
   '😀','😂','🥰','😎','🤔','😢','😡','🥳','😴','🤯',
   '👍','👎','❤️','🔥','✨','🎉','💯','👀','🤝','💪',
@@ -44,8 +46,8 @@ function chatEscape(text) {
   return (window.escapeHtml || function(t){return t})(text);
 }
 function chatSafePlayTone(freq, duration, type, volume) {
-  if (typeof playTone === 'function') {
-    try { playTone(freq, duration, type, volume); } catch (e) {}
+  if (typeof window.playTone === 'function') {
+    try { window.playTone(freq, duration, type, volume); } catch (e) {}
   }
 }
 function chatGetState() {
@@ -67,7 +69,7 @@ function chatHeaders(extra = {}) {
 }
 
 // ============================================
-// ФИЛЬТР МАТА
+// ФИЛЬТР МАТА (фикс #60, #61)
 // ============================================
 const BAD_ROOTS = [
   'хуй','хуё','хуе','хер','пизд','блят','бляд',
@@ -77,22 +79,48 @@ const BAD_ROOTS = [
   'пидор','пидар','уеб','уёб','долбоёб','долбоеб',
   'нахуй','нахуя','похуй','охуе','ахуе','гнид','мраз','твар',
 ];
-const WHITELIST = new Set([]);
+const WHITELIST = new Set([
+  'мандарин','мандарины','мандаринов','мандариновый',
+  'херой','херои','херсон',
+  'сукать','сукал','сукают',
+  'ебаный','ебаное',
+  'страхуй','страхуя',
+]);
 
+// Фикс #60: проверка на границы слов
 function hasProfanity(text) {
   const lower = text.toLowerCase().replace(/[^\wа-яё\s]/gi, ' ');
   const words = lower.split(/\s+/).filter(Boolean);
   return words.some(w => {
     if (WHITELIST.has(w)) return false;
-    return BAD_ROOTS.some(root => w.includes(root));
+    // Точное совпадение или префикс с окончанием
+    return BAD_ROOTS.some(root => {
+      if (w === root) return true;
+      // Проверяем начало слова + возможные окончания
+      if (w.startsWith(root)) {
+        const suffix = w.slice(root.length);
+        // Разрешаем только короткие окончания
+        return suffix.length <= 3 || /^(а|ам|ами|ах|ов|ой|ые|ый|ая|ое|и|у|ю|е|я)$/.test(suffix);
+      }
+      return false;
+    });
   });
 }
 
+// Фикс #61: цензура с границами слов
 function censorProfanity(text) {
   let result = text;
   BAD_ROOTS.forEach(root => {
-    const re = new RegExp(root, 'gi');
-    result = result.replace(re, m => '*'.repeat(m.length));
+    // \b не работает с кириллицей в старых браузерах,
+    // используем lookahead/lookbehind через (?<=...) и (?=...)
+    try {
+      const re = new RegExp(`(?<=^|[^а-яё])${root}[а-яё]{0,3}(?=$|[^а-яё])`, 'gi');
+      result = result.replace(re, m => '*'.repeat(m.length));
+    } catch (e) {
+      // Fallback для старых браузеров
+      const re = new RegExp(root, 'gi');
+      result = result.replace(re, m => '*'.repeat(m.length));
+    }
   });
   return result;
 }
@@ -153,7 +181,7 @@ function initMessenger() {
   bindChatUI();
   initEmojiPanel();
   loadMyRooms();
-  console.log('[Chat] Мессенджер v26.3.4 · Realtime rooms + фикс реакций');
+  console.log('[Chat] Мессенджер v26.4.0 · Realtime rooms + фикс реакций');
 }
 
 function bindChatUI() {
@@ -241,12 +269,15 @@ function bindChatUI() {
 }
 
 // ============================================
-// ПЕРЕКЛЮЧЕНИЕ КОМНАТ
+// ПЕРЕКЛЮЧЕНИЕ КОМНАТ (фикс #4)
 // ============================================
 function switchRoom(room) {
   if (!CHAT.client) return;
   const st = chatGetState();
-  if (!st) return;
+  if (!st) {
+    console.warn('[Chat] switchRoom: state не готов');
+    return;
+  }
   if (CHAT.currentRoom === room && CHAT.historyLoaded[room]) {
     updateChatHeader();
     return;
@@ -509,7 +540,6 @@ function subscribeToRooms() {
         if (!r || !r.room) return;
         CHAT.roomsList = (CHAT.roomsList || []).filter(x => x.room !== r.room);
         renderRoomsList();
-        console.log('[Chat] Realtime rooms DELETE:', r.room);
       }
     )
     .on(
@@ -537,7 +567,6 @@ function subscribeToRooms() {
       if (status === 'SUBSCRIBED') {
         console.log('[Chat] Realtime подписка на rooms активна');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.warn('[Chat] Realtime rooms error:', status);
         CHAT.roomsSubscribed = false;
       }
     });
@@ -773,15 +802,19 @@ function renderDmList() {
   });
 }
 
+// Фикс #16: экранирование _ в like-запросе
 async function refreshDmList() {
   const st = chatGetState();
   if (!st || !st.nickname || st.nickname === 'Игрок') return;
   if (Date.now() - CHAT.lastDmFetch < 3000) return;
   CHAT.lastDmFetch = Date.now();
   try {
-    const myPrefix1 = `dm_${st.nickname}_`;
+    // Фикс #16: экранируем _ и % в нике для LIKE-запроса
+    const escapeLike = (s) => s.replace(/[\\%_]/g, '\\$&');
+    const myNickEscaped = escapeLike(st.nickname);
+    const myPrefix1 = `dm_${myNickEscaped}_`;
     const res = await fetch(
-      `${CHAT_URL}/rest/v1/chat_messages?or=(room.like.${encodeURIComponent(myPrefix1)}*,room.like.*_${encodeURIComponent(st.nickname)})&select=room,nickname,text,created_at&order=created_at.desc&limit=100`,
+      `${CHAT_URL}/rest/v1/chat_messages?or=(room.like.${encodeURIComponent(myPrefix1)}*,room.like.*_${encodeURIComponent(myNickEscaped)})&select=room,nickname,text,created_at&order=created_at.desc&limit=100`,
       { headers: chatHeaders() }
     );
     if (!res.ok) return;
@@ -866,6 +899,11 @@ async function handleCreateRoom() {
     alert('Сначала установи ник');
     return;
   }
+  // Фикс #18: проверка ownerToken
+  if (!st.ownerToken) {
+    alert('Ошибка: не создан ownerToken. Обнови страницу.');
+    return;
+  }
 
   try {
     const checkRes = await fetch(
@@ -893,7 +931,7 @@ async function handleCreateRoom() {
         name,
         display,
         author_nick: st.nickname,
-        owner_token: st.ownerToken || '',
+        owner_token: st.ownerToken,
       }),
     });
     if (!res.ok) {
@@ -1017,6 +1055,12 @@ async function deleteRoom(roomId) {
     return;
   }
 
+  // Фикс #17: сообщения комнаты не удаляем (by design — история)
+  // Если хочешь удалять — раскомментируй:
+  // await fetch(`${CHAT_URL}/rest/v1/chat_messages?room=eq.${encodeURIComponent(roomId)}`, {
+  //   method: 'DELETE', headers: chatHeaders()
+  // });
+
   CHAT.roomsList = CHAT.roomsList.filter(r => r.room !== roomId);
   if (CHAT.currentRoom === roomId) switchRoom('general');
   delete CHAT.historyLoaded[roomId];
@@ -1025,7 +1069,6 @@ async function deleteRoom(roomId) {
     delete CHAT.subscribed[roomId];
   }
   renderRoomsList();
-  console.log('[Chat] Комната удалена:', roomId);
 }
 
 // ============================================
@@ -1048,7 +1091,7 @@ async function handleSendClick() {
     alert('🚫 Сообщение содержит недопустимые слова');
     return;
   }
-  const clean = censorProfanity(raw).slice(0, 500);
+  const clean = censorProfanity(raw).slice(0, 2000);
   CHAT.sending = true;
   if (sendBtn) sendBtn.disabled = true;
   input.disabled = true;
@@ -1115,14 +1158,12 @@ async function deleteMessage(messageId) {
       { method: 'DELETE', headers: chatHeaders() }
     );
     if (!res.ok) {
-      const err = await res.text();
-      console.warn('[Chat] Ошибка удаления:', res.status, err);
+      console.warn('[Chat] Ошибка удаления:', res.status);
       alert('Не удалось удалить');
       return;
     }
     removeMessageFromUI(messageId);
   } catch (e) {
-    console.warn('[Chat] Сеть:', e);
     alert('Нет соединения');
   }
 }
@@ -1164,7 +1205,7 @@ function hideReplyPreview() {
 }
 
 // ============================================
-// РЕАКЦИИ (ФИКС 26.3.4)
+// РЕАКЦИИ (фикс #14, #15)
 // ============================================
 async function loadReactionsForMessages(messageIds) {
   if (messageIds.length === 0) return;
@@ -1174,32 +1215,26 @@ async function loadReactionsForMessages(messageIds) {
       `${CHAT_URL}/rest/v1/chat_reactions?message_id=in.(${ids})&select=message_id,emoji,nickname`,
       { headers: chatHeaders() }
     );
-    if (!res.ok) {
-      console.warn('[Chat] loadReactions HTTP:', res.status);
-      return;
-    }
+    if (!res.ok) return;
     const rows = await res.json();
     const newReactions = {};
     rows.forEach(r => {
       if (!newReactions[r.message_id]) newReactions[r.message_id] = [];
       newReactions[r.message_id].push({ emoji: r.emoji, nickname: r.nickname });
     });
-    // НЕ перезаписываем полностью — мержим
+    // Фикс #14: merge без удаления
     Object.keys(newReactions).forEach(mid => {
       CHAT.reactions[mid] = newReactions[mid];
     });
-    // Удаляем реакции для сообщений, которых больше нет (опционально)
-    messageIds.forEach(mid => {
-      if (!newReactions[mid]) {
-        delete CHAT.reactions[mid];
-      }
-    });
+    // НЕ удаляем реакции, которых нет в ответе — они могли прийти через realtime
   } catch (e) {
     console.warn('[Chat] loadReactions:', e);
   }
 }
 
 async function toggleReaction(messageId, emoji) {
+  // Фикс #15: проверка на существование
+  if (!messageId || !emoji) return;
   const st = chatGetState();
   if (!st) return;
   const myNick = st.nickname;
@@ -1210,7 +1245,7 @@ async function toggleReaction(messageId, emoji) {
   const list = CHAT.reactions[messageId] || [];
   const existing = list.find(r => r.emoji === emoji && r.nickname === myNick);
 
-  // Оптимистичное обновление UI
+  // Оптимистичное обновление
   if (existing) {
     CHAT.reactions[messageId] = list.filter(
       r => !(r.emoji === emoji && r.nickname === myNick)
@@ -1223,30 +1258,23 @@ async function toggleReaction(messageId, emoji) {
 
   try {
     if (existing) {
-      // DELETE
       const res = await fetch(
         `${CHAT_URL}/rest/v1/chat_reactions?message_id=eq.${messageId}&nickname=eq.${encodeURIComponent(myNick)}&emoji=eq.${encodeURIComponent(emoji)}`,
         { method: 'DELETE', headers: chatHeaders() }
       );
       if (!res.ok) {
-        const err = await res.text();
-        console.warn('[Chat] toggleReaction DELETE:', res.status, err);
         // Откат
         if (!CHAT.reactions[messageId]) CHAT.reactions[messageId] = [];
         CHAT.reactions[messageId].push({ emoji, nickname: myNick });
         updateMessageReactionsUI(messageId);
       }
     } else {
-      // INSERT
       const res = await fetch(`${CHAT_URL}/rest/v1/chat_reactions`, {
         method: 'POST',
         headers: chatHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ message_id: messageId, nickname: myNick, emoji }),
       });
       if (!res.ok) {
-        const err = await res.text();
-        console.warn('[Chat] toggleReaction INSERT:', res.status, err);
-        // Откат
         CHAT.reactions[messageId] = (CHAT.reactions[messageId] || []).filter(
           r => !(r.emoji === emoji && r.nickname === myNick)
         );
@@ -1259,17 +1287,10 @@ async function toggleReaction(messageId, emoji) {
 }
 
 function updateMessageReactionsUI(messageId) {
-  // Ищем сообщение
   const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
-  if (!msgEl) {
-    console.warn('[Chat] updateReactions: сообщение не найдено', messageId);
-    return;
-  }
+  if (!msgEl) return;
   const bubble = msgEl.querySelector('.chat-bubble');
-  if (!bubble) {
-    console.warn('[Chat] updateReactions: .chat-bubble не найден');
-    return;
-  }
+  if (!bubble) return;
   let reactionsEl = bubble.querySelector('.chat-reactions');
   const list = CHAT.reactions[messageId] || [];
   if (list.length === 0) {
@@ -1303,7 +1324,6 @@ function updateMessageReactionsUI(messageId) {
 }
 
 function showReactionPicker(messageId, anchorEl) {
-  // Удаляем старый пикер, если есть
   const oldPicker = document.querySelector('.chat-reaction-picker');
   if (oldPicker) oldPicker.remove();
 
@@ -1313,7 +1333,6 @@ function showReactionPicker(messageId, anchorEl) {
     `<button class="chat-reaction-picker-btn" data-emoji="${e}">${e}</button>`
   ).join('');
 
-  // Позиционирование
   const rect = anchorEl.getBoundingClientRect();
   picker.style.position = 'fixed';
   picker.style.top = (rect.top - 50) + 'px';
@@ -1331,7 +1350,6 @@ function showReactionPicker(messageId, anchorEl) {
     });
   });
 
-  // Закрытие по клику вне
   setTimeout(() => {
     const closeHandler = (e) => {
       if (!picker.contains(e.target)) {
@@ -1344,7 +1362,7 @@ function showReactionPicker(messageId, anchorEl) {
 }
 
 // ============================================
-// ПОИСК
+// ПОИСК (фикс #5)
 // ============================================
 function toggleSearch() {
   if (CHAT.searchActive) closeSearch();
@@ -1381,8 +1399,9 @@ function filterMessagesBySearch() {
   const messages = box.querySelectorAll('.chat-message');
   let found = 0;
   messages.forEach(m => {
-    const text = m.querySelector('.text')?.textContent?.toLowerCase() || '';
-    const nick = m.querySelector('.chat-author')?.textContent?.toLowerCase() || '';
+    // Фикс #5: ищем по data-text, где хранится весь текст
+    const text = (m.dataset.text || m.querySelector('.text')?.textContent || '').toLowerCase();
+    const nick = (m.dataset.nick || m.querySelector('.chat-author')?.textContent || '').toLowerCase();
     const match = !q || text.includes(q) || nick.includes(q);
     m.style.display = match ? '' : 'none';
     if (match && q) found++;
@@ -1437,8 +1456,8 @@ function markSelfMessage(msg) {
 function findMessageById(id) {
   const el = document.querySelector(`[data-message-id="${id}"]`);
   if (!el) return null;
-  const nick = el.querySelector('.chat-author')?.textContent || '';
-  const text = el.querySelector('.text')?.textContent || '';
+  const nick = el.dataset.nick || el.querySelector('.chat-author')?.textContent || '';
+  const text = el.dataset.text || el.querySelector('.text')?.textContent || '';
   return { id, nickname: nick, text };
 }
 
@@ -1483,6 +1502,8 @@ function renderMessage(msg, scroll, grouped, replyMsg) {
   el.dataset.nick = msg.nickname;
   el.dataset.messageId = msg.id;
   el.dataset.createdAt = msg.created_at;
+  // Фикс #5: сохраняем весь текст для поиска (включая медиа)
+  el.dataset.text = msg.text || (msg.image_url ? '📷 Картинка' : '') + (msg.voice_url ? ' 🎤 Голосовое' : '');
 
   const avatar = getAvatarForNick(msg.nickname);
 
@@ -1734,7 +1755,6 @@ async function showUserProfile(nick) {
     if (achEl) achEl.textContent = row.achievements_count || 0;
     if (titleEl) titleEl.textContent = title;
   } catch (e) {
-    console.warn('[Chat] Профиль:', e);
     if (titleEl) titleEl.textContent = 'Ошибка загрузки';
   }
 }
@@ -1919,7 +1939,7 @@ function initNickOnboarding() {
       if (typeof window.renderProfile === 'function') window.renderProfile();
       if (typeof window.updateChatBadge === 'function') window.updateChatBadge();
       hideNickOnboarding();
-      if (typeof SOUNDS !== 'undefined' && SOUNDS.quest) SOUNDS.quest();
+      if (typeof window.SOUNDS !== 'undefined' && window.SOUNDS.quest) window.SOUNDS.quest();
       if (oldNick !== st.nickname) reinitializePresenceWithNewNick();
     });
   }
@@ -1933,7 +1953,7 @@ function initNickOnboarding() {
 }
 
 // ============================================
-// КАРТИНКИ В ЧАТЕ
+// КАРТИНКИ (фикс #20)
 // ============================================
 async function handleImageUpload(e) {
   const st = chatGetState();
@@ -1977,8 +1997,7 @@ async function handleImageUpload(e) {
     });
 
     if (!uploadRes.ok) {
-      const err = await uploadRes.text();
-      console.warn('[Chat] upload image:', uploadRes.status, err);
+      console.warn('[Chat] upload image:', uploadRes.status);
       alert('Не удалось загрузить картинку');
       return;
     }
@@ -2003,7 +2022,6 @@ async function handleImageUpload(e) {
     });
 
     if (!res.ok) {
-      console.warn('[Chat] insert image:', res.status);
       alert('Не удалось отправить');
       return;
     }
@@ -2055,11 +2073,12 @@ function closeLightbox() {
 }
 
 // ============================================
-// ГОЛОСОВЫЕ СООБЩЕНИЯ
+// ГОЛОСОВЫЕ (фикс #20)
 // ============================================
 let voiceRecorder = null;
 let voiceChunks = [];
 let voiceStartTime = 0;
+let voiceDuration = 0;
 let voiceTimerInterval = null;
 let voiceStream = null;
 let voiceSendAfterStop = false;
@@ -2083,12 +2102,15 @@ async function toggleVoiceRecording() {
     voiceRecorder = new MediaRecorder(voiceStream);
     voiceChunks = [];
     voiceSendAfterStop = false;
+    voiceDuration = 0;
 
     voiceRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) voiceChunks.push(e.data);
     };
 
     voiceRecorder.onstop = () => {
+      // Фикс #20: сохраняем длительность сразу
+      voiceDuration = Math.max(1, Math.floor((Date.now() - voiceStartTime) / 1000));
       if (voiceStream) {
         voiceStream.getTracks().forEach(t => t.stop());
         voiceStream = null;
@@ -2151,7 +2173,8 @@ async function uploadVoiceMessage() {
   const st = chatGetState();
   if (!st) return;
   if (!voiceChunks || voiceChunks.length === 0) return;
-  const duration = Math.max(1, Math.floor((Date.now() - voiceStartTime) / 1000));
+  // Фикс #20: используем сохранённую voiceDuration
+  const duration = voiceDuration || 1;
 
   const blob = new Blob(voiceChunks, { type: 'audio/webm' });
   voiceChunks = [];
@@ -2180,7 +2203,6 @@ async function uploadVoiceMessage() {
     });
 
     if (!uploadRes.ok) {
-      console.warn('[Chat] upload voice:', uploadRes.status);
       alert('Не удалось загрузить голосовое');
       return;
     }
@@ -2206,7 +2228,6 @@ async function uploadVoiceMessage() {
     });
 
     if (!res.ok) {
-      console.warn('[Chat] insert voice:', res.status);
       alert('Не удалось отправить');
       return;
     }
@@ -2224,7 +2245,7 @@ async function uploadVoiceMessage() {
 }
 
 // ============================================
-// АВТОИНИЦИАЛИЗАЦИЯ
+// АВТОИНИЦИАЛИЗАЦИЯ (фикс #19)
 // ============================================
 function tryInitMessenger(attempt = 0) {
   const hasState = (typeof window.state !== 'undefined' && window.state);
@@ -2236,7 +2257,8 @@ function tryInitMessenger(attempt = 0) {
     return;
   }
 
-  if (attempt < 60) {
+  // Фикс #19: 120 попыток × 250 мс = 30 сек
+  if (attempt < 120) {
     setTimeout(() => tryInitMessenger(attempt + 1), 250);
   } else {
     if (!hasState) console.warn('[Chat] state так и не появился');
@@ -2278,3 +2300,6 @@ window.showUserProfile = showUserProfile;
 window.hasProfanity = hasProfanity;
 window.censorProfanity = censorProfanity;
 window.subscribeToRooms = subscribeToRooms;
+window.renderDmList = renderDmList;
+
+console.log('[messenger.js] Загружено v26.4.0 · фиксы применены');

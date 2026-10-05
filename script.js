@@ -1,14 +1,16 @@
 // ============================================
-// FireLand · script.js · v26.3.5
+// FireLand · script.js · v26.4.0
 // Ядро: темы, частицы, звёзды, часы, настройки, onboarding.
 // Модули: storage.js, games.js, profile.js, sound.js,
 // streak.js, device.js, leaderboard.js, messenger.js
+// Фиксы: #8 (DEFAULT_STATE), #9 (renameNick check),
+//        #25 (settingsModal check), #26 (nick input)
 // ============================================
 
 (function () {
 'use strict';
 
-const APP_VERSION = '26.3.7';
+const APP_VERSION = '26.4.0';
 
 // ============================================
 // ПРОВЕРКА МОДУЛЕЙ
@@ -44,13 +46,11 @@ var STATE_KEY = window.STATE_KEY || 'main_state';
 var DEFAULT_STATE = window.DEFAULT_STATE || {};
 var SOUNDS = window.SOUNDS || { click() {}, achievement() {}, quest() {}, levelup() {}, reward() {}, caseOpen() {}, error() {} };
 var playTone = window.playTone || function () {};
-var applyThemeModule = window.applyTheme || null;
-var createParticlesModule = window.createParticles || null;
-var createStarsModule = window.createStars || null;
-var updateParticleColorsModule = window.updateParticleColors || null;
-var updateClockModule = window.updateClock || null;
-var buildAnimatedLogoModule = window.buildAnimatedLogo || null;
-var loadSettingsModule = window.loadSettings || null;
+
+// ============================================
+// ХЕЛПЕР
+// ============================================
+function getState() { return window.state || null; }
 
 // ============================================
 // ТЕМЫ
@@ -61,7 +61,8 @@ function getSmartTheme() {
 }
 
 function applyTheme() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   let theme = s.theme;
   if (theme === 'smart') theme = getSmartTheme();
   document.body.className = '';
@@ -72,6 +73,7 @@ function applyTheme() {
     btn.classList.toggle('active', btn.dataset.theme === s.theme);
   });
   updateParticleColors();
+  if (!s.themesUsed) s.themesUsed = [];
   if (!s.themesUsed.includes(s.theme)) {
     s.themesUsed.push(s.theme);
     saveState();
@@ -82,7 +84,8 @@ function applyTheme() {
 }
 
 setInterval(() => {
-  if (window.state && window.state.theme === 'smart') applyTheme();
+  const s = getState();
+  if (s && s.theme === 'smart') applyTheme();
 }, 60000);
 
 // ============================================
@@ -162,46 +165,52 @@ const uiSoundsToggle = document.getElementById('uiSoundsToggle');
 function loadSettings() {
   const versionEl = document.getElementById('appVersion');
   if (versionEl) versionEl.textContent = 'v' + APP_VERSION;
-  if (soundToggle) soundToggle.checked = window.state.soundEnabled;
-  if (uiSoundsToggle) uiSoundsToggle.checked = window.state.uiSoundsEnabled !== false;
-  window.isSoundEnabled = window.state.soundEnabled;
+  const s = getState();
+  if (!s) return;
+  if (soundToggle) soundToggle.checked = s.soundEnabled;
+  if (uiSoundsToggle) uiSoundsToggle.checked = s.uiSoundsEnabled !== false;
+  window.isSoundEnabled = s.soundEnabled;
   applyTheme();
   if (typeof window.loadAlarmSettings === 'function') window.loadAlarmSettings();
 }
 
 if (soundToggle) soundToggle.addEventListener('change', () => {
-  window.state.soundEnabled = soundToggle.checked;
-  window.isSoundEnabled = window.state.soundEnabled;
+  const s = getState(); if (!s) return;
+  s.soundEnabled = soundToggle.checked;
+  window.isSoundEnabled = s.soundEnabled;
   saveState();
 });
 if (uiSoundsToggle) uiSoundsToggle.addEventListener('change', () => {
-  window.state.uiSoundsEnabled = uiSoundsToggle.checked;
+  const s = getState(); if (!s) return;
+  s.uiSoundsEnabled = uiSoundsToggle.checked;
   saveState();
-  if (window.state.uiSoundsEnabled) SOUNDS.click();
+  if (s.uiSoundsEnabled) SOUNDS.click();
 });
 document.querySelectorAll('.theme-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    window.state.theme = btn.dataset.theme;
+    const s = getState(); if (!s) return;
+    s.theme = btn.dataset.theme;
     applyTheme();
-    if (window.state.todayStats) window.state.todayStats.themeChanged = true;
+    if (s.todayStats) s.todayStats.themeChanged = true;
     if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
     saveState();
   });
 });
-if (settingsGearBtn) settingsGearBtn.addEventListener('click', () => {
+if (settingsGearBtn && settingsModal) settingsGearBtn.addEventListener('click', () => {
   settingsModal.classList.add('show');
   if (typeof window.renderStats === 'function') window.renderStats();
   loadSettings();
-  if (window.state.todayStats) window.state.todayStats.settingsViewed = true;
+  const s = getState();
+  if (s && s.todayStats) s.todayStats.settingsViewed = true;
   if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
 });
-if (settingsCloseBtn) settingsCloseBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
+if (settingsCloseBtn && settingsModal) settingsCloseBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
 if (settingsModal) settingsModal.addEventListener('click', (e) => {
   if (e.target === settingsModal) settingsModal.classList.remove('show');
 });
 
 // ============================================
-// ПРОФИЛЬ — UI (обработчики) + ФИКС НИКА
+// ПРОФИЛЬ — UI + ФИКС НИКА
 // ============================================
 const profileModal = document.getElementById('profileModal');
 const profileCloseBtn = document.getElementById('profileCloseBtn');
@@ -210,7 +219,7 @@ const profileBigAvatar = document.getElementById('profileBigAvatar');
 const avatarFileInput = document.getElementById('avatarFileInput');
 
 const levelHeaderBadge = document.getElementById('levelHeaderBadge');
-if (levelHeaderBadge) levelHeaderBadge.addEventListener('click', () => {
+if (levelHeaderBadge && profileModal) levelHeaderBadge.addEventListener('click', () => {
   if (typeof window.renderProfile === 'function') window.renderProfile();
   if (typeof window.renderAchievements === 'function') window.renderAchievements();
   if (typeof window.renderRecords === 'function') window.renderRecords();
@@ -218,22 +227,25 @@ if (levelHeaderBadge) levelHeaderBadge.addEventListener('click', () => {
   if (typeof window.updateLevelDisplay === 'function') window.updateLevelDisplay();
   if (typeof window.renderCases === 'function') window.renderCases();
   profileModal.classList.add('show');
-  if (window.state.todayStats) window.state.todayStats.profileViewed = true;
+  const s = getState();
+  if (s && s.todayStats) s.todayStats.profileViewed = true;
   if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
 });
-if (profileCloseBtn) profileCloseBtn.addEventListener('click', () => profileModal.classList.remove('show'));
+if (profileCloseBtn && profileModal) profileCloseBtn.addEventListener('click', () => profileModal.classList.remove('show'));
 if (profileModal) profileModal.addEventListener('click', (e) => {
   if (e.target === profileModal) profileModal.classList.remove('show');
 });
 
-// ФИКС НИКА: читаем window.state, а при сохранении синхронизируем input → state
+// ФИКС НИКА
 if (profileNickInput) {
   profileNickInput.addEventListener('input', () => {
-    window.state.nickname = profileNickInput.value.trim() || 'Игрок';
+    const s = getState();
+    if (!s) return;
+    s.nickname = profileNickInput.value.trim() || 'Игрок';
     saveState();
-    if (window.state.nickname !== 'Игрок') {
+    if (s.nickname !== 'Игрок') {
       if (typeof window.unlockAch === 'function') window.unlockAch('set_nick');
-      if (window.state.todayStats) window.state.todayStats.nickSet = true;
+      if (s.todayStats) s.todayStats.nickSet = true;
       if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
     }
     if (typeof window.updateChatBadge === 'function') window.updateChatBadge();
@@ -249,24 +261,32 @@ if (profileNickInput) {
 const profileNickSaveBtn = document.getElementById('profileNickSaveBtn');
 if (profileNickSaveBtn) {
   profileNickSaveBtn.addEventListener('click', async () => {
+    const s = getState();
+    if (!s) return;
     const btn = profileNickSaveBtn;
     const hint = document.getElementById('profileNickHint');
-    // ФИКС: синхронизируем input → state перед проверкой
     const inputVal = profileNickInput ? profileNickInput.value.trim() : '';
-    if (inputVal) window.state.nickname = inputVal;
-    const newNick = (window.state.nickname || '').trim();
-    const oldNick = window.state.lastSubmittedNick;
+    if (inputVal) s.nickname = inputVal;
+    const newNick = (s.nickname || '').trim();
+    const oldNick = s.lastSubmittedNick;
     if (!newNick || newNick === 'Игрок') {
       if (hint) { hint.textContent = 'Сначала введи ник'; hint.classList.add('error'); }
+      return;
+    }
+    // Фикс #9: проверка на существование функции
+    if (typeof window.saveNickname !== 'function' && typeof window.renameNickEverywhere !== 'function') {
+      if (hint) { hint.textContent = 'Лидерборд не загружен'; hint.classList.add('error'); }
       return;
     }
     btn.disabled = true;
     btn.textContent = '⏳';
     let result;
-    if (oldNick && oldNick !== newNick) {
-      result = await window.renameNickEverywhere(oldNick, newNick, window.state.ownerToken);
-    } else {
+    if (oldNick && oldNick !== newNick && typeof window.renameNickEverywhere === 'function') {
+      result = await window.renameNickEverywhere(oldNick, newNick, s.ownerToken);
+    } else if (typeof window.saveNickname === 'function') {
       result = await window.saveNickname();
+    } else {
+      result = { ok: false, message: 'Функция недоступна' };
     }
     btn.disabled = false;
     btn.textContent = '💾';
@@ -300,15 +320,18 @@ if (profileNickSaveBtn) {
   });
 }
 
-if (profileBigAvatar) profileBigAvatar.addEventListener('click', () => {
-  if (avatarFileInput) avatarFileInput.click();
+if (profileBigAvatar && avatarFileInput) profileBigAvatar.addEventListener('click', () => {
+  avatarFileInput.click();
 });
 if (avatarFileInput) avatarFileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
+  const s = getState();
+  if (!s) return;
+  if (typeof window.compressAvatar !== 'function') return;
   const compressed = await window.compressAvatar(file, 256);
   if (compressed) {
-    window.state.avatar = compressed;
+    s.avatar = compressed;
     saveState();
     if (typeof window.renderProfile === 'function') window.renderProfile();
     if (typeof window.unlockAch === 'function') window.unlockAch('set_avatar');
@@ -318,6 +341,7 @@ if (avatarFileInput) avatarFileInput.addEventListener('change', async (e) => {
   }
 });
 
+// Фикс #8: импорт профиля с проверкой DEFAULT_STATE
 const importProfileInput = document.getElementById('importProfileInput');
 if (importProfileInput) {
   importProfileInput.addEventListener('change', async (e) => {
@@ -327,12 +351,29 @@ if (importProfileInput) {
       const text = await file.text();
       const data = JSON.parse(text);
       if (!data.state) throw new Error('Неверный формат');
+      if (!window.DEFAULT_STATE || Object.keys(window.DEFAULT_STATE).length === 0) {
+        throw new Error('DEFAULT_STATE не загружен. Обнови страницу.');
+      }
       if (!confirm('📥 Импортировать профиль?\n\nТекущий прогресс будет ЗАМЕНЁН.')) {
         e.target.value = '';
         return;
       }
-      window.state = { ...DEFAULT_STATE, ...data.state };
-      if (!window.state.todayStats.utilPlayed) window.state.todayStats.utilPlayed = [];
+      const merged = { ...window.DEFAULT_STATE, ...data.state };
+      // Фикс #29: миграция полей
+      if (!merged.temporalParadox) merged.temporalParadox = { level: 1, totalAccumulated: 0 };
+      if (!merged.streak) merged.streak = { current: 0, best: 0, lastLogin: null, history: [] };
+      if (!merged.streak.history) merged.streak.history = [];
+      if (!merged.favorites) merged.favorites = [];
+      if (!merged.dailyQuests) merged.dailyQuests = { date: null, quests: [], progress: {}, completed: [] };
+      if (!merged.todayStats) merged.todayStats = { ...window.DEFAULT_STATE.todayStats };
+      if (!merged.todayStats.utilPlayed) merged.todayStats.utilPlayed = [];
+      if (!merged.caseItems) merged.caseItems = [];
+      if (!merged.myRooms) merged.myRooms = [];
+      if (!merged.achievements) merged.achievements = [];
+      if (!merged.playedGames) merged.playedGames = [];
+      if (!merged.themesUsed) merged.themesUsed = [];
+      if (!merged.ownerToken) merged.ownerToken = generateOwnerToken();
+      window.state = merged;
       await idbSet(STATE_KEY, window.state);
       if (typeof window.renderGames === 'function') window.renderGames();
       if (typeof window.renderUtilities === 'function') window.renderUtilities();
@@ -378,7 +419,7 @@ if (profileResetBtn) profileResetBtn.addEventListener('click', () => {
 });
 
 // ============================================
-// ESC — закрытие модалок
+// ESC
 // ============================================
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -412,18 +453,29 @@ if (gameMenuTrigger) gameMenuTrigger.addEventListener('click', (e) => {
   e.stopPropagation();
   const dropdown = document.getElementById('gameMenuDropdown');
   const wrapper = document.getElementById('gameMenuWrapper');
-  const isMenuVisible = wrapper && wrapper.classList.contains('visible');
-  if (!isMenuVisible) { if (wrapper) wrapper.classList.add('visible'); }
-  const isOpen = dropdown && dropdown.classList.toggle('open');
-  if (isOpen) window._menuHideTimer && clearTimeout(window._menuHideTimer);
+  if (!wrapper || !dropdown) return;
+  const isMenuVisible = wrapper.classList.contains('visible');
+  if (!isMenuVisible) wrapper.classList.add('visible');
+  const isOpen = dropdown.classList.toggle('open');
+  if (isOpen) {
+    setTimeout(() => {
+      const closeHandler = (ev) => {
+        if (!wrapper.contains(ev.target)) {
+          dropdown.classList.remove('open');
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 50);
+  }
 });
 const menuReloadBtn = document.getElementById('menuReloadBtn');
 if (menuReloadBtn) menuReloadBtn.addEventListener('click', () => {
-  const s = window.state;
-  if (!s.lastGameId) return;
+  const s = getState();
+  if (!s || !s.lastGameId) return;
   const iframe = document.getElementById('gameIframe');
   const file = (window.GAME_FILES || {})[s.lastGameId];
-  if (!file) return;
+  if (!file || !iframe) return;
   if (typeof window.closeGameMenu === 'function') window.closeGameMenu();
   if (typeof window.showGameSkeleton === 'function') window.showGameSkeleton();
   window.currentGameStartTime = Date.now();
@@ -441,31 +493,32 @@ if (menuBackBtn) menuBackBtn.addEventListener('click', () => {
 const menuFullscreenBtn = document.getElementById('menuFullscreenBtn');
 if (menuFullscreenBtn) menuFullscreenBtn.addEventListener('click', () => {
   const el = document.getElementById('gameFrameContainer');
+  if (!el) return;
   if (!document.fullscreenElement) {
     (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen).call(el);
     if (typeof window.unlockAch === 'function') window.unlockAch('fullscreen');
-    if (window.state.todayStats) window.state.todayStats.fullscreenUsed = true;
+    const s = getState();
+    if (s && s.todayStats) s.todayStats.fullscreenUsed = true;
     if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
   } else {
     (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   }
 });
 const menuSettingsBtn = document.getElementById('menuSettingsBtn');
-if (menuSettingsBtn) menuSettingsBtn.addEventListener('click', () => {
+if (menuSettingsBtn && settingsModal) menuSettingsBtn.addEventListener('click', () => {
   if (typeof window.closeGameMenu === 'function') window.closeGameMenu();
   settingsModal.classList.add('show');
   if (typeof window.renderStats === 'function') window.renderStats();
   loadSettings();
-  if (window.state.todayStats) window.state.todayStats.settingsViewed = true;
+  const s = getState();
+  if (s && s.todayStats) s.todayStats.settingsViewed = true;
   if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
 });
 document.addEventListener('click', (e) => {
   const dropdown = document.getElementById('gameMenuDropdown');
   if (!dropdown || !dropdown.classList.contains('open')) return;
   const wrapper = document.getElementById('gameMenuWrapper');
-  if (wrapper && !wrapper.contains(e.target)) {
-    dropdown.classList.remove('open');
-  }
+  if (wrapper && !wrapper.contains(e.target)) dropdown.classList.remove('open');
 });
 document.addEventListener('fullscreenchange', () => {
   const btn = document.getElementById('menuFullscreenBtn');
@@ -485,8 +538,9 @@ if (pgCloseBtn) pgCloseBtn.addEventListener('click', () => {
 const pgPlayAgainBtn = document.getElementById('pgPlayAgainBtn');
 if (pgPlayAgainBtn) pgPlayAgainBtn.addEventListener('click', () => {
   document.getElementById('postGameModal').classList.remove('show');
-  if (typeof window.openGame === 'function' && window.state && window.state.lastGameId) {
-    window.openGame(window.state.lastGameId);
+  const s = getState();
+  if (typeof window.openGame === 'function' && s && s.lastGameId) {
+    window.openGame(s.lastGameId);
   }
 });
 const postGameModal = document.getElementById('postGameModal');
@@ -548,7 +602,7 @@ if (postGameModal) postGameModal.addEventListener('click', (e) => {
 })();
 
 // ============================================
-// ЭКСПОРТ В window
+// ЭКСПОРТ
 // ============================================
 window.APP_VERSION = APP_VERSION;
 window.getSmartTheme = getSmartTheme;
@@ -562,4 +616,4 @@ window.loadSettings = loadSettings;
 
 console.log('[script.js] Загружено v' + APP_VERSION);
 
-})(); // конец IIFE
+})();

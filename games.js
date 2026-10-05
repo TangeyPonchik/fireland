@@ -1,7 +1,8 @@
 // ============================================
-// FireLand · games.js · v26.3.5
-// Данные игр + вкладки + UI игр + меню игры + таймер
-// БЕЗ export. Всё в window.
+// FireLand · games.js · v26.4.0
+// Данные игр + вкладки + UI игр + меню + таймер
+// Фиксы: #1 (state check), #2 (achievements check), #11 (paradox),
+//        #12 (sessionTime), #13 (missedTime), #85 (isGameOpen)
 // ============================================
 
 // ============================================
@@ -20,7 +21,8 @@ const GAMES = [
 {id:'musibox',name:'Musibox',icon:'🎧',genre:'Музыка, Секвенсор',difficulty:2,description:'Создавай свою музыку! Множество треков — барабаны, басы, синты и вокал. Кликай по персонажам, комбинируй биты, лови бонусы за комбинации. Запиши и скачай свой микс, настоящая студия звукозаписи в браузере!',bg:'linear-gradient(135deg, #4dabf7, #9775fa, #f783ac)'},
 {id:'lastfrontier',name:'Последний рубеж',icon:'🧟',genre:'Автобаттлер, Карточная игра',difficulty:4,description:'Автобаттлер в мире зомби-апокалипсиса! Собирай карты зомби, сражайся в автоматических боях, зарабатывай монеты и гемы, покупай легендарных существ. Много уникальных карт с лором — от простого работяги до Зомби-бога.',bg:'linear-gradient(135deg, #2e4a2e, #0d1a0d, #66ff66)'},
 {id:'proryv3',name:'Прорыв 3',icon:'🌐',genre:'RPG, Стратегия, Финал',difficulty:5,description:'Финальная часть трилогии Прорыва! Выбери одну из четырёх фракций: Работник РКН, Хакер, Журналист или Инженер. Прокачивай VPN, сражайся с 25 уникальными врагами — от простого охранника до самого Максута Шадаева. Победи финального босса ЦЕНЗУРУ и освободи интернет!',bg:'linear-gradient(135deg, #c9418a, #a04ac9, #7a4ae0, #c9418a)'},
-{id:'snakebattle',name:'Snakes Battle',icon:'🐍',genre:'Онлайн · PvP · Командный',difficulty:5,description:'Командные бои змеек — красные против синих, до 20 игроков. Управляй мышью, свайпами или геймпадом: ешь гранулы, расти, убивай врагов. Монеты за убийства → скины и боксы. Дорастёшь до 500 длины — придёт БОСС-ЗМЕЯ. Стань королём змеек!',bg:'linear-gradient(135deg, #05f138, #b8cf33, #05f138, #b8cf33)'}];
+{id:'snakebattle',name:'Snakes Battle',icon:'🐍',genre:'Онлайн · PvP · Командный',difficulty:5,description:'Командные бои змеек — красные против синих, до 20 игроков. Управляй мышью, свайпами или геймпадом: ешь гранулы, расти, убивай врагов. Монеты за убийства → скины и боксы. Дорастёшь до 500 длины — придёт БОСС-ЗМЕЯ. Стань королём змеек!',bg:'linear-gradient(135deg, #05f138, #b8cf33, #05f138, #b8cf33)'}
+];
 
 const UTILITIES = [
 {id:'fireshop',name:'FireShop 3D',icon:'🎨',genre:'3D-редактор · Photoshop',difficulty:5,description:'Полноценный 3D/2D-редактор прямо в браузере. 3D-примитивы, свет, HDRI-окружение, покраска объектов, кисть-текстура, экспорт в GLB и PNG. 2D-режим с кистью, заливкой, фильтрами и текстом. Работает на Three.js.',bg:'linear-gradient(135deg, #ff6b35, #f7931e, #ffcd3c)',file:'УТИЛИТЫ/FireShop.html'},
@@ -46,8 +48,12 @@ cpstest:'УТИЛИТЫ/тест cps.html'
 };
 
 // ============================================
-// УТИЛИТЫ
+// ХЕЛПЕР
 // ============================================
+function getState() {
+  return window.state || null;
+}
+
 function gamesFormatTime(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
   if (h > 0) return `${h}ч ${m}м`;
@@ -67,7 +73,8 @@ function initTabs() {
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'quests') {
         if (typeof window.renderQuests === 'function') window.renderQuests();
-        if (window.state.todayStats) window.state.todayStats.questsViewed = true;
+        const s = getState();
+        if (s && s.todayStats) s.todayStats.questsViewed = true;
         if (typeof window.updateQuestProgress === 'function') window.updateQuestProgress();
       }
       if (btn.dataset.tab === 'leaderboard') {
@@ -102,7 +109,9 @@ let lastPlayedGameId = null;
 
 function toggleFavorite(gameId, event) {
   if (event) event.stopPropagation();
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  if (!s.favorites) s.favorites = [];
   const idx = s.favorites.indexOf(gameId);
   if (idx >= 0) s.favorites.splice(idx, 1);
   else {
@@ -119,7 +128,8 @@ function toggleFavorite(gameId, event) {
 function selectGame(gameId) {
   const game = GAMES.find(g => g.id === gameId);
   if (!game) return;
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   s.selectedGameId = gameId;
   s.selectedUtilityId = null;
   if (typeof window.saveState === 'function') window.saveState();
@@ -131,9 +141,9 @@ function selectGame(gameId) {
   const detailEl = document.getElementById('gameDetail');
   detailEl.style.display = 'flex';
   const stars = '⭐'.repeat(game.difficulty) + '☆'.repeat(5 - game.difficulty);
-  const playedTime = s.playTime[gameId] || 0;
+  const playedTime = (s.playTime && s.playTime[gameId]) || 0;
   const timeStr = playedTime > 0 ? gamesFormatTime(playedTime) : 'не играл';
-  const isFav = s.favorites.includes(gameId);
+  const isFav = s.favorites && s.favorites.includes(gameId);
   detailEl.innerHTML = `
     <div class="icon">${game.icon}</div>
     <div class="name">${game.name}</div>
@@ -155,7 +165,8 @@ function selectGame(gameId) {
 function selectUtility(utilId) {
   const util = UTILITIES.find(u => u.id === utilId);
   if (!util) return;
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   s.selectedUtilityId = utilId;
   s.selectedGameId = null;
   if (typeof window.saveState === 'function') window.saveState();
@@ -167,9 +178,9 @@ function selectUtility(utilId) {
   const detailEl = document.getElementById('utilDetail');
   detailEl.style.display = 'flex';
   const stars = '⭐'.repeat(util.difficulty) + '☆'.repeat(5 - util.difficulty);
-  const playedTime = s.playTime[utilId] || 0;
+  const playedTime = (s.playTime && s.playTime[utilId]) || 0;
   const timeStr = playedTime > 0 ? gamesFormatTime(playedTime) : 'не использовал';
-  const isFav = s.favorites.includes(utilId);
+  const isFav = s.favorites && s.favorites.includes(utilId);
   detailEl.innerHTML = `
     <div class="icon">${util.icon}</div>
     <div class="name">${util.name}</div>
@@ -193,10 +204,12 @@ function selectUtility(utilId) {
 }
 
 function clearSelection() {
-  const s = window.state;
-  s.selectedGameId = null;
-  s.selectedUtilityId = null;
-  if (typeof window.saveState === 'function') window.saveState();
+  const s = getState();
+  if (s) {
+    s.selectedGameId = null;
+    s.selectedUtilityId = null;
+    if (typeof window.saveState === 'function') window.saveState();
+  }
   document.querySelectorAll('.game-card').forEach(card => card.classList.remove('selected'));
   const ng = document.getElementById('noGameSelected'); if (ng) ng.style.display = 'flex';
   const gd = document.getElementById('gameDetail'); if (gd) gd.style.display = 'none';
@@ -208,10 +221,12 @@ function renderGames() {
   const grid = document.getElementById('gameGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  const favs = s.favorites || [];
   const filtered = [...GAMES].sort((a, b) => {
-    const af = s.favorites.includes(a.id) ? 0 : 1;
-    const bf = s.favorites.includes(b.id) ? 0 : 1;
+    const af = favs.includes(a.id) ? 0 : 1;
+    const bf = favs.includes(b.id) ? 0 : 1;
     return af - bf;
   });
   document.getElementById('gamesCount').textContent = filtered.length;
@@ -222,10 +237,12 @@ function renderUtilities() {
   const grid = document.getElementById('utilGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  const favs = s.favorites || [];
   const filtered = [...UTILITIES].sort((a, b) => {
-    const af = s.favorites.includes(a.id) ? 0 : 1;
-    const bf = s.favorites.includes(b.id) ? 0 : 1;
+    const af = favs.includes(a.id) ? 0 : 1;
+    const bf = favs.includes(b.id) ? 0 : 1;
     return af - bf;
   });
   document.getElementById('utilCount').textContent = filtered.length;
@@ -236,9 +253,9 @@ function createGameCard(game) {
   const card = document.createElement('div');
   card.className = 'game-card';
   card.dataset.gameId = game.id;
-  const s = window.state;
-  if (s.selectedGameId === game.id) card.classList.add('selected');
-  const isFav = s.favorites.includes(game.id);
+  const s = getState();
+  if (s && s.selectedGameId === game.id) card.classList.add('selected');
+  const isFav = s && s.favorites && s.favorites.includes(game.id);
   card.innerHTML = `
     <button class="fav-btn ${isFav ? 'active' : ''}" data-fav-id="${game.id}">${isFav ? '⭐' : '☆'}</button>
     <div class="card-bg" style="background:${game.bg};"></div>
@@ -255,9 +272,9 @@ function createUtilityCard(util) {
   const card = document.createElement('div');
   card.className = 'game-card util-card';
   card.dataset.gameId = util.id;
-  const s = window.state;
-  if (s.selectedUtilityId === util.id) card.classList.add('selected');
-  const isFav = s.favorites.includes(util.id);
+  const s = getState();
+  if (s && s.selectedUtilityId === util.id) card.classList.add('selected');
+  const isFav = s && s.favorites && s.favorites.includes(util.id);
   card.innerHTML = `
     <div class="exp-badge" style="background:linear-gradient(135deg,#22c55e,#16a34a);">УТИЛИТА</div>
     <button class="fav-btn ${isFav ? 'active' : ''}" data-fav-id="${util.id}">${isFav ? '⭐' : '☆'}</button>
@@ -340,22 +357,27 @@ function hideGameSkeleton() {
 // ОТКРЫТИЕ / ЗАКРЫТИЕ ИГРЫ
 // ============================================
 function openGame(gameId) {
+  const s = getState();
+  if (!s) { console.warn('[games] state не готов'); return; }
   const container = document.getElementById('gameFrameContainer');
   const iframe = document.getElementById('gameIframe');
   const file = GAME_FILES[gameId];
   if (!file) { alert('❌ Файл не найден: ' + gameId); return; }
   const isUtil = UTILITIES.some(u => u.id === gameId);
-  const s = window.state;
+
   s.lastGameId = gameId;
   s.lastGameTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+  // Фикс #12: сбрасываем ВСЕ переменные сессии
   currentGameStartTime = Date.now();
-  sessionStartTotalTime = s.totalTime;
-  sessionXpStart = s.totalXp;
+  sessionStartTotalTime = s.totalTime || 0;
+  sessionXpStart = s.totalXp || 0;
   sessionAchEarned = [];
+
   if (typeof window.saveState === 'function') window.saveState();
   updateLastGameBar();
   checkGameAchievements(gameId);
-  const achBefore = new Set(s.achievements);
+  const achBefore = new Set(s.achievements || []);
   if (typeof window.hideMascot === 'function') window.hideMascot();
   document.body.classList.add('game-active');
   showGameSkeleton();
@@ -381,7 +403,9 @@ function openGame(gameId) {
   addGameMenuListeners();
   const achTrackInterval = setInterval(() => {
     if (!isGameOpen) { clearInterval(achTrackInterval); return; }
-    s.achievements.forEach(id => {
+    const st = getState();
+    if (!st || !st.achievements) return;
+    st.achievements.forEach(id => {
       if (!achBefore.has(id) && !sessionAchEarned.includes(id)) sessionAchEarned.push(id);
     });
   }, 1000);
@@ -393,14 +417,21 @@ function closeGame() {
   const container = document.getElementById('gameFrameContainer');
   const iframe = document.getElementById('gameIframe');
   const sessionTime = Math.floor((Date.now() - currentGameStartTime) / 1000);
-  const s = window.state;
-  const trackedSessionTime = Math.max(0, s.totalTime - (sessionStartTotalTime || 0));
-  const missedTime = Math.max(0, sessionTime - trackedSessionTime);
-  if (missedTime > 0 && missedTime < 3600) {
-    s.totalTime += missedTime;
-    if (s.lastGameId && s.playTime[s.lastGameId]) s.playTime[s.lastGameId] += missedTime;
+  const s = getState();
+  if (s) {
+    // Фикс #13: не начисляем время, если totalTime был сброшен
+    if (s.totalTime >= sessionStartTotalTime) {
+      const trackedSessionTime = Math.max(0, s.totalTime - (sessionStartTotalTime || 0));
+      const missedTime = Math.max(0, sessionTime - trackedSessionTime);
+      if (missedTime > 0 && missedTime < 3600) {
+        s.totalTime += missedTime;
+        if (s.lastGameId && s.playTime && s.playTime[s.lastGameId]) {
+          s.playTime[s.lastGameId] += missedTime;
+        }
+      }
+    }
   }
-  const sessionXp = s.totalXp - sessionXpStart;
+  const sessionXp = s ? (s.totalXp - sessionXpStart) : 0;
   container.style.display = 'none';
   iframe.src = 'about:blank';
   isGameOpen = false;
@@ -408,7 +439,7 @@ function closeGame() {
   removeGameMenuListeners();
   hideGameSkeleton();
   if (typeof window.showMascot === 'function') window.showMascot();
-  if (sessionTime >= 5) showPostGameScreen(s.lastGameId, sessionTime, sessionXp, sessionAchEarned);
+  if (sessionTime >= 5 && s) showPostGameScreen(s.lastGameId, sessionTime, sessionXp, sessionAchEarned);
   if (typeof window.saveState === 'function') window.saveState(true);
 }
 
@@ -444,7 +475,8 @@ function updateLastGameBar() {
   const name = document.getElementById('lastGameName');
   const time = document.getElementById('lastGameTime');
   const playBtn = document.getElementById('lastGamePlayBtn');
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   if (s.lastGameId) {
     const ALL = [...GAMES, ...UTILITIES];
     const game = ALL.find(g => g.id === s.lastGameId);
@@ -472,10 +504,12 @@ function startTimeTicker(gameId) {
     if (elapsed < 1) return;
     const cappedElapsed = Math.min(elapsed, 5);
     lastTickTime += cappedElapsed * 1000;
-    const s = window.state;
+    const s = getState();
+    if (!s) return;
     s.totalTime += cappedElapsed;
     if (!s.playTime[gameId]) s.playTime[gameId] = 0;
     s.playTime[gameId] += cappedElapsed;
+    if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
     s.temporalParadox.totalAccumulated += cappedElapsed;
     checkParadox();
     const today = typeof window.todayStr === 'function' ? window.todayStr() : new Date().toISOString().slice(0, 10);
@@ -488,7 +522,9 @@ function startTimeTicker(gameId) {
       };
     }
     s.todayStats.timeSpent += cappedElapsed;
-    if (s.favorites.includes(gameId)) s.todayStats.favTimeSpent = (s.todayStats.favTimeSpent || 0) + cappedElapsed;
+    if (s.favorites && s.favorites.includes(gameId)) {
+      s.todayStats.favTimeSpent = (s.todayStats.favTimeSpent || 0) + cappedElapsed;
+    }
     const totalMin = Math.floor(s.totalTime / 60);
     if (typeof window.unlockAch === 'function') {
       if (totalMin >= 1) window.unlockAch('time_1min');
@@ -496,9 +532,7 @@ function startTimeTicker(gameId) {
       if (totalMin >= 30) window.unlockAch('time_30min');
       if (totalMin >= 60) window.unlockAch('time_1hour');
       if (totalMin >= 300) window.unlockAch('time_5hours');
-    }
-    const h = new Date().getHours();
-    if (typeof window.unlockAch === 'function') {
+      const h = new Date().getHours();
       if (h >= 0 && h < 5) window.unlockAch('night_owl');
       if (h >= 5 && h < 7) window.unlockAch('early_bird');
       if (h >= 12 && h < 14) window.unlockAch('lunch_time');
@@ -519,13 +553,17 @@ function checkParadox() {
   let guard = 0;
   const MAX_ITERATIONS = 100;
   let changed = false;
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
   const getInfo = window.getParadoxLevelInfo || function () { return { minutes: 30, xp: 100 }; };
   const getLvl = window.getLevelFromTotalXp || function (xp) { return { level: 1 }; };
   while (guard++ < MAX_ITERATIONS) {
     const p = s.temporalParadox;
     const info = getInfo(p.level);
     const neededSeconds = info.minutes * 60;
+    // Фикс #11: защита от 0 и отрицательных
+    if (neededSeconds < 1) break;
     if (p.totalAccumulated < neededSeconds) break;
     p.totalAccumulated -= neededSeconds;
     s.totalXp += info.xp;
@@ -551,10 +589,13 @@ function checkParadox() {
 // ДОСТИЖЕНИЯ ИГРЫ
 // ============================================
 function checkGameAchievements(gameId) {
+  const s = getState();
+  if (!s) return;
   const isUtil = UTILITIES.some(u => u.id === gameId);
   const today = typeof window.todayStr === 'function' ? window.todayStr() : new Date().toISOString().slice(0, 10);
-  const s = window.state;
   const unlock = window.unlockAch || function () {};
+  if (!s.achievements) s.achievements = [];
+  if (!s.playedGames) s.playedGames = [];
   if (!s.todayStats || s.todayStats.date !== today) {
     s.todayStats = {
       date: today, gamesPlayed: [], timeSpent: 0, utilPlayed: [], favPlayed: [],
@@ -570,7 +611,7 @@ function checkGameAchievements(gameId) {
     const utilsPlayed = s.playedGames.filter(g => UTILITIES.some(u => u.id === g));
     if (utilsPlayed.length >= UTILITIES.length) unlock('all_utils');
   }
-  if (s.favorites.includes(gameId)) {
+  if (s.favorites && s.favorites.includes(gameId)) {
     if (!s.todayStats.favPlayed.includes(gameId)) s.todayStats.favPlayed.push(gameId);
   }
   if (!s.todayStats.gamesPlayed.includes(gameId)) s.todayStats.gamesPlayed.push(gameId);
@@ -603,7 +644,7 @@ function checkGameAchievements(gameId) {
 }
 
 // ============================================
-// ЭКСПОРТ В window
+// ЭКСПОРТ
 // ============================================
 window.GAMES = GAMES;
 window.UTILITIES = UTILITIES;
@@ -658,4 +699,4 @@ Object.defineProperty(window, 'sessionAchEarned', {
   configurable: true
 });
 
-console.log('[games.js] Загружено:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + UI игр');
+console.log('[games.js] Загружено v26.4.0:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + UI игр');

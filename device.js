@@ -1,12 +1,16 @@
 // ============================================
-// FireLand · device.js · v26.3.4
+// FireLand · device.js · v26.4.0
 // Устройство + TV + свайпы
+// Фиксы: #37 (TV detection), #38 (двойные обработчики)
 // ============================================
+
+let tvNavigationSetup = false;
+let swipeNavigationSetup = false;
 
 function detectDevice() {
   const ua = navigator.userAgent;
-  const isTV = /SmartTV|Tizen|WebOS|AppleTV|AndroidTV|HbbTV|NetCast|BRAVIA|VIDAA|Roku|Xbox|PlayStation/i.test(ua)
-    || (window.innerWidth >= 1920 && window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  // Фикс #37: TV определяем по User-Agent, а не только по размеру экрана
+  const isTV = /SmartTV|Tizen|WebOS|AppleTV|AndroidTV|HbbTV|NetCast|BRAVIA|VIDAA|Roku|Xbox|PlayStation|SMART-TV/i.test(ua);
   const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua) && !isTV;
   return isTV ? 'tv' : isMobile ? 'mobile' : 'desktop';
 }
@@ -19,10 +23,15 @@ function applyDeviceMode() {
 
 function setupTVNavigation() {
   if (document.body.dataset.device !== 'tv') return;
+  // Фикс #38: защита от повторного вызова
+  if (tvNavigationSetup) return;
+  tvNavigationSetup = true;
+
   setTimeout(() => {
     const activeTab = document.querySelector('.tab-btn.active');
     if (activeTab) activeTab.focus();
   }, 300);
+
   document.addEventListener('keydown', (e) => {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
     const focusable = Array.from(document.querySelectorAll(
@@ -55,7 +64,7 @@ function setupTVNavigation() {
     } else if (e.key === 'MediaPlayPause') {
       e.preventDefault();
       if (window.isGameOpen) window.closeGame();
-      else if (window.state.selectedGameId) window.openGame(window.state.selectedGameId);
+      else if (window.state && window.state.selectedGameId) window.openGame(window.state.selectedGameId);
     }
   });
   console.log('[TV] Навигация пультом активна');
@@ -63,6 +72,10 @@ function setupTVNavigation() {
 
 function setupSwipeNavigation() {
   if (document.body.dataset.device === 'desktop') return;
+  // Фикс #38: защита от повторного вызова
+  if (swipeNavigationSetup) return;
+  swipeNavigationSetup = true;
+
   let touchStartX = 0;
   let touchStartY = 0;
   let touchStartTime = 0;
@@ -136,4 +149,4 @@ window.applyDeviceMode = applyDeviceMode;
 window.setupTVNavigation = setupTVNavigation;
 window.setupSwipeNavigation = setupSwipeNavigation;
 
-console.log('[device.js] Загружено');
+console.log('[device.js] Загружено v26.4.0');

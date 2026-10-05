@@ -2378,3 +2378,77 @@ body[data-device="tv"] .chat-scroll-down{width:56px;height:56px;font-size:26px;b
 body.theme-light .chat-reaction-picker {
   background: rgba(255, 255, 255, 0.98);
 }
+
+/* ============================================
+   v26.4.0 · Фиксы багов из changelog
+   ============================================ */
+
+/* Фикс #48, #83: показываем fav-btn на тач-устройствах */
+@media (hover: none) and (pointer: coarse) {
+  .game-card .fav-btn {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    font-size: 16px;
+  }
+  .community-card-fav {
+    opacity: 1;
+  }
+}
+
+/* Фикс #46, #84: действия сообщения доступны на мобильных */
+@media (max-width: 768px) {
+  .chat-message-actions {
+    display: flex !important;
+    opacity: 0.6;
+    position: static;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 4px;
+  }
+  .chat-message-actions .chat-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  /* Показываем actions при тапе на сообщение */
+  .chat-message:active .chat-message-actions,
+  .chat-message:hover .chat-message-actions {
+    opacity: 1;
+  }
+}
+
+/* Фикс #49: корректные размеры fav-btn */
+.chat-reaction-picker {
+  max-width: calc(100vw - 20px);
+  overflow-x: auto;
+}
+
+/* Фикс #82: пикер реакций для light-темы через system */
+@media (prefers-color-scheme: light) {
+  body.theme-system .chat-reaction-picker {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+  body.theme-system .chat-reaction-picker-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Фикс #50: стабильная waveform для голосовых */
+.chat-voice-waveform .bar {
+  transition: background 0.15s, height 0.15s;
+  will-change: background;
+}
+
+/* Улучшение для .chat-message на мобильных */
+@media (max-width: 480px) {
+  .chat-message-actions .chat-action-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+}

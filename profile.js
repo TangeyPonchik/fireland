@@ -1,11 +1,11 @@
 // ============================================
-// FireLand · profile.js · v26.3.5
+// FireLand · profile.js · v26.4.0
 // Данные XP + UI профиля + кейсы + задания + будильник
-// БЕЗ export. Всё в window.
+// Фиксы: #6, #7, #23, #64, #65, #66, #71
 // ============================================
 
 // ============================================
-// ДАННЫЕ: ТИТУЛЫ УРОВНЕЙ
+// ДАННЫЕ
 // ============================================
 const LEVEL_TITLES = [
 {min:1,max:2,title:'🌱 Новичок'},{min:3,max:4,title:'🌿 Ученик'},{min:5,max:6,title:'🎯 Опытный'},{min:7,max:8,title:'⚔️ Ветеран'},
@@ -25,13 +25,10 @@ const LEVEL_TITLES = [
 
 const PARADOX = {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
 
-// ============================================
-// ДАННЫЕ: ДОСТИЖЕНИЯ
-// ============================================
 const ACHIEVEMENTS = [
 {id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:50,rarity:'common'},
 {id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
-{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/window.GAMES.length),progressText:s=>`${s.playedGames.length}/${window.GAMES.length}`},
+{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/(window.GAMES?.length||13)),progressText:s=>`${s.playedGames.length}/${window.GAMES?.length||13}`},
 {id:'proryv1_win',icon:'💻',name:'Прорыв совершен',desc:'Сыграть в Прорыв 1',xp:50,rarity:'common'},
 {id:'dom_escape',icon:'🏚️',name:'Выбрался из ДОМА',desc:'Пройти квест ДОМ',xp:150,rarity:'epic'},
 {id:'dom2_burner',icon:'🩸',name:'Сжигатель якорей',desc:'Сжечь 3 якоря в ДОМ 2',xp:300,rarity:'legendary'},
@@ -89,9 +86,6 @@ const ACHIEVEMENTS = [
 {id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
 {id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true}];
 
-// ============================================
-// ДАННЫЕ: КВЕСТЫ
-// ============================================
 const QUEST_POOL = [
 {id:'q_play_1',icon:'🎮',name:'Первый шаг',desc:'Запусти 1 игру',xp:30,target:1,type:'games_today'},
 {id:'q_play_2',icon:'🎯',name:'Игрок дня',desc:'Запусти 2 разные игры',xp:50,target:2,type:'games_today'},
@@ -121,13 +115,14 @@ const QUEST_POOL = [
 ];
 
 // ============================================
-// ФУНКЦИИ XP
+// ХЕЛПЕРЫ
 // ============================================
+function getState() { return window.state || null; }
+
 function getTitleForLevel(level) {
   const t = LEVEL_TITLES.find(t => level >= t.min && level <= t.max);
   return t ? t.title : '🔥🔥🔥 БОГ FireLand';
 }
-
 function getXpForLevel(level) {
   if (level <= 20) return 100 + (level - 1) * 50;
   if (level <= 50) return 1050 + (level - 20) * 100;
@@ -135,7 +130,6 @@ function getXpForLevel(level) {
   if (level <= 95) return 10050 + (level - 80) * 500;
   return 17550 + (level - 95) * 1000;
 }
-
 function getLevelFromTotalXp(totalXp) {
   let level = 1, consumed = 0;
   while (true) {
@@ -147,7 +141,6 @@ function getLevelFromTotalXp(totalXp) {
   }
   return { level, currentXp: totalXp - consumed, neededXp: getXpForLevel(level) };
 }
-
 function getParadoxLevelInfo(level) {
   let neededMinutes = PARADOX.BASE_TIME;
   for (let i = 0; i < level; i++) {
@@ -157,10 +150,6 @@ function getParadoxLevelInfo(level) {
   const xp = Math.round(PARADOX.BASE_XP * Math.pow(PARADOX.XP_MULT, level - 1));
   return { minutes: Math.round(neededMinutes), xp };
 }
-
-// ============================================
-// УТИЛИТА: ФОРМАТ ВРЕМЕНИ
-// ============================================
 function profileFormatTime(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
   if (h > 0) return `${h}ч ${m}м`;
@@ -172,7 +161,8 @@ function profileFormatTime(sec) {
 // UI ПРОФИЛЯ
 // ============================================
 function renderProfile() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const nick = s.nickname || 'Игрок';
   const input = document.getElementById('profileNickInput');
   if (input) input.value = nick;
@@ -187,7 +177,8 @@ function renderProfile() {
 }
 
 function updateLevelDisplay() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const lvlInfo = getLevelFromTotalXp(s.totalXp);
   const title = getTitleForLevel(lvlInfo.level);
   const percent = (lvlInfo.currentXp / lvlInfo.neededXp) * 100;
@@ -215,7 +206,9 @@ function renderAchievements() {
   const grid = document.getElementById('achievementsGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  if (!s.achievements) s.achievements = [];
   ACHIEVEMENTS.forEach(ach => {
     if (ach.isParadox) { renderParadoxCard(grid, ach); return; }
     const earned = s.achievements.includes(ach.id);
@@ -241,7 +234,8 @@ function renderAchievements() {
 }
 
 function renderParadoxCard(grid, ach) {
-  const s = window.state;
+  const s = getState();
+  if (!s || !s.temporalParadox) return;
   const p = s.temporalParadox;
   const info = getParadoxLevelInfo(p.level);
   const neededSeconds = info.minutes * 60;
@@ -257,8 +251,9 @@ function renderRecords() {
   const list = document.getElementById('recordsList');
   if (!list) return;
   list.innerHTML = '';
-  const s = window.state;
-  const sorted = Object.entries(s.playTime).sort((a, b) => b[1] - a[1]);
+  const s = getState();
+  if (!s) return;
+  const sorted = Object.entries(s.playTime || {}).sort((a, b) => b[1] - a[1]);
   if (sorted.length === 0) {
     list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-weight:600;">Пока нет рекордов — сыграй в игру!</div>';
     return;
@@ -275,7 +270,8 @@ function renderRecords() {
 }
 
 function renderStats() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const GAMES_LEN = (window.GAMES || []).length;
   const UTILS_LEN = (window.UTILITIES || []).length;
   const tg = document.getElementById('totalGames');
@@ -283,7 +279,7 @@ function renderStats() {
   const tt = document.getElementById('totalTime');
   if (tt) tt.textContent = Math.floor(s.totalTime / 60) + ' мин';
   const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox).length;
-  const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox').length;
+  const earnedNormal = (s.achievements || []).filter(id => id !== 'temporal_paradox').length;
   const text = earnedNormal + '/' + totalNormal;
   const ac = document.getElementById('achCount');
   if (ac) ac.textContent = text;
@@ -295,7 +291,8 @@ function renderStats() {
 // ДОСТИЖЕНИЯ
 // ============================================
 function checkLevelAchievements() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   if (s.level >= 25) unlockAch('level_25');
   if (s.level >= 50) unlockAch('level_50');
   if (s.level >= 75) unlockAch('level_75');
@@ -303,9 +300,11 @@ function checkLevelAchievements() {
 }
 
 function unlockAch(id) {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  if (!s.achievements) s.achievements = [];
   if (s.achievements.includes(id)) return;
-  if (id === 'veteran' || id === 'temporal_paradox') return;
+  if (id === 'veteran') return;
   s.achievements.push(id);
   const ach = ACHIEVEMENTS.find(a => a.id === id);
   if (ach && ach.xp) s.totalXp += ach.xp;
@@ -331,13 +330,17 @@ function unlockAch(id) {
 }
 
 function checkVeteran() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
+  if (!s.achievements) s.achievements = [];
   if (s.achievements.includes('veteran')) return;
   const allOthers = ACHIEVEMENTS.filter(a => !a.isVeteran && !a.isParadox);
   const allEarned = allOthers.every(a => s.achievements.includes(a.id));
   if (allEarned) {
     s.achievements.push('veteran');
     s.totalXp += 1000;
+    // Фикс #23: saveState перед showVeteranToast
+    if (typeof window.saveState === 'function') window.saveState();
     setTimeout(() => showVeteranToast(), 1000);
   }
 }
@@ -408,7 +411,8 @@ function showLevelUpToast(level) {
 // ЭКСПОРТ / ИМПОРТ / СБРОС
 // ============================================
 async function exportProfile() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const data = { version: 26, exportedAt: new Date().toISOString(), state: s };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -481,7 +485,8 @@ async function renameNickEverywhere(oldNick, newNick, token) {
       }
       return { ok: false, message: data.error || 'Ошибка' };
     }
-    window.state.lastSubmittedNick = newNick;
+    const s = getState();
+    if (s) s.lastSubmittedNick = newNick;
     if (typeof window.saveState === 'function') window.saveState(true);
     if (typeof CHAT !== 'undefined') {
       CHAT.dmList = [];
@@ -505,7 +510,7 @@ async function renameNickEverywhere(oldNick, newNick, token) {
 async function resetAllData() {
   const SUPABASE_URL = window.SUPABASE_URL;
   const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
-  const s = window.state;
+  const s = getState();
   const oldNick = s && s.nickname && s.nickname !== 'Игрок' ? s.nickname : null;
   const oldToken = s && s.ownerToken ? s.ownerToken : null;
   let msg = '🗑️ Сбросить ВСЁ?\n\nВесь прогресс вернётся к заводским!';
@@ -537,7 +542,16 @@ async function resetAllData() {
   }
   localStorage.removeItem('fireland_light');
   localStorage.removeItem('abdulla_games_state_no_credits');
-  window.state = JSON.parse(JSON.stringify(window.DEFAULT_STATE || {}));
+  localStorage.removeItem('fireland_lb_auto_refresh');
+
+  // Фикс #6: проверка DEFAULT_STATE
+  const DEFAULT = window.DEFAULT_STATE;
+  if (!DEFAULT || Object.keys(DEFAULT).length === 0) {
+    console.error('[Reset] DEFAULT_STATE пустой — перезагрузка');
+    location.reload();
+    return;
+  }
+  window.state = JSON.parse(JSON.stringify(DEFAULT));
   window.state.ownerToken = typeof window.generateOwnerToken === 'function' ? window.generateOwnerToken() : 'tok_' + Date.now();
   window.state.unreadChatCount = 0;
   if (typeof window.idbSet === 'function') await window.idbSet(STATE_KEY, window.state);
@@ -615,20 +629,26 @@ function getWeekStart() {
   const monday = new Date(now);
   monday.setDate(now.getDate() - dayOfWeek);
   monday.setHours(0, 0, 0, 0);
-  const dStr = window.dateStr || function (d) { return d.toISOString().slice(0, 10); };
+  // Фикс #36: используем локальное dateStr
+  const dStr = window.dateStr || function (d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
   return dStr(monday);
 }
 
 function canOpenDailyCase() {
   const todayStr = window.todayStr || function () { return new Date().toISOString().slice(0, 10); };
-  return window.state.lastDailyCase !== todayStr();
+  const s = getState();
+  return !s || s.lastDailyCase !== todayStr();
 }
 function canOpenWeeklyCase() {
-  return window.state.lastWeeklyCase !== getWeekStart();
+  const s = getState();
+  return !s || s.lastWeeklyCase !== getWeekStart();
 }
 
 function openCase(type) {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const todayStr = window.todayStr || function () { return new Date().toISOString().slice(0, 10); };
   if (type === 'daily' && !canOpenDailyCase()) {
     if (window.SOUNDS && window.SOUNDS.error) window.SOUNDS.error();
@@ -657,6 +677,8 @@ function openCase(type) {
   const revealTitle = document.getElementById('caseRevealTitle');
   const revealReward = document.getElementById('caseRevealReward');
   const revealRarity = document.getElementById('caseRevealRarity');
+  // Фикс #64: проверка на null
+  if (!modal || !revealIcon || !revealTitle || !revealReward || !revealRarity) return;
   modal.classList.add('show');
   revealIcon.textContent = '📦';
   revealTitle.textContent = 'Открываем...';
@@ -710,17 +732,17 @@ function renderCases() {
   if (!dailyBtn) return;
   if (canOpenDailyCase()) {
     dailyBtn.disabled = false; dailyBtn.textContent = '✨ Открыть';
-    dailyTimer.textContent = '✅ Доступен';
+    if (dailyTimer) dailyTimer.textContent = '✅ Доступен';
   } else {
     dailyBtn.disabled = true; dailyBtn.textContent = '❌ Открыт';
-    dailyTimer.textContent = '⏰ Завтра';
+    if (dailyTimer) dailyTimer.textContent = '⏰ Завтра';
   }
   if (canOpenWeeklyCase()) {
     weeklyBtn.disabled = false; weeklyBtn.textContent = '✨ Открыть';
-    weeklyTimer.textContent = '✅ Доступен';
+    if (weeklyTimer) weeklyTimer.textContent = '✅ Доступен';
   } else {
     weeklyBtn.disabled = true; weeklyBtn.textContent = '❌ Открыт';
-    weeklyTimer.textContent = '⏰ В понедельник';
+    if (weeklyTimer) weeklyTimer.textContent = '⏰ В понедельник';
   }
 }
 
@@ -742,9 +764,10 @@ function initCasesUI() {
 // ЗАДАНИЯ
 // ============================================
 function checkDailyQuests() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
-  if (s.dailyQuests.date === today) return;
+  if (s.dailyQuests && s.dailyQuests.date === today) return;
   const shuffled = [...QUEST_POOL].sort(() => Math.random() - 0.5);
   const quests = shuffled.slice(0, 5);
   s.dailyQuests = {
@@ -753,17 +776,12 @@ function checkDailyQuests() {
     progress: {},
     completed: []
   };
-  s.todayStats = {
-    date: today, gamesPlayed: [], timeSpent: 0, utilPlayed: [], favPlayed: [],
-    achEarned: 0, favAdded: 0, nickSet: false, themeChanged: false,
-    fullscreenUsed: false, profileViewed: false, settingsViewed: false,
-    questsViewed: false, favTimeSpent: 0, caseOpened: 0
-  };
   if (typeof window.saveState === 'function') window.saveState();
 }
 
 function updateQuestProgress() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
   if (!s.todayStats || s.todayStats.date !== today) {
     s.todayStats = {
@@ -832,7 +850,8 @@ function renderQuests() {
   const panel = document.getElementById('questsPanel');
   if (!panel) return;
   panel.innerHTML = '';
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
   if (s.dailyQuests.date !== today) checkDailyQuests();
   s.dailyQuests.quests.forEach(qId => {
@@ -926,93 +945,105 @@ let alarmIntervalId = null;
 let alarmIsRinging = false;
 
 function loadAlarmSettings() {
-  const s = window.state;
+  const s = getState();
+  if (!s) return;
   if (alarmVolumeSlider) {
     alarmVolumeSlider.value = s.alarmVolume;
-    alarmVolumeValue.textContent = Math.round(s.alarmVolume * 100) + '%';
+    if (alarmVolumeValue) alarmVolumeValue.textContent = Math.round(s.alarmVolume * 100) + '%';
   }
   if (alarmRepeatsSlider) {
     alarmRepeatsSlider.value = s.alarmRepeats;
-    alarmRepeatsValue.textContent = s.alarmRepeats;
+    if (alarmRepeatsValue) alarmRepeatsValue.textContent = s.alarmRepeats;
   }
   if (alarmDelaySlider) {
     alarmDelaySlider.value = s.alarmDelay;
-    alarmDelayValue.textContent = s.alarmDelay + 'с';
+    if (alarmDelayValue) alarmDelayValue.textContent = s.alarmDelay + 'с';
   }
   if (vibrationToggle) vibrationToggle.checked = s.vibrationEnabled;
 }
 
 if (alarmVolumeSlider) alarmVolumeSlider.addEventListener('input', () => {
-  window.state.alarmVolume = parseFloat(alarmVolumeSlider.value);
-  alarmVolumeValue.textContent = Math.round(window.state.alarmVolume * 100) + '%';
+  const s = getState(); if (!s) return;
+  s.alarmVolume = parseFloat(alarmVolumeSlider.value);
+  if (alarmVolumeValue) alarmVolumeValue.textContent = Math.round(s.alarmVolume * 100) + '%';
   if (typeof window.saveState === 'function') window.saveState();
 });
 if (alarmRepeatsSlider) alarmRepeatsSlider.addEventListener('input', () => {
-  window.state.alarmRepeats = parseInt(alarmRepeatsSlider.value);
-  alarmRepeatsValue.textContent = window.state.alarmRepeats;
+  const s = getState(); if (!s) return;
+  s.alarmRepeats = parseInt(alarmRepeatsSlider.value);
+  if (alarmRepeatsValue) alarmRepeatsValue.textContent = s.alarmRepeats;
   if (typeof window.saveState === 'function') window.saveState();
 });
 if (alarmDelaySlider) alarmDelaySlider.addEventListener('input', () => {
-  window.state.alarmDelay = parseInt(alarmDelaySlider.value);
-  alarmDelayValue.textContent = window.state.alarmDelay + 'с';
+  const s = getState(); if (!s) return;
+  s.alarmDelay = parseInt(alarmDelaySlider.value);
+  if (alarmDelayValue) alarmDelayValue.textContent = s.alarmDelay + 'с';
   if (typeof window.saveState === 'function') window.saveState();
 });
 if (vibrationToggle) vibrationToggle.addEventListener('change', () => {
-  window.state.vibrationEnabled = vibrationToggle.checked;
+  const s = getState(); if (!s) return;
+  s.vibrationEnabled = vibrationToggle.checked;
   if (typeof window.saveState === 'function') window.saveState();
 });
 if (alarmSecondsSlider) alarmSecondsSlider.addEventListener('input', () => {
-  alarmSecondsValue.textContent = alarmSecondsSlider.value;
+  if (alarmSecondsValue) alarmSecondsValue.textContent = alarmSecondsSlider.value;
   updateAlarmDisplay();
 });
 if (alarmMinutesSlider) alarmMinutesSlider.addEventListener('input', () => {
-  alarmMinutesValue.textContent = alarmMinutesSlider.value;
+  if (alarmMinutesValue) alarmMinutesValue.textContent = alarmMinutesSlider.value;
   updateAlarmDisplay();
 });
 if (alarmHoursSlider) alarmHoursSlider.addEventListener('input', () => {
-  alarmHoursValue.textContent = alarmHoursSlider.value;
+  if (alarmHoursValue) alarmHoursValue.textContent = alarmHoursSlider.value;
   updateAlarmDisplay();
 });
 if (alarmToggleBtn) alarmToggleBtn.addEventListener('click', () => {
+  if (!alarmModal) return;
   alarmModal.classList.add('show');
-  alarmHoursSlider.value = 0;
-  alarmMinutesSlider.value = 0;
-  alarmSecondsSlider.value = 5;
-  alarmHoursValue.textContent = '0';
-  alarmMinutesValue.textContent = '0';
-  alarmSecondsValue.textContent = '5';
+  if (alarmHoursSlider) alarmHoursSlider.value = 0;
+  if (alarmMinutesSlider) alarmMinutesSlider.value = 0;
+  if (alarmSecondsSlider) alarmSecondsSlider.value = 5;
+  if (alarmHoursValue) alarmHoursValue.textContent = '0';
+  if (alarmMinutesValue) alarmMinutesValue.textContent = '0';
+  if (alarmSecondsValue) alarmSecondsValue.textContent = '5';
   updateAlarmDisplay();
   loadAlarmSettings();
 });
-if (alarmCloseBtn) alarmCloseBtn.addEventListener('click', () => alarmModal.classList.remove('show'));
+if (alarmCloseBtn) alarmCloseBtn.addEventListener('click', () => {
+  if (alarmModal) alarmModal.classList.remove('show');
+});
 if (alarmModal) alarmModal.addEventListener('click', (e) => {
   if (e.target === alarmModal) alarmModal.classList.remove('show');
 });
 
 function getAlarmTotalSeconds() {
-  const h = parseInt(alarmHoursSlider.value) || 0;
-  const m = parseInt(alarmMinutesSlider.value) || 0;
-  const s = parseInt(alarmSecondsSlider.value) || 0;
+  const h = parseInt(alarmHoursSlider?.value) || 0;
+  const m = parseInt(alarmMinutesSlider?.value) || 0;
+  const s = parseInt(alarmSecondsSlider?.value) || 0;
   return h * 3600 + m * 60 + s;
 }
 
 function alarmRing() {
   if (alarmIsRinging) return;
   alarmIsRinging = true;
-  alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
-  alarmStatus.classList.add('alarm-status-ringing');
-  alarmIndicator.classList.add('active');
+  const s = getState();
+  // Фикс #65: проверка на null
+  if (alarmStatus) {
+    alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
+    alarmStatus.classList.add('alarm-status-ringing');
+  }
+  if (alarmIndicator) alarmIndicator.classList.add('active');
   if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
   let ringCount = 0;
-  const totalRings = window.state.alarmRepeats;
-  const delayMs = window.state.alarmDelay * 1000;
+  const totalRings = s ? s.alarmRepeats : 5;
+  const delayMs = s ? s.alarmDelay * 1000 : 15000;
   let ringInterval = null;
   function doRing() {
     if (ringCount >= totalRings) {
       if (ringInterval) clearInterval(ringInterval);
-      alarmStatus.classList.remove('alarm-status-ringing');
+      if (alarmStatus) alarmStatus.classList.remove('alarm-status-ringing');
       alarmIsRinging = false;
-      alarmIndicator.classList.remove('active');
+      if (alarmIndicator) alarmIndicator.classList.remove('active');
       return;
     }
     if (typeof window.playAlarmSound === 'function') window.playAlarmSound();
@@ -1024,6 +1055,7 @@ function alarmRing() {
 }
 
 function updateAlarmDisplay() {
+  if (!alarmStatus) return;
   if (!alarmEndTime) {
     const total = getAlarmTotalSeconds();
     const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
@@ -1048,15 +1080,17 @@ function startAlarm() {
   if (totalSecs < 1) { alert('❌ Минимум 1 секунда!'); return; }
   if (alarmIntervalId) clearInterval(alarmIntervalId);
   alarmEndTime = Date.now() + totalSecs * 1000;
+  // Фикс #66: сброс alarmIsRinging
   alarmIsRinging = false;
-  alarmStatus.classList.remove('alarm-status-ringing');
-  alarmIndicator.classList.add('active');
-  alarmStartBtn.style.display = 'none';
-  alarmCancelBtn.style.display = 'inline-block';
+  if (alarmStatus) alarmStatus.classList.remove('alarm-status-ringing');
+  if (alarmIndicator) alarmIndicator.classList.add('active');
+  if (alarmStartBtn) alarmStartBtn.style.display = 'none';
+  if (alarmCancelBtn) alarmCancelBtn.style.display = 'inline-block';
   alarmIntervalId = setInterval(updateAlarmDisplay, 1000);
   updateAlarmDisplay();
-  if (!window.state.alarmUsed) {
-    window.state.alarmUsed = true;
+  const s = getState();
+  if (s && !s.alarmUsed) {
+    s.alarmUsed = true;
     if (typeof window.saveState === 'function') window.saveState();
     unlockAch('alarm_user');
   }
@@ -1078,7 +1112,7 @@ if (alarmStartBtn) alarmStartBtn.addEventListener('click', startAlarm);
 if (alarmCancelBtn) alarmCancelBtn.addEventListener('click', cancelAlarm);
 
 // ============================================
-// ЭКСПОРТ В window
+// ЭКСПОРТ
 // ============================================
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
@@ -1130,4 +1164,4 @@ window.cancelAlarm = cancelAlarm;
 window.updateAlarmDisplay = updateAlarmDisplay;
 window.alarmRing = alarmRing;
 
-console.log('[profile.js] Загружено:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');
+console.log('[profile.js] Загружено v26.4.0:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');

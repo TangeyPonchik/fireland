@@ -1,6 +1,7 @@
 // ============================================
-// FireLand · storage.js · v26.3.4
+// FireLand · storage.js · v26.4.0
 // IndexedDB + save/load + DEFAULT_STATE + ownerToken
+// Фиксы: #34 (avatar), #36 (local time), #72, #74 (onblocked), #35 (миграции)
 // ============================================
 
 const DEFAULT_STATE = {
@@ -44,7 +45,12 @@ let dbInstance = null;
 function openDB() {
   return new Promise((resolve, reject) => {
     if (dbInstance) return resolve(dbInstance);
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    let req;
+    try {
+      req = indexedDB.open(DB_NAME, DB_VERSION);
+    } catch (e) {
+      return reject(e);
+    }
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
@@ -54,37 +60,59 @@ function openDB() {
       resolve(dbInstance);
     };
     req.onerror = () => reject(req.error);
+    // Фикс #72: обработка blocked
+    req.onblocked = () => {
+      console.warn('[storage] IndexedDB blocked — закройте другие вкладки FireLand');
+      reject(new Error('IDB_BLOCKED'));
+    };
   });
 }
 
 async function idbGet(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      req.onabort = () => reject(new Error('IDB_ABORT'));
+    });
+  } catch (e) {
+    console.warn('[storage] idbGet:', e);
+    return undefined;
+  }
 }
 
 async function idbSet(key, value) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const req = tx.objectStore(STORE_NAME).put(value, key);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).put(value, key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+      tx.onabort = () => reject(new Error('IDB_ABORT'));
+      // Фикс #74: onblocked
+      tx.onblocked = () => reject(new Error('IDB_BLOCKED'));
+    });
+  } catch (e) {
+    console.warn('[storage] idbSet:', e);
+  }
 }
 
 async function idbDelete(key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const req = tx.objectStore(STORE_NAME).delete(key);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) {
+    console.warn('[storage] idbDelete:', e);
+  }
 }
 
 // ========== State ==========
@@ -110,11 +138,19 @@ async function doSaveState() {
   try {
     window.state._savedAt = Date.now();
     await idbSet(STATE_KEY, window.state);
-    const lightState = { ...window.state };
-    delete lightState.avatar;
+    // Фикс #34: сохраняем ВСЁ, включая avatar
     try {
-      localStorage.setItem('fireland_light', JSON.stringify(lightState));
-    } catch (e) {}
+      localStorage.setItem('fireland_light', JSON.stringify(window.state));
+    } catch (e) {
+      // Если переполнено — сохраняем без аватара
+      try {
+        const lightState = { ...window.state };
+        delete lightState.avatar;
+        localStorage.setItem('fireland_light', JSON.stringify(lightState));
+      } catch (e2) {
+        console.warn('[storage] localStorage переполнен');
+      }
+    }
   } catch (e) {
     console.warn('Save failed:', e);
   }
@@ -133,26 +169,28 @@ async function loadState() {
       const raw = localStorage.getItem('fireland_light') || localStorage.getItem('abdulla_games_state_no_credits');
       if (raw) light = JSON.parse(raw);
     } catch (e) {}
+
+    // Фикс #34: если light новее, но без аватара — берём аватар из full
     if (full && light && (light._savedAt || 0) > (full._savedAt || 0)) {
-      window.state = { ...DEFAULT_STATE, ...light };
+      const merged = { ...DEFAULT_STATE, ...light };
+      if (!merged.avatar && full.avatar) merged.avatar = full.avatar;
+      window.state = merged;
     } else if (full) {
       window.state = { ...DEFAULT_STATE, ...full };
     } else if (light) {
       window.state = { ...DEFAULT_STATE, ...light };
       await idbSet(STATE_KEY, window.state);
     }
+
     const s = window.state;
+
+    // Фикс #35: миграции ВСЕХ полей
     if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
     if (!s.streak) s.streak = { current: 0, best: 0, lastLogin: null, history: [] };
     if (!s.streak.history) s.streak.history = [];
     if (!s.favorites) s.favorites = [];
     if (!s.dailyQuests) s.dailyQuests = { date: null, quests: [], progress: {}, completed: [] };
-    if (!s.todayStats) s.todayStats = {
-      date: null, gamesPlayed: [], timeSpent: 0, utilPlayed: [], favPlayed: [],
-      achEarned: 0, favAdded: 0, nickSet: false, themeChanged: false,
-      fullscreenUsed: false, profileViewed: false, settingsViewed: false,
-      questsViewed: false, favTimeSpent: 0, caseOpened: 0
-    };
+    if (!s.todayStats) s.todayStats = { ...DEFAULT_STATE.todayStats };
     if (!s.todayStats.utilPlayed) s.todayStats.utilPlayed = [];
     if (s.lastDailyReward === undefined) s.lastDailyReward = null;
     if (s.dailyRewardsClaimed === undefined) s.dailyRewardsClaimed = 0;
@@ -167,6 +205,12 @@ async function loadState() {
     if (!s.myRooms) s.myRooms = [];
     if (s.myCommunityGames === undefined) s.myCommunityGames = 0;
     if (s.theme === 'dark' || s.theme === 'blue') s.theme = 'system';
+    if (s.gamesOpened === undefined) s.gamesOpened = 0;
+    if (!s.gameOpenTimes) s.gameOpenTimes = [];
+    if (!s.themesUsed) s.themesUsed = [];
+    if (s.alarmUsed === undefined) s.alarmUsed = false;
+    if (s.questsCompletedTotal === undefined) s.questsCompletedTotal = 0;
+
     if (!s.ownerToken) {
       s.ownerToken = generateOwnerToken();
       saveState(true);
@@ -177,7 +221,7 @@ async function loadState() {
   }
 }
 
-// ========== Утилиты дат ==========
+// ========== Утилиты дат (локальное время — фикс #36) ==========
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -199,4 +243,4 @@ window.generateOwnerToken = generateOwnerToken;
 window.todayStr = todayStr;
 window.dateStr = dateStr;
 
-console.log('[storage.js] Загружено');
+console.log('[storage.js] Загружено v26.4.0');

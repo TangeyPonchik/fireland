@@ -5,10 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Лаунчер FireLand</title>
 <meta name="theme-color" content="#6a8aff">
+<meta name="description" content="Игровая платформа в браузере — 13 игр, чат, лидерборд, достижения, PWA">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FireLand">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="FireLand">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="style.css?v=34">
 </head>
 <body>
 <div class="bg-particles" id="bgParticles"></div>
@@ -376,7 +390,7 @@
 </div>
 <div class="support-info">
 <span>📧 <span class="email">ronormav@gmail.com</span></span>
-<span>⚡ <span class="version" id="appVersion">v26.3.7</span></span>
+<span>⚡ <span class="version" id="appVersion">v26.4.0</span></span>
 </div>
 <div class="fireland">🔥 <span>Создано студией FireLand!</span> 🔥</div>
 </div>
@@ -444,18 +458,41 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="storage.js?v=33"></script>
-<script src="games.js?v=33"></script>
-<script src="profile.js?v=33"></script>
-<script src="sound.js?v=33"></script>
-<script src="streak.js?v=33"></script>
-<script src="device.js?v=33"></script>
-<script src="leaderboard.js?v=33"></script>
-<script src="script.js?v=33"></script>
-<script src="messenger.js?31=31"></script>
+<script src="storage.js?v=34"></script>
+<script src="games.js?v=34"></script>
+<script src="profile.js?v=34"></script>
+<script src="sound.js?v=34"></script>
+<script src="streak.js?v=34"></script>
+<script src="device.js?v=34"></script>
+<script src="leaderboard.js?v=34"></script>
+<script src="script.js?v=34"></script>
+<script src="messenger.js?v=34"></script>
 <div class="chat-lightbox" id="chatLightbox" style="display:none;">
 <button class="chat-lightbox-close" id="chatLightboxClose">✕</button>
 <img id="chatLightboxImg" src="" alt="">
 </div>
+
+<!-- ============================================ -->
+<!-- PWA: Регистрация Service Worker             -->
+<!-- ============================================ -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker зарегистрирован:', reg.scope);
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[PWA] Доступно обновление. Обновите страницу (Ctrl+Shift+R).');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[PWA] Ошибка регистрации SW:', err));
+  });
+}
+</script>
 </body>
-</html>   
+</html>
