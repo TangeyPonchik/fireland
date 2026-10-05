@@ -1,12 +1,12 @@
 // ============================================
-// FireLand · script.js · v26.4.2
+// FireLand · script.js · v26.4.3
 // Ядро: темы, частицы, звёзды, часы, настройки, onboarding.
 // ============================================
 
 (function () {
 'use strict';
 
-const APP_VERSION = '26.4.2';
+const APP_VERSION = '26.4.3';
 
 (function checkModules() {
   const missing = [];

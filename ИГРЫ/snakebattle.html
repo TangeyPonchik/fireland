@@ -142,7 +142,6 @@
   .pause-hint{font-size:14px;opacity:0.6;font-weight:600}
   .pause-resume-btn{padding:14px 32px;border:none;border-radius:14px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;background:#4d9eff;color:#fff;min-height:52px}
   .pause-resume-btn:hover{background:#6bb0ff}
-  /* ===== LOBBY ROOM ===== */
   #lobby-room{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0a0c14;z-index:22;padding:20px;overflow-y:auto}
   #lobby-room.show{display:flex}
   .lobby-room-card{width:100%;max-width:520px;background:#14182a;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px;text-align:center;margin:auto}
@@ -162,7 +161,6 @@
   .lobby-player-badge{font-size:11px;font-weight:800;color:#fbbf24;letter-spacing:0.5px}
   .lobby-room-actions{display:flex;flex-direction:column;gap:10px}
   .lobby-room-status{font-size:12px;opacity:0.6;font-weight:600;margin-bottom:10px}
-  /* ===== LOBBIES LIST MODAL ===== */
   #lobbies-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);z-index:99999;padding:20px}
   #lobbies-modal.show{display:flex}
   .lobbies-card{width:100%;max-width:460px;background:#14182a;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:24px;max-height:80vh;display:flex;flex-direction:column}
@@ -317,8 +315,8 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 /* ============ SVG ICONS ============ */
 const ICONS = {
@@ -477,12 +475,12 @@ function ensureAudio(){
 }
 function playTone(freq, dur, type = 'sine', vol = 1, delay = 0){
   if (!soundEnabled) return;
-  const ctx = ensureAudio();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
-  const t0 = ctx.currentTime + delay;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+  const c = ensureAudio();
+  if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  const t0 = c.currentTime + delay;
+  const osc = c.createOscillator();
+  const gain = c.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, t0);
   gain.gain.setValueAtTime(0, t0);
@@ -550,6 +548,17 @@ async function copyRoomId(){
 /* ============ FULLSCREEN ============ */
 function toggleFullscreen(){
   if (!FEATURES.fullscreen) return;
+  const container = document.getElementById('game-container');
+  if (container && window.self !== window.top){
+    if (!document.fullscreenElement){
+      const fn = container.requestFullscreen || container.webkitRequestFullscreen;
+      if (fn) try { fn.call(container); } catch(e){}
+    } else {
+      const fn = document.exitFullscreen || document.webkitExitFullscreen;
+      if (fn) try { fn.call(document); } catch(e){}
+    }
+    return;
+  }
   const el = document.documentElement;
   if (!document.fullscreenElement){
     const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
@@ -679,7 +688,7 @@ async function idbSet(key, value){
 const SUPABASE_URL = 'https://brqlmsbvwmycyhiluuui.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJycWxtc2J2d215Y3loaWx1dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODQwMDYsImV4cCI6MjEwNTA2MDAwNn0.mIW8zji9P67qIFm8V8dFcMV2wzoI6GnRYg9prxKAxj8';
 let sb = null;
-try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 30 } } }); }
+try { sb = createClient(SUPABASE_URL, SUPABASE_KEY, { realtime: { params: { eventsPerSecond: 30 } } }); }
 catch (e) {}
 
 /* ============ КОНСТАНТЫ ============ */
@@ -895,7 +904,6 @@ let directoryChannel = null;
 let myLobbyId = null;
 let isLobbyHost = false;
 let lobbyPlayers = new Map();
-let directoryUpdateTimeout = null;
 
 function rand(min, max){ return Math.random() * (max - min) + min; }
 function distSq(ax, ay, bx, by){ const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
@@ -1100,7 +1108,7 @@ class Snake {
     const head = this.segments[0];
     const headR = this.getHeadRadius();
     ctx.shadowColor = this.skin.colors[0];
-    ctx.shadowBlur = this.boosting ? 24 : 12;
+    ctx.shadowBlur = this.boosting ? 12 : 0;
     ctx.beginPath();
     ctx.arc(head.x, head.y, headR, 0, Math.PI * 2);
     ctx.fillStyle = this.skin.colors[0];
@@ -1794,6 +1802,32 @@ function checkCollisions(){
   for (const cp of checkPoints){
     for (const p of players.values()){
       if (p.id === mySnake.id || !p.alive || p.team === mySnake.team) continue;
+      const hh = checkHeadHeadCollisionAt(cp, mySnake, p);
+      if (hh.hit){
+        if (hh.winner === mySnake){
+          if (!p.alive) continue;
+          kills++;
+          const r = getCoinReward(p.length);
+          coins += r;
+          saveCoins(coins);
+          updateCoinsDisplay();
+          showToast(`<span class="ico">${svg('coin', 14)}</span> +${r}`);
+          updateMissionProgress('kills', 1);
+          SFX.kill();
+          vibrate(60);
+          if (channel) channel.send({
+            type: 'broadcast', event: 'player_died',
+            payload: { id: p.id, x: p.x, y: p.y, team: p.team, killer: myId, length: p.length }
+          });
+          p.alive = false;
+          spawnDeathFood(p);
+          continue;
+        } else {
+          lastDeathPos = { x: mySnake.x, y: mySnake.y };
+          die('Лобовое столкновение', p.id);
+          return;
+        }
+      }
       if (headHitsBody(cp, mySnake, p)){
         lastDeathPos = { x: mySnake.x, y: mySnake.y };
         die('Столкновение с врагом', p.id);
@@ -2057,6 +2091,8 @@ window.addEventListener('resize', () => {
   resizeTimeout = setTimeout(resize, 100);
 });
 window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+document.addEventListener('fullscreenchange', () => setTimeout(resize, 100));
+document.addEventListener('webkitfullscreenchange', () => setTimeout(resize, 100));
 resize();
 
 function drawGrid(){
@@ -2167,14 +2203,22 @@ function render(){
 
   for (let i = 0; i < foods.length; i++){
     const f = foods[i];
+    if (f.glow) continue;
     if (f.x < camL || f.x > camR || f.y < camT || f.y > camB) continue;
     ctx.beginPath();
     ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
     ctx.fillStyle = f.color;
-    if (f.glow){
-      ctx.shadowColor = f.color;
-      ctx.shadowBlur = 8;
-    }
+    ctx.fill();
+  }
+  for (let i = 0; i < foods.length; i++){
+    const f = foods[i];
+    if (!f.glow) continue;
+    if (f.x < camL || f.x > camR || f.y < camT || f.y > camB) continue;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.shadowColor = f.color;
+    ctx.shadowBlur = 5;
+    ctx.fillStyle = f.color;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -2521,7 +2565,12 @@ function gameLoop(){
     }
     if (!isBotMode && performance.now() - lastBroadcast > TICK_RATE){
       lastBroadcast = performance.now();
-      if (mySnake && mySnake.alive && channel) channel.send({ type:'broadcast', event:'state', payload:mySnake.toNet() });
+      if (mySnake && mySnake.alive && channel){
+        channel.send({ type:'broadcast', event:'state', payload:mySnake.toNet() });
+        if (frameCounter % 3 === 0 && channel.track){
+          try { channel.track(mySnake.toNet()); } catch(e){}
+        }
+      }
     }
     render();
   } else if (gameState === 'dead'){
@@ -2810,6 +2859,19 @@ async function joinRoom(rid){
     list.sort((a, b) => a.id.localeCompare(b.id));
     hostId = list[0]?.id || null;
     updatePlayersList(list);
+
+    for (const p of list){
+      if (p.id === myId) continue;
+      if (p.x !== undefined && p.y !== undefined){
+        let remote = players.get(p.id);
+        if (!remote){
+          remote = new Snake(p.id, p.name, p.team, p.x, p.y, {});
+          remote.segments = [];
+          players.set(p.id, remote);
+        }
+        remote.applyNet(p);
+      }
+    }
 
     const count = list.length;
     if (count > MAX_PLAYERS){ leaveRoom(); resetLobbyUI(); return; }
