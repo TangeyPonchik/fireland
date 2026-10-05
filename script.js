@@ -6,7 +6,8 @@
 (function () {
 'use strict';
 
-const APP_VERSION = '27.0.0';
+const APP_VERSION = '27.0.1';
+const APP_VERSION_LABEL = '27.0:1';
 
 (function checkModules() {
   const missing = [];
