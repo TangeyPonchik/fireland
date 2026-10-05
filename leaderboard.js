@@ -11,6 +11,7 @@ const LB = {
   autoRefreshTimer: null,
   isFetching: false,
   isSaving: false,
+  autoRefreshEnabled: localStorage.getItem('fireland_lb_auto_refresh') === 'true',
 };
 
 window.escapeHtml = window.escapeHtml || function (text) {
@@ -243,18 +244,29 @@ function renderLeaderboard(data) {
     <div class="lb-footer">
       <button class="lb-refresh-btn" onclick="refreshLeaderboard()">🔄 Обновить</button>
       <label class="lb-auto-label">
-        <input type="checkbox" id="lbAutoRefresh" ${LB.autoRefreshTimer ? 'checked' : ''}>
+        <input type="checkbox" id="lbAutoRefresh" ${LB.autoRefreshEnabled ? 'checked' : ''}>
         Автообновление
       </label>
     </div>
   `;
-  const autoCheckbox = document.getElementById('lbAutoRefresh');
-  if (autoCheckbox) {
-    autoCheckbox.addEventListener('change', (e) => {
-      if (e.target.checked) startLeaderboardAutoRefresh();
-      else stopLeaderboardAutoRefresh();
-    });
+const autoCheckbox = document.getElementById('lbAutoRefresh');
+if (autoCheckbox) {
+  autoCheckbox.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      LB.autoRefreshEnabled = true;
+      localStorage.setItem('fireland_lb_auto_refresh', 'true');
+      startLeaderboardAutoRefresh();
+    } else {
+      LB.autoRefreshEnabled = false;
+      localStorage.setItem('fireland_lb_auto_refresh', 'false');
+      stopLeaderboardAutoRefresh();
+    }
+  });
+  // Автозапуск, если было включено
+  if (LB.autoRefreshEnabled && !LB.autoRefreshTimer) {
+    startLeaderboardAutoRefresh();
   }
+}
 }
 
 // ============================================
