@@ -2452,3 +2452,27 @@ body.theme-light .chat-reaction-picker {
     font-size: 13px;
   }
 }
+
+/* ============================================
+   FIX #settings-layout · v27.0.x
+   Футер не вылетает, настройки на всю ширину
+   ============================================ */
+#settingsModal .modal-content {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+}
+#settingsModal .setting-row {
+  width: 100%;
+  flex-wrap: nowrap;   /* не даём переноситься */
+}
+#settingsModal .setting-row .setting-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#settingsModal .fireland {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 16px;
+}
