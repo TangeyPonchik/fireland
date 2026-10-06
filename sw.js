@@ -1,26 +1,26 @@
 // ============================================
-// FireLand · Service Worker · v27.0.3
+// FireLand · Service Worker · v27.0.6
 // Кэширует ВСЁ: лаунчер, игры, утилиты, маскот
 // ============================================
 
-const CACHE_NAME = 'fireland-v27.0.5';
-const CACHE_VERSION = '27.0.5';
+const CACHE_NAME = 'fireland-v27.1.1';
+const CACHE_VERSION = '27.1.1';
 
 // Что кэшируем при установке
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './supabase.js?v=43',
-  './style.css?v=43',
-  './storage.js?v=43',
-  './games.js?v=43',
-  './profile.js?v=43',
-  './sound.js?v=43',
-  './streak.js?v=43',
-  './device.js?v=43',
-  './leaderboard.js?v=43',
-  './script.js?v=43',
-  './messenger.js?v=43',
+  './supabase.js?v=45',
+  './style.css?v=45',
+  './storage.js?v=45',
+  './games.js?v=45',
+  './profile.js?v=45',
+  './sound.js?v=45',
+  './streak.js?v=45',
+  './device.js?v=45',
+  './leaderboard.js?v=45',
+  './script.js?v=45',
+  './messenger.js?v=45',
   './manifest.json',
   './fireek.mp4'
 ];
@@ -32,7 +32,6 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Install v' + CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Кэшируем по одному, чтобы один упавший файл не сломал всё
       const results = await Promise.allSettled(
         PRECACHE_URLS.map(url =>
           cache.add(url).catch(err => {
@@ -70,17 +69,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Пропускаем всё, что не наш origin (Supabase, CDN, Google Fonts)
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+  if (url.origin !== self.location.origin) return;
+  if (request.method !== 'GET') return;
 
-  // Пропускаем POST/PUT/DELETE (только GET кэшируем)
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Network-first для HTML (чтобы обновления приходили)
+  // Network-first для HTML
   if (request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
@@ -94,11 +86,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first для всего остального (JS, CSS, игры, маскот)
+  // Cache-first для всего остального
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) {
-        // Обновляем кэш в фоне (stale-while-revalidate)
         fetch(request).then(response => {
           if (response.ok) {
             caches.open(CACHE_NAME).then(cache => cache.put(request, response));
@@ -106,7 +97,6 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => {});
         return cached;
       }
-      // Нет в кэше — пробуем сеть
       return fetch(request).then(response => {
         if (response.ok && response.status === 200) {
           const clone = response.clone();
@@ -119,12 +109,10 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ============================================
-// MESSAGE — обработка сообщений от страницы
+// MESSAGE
 // ============================================
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
   if (event.data === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_VERSION });
   }

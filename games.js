@@ -1,8 +1,8 @@
 // ============================================
-// FireLand · games.js · v26.4.0
+// FireLand · games.js · v27.0.6
 // Данные игр + вкладки + UI игр + меню + таймер
-// Фиксы: #1 (state check), #2 (achievements check), #11 (paradox),
-//        #12 (sessionTime), #13 (missedTime), #85 (isGameOpen)
+// НОВОЕ: тач-меню (бургер + свайпы) для мобилок
+// Фиксы: #1, #2, #11, #12, #13, #85
 // ============================================
 
 // ============================================
@@ -106,6 +106,11 @@ let sessionStartTotalTime = 0;
 let tickInterval = null;
 let lastTickTime = 0;
 let lastPlayedGameId = null;
+
+// === НОВЫЕ переменные для тач-меню ===
+let gameTouchStartX = 0;
+let gameTouchStartY = 0;
+let gameTouchStartTime = 0;
 
 function toggleFavorite(gameId, event) {
   if (event) event.stopPropagation();
@@ -316,14 +321,88 @@ function checkGameMenuVisibility(e) {
   });
 }
 
+// === ОБНОВЛЕНО: добавлены тач-события ===
 function addGameMenuListeners() {
   if (backBtnListenersAdded) return;
+
+  // Десктоп: mousemove (как было)
   document.addEventListener('mousemove', checkGameMenuVisibility);
+
+  // Тач: свайп сверху вниз → меню, снизу вверх → закрыть
+  document.addEventListener('touchstart', handleGameTouchStart, { passive: true });
+  document.addEventListener('touchend', handleGameTouchEnd, { passive: true });
+
+  // На тач-устройствах бургер всегда виден
+  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+    const wrapper = document.getElementById('gameMenuWrapper');
+    if (wrapper) wrapper.classList.add('visible');
+  }
+
+  // Показать подсказку «Свайп вниз для меню» на 3.5 сек
+  showMenuSwipeHint();
+
   backBtnListenersAdded = true;
 }
 
+// === НОВЫЕ функции для тач-меню ===
+function handleGameTouchStart(e) {
+  if (!isGameOpen) return;
+  const t = e.touches[0];
+  if (!t) return;
+  gameTouchStartX = t.clientX;
+  gameTouchStartY = t.clientY;
+  gameTouchStartTime = Date.now();
+}
+
+function handleGameTouchEnd(e) {
+  if (!isGameOpen) return;
+  const t = e.changedTouches[0];
+  if (!t) return;
+  const dx = t.clientX - gameTouchStartX;
+  const dy = t.clientY - gameTouchStartY;
+  const dt = Date.now() - gameTouchStartTime;
+
+  // Свайп сверху вниз → открыть меню (в верхней трети экрана)
+  if (dt < 400 && dy > 80 && Math.abs(dx) < 60 && gameTouchStartY < window.innerHeight * 0.4) {
+    toggleGameMenu();
+    return;
+  }
+
+  // Свайп снизу вверх → закрыть меню
+  if (dt < 400 && dy < -80 && Math.abs(dx) < 60) {
+    closeGameMenu();
+  }
+}
+
+function toggleGameMenu() {
+  const dropdown = document.getElementById('gameMenuDropdown');
+  const wrapper = document.getElementById('gameMenuWrapper');
+  if (!dropdown || !wrapper) return;
+  wrapper.classList.add('visible');
+  const nowOpen = dropdown.classList.toggle('open');
+  isMenuOpen = nowOpen;
+  if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
+}
+
+function showMenuSwipeHint() {
+  if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
+  let hint = document.querySelector('.game-menu-swipe-hint');
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.className = 'game-menu-swipe-hint';
+    hint.textContent = '⬇ Свайп вниз для меню';
+    const container = document.getElementById('gameFrameContainer');
+    if (container) container.appendChild(hint);
+  }
+  hint.classList.add('show');
+  setTimeout(() => hint.classList.remove('show'), 3500);
+}
+
+// === ОБНОВЛЕНО: снимаем и тач-обработчики ===
 function removeGameMenuListeners() {
   document.removeEventListener('mousemove', checkGameMenuVisibility);
+  document.removeEventListener('touchstart', handleGameTouchStart);
+  document.removeEventListener('touchend', handleGameTouchEnd);
   backBtnListenersAdded = false;
   const wrapper = document.getElementById('gameMenuWrapper');
   const dropdown = document.getElementById('gameMenuDropdown');
@@ -368,7 +447,6 @@ function openGame(gameId) {
   s.lastGameId = gameId;
   s.lastGameTime = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-  // Фикс #12: сбрасываем ВСЕ переменные сессии
   currentGameStartTime = Date.now();
   sessionStartTotalTime = s.totalTime || 0;
   sessionXpStart = s.totalXp || 0;
@@ -419,7 +497,6 @@ function closeGame() {
   const sessionTime = Math.floor((Date.now() - currentGameStartTime) / 1000);
   const s = getState();
   if (s) {
-    // Фикс #13: не начисляем время, если totalTime был сброшен
     if (s.totalTime >= sessionStartTotalTime) {
       const trackedSessionTime = Math.max(0, s.totalTime - (sessionStartTotalTime || 0));
       const missedTime = Math.max(0, sessionTime - trackedSessionTime);
@@ -562,7 +639,6 @@ function checkParadox() {
     const p = s.temporalParadox;
     const info = getInfo(p.level);
     const neededSeconds = info.minutes * 60;
-    // Фикс #11: защита от 0 и отрицательных
     if (neededSeconds < 1) break;
     if (p.totalAccumulated < neededSeconds) break;
     p.totalAccumulated -= neededSeconds;
@@ -673,6 +749,12 @@ window.addGameMenuListeners = addGameMenuListeners;
 window.removeGameMenuListeners = removeGameMenuListeners;
 window.closeGameMenu = closeGameMenu;
 
+// === НОВЫЕ экспорты для тач-меню ===
+window.toggleGameMenu = toggleGameMenu;
+window.handleGameTouchStart = handleGameTouchStart;
+window.handleGameTouchEnd = handleGameTouchEnd;
+window.showMenuSwipeHint = showMenuSwipeHint;
+
 Object.defineProperty(window, 'isGameOpen', {
   get() { return isGameOpen; },
   set(v) { isGameOpen = v; },
@@ -700,5 +782,5 @@ Object.defineProperty(window, 'sessionAchEarned', {
 });
 
 if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
-  console.log('[games.js] Загружено v26.4.1:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + UI игр');
+  console.log('[games.js] Загружено v27.0.6:', GAMES.length, 'игр,', UTILITIES.length, 'утилит + тач-меню');
 }

@@ -2476,3 +2476,145 @@ body.theme-light .chat-reaction-picker {
   text-align: center;
   margin-top: 16px;
 }
+
+/* ============================================
+   FIX MOBILE v27.0.x — меню игры, панели, лаги
+   ============================================ */
+
+/* 1. ОБЩИЕ ТАЧ-ФИКСЫ */
+html, body { overscroll-behavior-y: contain; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* 2. МЕНЮ ИГРЫ: бургер всегда виден на тач */
+@media (hover: none) and (pointer: coarse) {
+  .game-menu-wrapper .game-menu-trigger {
+    opacity: 0.85;
+    pointer-events: auto;
+    width: 48px;
+    height: 48px;
+    background: rgba(10, 18, 40, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+  }
+  .game-menu-wrapper .game-menu-trigger:active {
+    opacity: 1;
+    transform: scale(0.92);
+  }
+  .game-menu-wrapper .game-menu-trigger span {
+    width: 22px;
+    height: 3px;
+  }
+}
+
+/* 3. ПОДСКАЗКА СВАЙПА */
+.game-menu-swipe-hint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(106, 138, 255, 0.9);
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+.game-menu-swipe-hint.show { opacity: 1; }
+
+/* 4. МОДАЛКИ: bottom-sheet на ≤768px */
+@media (max-width: 768px) {
+  .modal { align-items: flex-end; padding: 0; }
+  .modal .modal-content {
+    border-radius: 28px 28px 0 0;
+    max-height: 92dvh;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    animation: slideUpModal 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    overscroll-behavior: contain;
+  }
+  .modal .modal-close {
+    top: 12px; right: 16px;
+    width: 44px; height: 44px;
+    font-size: 26px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal .modal-content::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 44px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+  .modal .modal-title { margin-top: 14px; }
+}
+@keyframes slideUpModal {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* 5. ПАНЕЛИ: одна колонка, изолированный скролл */
+@media (max-width: 768px) {
+  .games-layout {
+    grid-template-columns: 1fr;
+    height: auto; min-height: auto; max-height: none;
+    gap: 10px;
+  }
+  .games-list-panel {
+    max-height: 48dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .game-detail-panel {
+    min-height: 38dvh;
+    max-height: 48dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* 6. ЛАГИ: выключаем частицы и тяжёлые анимации */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .bg-particles, .stars-bg { display: none !important; }
+  .game-card { transition: transform 0.15s ease, border-color 0.15s ease !important; }
+  .game-card:hover { transform: none !important; box-shadow: none !important; }
+  .logo .fire, .streak-badge .streak-fire,
+  .mascot-bubble, .mascot-container,
+  .daily-reward-header, .case-icon { animation: none !important; }
+}
+
+/* 7. ЧАТ: изолированный скролл */
+@media (max-width: 768px) {
+  .chat-layout {
+    grid-template-columns: 1fr;
+    height: auto; min-height: auto; max-height: none;
+    gap: 8px;
+  }
+  .chat-sidebar { max-height: 32dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .chat-main-panel { height: 58dvh; min-height: 320px; }
+  .chat-messages { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+}
+
+/* 8. ТАБЫ: горизонтальный скролл на узких экранах */
+@media (max-width: 480px) {
+  .tabs {
+    gap: 4px; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 0 0 auto; min-width: 0;
+    padding: 9px 12px; font-size: 12px;
+    white-space: nowrap;
+  }
+}

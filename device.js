@@ -1,15 +1,16 @@
 // ============================================
-// FireLand · device.js · v26.4.0
-// Устройство + TV + свайпы
+// FireLand · device.js · v27.0.6
+// Устройство + TV + свайпы вкладок + свайп «назад из игры»
 // Фиксы: #37 (TV detection), #38 (двойные обработчики)
+// НОВОЕ: свайп от левого края → выход из игры
 // ============================================
 
 let tvNavigationSetup = false;
 let swipeNavigationSetup = false;
+let gameBackSwipeSetup = false;
 
 function detectDevice() {
   const ua = navigator.userAgent;
-  // Фикс #37: TV определяем по User-Agent, а не только по размеру экрана
   const isTV = /SmartTV|Tizen|WebOS|AppleTV|AndroidTV|HbbTV|NetCast|BRAVIA|VIDAA|Roku|Xbox|PlayStation|SMART-TV/i.test(ua);
   const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua) && !isTV;
   return isTV ? 'tv' : isMobile ? 'mobile' : 'desktop';
@@ -21,9 +22,11 @@ function applyDeviceMode() {
   console.log('[Device] Режим:', device);
 }
 
+// ============================================
+// TV-НАВИГАЦИЯ
+// ============================================
 function setupTVNavigation() {
   if (document.body.dataset.device !== 'tv') return;
-  // Фикс #38: защита от повторного вызова
   if (tvNavigationSetup) return;
   tvNavigationSetup = true;
 
@@ -70,9 +73,11 @@ function setupTVNavigation() {
   console.log('[TV] Навигация пультом активна');
 }
 
+// ============================================
+// СВАЙПЫ ВКЛАДОК (лаунчер)
+// ============================================
 function setupSwipeNavigation() {
   if (document.body.dataset.device === 'desktop') return;
-  // Фикс #38: защита от повторного вызова
   if (swipeNavigationSetup) return;
   swipeNavigationSetup = true;
 
@@ -143,10 +148,65 @@ function setupSwipeNavigation() {
   console.log('[Mobile] Свайпы вкладок активны');
 }
 
+// ============================================
+// НОВОЕ: СВАЙП ОТ ЛЕВОГО КРАЯ → ВЫХОД ИЗ ИГРЫ
+// ============================================
+function setupGameBackSwipe() {
+  if (gameBackSwipeSetup) return;
+  gameBackSwipeSetup = true;
+
+  let edgeStartX = 0;
+  let edgeStartY = 0;
+  let edgeStartTime = 0;
+  let edgeTracking = false;
+
+  const EDGE_ZONE = 30;        // px от левого края — зона старта
+  const SWIPE_THRESHOLD = 80;  // минимум движения
+  const SWIPE_TIME = 500;      // максимум времени
+
+  document.addEventListener('touchstart', (e) => {
+    // Только когда игра открыта
+    if (!window.isGameOpen) return;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    // Старт должен быть у левого края экрана
+    if (t.clientX > EDGE_ZONE) return;
+    edgeStartX = t.clientX;
+    edgeStartY = t.clientY;
+    edgeStartTime = Date.now();
+    edgeTracking = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!edgeTracking) return;
+    edgeTracking = false;
+    if (!window.isGameOpen) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - edgeStartX;
+    const dy = t.clientY - edgeStartY;
+    const dt = Date.now() - edgeStartTime;
+
+    // Горизонтальный свайп вправо, длинный и быстрый
+    if (dt < SWIPE_TIME && dx > SWIPE_THRESHOLD && Math.abs(dy) < 60) {
+      if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
+      if (typeof window.closeGame === 'function') {
+        window.closeGame();
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    edgeTracking = false;
+  }, { passive: true });
+
+  console.log('[Mobile] Свайп-назад из игры активен');
+}
+
 // ========== Экспорт ==========
 window.detectDevice = detectDevice;
 window.applyDeviceMode = applyDeviceMode;
 window.setupTVNavigation = setupTVNavigation;
 window.setupSwipeNavigation = setupSwipeNavigation;
+window.setupGameBackSwipe = setupGameBackSwipe;
 
-console.log('[device.js] Загружено v26.4.0');
+console.log('[device.js] Загружено v27.0.6');

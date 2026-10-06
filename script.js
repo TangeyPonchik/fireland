@@ -6,8 +6,8 @@
 (function () {
 'use strict';
 
-const APP_VERSION = '27.0.5';
-const APP_VERSION_LABEL = '27.0:5';
+const APP_VERSION = '27.1.1';
+const APP_VERSION_LABEL = '27.1:1';
 
 (function checkModules() {
   const missing = [];
@@ -558,6 +558,7 @@ if (postGameModal) postGameModal.addEventListener('click', (e) => {
 
   if (typeof window.setupTVNavigation === 'function') window.setupTVNavigation();
   if (typeof window.setupSwipeNavigation === 'function') window.setupSwipeNavigation();
+  if (typeof window.setupGameBackSwipe === 'function') window.setupGameBackSwipe();   // ← ДОБАВИЛ
   if (typeof window.updateChatBadge === 'function') setTimeout(window.updateChatBadge, 800);
 })();
 
