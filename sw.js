@@ -3,24 +3,24 @@
 // Кэширует ВСЁ: лаунчер, игры, утилиты, маскот
 // ============================================
 
-const CACHE_NAME = 'fireland-v27.1.1';
-const CACHE_VERSION = '27.1.1';
+const CACHE_NAME = 'fireland-v27.1.2';
+const CACHE_VERSION = '27.1.2';
 
 // Что кэшируем при установке
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './supabase.js?v=45',
-  './style.css?v=45',
-  './storage.js?v=45',
-  './games.js?v=45',
-  './profile.js?v=45',
-  './sound.js?v=45',
-  './streak.js?v=45',
-  './device.js?v=45',
-  './leaderboard.js?v=45',
-  './script.js?v=45',
-  './messenger.js?v=45',
+  './supabase.js?v=46',
+  './style.css?v=46',
+  './storage.js?v=46',
+  './games.js?v=46',
+  './profile.js?v=46',
+  './sound.js?v=46',
+  './streak.js?v=46',
+  './device.js?v=46',
+  './leaderboard.js?v=46',
+  './script.js?v=46',
+  './messenger.js?v=46',
   './manifest.json',
   './fireek.mp4'
 ];
