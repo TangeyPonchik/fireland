@@ -2618,3 +2618,20 @@ html, body { overscroll-behavior-y: contain; }
     white-space: nowrap;
   }
 }
+
+/* ============================================
+   Telegram-ссылка в футере настроек
+   ============================================ */
+.support-info .tg-link {
+  color: #29b6f6;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.support-info .tg-link:hover {
+  color: #4fc3f7;
+  text-decoration: underline;
+}
