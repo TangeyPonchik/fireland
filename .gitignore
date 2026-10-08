@@ -1,6 +1,3 @@
-# Local Netlify folder
-.netlify
-
 # Логи
 *.log
 
@@ -17,9 +14,11 @@ Thumbs.db
 *.tmp
 *.bak
 
-# Технические скрипты
-.scripts/
+# Зависимости
+node_modules/
+.scripts/node_modules/
 
 # Ключи
+.scripts/.env.local
 *.key
 *.env
