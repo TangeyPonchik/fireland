@@ -1,26 +1,27 @@
 // ============================================
-// FireLand · Service Worker · v27.0.6
+// FireLand · Service Worker · v27.3.0
 // Кэширует ВСЁ: лаунчер, игры, утилиты, маскот
 // ============================================
 
-const CACHE_NAME = 'fireland-v27.3.0';
-const CACHE_VERSION = '27.3.0';
+const CACHE_NAME = 'fireland-v27.4.0';
+const CACHE_VERSION = '27.4.0';
 
 // Что кэшируем при установке
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './supabase.js?v=53',
-  './style.css?v=53',
-  './storage.js?v=53',
-  './games.js?v=53',
-  './profile.js?v=53',
-  './sound.js?v=53',
-  './streak.js?v=53',
-  './device.js?v=53',
-  './leaderboard.js?v=53',
-  './script.js?v=53',
-  './messenger.js?v=53',
+  './supabase.js?v=54',
+  './style.css?v=54',
+  './storage.js?v=54',
+  './games.js?v=54',
+  './profile.js?v=54',
+  './sound.js?v=54',
+  './streak.js?v=54',
+  './device.js?v=54',
+  './leaderboard.js?v=54',
+  './script.js?v=54',
+  './neiro.js?v=54',
+  './messenger.js?v=54',
   './manifest.json',
   './fireek.mp4'
 ];

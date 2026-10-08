@@ -86,7 +86,8 @@ function setupSwipeNavigation() {
   let touchStartTime = 0;
   const SWIPE_THRESHOLD = 80;
   const SWIPE_TIME = 500;
-  const tabsOrder = ['games', 'utilities', 'quests', 'leaderboard', 'chat'];
+  // ✅ ФИКС: neiro добавлен в конце (в index.html он после chat)
+  const tabsOrder = ['games', 'utilities', 'quests', 'leaderboard', 'chat', 'neiro'];
 
   function showSwipeIndicator(text) {
     let el = document.querySelector('.tab-swipe-indicator');
@@ -126,7 +127,7 @@ function setupSwipeNavigation() {
     if (e.target.closest('.game-frame-wrap')) return;
     if (e.target.closest('.modal.show')) return;
     if (e.target.closest('input, textarea, select')) return;
-    if (e.target.closest('.lb-list, .games-list-panel, .chat-messages, .online-list, .dm-list, .rooms-list')) return;
+    if (e.target.closest('.lb-list, .games-list-panel, .chat-messages, .online-list, .dm-list, .rooms-list, .neiro-messages')) return;
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     touchStartTime = Date.now();
@@ -149,7 +150,7 @@ function setupSwipeNavigation() {
 }
 
 // ============================================
-// НОВОЕ: СВАЙП ОТ ЛЕВОГО КРАЯ → ВЫХОД ИЗ ИГРЫ
+// СВАЙП ОТ ЛЕВОГО КРАЯ → ВЫХОД ИЗ ИГРЫ
 // ============================================
 function setupGameBackSwipe() {
   if (gameBackSwipeSetup) return;
@@ -160,16 +161,14 @@ function setupGameBackSwipe() {
   let edgeStartTime = 0;
   let edgeTracking = false;
 
-  const EDGE_ZONE = 30;        // px от левого края — зона старта
-  const SWIPE_THRESHOLD = 80;  // минимум движения
-  const SWIPE_TIME = 500;      // максимум времени
+  const EDGE_ZONE = 30;
+  const SWIPE_THRESHOLD = 80;
+  const SWIPE_TIME = 500;
 
   document.addEventListener('touchstart', (e) => {
-    // Только когда игра открыта
     if (!window.isGameOpen) return;
     if (e.touches.length !== 1) return;
     const t = e.touches[0];
-    // Старт должен быть у левого края экрана
     if (t.clientX > EDGE_ZONE) return;
     edgeStartX = t.clientX;
     edgeStartY = t.clientY;
@@ -186,7 +185,6 @@ function setupGameBackSwipe() {
     const dy = t.clientY - edgeStartY;
     const dt = Date.now() - edgeStartTime;
 
-    // Горизонтальный свайп вправо, длинный и быстрый
     if (dt < SWIPE_TIME && dx > SWIPE_THRESHOLD && Math.abs(dy) < 60) {
       if (typeof window.vibrateDevice === 'function') window.vibrateDevice();
       if (typeof window.closeGame === 'function') {

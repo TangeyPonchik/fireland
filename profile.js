@@ -701,11 +701,11 @@ function openCase(type) {
   const revealTitle = document.getElementById('caseRevealTitle');
   const revealReward = document.getElementById('caseRevealReward');
   const revealRarity = document.getElementById('caseRevealRarity');
-  // Фикс #64: проверка на null
-  if (alarmStatus) {
-  alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
-  alarmStatus.classList.add('alarm-status-ringing');
-}
+   // Фикс #64: проверка на null элементов кейса
+  if (!modal || !revealIcon || !revealTitle || !revealReward || !revealRarity) {
+    console.warn('[openCase] Не найдены элементы модалки кейса');
+    return;
+  }
   modal.classList.add('show');
   revealIcon.textContent = '📦';
   revealTitle.textContent = 'Открываем...';

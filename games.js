@@ -2,7 +2,7 @@
 // FireLand · games.js · v27.0.6
 // Данные игр + вкладки + UI игр + меню + таймер
 // НОВОЕ: тач-меню (бургер + свайпы) для мобилок
-// Фиксы: #1, #2, #11, #12, #13, #85
+// ФИКС: initTabs — btn внутри forEach
 // ============================================
 
 // ============================================
@@ -62,7 +62,7 @@ function gamesFormatTime(sec) {
 }
 
 // ============================================
-// ВКЛАДКИ
+// ВКЛАДКИ (ФИКС: btn внутри forEach)
 // ============================================
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -86,6 +86,10 @@ function initTabs() {
       if (btn.dataset.tab === 'utilities') {
         renderUtilities();
       }
+      if (btn.dataset.tab === 'neiro') {
+        if (typeof window.neiroInit === 'function') window.neiroInit();
+        if (typeof window.neiroRenderMessages === 'function') window.neiroRenderMessages();
+      }
     });
   });
 }
@@ -107,7 +111,6 @@ let tickInterval = null;
 let lastTickTime = 0;
 let lastPlayedGameId = null;
 
-// === НОВЫЕ переменные для тач-меню ===
 let gameTouchStartX = 0;
 let gameTouchStartY = 0;
 let gameTouchStartTime = 0;
@@ -321,30 +324,19 @@ function checkGameMenuVisibility(e) {
   });
 }
 
-// === ОБНОВЛЕНО: добавлены тач-события ===
 function addGameMenuListeners() {
   if (backBtnListenersAdded) return;
-
-  // Десктоп: mousemove (как было)
   document.addEventListener('mousemove', checkGameMenuVisibility);
-
-  // Тач: свайп сверху вниз → меню, снизу вверх → закрыть
   document.addEventListener('touchstart', handleGameTouchStart, { passive: true });
   document.addEventListener('touchend', handleGameTouchEnd, { passive: true });
-
-  // На тач-устройствах бургер всегда виден
   if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
     const wrapper = document.getElementById('gameMenuWrapper');
     if (wrapper) wrapper.classList.add('visible');
   }
-
-  // Показать подсказку «Свайп вниз для меню» на 3.5 сек
   showMenuSwipeHint();
-
   backBtnListenersAdded = true;
 }
 
-// === НОВЫЕ функции для тач-меню ===
 function handleGameTouchStart(e) {
   if (!isGameOpen) return;
   const t = e.touches[0];
@@ -361,14 +353,10 @@ function handleGameTouchEnd(e) {
   const dx = t.clientX - gameTouchStartX;
   const dy = t.clientY - gameTouchStartY;
   const dt = Date.now() - gameTouchStartTime;
-
-  // Свайп сверху вниз → открыть меню (в верхней трети экрана)
   if (dt < 400 && dy > 80 && Math.abs(dx) < 60 && gameTouchStartY < window.innerHeight * 0.4) {
     toggleGameMenu();
     return;
   }
-
-  // Свайп снизу вверх → закрыть меню
   if (dt < 400 && dy < -80 && Math.abs(dx) < 60) {
     closeGameMenu();
   }
@@ -398,7 +386,6 @@ function showMenuSwipeHint() {
   setTimeout(() => hint.classList.remove('show'), 3500);
 }
 
-// === ОБНОВЛЕНО: снимаем и тач-обработчики ===
 function removeGameMenuListeners() {
   document.removeEventListener('mousemove', checkGameMenuVisibility);
   document.removeEventListener('touchstart', handleGameTouchStart);
@@ -749,7 +736,6 @@ window.addGameMenuListeners = addGameMenuListeners;
 window.removeGameMenuListeners = removeGameMenuListeners;
 window.closeGameMenu = closeGameMenu;
 
-// === НОВЫЕ экспорты для тач-меню ===
 window.toggleGameMenu = toggleGameMenu;
 window.handleGameTouchStart = handleGameTouchStart;
 window.handleGameTouchEnd = handleGameTouchEnd;
