@@ -13,11 +13,11 @@
   .ico{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
   .hud{position:absolute;inset:0;pointer-events:none;z-index:5}
   .top-center{position:absolute;top:calc(14px + env(safe-area-inset-top,0));left:50%;transform:translateX(-50%);display:flex;gap:8px}
-  .team-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:16px;font-weight:800;font-size:15px;background:rgba(10,14,26,0.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.08)}
+  .team-pill{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:16px;font-weight:800;font-size:15px;background:rgba(10,14,26,0.75);border:1px solid rgba(255,255,255,0.08)}
   .team-pill.red{color:#ff4d5e;border-color:rgba(255,77,94,0.3)}
   .team-pill.blue{color:#4d9eff;border-color:rgba(77,158,255,0.3)}
   .team-pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
-  .player-stats{position:absolute;top:calc(14px + env(safe-area-inset-top,0));right:calc(14px + env(safe-area-inset-right,0));display:flex;flex-direction:column;gap:5px;padding:12px 14px;border-radius:16px;background:rgba(10,14,26,0.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.08);font-size:12px;font-weight:700;min-width:150px}
+  .player-stats{position:absolute;top:calc(14px + env(safe-area-inset-top,0));right:calc(14px + env(safe-area-inset-right,0));display:flex;flex-direction:column;gap:5px;padding:12px 14px;border-radius:16px;background:rgba(10,14,26,0.75);border:1px solid rgba(255,255,255,0.08);font-size:12px;font-weight:700;min-width:150px}
   .stat-row{display:flex;justify-content:space-between;gap:12px;align-items:center}
   .stat-row .label{opacity:0.55}
   .stat-row .val{color:#7dffb0;font-size:15px;font-weight:800;display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
@@ -25,23 +25,23 @@
   .stat-row .val.coins{color:#fbbf24}
   .stat-row .val.apples{color:#ef4444}
   .effects-bar{position:absolute;top:calc(90px + env(safe-area-inset-top,0));left:calc(14px + env(safe-area-inset-left,0));display:flex;flex-direction:column;gap:6px}
-  .effect-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(10,14,26,0.8);backdrop-filter:blur(12px);border:1px solid rgba(125,255,176,0.4);font-size:12px;font-weight:800;color:#7dffb0}
+  .effect-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(10,14,26,0.8);border:1px solid rgba(125,255,176,0.4);font-size:12px;font-weight:800;color:#7dffb0}
   .effect-chip .timer{opacity:0.7;font-family:monospace;font-variant-numeric:tabular-nums}
-  .mini-map-wrap{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0));right:calc(14px + env(safe-area-inset-right,0));padding:6px;border-radius:14px;background:rgba(10,14,26,0.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1)}
+  .mini-map-wrap{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0));right:calc(14px + env(safe-area-inset-right,0));padding:6px;border-radius:14px;background:rgba(10,14,26,0.75);border:1px solid rgba(255,255,255,0.1)}
   #miniMap{display:block;border-radius:10px;width:120px;height:120px}
   @media (max-width:480px){#miniMap{width:90px;height:90px}}
-  .controls-hint{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0));left:calc(14px + env(safe-area-inset-left,0));padding:10px 16px;border-radius:12px;background:rgba(10,14,26,0.6);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.06);font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);line-height:1.7}
+  .controls-hint{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom,0));left:calc(14px + env(safe-area-inset-left,0));padding:10px 16px;border-radius:12px;background:rgba(10,14,26,0.6);border:1px solid rgba(255,255,255,0.06);font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);line-height:1.7}
   .controls-hint .row{display:flex;align-items:center;gap:6px}
   .controls-hint kbd{display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,0.1);font-weight:700;color:rgba(255,255,255,0.9);font-family:inherit;font-size:10px}
   @media (pointer:coarse){.controls-hint{display:none}}
-  .shield-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 24px;border-radius:30px;background:rgba(77,158,255,0.2);border:2px solid rgba(77,158,255,0.5);backdrop-filter:blur(10px);color:#7db8ff;font-weight:800;font-size:14px;letter-spacing:1px;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:8px;pointer-events:none}
+  .shield-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:10px 24px;border-radius:30px;background:rgba(77,158,255,0.2);border:2px solid rgba(77,158,255,0.5);color:#7db8ff;font-weight:800;font-size:14px;letter-spacing:1px;opacity:0;transition:opacity 0.3s;display:flex;align-items:center;gap:8px;pointer-events:none}
   .shield-indicator.show{opacity:1}
   .boss-bar{position:absolute;top:calc(60px + env(safe-area-inset-top,0));left:50%;transform:translateX(-50%);width:min(300px,80vw);display:none;z-index:6}
   .boss-bar.show{display:block}
   .boss-bar-inner{height:14px;background:rgba(0,0,0,0.6);border-radius:7px;overflow:hidden;border:2px solid rgba(255,77,94,0.6)}
   .boss-bar-fill{height:100%;width:100%;background:linear-gradient(90deg,#ff4d5e,#ff8c42);transition:width 0.3s}
   .boss-bar-label{text-align:center;font-size:11px;font-weight:800;color:#ff8c96;margin-top:4px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:6px}
-  .hud-btn{position:absolute;width:40px;height:40px;border-radius:12px;background:rgba(10,14,26,0.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto;transition:background 0.15s;font-family:inherit;padding:0;font-size:18px}
+  .hud-btn{position:absolute;width:40px;height:40px;border-radius:12px;background:rgba(10,14,26,0.75);border:1px solid rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto;transition:background 0.15s;font-family:inherit;padding:0;font-size:18px}
   .hud-btn:hover{background:rgba(30,40,60,0.9)}
   .hud-btn.top-left{top:calc(14px + env(safe-area-inset-top,0));left:calc(14px + env(safe-area-inset-left,0))}
   .hud-btn.top-left.second{top:calc(62px + env(safe-area-inset-top,0))}
@@ -100,7 +100,7 @@
   .mission-desc{font-size:11px;opacity:0.6}
   .mission-progress{font-size:11px;font-weight:800;color:#fbbf24}
   .mission-check{color:#22c55e}
-  #death-screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(16px);z-index:15;padding:20px}
+  #death-screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);z-index:15;padding:20px}
   #death-screen.show{display:flex}
   .death-card{text-align:center;padding:36px 32px;border-radius:24px;max-width:380px;width:100%;background:#14182a;border:1px solid rgba(255,77,94,0.2)}
   .death-icon-svg{width:96px;height:96px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,77,94,0.1);color:#ff4d5e}
@@ -110,7 +110,7 @@
   .death-stat{padding:12px;border-radius:14px;background:rgba(255,255,255,0.04)}
   .death-stat .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
   .death-stat .l{font-size:10px;opacity:0.5;margin-top:2px;letter-spacing:1px;text-transform:uppercase;font-weight:700}
-  #tutorial{position:fixed;inset:0;z-index:99999;background:rgba(6,7,13,0.92);backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;padding:20px}
+  #tutorial{position:fixed;inset:0;z-index:99999;background:rgba(6,7,13,0.92);display:none;align-items:center;justify-content:center;padding:20px}
   #tutorial.show{display:flex}
   .tut-card{width:100%;max-width:480px;border-radius:24px;background:#14182a;border:1px solid rgba(255,255,255,0.1);padding:36px 28px 24px;text-align:center;position:relative}
   .tut-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#4d9eff;border-radius:24px 24px 0 0}
@@ -135,7 +135,7 @@
   #boost-btn{position:absolute;bottom:calc(34px + env(safe-area-inset-bottom,0));left:calc(34px + env(safe-area-inset-left,0));width:84px;height:84px;border-radius:50%;background:rgba(125,255,176,0.12);border:2px solid rgba(125,255,176,0.4);color:#7dffb0;font-size:11px;font-weight:900;letter-spacing:1px;display:none;align-items:center;justify-content:center;z-index:6;touch-action:none;font-family:inherit;user-select:none;pointer-events:auto}
   @media (pointer:coarse){#boost-btn{display:flex}}
   .toast{position:fixed;top:calc(24px + env(safe-area-inset-top,0));left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:16px;background:#14182a;border:1px solid rgba(251,191,36,0.4);color:#fbbf24;font-weight:800;font-size:14px;z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,0.5);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:opacity 0.4s}
-  #pause-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,7,13,0.85);backdrop-filter:blur(20px);z-index:30;flex-direction:column;gap:24px}
+  #pause-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,7,13,0.85);z-index:30;flex-direction:column;gap:24px}
   #pause-overlay.show{display:flex}
   .pause-title{font-size:32px;font-weight:900;color:#4d9eff;letter-spacing:-1px}
   .pause-count{font-size:72px;font-weight:900;color:#fbbf24;font-variant-numeric:tabular-nums}
@@ -161,7 +161,7 @@
   .lobby-player-badge{font-size:11px;font-weight:800;color:#fbbf24;letter-spacing:0.5px}
   .lobby-room-actions{display:flex;flex-direction:column;gap:10px}
   .lobby-room-status{font-size:12px;opacity:0.6;font-weight:600;margin-bottom:10px}
-  #lobbies-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);z-index:99999;padding:20px}
+  #lobbies-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:99999;padding:20px}
   #lobbies-modal.show{display:flex}
   .lobbies-card{width:100%;max-width:460px;background:#14182a;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:24px;max-height:80vh;display:flex;flex-direction:column}
   .lobbies-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
@@ -430,6 +430,9 @@ const FEATURES = {
   gamepad: true,
   notifications: false
 };
+
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const RENDER_SCALE = IS_MOBILE ? 0.5 : 1;
 
 /* ============ VIBRATION ============ */
 function vibrate(pattern){
@@ -705,7 +708,7 @@ const BOOST_MIN_LENGTH = 8;
 const SEGMENT_SPACING = 6;
 const PLAYER_START_LENGTH = 25;
 const BOT_START_MIN = 5, BOT_START_MAX = 25;
-const FOOD_COUNT = 350;
+const FOOD_COUNT = IS_MOBILE ? 150 : 350;
 const MAX_FOOD = 500;
 const FOOD_MARGIN = 100;
 const TICK_RATE = 33;
@@ -715,7 +718,7 @@ const SPEED_LERP = 0.25;
 const INVULN_TIME = 5000;
 const BOT_COUNT = 10;
 const BOT_WALL_AVOID = 150;
-const BOT_AGGRO_RANGE = 180;
+const BOT_AGGRO_RANGE = 120;
 const BOT_EAT_RANGE = 500;
 const BOT_ALLY_SPACE = 110;
 const THICKNESS_MAX = 1.6;
@@ -732,7 +735,7 @@ const BOLT_SPAWN_CHANCE = 0.002;
 const MEAT_VALUE = 1.5;
 const MEAT_BOOST_DURATION = 4000;
 const MOUSE_DEAD_ZONE = 100;
-const MINIMAP_INTERVAL = 100;
+const MINIMAP_INTERVAL = IS_MOBILE ? 500 : 100;
 const TEAM_RED = 'red', TEAM_BLUE = 'blue';
 
 function getCoinReward(len){
@@ -1094,7 +1097,7 @@ class Snake {
     const prevAlpha = ctx.globalAlpha;
     if (invuln) ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.01));
 
-    const step = segCount > 80 ? 2 : 1;
+    const step = segCount > 40 ? 3 : (segCount > 20 ? 2 : 1);
     for (let i = segCount - 1; i >= 0; i -= step){
       const seg = this.segments[i];
       if (!seg) continue;
@@ -1107,8 +1110,12 @@ class Snake {
 
     const head = this.segments[0];
     const headR = this.getHeadRadius();
-    ctx.shadowColor = this.skin.colors[0];
-    ctx.shadowBlur = this.boosting ? 12 : 0;
+    if (this.isLocal && this.boosting){
+      ctx.shadowColor = this.skin.colors[0];
+      ctx.shadowBlur = 10;
+    } else {
+      ctx.shadowBlur = 0;
+    }
     ctx.beginPath();
     ctx.arc(head.x, head.y, headR, 0, Math.PI * 2);
     ctx.fillStyle = this.skin.colors[0];
@@ -1422,7 +1429,7 @@ class Bot extends Snake {
       if (!h) return;
       const d2 = distSq(h.x, h.y, this.x, this.y);
       if (d2 > bestDist * bestDist) return;
-      if (this.length < c.length * 1.5) return;
+      if (this.length < c.length * 1.2) return;
       bestDist = Math.sqrt(d2);
       best = c;
     };
@@ -1471,7 +1478,7 @@ class Bot extends Snake {
   update(){
     if (!this.alive) return;
 
-    if (this.tick % 20 === 0){
+    if (this.tick % 40 === 0){
       const moved = distSq(this.x, this.y, this.lastPos.x, this.lastPos.y);
       if (moved < 100) this.stuckCounter++;
       else this.stuckCounter = 0;
@@ -1802,6 +1809,47 @@ function checkCollisions(){
   for (const cp of checkPoints){
     for (const p of players.values()){
       if (p.id === mySnake.id || !p.alive || p.team === mySnake.team) continue;
+
+      if (headHitsBody(cp, mySnake, p)){
+        lastDeathPos = { x: mySnake.x, y: mySnake.y };
+        if (channel) channel.send({
+          type: 'broadcast', event: 'player_died',
+          payload: { id: myId, x: mySnake.x, y: mySnake.y, team: mySnake.team, killer: p.id, length: mySnake.length }
+        });
+        die('Столкновение с врагом', p.id);
+        return;
+      }
+
+      const pHead = p.segments[0];
+      if (pHead && mySnake.segments.length > 2){
+        for (let i = 2; i < Math.min(mySnake.segments.length, 30); i += 2){
+          const seg = mySnake.segments[i];
+          if (!seg) continue;
+          const segR = mySnake.getSegmentRadius(i);
+          const pHeadR = p.getHeadRadius();
+          const hitDist = pHeadR * 0.6 + segR * 0.6;
+          if (distSq(pHead.x, pHead.y, seg.x, seg.y) < hitDist * hitDist){
+            if (!p.alive) continue;
+            kills++;
+            const r = getCoinReward(p.length);
+            coins += r;
+            saveCoins(coins);
+            updateCoinsDisplay();
+            showToast(`<span class="ico">${svg('coin', 14)}</span> +${r}`);
+            updateMissionProgress('kills', 1);
+            SFX.kill();
+            vibrate(60);
+            p.alive = false;
+            spawnDeathFood(p);
+            if (channel) channel.send({
+              type: 'broadcast', event: 'player_died',
+              payload: { id: p.id, x: p.x, y: p.y, team: p.team, killer: myId, length: p.length }
+            });
+            break;
+          }
+        }
+      }
+
       const hh = checkHeadHeadCollisionAt(cp, mySnake, p);
       if (hh.hit){
         if (hh.winner === mySnake){
@@ -1815,23 +1863,18 @@ function checkCollisions(){
           updateMissionProgress('kills', 1);
           SFX.kill();
           vibrate(60);
+          p.alive = false;
+          spawnDeathFood(p);
           if (channel) channel.send({
             type: 'broadcast', event: 'player_died',
             payload: { id: p.id, x: p.x, y: p.y, team: p.team, killer: myId, length: p.length }
           });
-          p.alive = false;
-          spawnDeathFood(p);
           continue;
         } else {
           lastDeathPos = { x: mySnake.x, y: mySnake.y };
           die('Лобовое столкновение', p.id);
           return;
         }
-      }
-      if (headHitsBody(cp, mySnake, p)){
-        lastDeathPos = { x: mySnake.x, y: mySnake.y };
-        die('Столкновение с врагом', p.id);
-        return;
       }
     }
     for (const b of bots){
@@ -1946,16 +1989,31 @@ function checkBotCollisions(){
     if (!bot.alive) continue;
     for (const other of bots){
       if (other.id === bot.id || !other.alive || other.team === bot.team) continue;
+      const otherHead = other.segments[0];
+      if (!otherHead) continue;
+
       const hh = checkHeadHeadCollisionAt(head, bot, other);
       if (hh.hit){
-        if (hh.winner === bot){ killBot(other); bot.kills++; }
-        else if (hh.winner === other){ killBot(bot); other.kills++; }
-        else { killBot(other); killBot(bot); }
+        if (hh.winner === bot){
+          killBot(other);
+          bot.kills++;
+        } else if (hh.winner === other){
+          killBot(bot);
+          other.kills++;
+        } else {
+          killBot(other);
+          killBot(bot);
+        }
         break;
       }
       if (headHitsBody(head, bot, other)){
         killBot(bot);
         other.kills++;
+        break;
+      }
+      if (headHitsBody(otherHead, other, bot)){
+        killBot(other);
+        bot.kills++;
         break;
       }
     }
@@ -2083,8 +2141,10 @@ function setupInput(){
 /* ============ РЕНДЕР ============ */
 let resizeTimeout = null;
 function resize(){
-  elCanvas.width = window.innerWidth;
-  elCanvas.height = window.innerHeight;
+  elCanvas.width = Math.floor(window.innerWidth * RENDER_SCALE);
+  elCanvas.height = Math.floor(window.innerHeight * RENDER_SCALE);
+  elCanvas.style.width = window.innerWidth + 'px';
+  elCanvas.style.height = window.innerHeight + 'px';
 }
 window.addEventListener('resize', () => {
   if (resizeTimeout) clearTimeout(resizeTimeout);
@@ -2123,11 +2183,13 @@ function drawGrid(){
 
 function drawBoxes(){
   for (const b of boxes){
-    const pulse = 1 + Math.sin(b.pulse) * 0.1;
+    const pulse = IS_MOBILE ? 1 : (1 + Math.sin(b.pulse) * 0.1);
     ctx.save();
     ctx.translate(b.x, b.y);
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur = 25;
+    if (!IS_MOBILE){
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 25;
+    }
     ctx.beginPath();
     ctx.arc(0, 0, b.r * pulse, 0, Math.PI * 2);
     const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, b.r * pulse);
@@ -2162,11 +2224,13 @@ function drawBoxes(){
 
 function drawBolts(){
   for (const b of bolts){
-    const pulse = 1 + Math.sin(b.pulse) * 0.15;
+    const pulse = IS_MOBILE ? 1 : (1 + Math.sin(b.pulse) * 0.15);
     ctx.save();
     ctx.translate(b.x, b.y);
-    ctx.shadowColor = '#4d9eff';
-    ctx.shadowBlur = 30;
+    if (!IS_MOBILE){
+      ctx.shadowColor = '#4d9eff';
+      ctx.shadowBlur = 30;
+    }
     ctx.beginPath();
     ctx.arc(0, 0, b.r * pulse, 0, Math.PI * 2);
     ctx.fillStyle = b.charging ? 'rgba(77,158,255,0.8)' : 'rgba(77,158,255,0.3)';
@@ -2430,7 +2494,7 @@ function startShieldTimer(){
 
 function startEffectsUpdater(){
   if (effectsInterval) clearInterval(effectsInterval);
-  effectsInterval = setInterval(renderEffectsBar, 200);
+  effectsInterval = setInterval(renderEffectsBar, IS_MOBILE ? 500 : 200);
 }
 
 function renderEffectsBar(){
@@ -2536,14 +2600,36 @@ function die(reason, killerId = null){
 }
 
 let frameCounter = 0;
+let renderSkip = 0;
 function gameLoop(){
   rafId = requestAnimationFrame(gameLoop);
   frameCounter++;
   if (gameState === 'playing'){
+    if (IS_MOBILE){
+      renderSkip = (renderSkip + 1) % 2;
+      if (renderSkip !== 0){
+        pollGamepad();
+        if (input.boosting && !lastBoostState) SFX.boost();
+        lastBoostState = input.boosting;
+        if (mySnake && mySnake.alive){
+          if (input.hasInput) mySnake.targetAngle = input.targetAngle;
+          mySnake.boosting = input.boosting;
+          mySnake.update();
+          camera.x += (mySnake.x - camera.x) * 0.14;
+          camera.y += (mySnake.y - camera.y) * 0.14;
+          checkCollisions();
+        }
+        if (bots.length > 0){
+          for (const b of bots) b.update();
+          checkBotCollisions();
+        }
+        return;
+      }
+    }
     pollGamepad();
     if (input.boosting && !lastBoostState) SFX.boost();
     lastBoostState = input.boosting;
-    if (isBotMode){
+    if (bots.length > 0){
       for (const b of bots) b.update();
       checkBotCollisions();
     }
@@ -2556,7 +2642,7 @@ function gameLoop(){
       camera.x += (mySnake.x - camera.x) * 0.14;
       camera.y += (mySnake.y - camera.y) * 0.14;
       checkCollisions();
-      if (frameCounter % 3 === 0) updateHUD();
+      if (frameCounter % (IS_MOBILE ? 6 : 3) === 0) updateHUD();
     }
     updateBoxes();
     if (bossSnake && bossSnake.alive){
