@@ -1,310 +1,288 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест скорости автокликера</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background: #1a1a2e;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-        .container {
-            background: #16213e;
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            text-align: center;
-            width: 400px;
-            max-width: 95%;
-            border: 1px solid #0f3460;
-        }
-        h1 {
-            font-size: 22px;
-            margin-bottom: 20px;
-            color: #e94560;
-            letter-spacing: 1px;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .stat-box {
-            background: #0f3460;
-            padding: 15px 10px;
-            border-radius: 12px;
-        }
-        .stat-box span {
-            display: block;
-            font-size: 28px;
-            font-weight: bold;
-            color: #fff;
-            margin-top: 5px;
-        }
-        .stat-label {
-            font-size: 14px;
-            color: #aaa;
-        }
-        .click-zone {
-            background: #1a1a2e;
-            border: 3px dashed #e94560;
-            border-radius: 20px;
-            padding: 40px 20px;
-            cursor: pointer;
-            transition: all 0.1s;
-            margin-bottom: 20px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .click-zone:active {
-            background: #2a2a4e;
-            transform: scale(0.96);
-        }
-        .click-zone p {
-            font-size: 18px;
-            color: #ccc;
-            pointer-events: none;
-        }
-        .click-zone .big {
-            font-size: 42px;
-            color: #fff;
-            font-weight: bold;
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        button {
-            background: #0f3460;
-            border: none;
-            color: #fff;
-            padding: 10px 24px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:hover {
-            background: #e94560;
-            color: #fff;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        .result {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #e94560;
-            min-height: 24px;
-        }
-        .green {
-            color: #4ecca3 !important;
-        }
-        .note {
-            margin-top: 15px;
-            font-size: 12px;
-            color: #777;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>CPS Тест</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #12141c;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  h1 { margin-bottom: 20px; font-weight: 500; letter-spacing: 1px; }
+  #wrap {
+    position: relative;
+    width: 600px;
+    height: 400px;
+    max-width: 95vw;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.15);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    background: #1b1e2b;
+  }
+  #stats {
+    margin-top: 20px;
+    display: flex;
+    gap: 40px;
+    font-size: 22px;
+  }
+  #stats span { color: #00c8ff; font-weight: bold; }
+  #hint { margin-top: 10px; color: #888; font-size: 14px; }
+  button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #00c8ff;
+    color: #12141c;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  button:hover { background: #33d6ff; }
+  button:disabled { background: #444; color: #888; cursor: not-allowed; }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h1>⚡ Тест автокликера</h1>
-    
-    <div class="stats">
-        <div class="stat-box">
-            <div class="stat-label">Кликов</div>
-            <span id="clickCounter">0</span>
-        </div>
-        <div class="stat-box">
-            <div class="stat-label">Скорость</div>
-            <span id="cpsDisplay">0.00</span>
-        </div>
-    </div>
+<h1>CPS Тест — 10 секунд</h1>
 
-    <div class="click-zone" id="clickZone">
-        <p class="big">🎯</p>
-        <p>Кликай сюда или наведи автокликер</p>
-    </div>
-
-    <div class="controls">
-        <button id="startBtn">▶ Старт</button>
-        <button id="resetBtn">🔄 Сброс</button>
-    </div>
-
-    <div class="result" id="resultText">Нажми «Старт» и начни кликать</div>
-    <div class="note">Измерение происходит в реальном времени</div>
+<div id="wrap">
+  <canvas id="canvas" width="600" height="400"></canvas>
 </div>
 
+<div id="stats">
+  <div>Время: <span id="timer">10.0</span>с</div>
+  <div>CPS: <span id="cps">0.00</span></div>
+  <div>Клики: <span id="clicks">0</span></div>
+</div>
+
+<div id="hint">Кликни по полю, чтобы начать. Отсчёт начнётся с первого клика.</div>
+<button id="resetBtn" disabled>Заново</button>
+
 <script>
-    // === Игровые переменные ===
-    let clicks = 0;
-    let isRunning = false;
-    let lastTime = Date.now();
-    let timerId = null;
-    let cps = 0;
+(function() {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const timerEl = document.getElementById('timer');
+  const cpsEl = document.getElementById('cps');
+  const clicksEl = document.getElementById('clicks');
+  const resetBtn = document.getElementById('resetBtn');
+  const hintEl = document.getElementById('hint');
 
-    // === DOM ===
-    const clickZone = document.getElementById('clickZone');
-    const clickCounter = document.getElementById('clickCounter');
-    const cpsDisplay = document.getElementById('cpsDisplay');
-    const resultText = document.getElementById('resultText');
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
+  const DURATION = 10; // секунд
 
-    // === Функция обработки клика ===
-    function handleClick() {
-        if (!isRunning) {
-            resultText.textContent = '❌ Сначала нажми "Старт"!';
-            return;
-        }
-        clicks++;
-        clickCounter.textContent = clicks;
-        updateCPS();
+  let state = 'idle';   // idle | running | finished
+  let clicks = 0;
+  let startTime = 0;
+  let rafId = null;
+
+  // частицы для визуального отклика
+  const particles = [];
+
+  function drawBackground() {
+    // градиентный фон
+    const g = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, 50,
+      canvas.width / 2, canvas.height / 2, 400
+    );
+    g.addColorStop(0, '#232838');
+    g.addColorStop(1, '#12141c');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // сетка
+    ctx.strokeStyle = 'rgba(0, 200, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < canvas.width; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+  }
+
+  function drawCentralText() {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (state === 'idle') {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = 'bold 32px Segoe UI, Arial';
+      ctx.fillText('Кликни, чтобы начать', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillStyle = 'rgba(0,200,255,0.7)';
+      ctx.font = '18px Segoe UI, Arial';
+      ctx.fillText('10 секунд на максимальный CPS', canvas.width / 2, canvas.height / 2 + 25);
+    } else if (state === 'running') {
+      const elapsed = (performance.now() - startTime) / 1000;
+      const remaining = Math.max(0, DURATION - elapsed);
+      ctx.fillStyle = 'rgba(0,200,255,0.9)';
+      ctx.font = 'bold 90px Segoe UI, Arial';
+      ctx.fillText(remaining.toFixed(1), canvas.width / 2, canvas.height / 2);
+    } else if (state === 'finished') {
+      ctx.fillStyle = '#00c8ff';
+      ctx.font = 'bold 28px Segoe UI, Arial';
+      ctx.fillText('Готово!', canvas.width / 2, canvas.height / 2 - 40);
+      const cps = clicks / DURATION;
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 72px Segoe UI, Arial';
+      ctx.fillText(cps.toFixed(2), canvas.width / 2, canvas.height / 2 + 30);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '20px Segoe UI, Arial';
+      ctx.fillText('CPS', canvas.width / 2, canvas.height / 2 + 90);
+    }
+  }
+
+  function drawParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.03;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = '#00c8ff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    drawBackground();
+    drawParticles();
+    drawCentralText();
+
+    if (state === 'running') {
+      rafId = requestAnimationFrame(render);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function updateUI() {
+    const elapsed = state === 'idle' ? 0 : Math.min(DURATION, (performance.now() - startTime) / 1000);
+    const remaining = Math.max(0, DURATION - elapsed);
+    timerEl.textContent = remaining.toFixed(1);
+    clicksEl.textContent = clicks;
+    const cps = state === 'idle' ? 0 : clicks / Math.max(elapsed, 0.001);
+    cpsEl.textContent = (state === 'finished' ? clicks / DURATION : cps).toFixed(2);
+  }
+
+  function startTest() {
+    state = 'running';
+    clicks = 0;
+    startTime = performance.now();
+    hintEl.textContent = 'Кликай как можно быстрее!';
+    resetBtn.disabled = true;
+    if (!rafId) render();
+    updateUI();
+  }
+
+  function finishTest() {
+    state = 'finished';
+    clicksEl.textContent = clicks;
+    cpsEl.textContent = (clicks / DURATION).toFixed(2);
+    timerEl.textContent = '0.0';
+    hintEl.textContent = 'Нажми «Заново», чтобы попробовать снова.';
+    resetBtn.disabled = false;
+    render();
+  }
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (state === 'finished') return;
+
+    if (state === 'idle') {
+      startTest();
+      // первый клик тоже считается
     }
 
-    // === Обновление CPS ===
-    function updateCPS() {
-        const now = Date.now();
-        const delta = (now - lastTime) / 1000; // секунды
-        if (delta > 0) {
-            // Вычисляем мгновенную скорость: 1 клик / прошедшее время с последнего клика
-            // Но чтобы не прыгало, используем среднюю за последние 0.5 сек через таймер
-        }
+    if (state === 'running') {
+      const elapsed = (performance.now() - startTime) / 1000;
+      if (elapsed >= DURATION) return;
+      clicks++;
+
+      // частицы в точке клика
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: 2 + Math.random() * 3,
+          life: 1
+        });
+      }
+
+      updateUI();
     }
+  });
 
-    // === Главный цикл обновления (раз в 100мс) ===
-    function updateStats() {
-        if (!isRunning) return;
-        
-        // Считаем CPS за последние 2 секунды
-        // В данном случае мы просто показываем текущую скорость,
-        // которая обновляется при каждом клике через setInterval.
-        
-        // Для простоты и наглядности: каждый тик таймера пересчитываем CPS по общему времени
-        const now = Date.now();
-        const elapsedSeconds = (now - lastTime) / 1000;
-        
-        if (elapsedSeconds > 0.5) { // Обновляем только если прошло полсекунды (для стабильности)
-            // Если кликов нет, скорость падает
-            if (clicks === 0) {
-                cps = 0;
-            } else {
-                // CPS = общее количество кликов / общее время в секундах
-                const totalTimeSec = (now - lastTime) / 1000;
-                cps = clicks / totalTimeSec;
-            }
-            cpsDisplay.textContent = cps.toFixed(2);
-        }
-        
-        // Если скорость очень высокая (более 20), предупреждаем
-        if (cps > 20 && isRunning) {
-            resultText.textContent = '🔥 Супер-скорость! Это автокликер?';
-            resultText.classList.add('green');
-        } else if (cps > 10 && isRunning) {
-            resultText.textContent = '⚡ Очень быстро!';
-        } else if (isRunning) {
-            resultText.textContent = '🖱️ Кликай или используй автокликер...';
-            resultText.classList.remove('green');
-        }
+  // глобальный таймер для точного завершения
+  function tick() {
+    if (state === 'running') {
+      const elapsed = (performance.now() - startTime) / 1000;
+      if (elapsed >= DURATION) {
+        finishTest();
+        return;
+      }
+      updateUI();
+      setTimeout(tick, 50);
     }
+  }
 
-    // === Запуск теста ===
-    function startTest() {
-        if (isRunning) return;
-        
-        // Сброс данных перед стартом
-        clicks = 0;
-        clickCounter.textContent = '0';
-        cpsDisplay.textContent = '0.00';
-        cps = 0;
-        lastTime = Date.now(); // Обнуляем таймер
-        resultText.textContent = '⏳ Запуск...';
-        resultText.classList.remove('green');
-        
-        isRunning = true;
-        startBtn.textContent = '⏹ Стоп';
-        
-        // Запускаем обновление статистики раз в 100мс
-        if (timerId) clearInterval(timerId);
-        timerId = setInterval(updateStats, 100);
-        
-        resultText.textContent = '✅ Тест запущен! Кликай по зоне.';
-    }
+  // переопределим startTest, чтобы запускать tick
+  const originalStart = startTest;
+  startTest = function() {
+    originalStart();
+    tick();
+  };
 
-    // === Остановка теста ===
-    function stopTest() {
-        if (!isRunning) return;
-        isRunning = false;
-        clearInterval(timerId);
-        timerId = null;
-        startBtn.textContent = '▶ Старт';
-        
-        // Фиксируем финальную скорость
-        const now = Date.now();
-        const totalSec = (now - lastTime) / 1000;
-        if (totalSec > 0 && clicks > 0) {
-            cps = clicks / totalSec;
-        } else {
-            cps = 0;
-        }
-        cpsDisplay.textContent = cps.toFixed(2);
-        resultText.textContent = `🏁 Готово! Итоговая скорость: ${cps.toFixed(2)} кликов/сек`;
-        resultText.classList.add('green');
-    }
+  resetBtn.addEventListener('click', () => {
+    state = 'idle';
+    clicks = 0;
+    particles.length = 0;
+    timerEl.textContent = '10.0';
+    cpsEl.textContent = '0.00';
+    clicksEl.textContent = '0';
+    hintEl.textContent = 'Кликни по полю, чтобы начать. Отсчёт начнётся с первого клика.';
+    resetBtn.disabled = true;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    render();
+  });
 
-    // === Полный сброс ===
-    function resetTest() {
-        // Если тест запущен, сначала остановим
-        if (isRunning) {
-            clearInterval(timerId);
-            timerId = null;
-            isRunning = false;
-            startBtn.textContent = '▶ Старт';
-        }
-        
-        clicks = 0;
-        cps = 0;
-        clickCounter.textContent = '0';
-        cpsDisplay.textContent = '0.00';
-        lastTime = Date.now();
-        resultText.textContent = '🔄 Сброшено. Нажми "Старт" для нового теста.';
-        resultText.classList.remove('green');
-    }
-
-    // === Обработчики кнопок ===
-    clickZone.addEventListener('click', handleClick);
-
-    startBtn.addEventListener('click', () => {
-        if (isRunning) {
-            stopTest();
-        } else {
-            startTest();
-        }
-    });
-
-    resetBtn.addEventListener('click', resetTest);
-
-    // === Поддержка автокликера (дополнительно) ===
-    // Если автокликер делает клики слишком часто, браузер может их не пропускать,
-    // поэтому этот инструмент покажет реальную скорость, которую видит браузер.
-
-    console.log('⚡ Тест автокликера загружен. Нажми Старт!');
+  // стартовый рендер
+  render();
+})();
 </script>
 </body>
 </html>
