@@ -136,7 +136,7 @@ async function neiroAsk(prompt, options = {}) {
         messages,
         temperature: 0.8,
         max_tokens: 400,
-        stream: true,
+         stream: false,
       }),
       signal: controller.signal,
     });
@@ -150,11 +150,9 @@ async function neiroAsk(prompt, options = {}) {
       throw new Error(errorMsg);
     }
 
-    // ===== СТРИМИНГ =====
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let answer = '';
-    let sseBuffer = '';
+// ===== БЕЗ СТРИМИНГА =====
+const data = await response.json();
+let answer = data.choices?.[0]?.message?.content || '(пустой ответ)';
 
     neiroHideThinking();
     const box = document.getElementById('neiroMessages');
@@ -168,30 +166,7 @@ async function neiroAsk(prompt, options = {}) {
       streamTextEl = document.getElementById('neiroStreamText');
     }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      sseBuffer += decoder.decode(value, { stream: true });
-      const lines = sseBuffer.split('\n');
-      sseBuffer = lines.pop() || '';
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === 'data: [DONE]') continue;
-        if (trimmed.startsWith('data: ')) {
-          try {
-            const json = JSON.parse(trimmed.slice(6));
-            const delta = json.choices?.[0]?.delta?.content;
-            if (delta) {
-              answer += delta;
-              if (streamTextEl) streamTextEl.textContent = answer;
-              if (box) box.scrollTop = box.scrollHeight;
-            }
-          } catch (e) {}
-        }
-      }
-    }
-
-    if (!answer) answer = '(пустой ответ)';
+while (true) { const { done, value }... до if (!answer) answer = '(пустой ответ)';
 
     NEIRO.history.push({ role: 'user', content: prompt.trim() });
     NEIRO.history.push({ role: 'assistant', content: answer });
