@@ -61,16 +61,9 @@ FireLand — игровая платформа в браузере. Работа
   minInterval: 2000,
   maxHistoryLength: 15,
   currentModel: localStorage.getItem('fireland_neiro_model') || 'default',
-  modelsList: [
-    { id: 'default', name: '🤖 Auto (LLM7 выбирает)', desc: 'LLM7 сам подберёт модель' },
-    { id: 'fast', name: '⚡ Fast', desc: 'Быстрая лёгкая модель' },
-    { id: 'gpt-4o-mini', name: '🟢 GPT-4o Mini', desc: 'OpenAI, быстрая' },
-    { id: 'gpt-4o', name: '🧠 GPT-4o', desc: 'OpenAI, умная' },
-    { id: 'deepseek-v3', name: '🐋 DeepSeek V3', desc: 'Китайская, хороша в коде' },
-    { id: 'deepseek-r1', name: '🧩 DeepSeek R1', desc: 'Reasoning, думает долго' },
-    { id: 'mistral', name: '🌪️ Mistral', desc: 'Европейская, быстрая' },
-    { id: 'llama-3.3-70b', name: '🦙 Llama 3.3 70B', desc: 'Meta, мощная' },
-  ],
+modelsList: [
+  { id: 'turboderp/Qwen3.8-27B-exl3', name: '⚡ Qwen3.8 27B', desc: 'UncloseAI, без ключа' },
+],
 };
 
 function neiroGetState() { return window.state || null; }
@@ -133,13 +126,13 @@ async function neiroAsk(prompt, options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const response = await fetch('https://api.llm7.io/v1/chat/completions', {
+    const response = await fetch('https://hermes.ai.unturf.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-'Authorization': 'Bearer ' + (window.NEIRO_TOKEN || 'unused'),
-},
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        model: NEIRO.currentModel || 'default',
+        model: 'turboderp/Qwen3.8-27B-exl3',
         messages,
         temperature: 0.8,
         max_tokens: 400,
@@ -152,9 +145,8 @@ async function neiroAsk(prompt, options = {}) {
     if (!response.ok) {
       let errorMsg = `HTTP ${response.status}`;
       if (response.status === 429) errorMsg = 'Слишком много запросов. Подожди 60 секунд';
-      else if (response.status === 500) errorMsg = 'Сервер LLM7 перегружен. Попробуй через 10 секунд';
-      else if (response.status === 402) errorMsg = 'Лимит токенов исчерпан. Попробуй завтра';
-      else if (response.status === 404) errorMsg = 'Модель не найдена. Выбери другую в настройках';
+      else if (response.status === 500) errorMsg = 'Сервер UncloseAI перегружен. Попробуй через 10 секунд';
+      else if (response.status === 502) errorMsg = 'Модель временно недоступна. Попробуй позже';
       throw new Error(errorMsg);
     }
 
@@ -214,9 +206,9 @@ async function neiroAsk(prompt, options = {}) {
     console.warn('[Neiro] Ошибка:', e);
     let msg = e.message || 'Не удалось получить ответ';
     if (e.name === 'AbortError') {
-      msg = 'Сервер не ответил за 60 секунд. Выбери модель «fast» в настройках';
+      msg = 'Сервер не ответил за 60 секунд. Попробуй позже';
     } else if (e.message === 'Failed to fetch') {
-      msg = 'Нет соединения с LLM7. Проверь интернет, VPN или открой через localhost:3000';
+      msg = 'Нет соединения с UncloseAI. Проверь интернет или открой через localhost:3000';
     }
     return { ok: false, error: msg };
   } finally {
