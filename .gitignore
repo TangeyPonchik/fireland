@@ -22,3 +22,4 @@ node_modules/
 .scripts/.env.local
 *.key
 *.env
+neiro-token.js

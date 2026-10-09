@@ -136,9 +136,8 @@ async function neiroAsk(prompt, options = {}) {
     const response = await fetch('https://api.llm7.io/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer unused',
-      },
+'Authorization': 'Bearer ' + (window.NEIRO_TOKEN || 'unused'),
+},
       body: JSON.stringify({
         model: NEIRO.currentModel || 'default',
         messages,
