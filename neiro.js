@@ -1,6 +1,6 @@
 // ============================================
-// FireLand · neiro.js · v2.0.0
-// Нейросеть на LLM7.io (стриминг + динамические модели)
+// FireLand · neiro.js · v2.1.0
+// Нейросеть на LLM7.io (стриминг + фиксированный список моделей)
 // Выбор модели — в настройках (⚙️)
 // ============================================
 
@@ -63,6 +63,13 @@ FireLand — игровая платформа в браузере. Работа
   currentModel: localStorage.getItem('fireland_neiro_model') || 'default',
   modelsList: [
     { id: 'default', name: '🤖 Auto (LLM7 выбирает)', desc: 'LLM7 сам подберёт модель' },
+    { id: 'fast', name: '⚡ Fast', desc: 'Быстрая лёгкая модель' },
+    { id: 'gpt-4o-mini', name: '🟢 GPT-4o Mini', desc: 'OpenAI, быстрая' },
+    { id: 'gpt-4o', name: '🧠 GPT-4o', desc: 'OpenAI, умная' },
+    { id: 'deepseek-v3', name: '🐋 DeepSeek V3', desc: 'Китайская, хороша в коде' },
+    { id: 'deepseek-r1', name: '🧩 DeepSeek R1', desc: 'Reasoning, думает долго' },
+    { id: 'mistral', name: '🌪️ Mistral', desc: 'Европейская, быстрая' },
+    { id: 'llama-3.3-70b', name: '🦙 Llama 3.3 70B', desc: 'Meta, мощная' },
   ],
 };
 
@@ -78,35 +85,6 @@ function neiroSafeSound(name) {
 }
 function neiroEscape(text) {
   return (window.escapeHtml || function(t){ return String(t); })(text);
-}
-
-// ============================================
-// ЗАГРУЗКА СПИСКА МОДЕЛЕЙ С LLM7
-// ============================================
-async function neiroLoadModels() {
-  try {
-    const res = await fetch('https://api.llm7.io/v1/models');
-    if (!res.ok) return;
-    const data = await res.json();
-    const list = (data.data || data.models || data || []).map(m => {
-      const id = typeof m === 'string' ? m : m.id;
-      if (!id) return null;
-      return {
-        id,
-        name: `🤖 ${id}`,
-        desc: typeof m === 'object' && m.description ? m.description : `Модель ${id}`,
-      };
-    }).filter(Boolean);
-    if (list.length > 0) {
-      NEIRO.modelsList = [
-        { id: 'default', name: '🤖 Auto (LLM7 выбирает)', desc: 'LLM7 сам подберёт модель' },
-        ...list,
-      ];
-      neiroRenderModelSelector();
-    }
-  } catch (e) {
-    console.warn('[Neiro] Не удалось загрузить модели:', e);
-  }
 }
 
 // ============================================
@@ -130,7 +108,7 @@ function neiroChangeModel(modelId) {
 }
 
 // ============================================
-// ЗАПРОС К LLM7 (СТРИМИНГ)
+// ЗАПРОС К LLM7 (СТРИМИНГ + таймаут 60 сек)
 // ============================================
 async function neiroAsk(prompt, options = {}) {
   if (!prompt || !prompt.trim()) return { ok: false, error: 'Пустой запрос' };
@@ -151,6 +129,9 @@ async function neiroAsk(prompt, options = {}) {
     { role: 'user', content: prompt.trim() },
   ];
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
   try {
     const response = await fetch('https://api.llm7.io/v1/chat/completions', {
       method: 'POST',
@@ -165,7 +146,9 @@ async function neiroAsk(prompt, options = {}) {
         max_tokens: 400,
         stream: true,
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       let errorMsg = `HTTP ${response.status}`;
@@ -228,8 +211,15 @@ async function neiroAsk(prompt, options = {}) {
 
     return { ok: true, answer };
   } catch (e) {
+    clearTimeout(timeoutId);
     console.warn('[Neiro] Ошибка:', e);
-    return { ok: false, error: e.message || 'Не удалось получить ответ' };
+    let msg = e.message || 'Не удалось получить ответ';
+    if (e.name === 'AbortError') {
+      msg = 'Сервер не ответил за 60 секунд. Выбери модель «fast» в настройках';
+    } else if (e.message === 'Failed to fetch') {
+      msg = 'Нет соединения с LLM7. Проверь интернет, VPN или открой через localhost:3000';
+    }
+    return { ok: false, error: msg };
   } finally {
     NEIRO.isSending = false;
   }
@@ -341,10 +331,7 @@ function neiroInit() {
   neiroRenderModelSelector();
   neiroRenderMessages();
 
-  // Загружаем полный список моделей с LLM7 (в фоне)
-  neiroLoadModels();
-
-  console.log('[Neiro] v2.0.0 · модель:', NEIRO.currentModel);
+  console.log('[Neiro] v2.1.0 · модель:', NEIRO.currentModel);
 }
 
 window.NEIRO = NEIRO;
@@ -354,7 +341,6 @@ window.neiroClearHistory = neiroClearHistory;
 window.neiroInit = neiroInit;
 window.neiroRenderMessages = neiroRenderMessages;
 window.neiroChangeModel = neiroChangeModel;
-window.neiroLoadModels = neiroLoadModels;
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   setTimeout(neiroInit, 300);
@@ -362,4 +348,4 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
   window.addEventListener('load', () => setTimeout(neiroInit, 300));
 }
 
-console.log('[neiro.js] Загружено v2.0.0 · LLM7.io · модели в настройках');
+console.log('[neiro.js] Загружено v2.1.0 · LLM7.io · фиксированный список моделей');
