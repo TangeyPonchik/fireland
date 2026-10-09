@@ -86,10 +86,6 @@ function initTabs() {
       if (btn.dataset.tab === 'utilities') {
         renderUtilities();
       }
-      if (btn.dataset.tab === 'neiro') {
-        if (typeof window.neiroInit === 'function') window.neiroInit();
-        if (typeof window.neiroRenderMessages === 'function') window.neiroRenderMessages();
-      }
     });
   });
 }
