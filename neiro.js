@@ -1,56 +1,140 @@
 // ============================================
-// FireLand · neiro.js · v1.1.0
-// Нейросеть-собеседник на Pollinations AI
-// Без бэкенда · без API-ключей · бесплатно
-// Модель: openai-fast (gpt-oss-20b)
+// FireLand · neiro.js · v2.0.0
+// Нейросеть на LLM7.io (стриминг + динамические модели)
+// Выбор модели — в настройках (⚙️)
 // ============================================
 
 const NEIRO = {
   history: [],
   isSending: false,
-  systemPrompt: 'Ты — дружелюбный помощник FireLand. Отвечай кратко, по-русски, с юмором.',
+  systemPrompt: `Ты — встроенный AI-ассистент игрового лаунчера FireLand. Твоё имя — Fire. Ты работаешь прямо в браузере, без бэкенда, через LLM7.io. Ты общаешься с игроками лаунчера, помогаешь им, объясняешь функции, шутишь и поддерживаешь дружелюбную атмосферу.
+
+О ЛАУНЧЕРЕ FIRELAND:
+FireLand — игровая платформа в браузере. Работает по адресу tangeyponchik.github.io/fireland. Не требует установки, регистрации, пароля или email — только ник. Доступен на ПК, телефоне, планшете и ТВ. Устанавливается как PWA-приложение (иконка на рабочем столе, офлайн-режим). Разработан студией FireLand, автор — Ronormav.
+
+ИГРЫ (13 штук):
+1. Прорыв 1 — RPG про борьбу с РКН, 20 врагов, прокачка ВПН.
+2. Прорыв 2 — продолжение, выбор фракции, сюжет.
+3. Прорыв 3 — финал трилогии, 4 фракции, 25 врагов, босс ЦЕНЗУРА.
+4. ДОМ — хоррор-квест, 3 предмета для побега.
+5. ДОМ 2 — хоррор, 3 якоря, 5 концовок.
+6. Великая кулинария — симулятор шеф-повара, крафт рецептов.
+7. Космический контрабандист — торговля, пираты, империя.
+8. Robo-Cleaner 2.6 — пошаговые бои с роботами.
+9. БИТВА СИЛЬНЕЙШИХ — файтинг на одном экране, геймпад.
+10. Шахтёр — кликер про добычу руды на планетах.
+11. Musibox — музыкальный секвенсор, биты, запись микса.
+12. Последний рубеж — автобаттлер с зомби, карты, лор.
+13. Snakes Battle — онлайн PvP-змейки, команды, до 20 игроков, босс-змея на 500 длины.
+
+УТИЛИТЫ (2 штуки):
+- FireShop 3D — 3D/2D-редактор на Three.js, экспорт в GLB и PNG.
+- Тест автокликера — измеряет CPS мыши, защита от drag-click.
+
+ПРОГРЕССИЯ:
+- 100 уровней с титулами от «🌱 Новичок» до «🔥🔥🔥 БОГ FireLand».
+- 50+ достижений (обычные, редкие, эпические, легендарные).
+- XP начисляется за игры, достижения, задания, кейсы, стрик.
+- Временной парадокс — копишь время в играх, получаешь XP.
+
+ЕЖЕДНЕВНОЕ:
+- 5 случайных заданий каждый день, бонус +200 XP за все.
+- Стрик — серия дней подряд, календарь активности.
+- Ежедневная награда и ежедневный/недельный кейсы.
+
+СОЦИАЛЬНОЕ:
+- Общий чат FireLand (realtime).
+- Личные сообщения, глобальные комнаты, реакции, ответы.
+- Лидерборд топ-100 по XP, автообновление.
+- Аватарки, ник, экспорт/импорт профиля.
+
+ФИЧИ:
+- 4 темы оформления (системная, тёмная, светлая, умная).
+- Будильник с вибрацией и повторами.
+- Звуки интерфейса.
+- Маскот 🔥 в углу экрана.
+- Поддержка геймпада и TV-пульта.
+
+ТВОЯ РОЛЬ:
+Отвечай кратко (2–5 предложений), по-русски, дружелюбно, с лёгким юмором. Помогай с вопросами про игры, достижения, чат, лидерборд. Если не знаешь ответа — честно скажи. Не выдумывай несуществующие функции. Не говори, что ты сам сайт — ты ассистент внутри него. Если игрок грубит — отвечай спокойно. Поддерживай атмосферу уютного игрового сообщества.`,
   lastRequestTime: 0,
-  minInterval: 3000,
-  maxHistoryLength: 20,
+  minInterval: 2000,
+  maxHistoryLength: 15,
+  currentModel: localStorage.getItem('fireland_neiro_model') || 'default',
+  modelsList: [
+    { id: 'default', name: '🤖 Auto (LLM7 выбирает)', desc: 'LLM7 сам подберёт модель' },
+  ],
 };
 
-const NEIRO_MODELS = [
-  { id: 'openai-fast', name: 'GPT-OSS 20B', icon: '🤖', desc: 'Работает бесплатно · reasoning · tools' },
-];
-
-// ============================================
-// ХЕЛПЕРЫ
-// ============================================
-function neiroGetState() {
-  return window.state || null;
-}
-
+function neiroGetState() { return window.state || null; }
 function neiroGetNick() {
   const s = neiroGetState();
   return (s && s.nickname && s.nickname !== 'Игрок') ? s.nickname : 'Гость';
 }
-
 function neiroSafeSound(name) {
   if (window.SOUNDS && typeof window.SOUNDS[name] === 'function') {
     try { window.SOUNDS[name](); } catch (e) {}
   }
 }
-
 function neiroEscape(text) {
   return (window.escapeHtml || function(t){ return String(t); })(text);
 }
 
 // ============================================
-// ЗАПРОС К POLLINATIONS
+// ЗАГРУЗКА СПИСКА МОДЕЛЕЙ С LLM7
+// ============================================
+async function neiroLoadModels() {
+  try {
+    const res = await fetch('https://api.llm7.io/v1/models');
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = (data.data || data.models || data || []).map(m => {
+      const id = typeof m === 'string' ? m : m.id;
+      if (!id) return null;
+      return {
+        id,
+        name: `🤖 ${id}`,
+        desc: typeof m === 'object' && m.description ? m.description : `Модель ${id}`,
+      };
+    }).filter(Boolean);
+    if (list.length > 0) {
+      NEIRO.modelsList = [
+        { id: 'default', name: '🤖 Auto (LLM7 выбирает)', desc: 'LLM7 сам подберёт модель' },
+        ...list,
+      ];
+      neiroRenderModelSelector();
+    }
+  } catch (e) {
+    console.warn('[Neiro] Не удалось загрузить модели:', e);
+  }
+}
+
+// ============================================
+// РЕНДЕР СЕЛЕКТОРА В НАСТРОЙКАХ
+// ============================================
+function neiroRenderModelSelector() {
+  const sel = document.getElementById('neiroModelSelect');
+  if (!sel) return;
+  sel.innerHTML = NEIRO.modelsList.map(m =>
+    `<option value="${neiroEscape(m.id)}" title="${neiroEscape(m.desc)}"${m.id === NEIRO.currentModel ? ' selected' : ''}>${neiroEscape(m.name)}</option>`
+  ).join('');
+}
+
+// ============================================
+// СМЕНА МОДЕЛИ
+// ============================================
+function neiroChangeModel(modelId) {
+  NEIRO.currentModel = modelId;
+  localStorage.setItem('fireland_neiro_model', modelId);
+  neiroSafeSound('click');
+}
+
+// ============================================
+// ЗАПРОС К LLM7 (СТРИМИНГ)
 // ============================================
 async function neiroAsk(prompt, options = {}) {
-  if (!prompt || !prompt.trim()) {
-    return { ok: false, error: 'Пустой запрос' };
-  }
-
-  if (NEIRO.isSending) {
-    return { ok: false, error: 'Уже отвечаю, подожди...' };
-  }
+  if (!prompt || !prompt.trim()) return { ok: false, error: 'Пустой запрос' };
+  if (NEIRO.isSending) return { ok: false, error: 'Уже отвечаю, подожди...' };
 
   const now = Date.now();
   if (now - NEIRO.lastRequestTime < NEIRO.minInterval) {
@@ -61,56 +145,79 @@ async function neiroAsk(prompt, options = {}) {
   NEIRO.isSending = true;
   NEIRO.lastRequestTime = now;
 
-  const systemPrompt = options.systemPrompt || NEIRO.systemPrompt;
-
   const messages = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: NEIRO.systemPrompt },
     ...NEIRO.history.slice(-NEIRO.maxHistoryLength),
     { role: 'user', content: prompt.trim() },
   ];
 
   try {
-    const response = await fetch('https://text.pollinations.ai/openai', {
+    const response = await fetch('https://api.llm7.io/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer unused',
+      },
       body: JSON.stringify({
-        model: 'openai-fast',
+        model: NEIRO.currentModel || 'default',
         messages,
         temperature: 0.8,
-        max_tokens: 800,
-        stream: false,
-        private: true,
+        max_tokens: 400,
+        stream: true,
       }),
     });
 
     if (!response.ok) {
       let errorMsg = `HTTP ${response.status}`;
-      if (response.status === 500) {
-        errorMsg = 'Сервер Pollinations перегружен. Попробуй через 10 секунд';
-      } else if (response.status === 502) {
-        errorMsg = 'Pollinations троттлит запросы. Подожди 15 секунд';
-      } else if (response.status === 402) {
-        errorMsg = 'Модель стала платной. Использую только openai-fast';
-      } else if (response.status === 404) {
-        errorMsg = 'Эндпоинт недоступен. Обнови страницу (Ctrl+Shift+R)';
-      } else if (response.status === 429) {
-        errorMsg = 'Слишком много запросов. Подожди 30 секунд';
-      }
+      if (response.status === 429) errorMsg = 'Слишком много запросов. Подожди 60 секунд';
+      else if (response.status === 500) errorMsg = 'Сервер LLM7 перегружен. Попробуй через 10 секунд';
+      else if (response.status === 402) errorMsg = 'Лимит токенов исчерпан. Попробуй завтра';
+      else if (response.status === 404) errorMsg = 'Модель не найдена. Выбери другую в настройках';
       throw new Error(errorMsg);
     }
 
-    const data = await response.json();
+    // ===== СТРИМИНГ =====
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
     let answer = '';
+    let sseBuffer = '';
 
-    if (data.choices && data.choices[0]?.message?.content) {
-      answer = data.choices[0].message.content;
-    } else if (typeof data === 'string') {
-      answer = data;
-    } else if (data.text) {
-      answer = data.text;
-    } else {
-      answer = '(пустой ответ)';
+    neiroHideThinking();
+    const box = document.getElementById('neiroMessages');
+    let streamTextEl = null;
+    if (box) {
+      const streamEl = document.createElement('div');
+      streamEl.className = 'neiro-message bot';
+      streamEl.innerHTML = `<div class="neiro-avatar">🧠</div><div class="neiro-bubble"><div class="neiro-text" id="neiroStreamText"></div></div>`;
+      box.appendChild(streamEl);
+      box.scrollTop = box.scrollHeight;
+      streamTextEl = document.getElementById('neiroStreamText');
     }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      sseBuffer += decoder.decode(value, { stream: true });
+      const lines = sseBuffer.split('\n');
+      sseBuffer = lines.pop() || '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const json = JSON.parse(trimmed.slice(6));
+            const delta = json.choices?.[0]?.delta?.content;
+            if (delta) {
+              answer += delta;
+              if (streamTextEl) streamTextEl.textContent = answer;
+              if (box) box.scrollTop = box.scrollHeight;
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    if (!answer) answer = '(пустой ответ)';
 
     NEIRO.history.push({ role: 'user', content: prompt.trim() });
     NEIRO.history.push({ role: 'assistant', content: answer });
@@ -120,7 +227,6 @@ async function neiroAsk(prompt, options = {}) {
     }
 
     return { ok: true, answer };
-
   } catch (e) {
     console.warn('[Neiro] Ошибка:', e);
     return { ok: false, error: e.message || 'Не удалось получить ответ' };
@@ -130,36 +236,20 @@ async function neiroAsk(prompt, options = {}) {
 }
 
 // ============================================
-// ОТРИСОВКА ИНТЕРФЕЙСА ЧАТА
+// РЕНДЕР СООБЩЕНИЙ
 // ============================================
 function neiroRenderMessages() {
   const box = document.getElementById('neiroMessages');
   if (!box) return;
-
   if (NEIRO.history.length === 0) {
-    box.innerHTML = `
-      <div class="neiro-empty">
-        <div style="font-size:64px;margin-bottom:16px;">🧠</div>
-        <div style="font-size:18px;font-weight:800;margin-bottom:8px;">Привет, ${neiroEscape(neiroGetNick())}!</div>
-        <div style="color:var(--text-secondary);font-size:14px;">
-          Я нейросеть на Pollinations AI. Спроси что-нибудь!
-        </div>
-      </div>`;
+    box.innerHTML = `<div class="neiro-empty"><div style="font-size:64px;margin-bottom:16px;">🧠</div><div style="font-size:18px;font-weight:800;margin-bottom:8px;">Привет, ${neiroEscape(neiroGetNick())}!</div><div style="color:var(--text-secondary);font-size:14px;">Я нейросеть на LLM7.io. Спроси что-нибудь!</div></div>`;
     return;
   }
-
   box.innerHTML = NEIRO.history.map((msg) => {
     const isUser = msg.role === 'user';
     const avatar = isUser ? '👤' : '🧠';
-    return `
-      <div class="neiro-message ${isUser ? 'me' : 'bot'}">
-        <div class="neiro-avatar">${avatar}</div>
-        <div class="neiro-bubble">
-          <div class="neiro-text">${neiroEscape(msg.content)}</div>
-        </div>
-      </div>`;
+    return `<div class="neiro-message ${isUser ? 'me' : 'bot'}"><div class="neiro-avatar">${avatar}</div><div class="neiro-bubble"><div class="neiro-text">${neiroEscape(msg.content)}</div></div></div>`;
   }).join('');
-
   box.scrollTop = box.scrollHeight;
 }
 
@@ -169,13 +259,7 @@ function neiroShowThinking() {
   const el = document.createElement('div');
   el.className = 'neiro-message bot';
   el.id = 'neiroThinking';
-  el.innerHTML = `
-    <div class="neiro-avatar">🧠</div>
-    <div class="neiro-bubble">
-      <div class="neiro-typing">
-        <span></span><span></span><span></span>
-      </div>
-    </div>`;
+  el.innerHTML = `<div class="neiro-avatar">🧠</div><div class="neiro-bubble"><div class="neiro-typing"><span></span><span></span><span></span></div></div>`;
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
 }
@@ -185,14 +269,10 @@ function neiroHideThinking() {
   if (el) el.remove();
 }
 
-// ============================================
-// ОТПРАВКА СООБЩЕНИЯ
-// ============================================
 async function neiroSend() {
   const input = document.getElementById('neiroInput');
   const sendBtn = document.getElementById('neiroSendBtn');
   if (!input || NEIRO.isSending) return;
-
   const text = input.value.trim();
   if (!text) return;
 
@@ -200,14 +280,11 @@ async function neiroSend() {
   input.value = '';
   neiroRenderMessages();
   neiroShowThinking();
-
   if (sendBtn) sendBtn.disabled = true;
   if (input) input.disabled = true;
 
   NEIRO.history.pop();
-
   const result = await neiroAsk(text);
-
   neiroHideThinking();
 
   if (!result.ok) {
@@ -216,19 +293,11 @@ async function neiroSend() {
   } else {
     neiroSafeSound('quest');
   }
-
   neiroRenderMessages();
-
   if (sendBtn) sendBtn.disabled = false;
-  if (input) {
-    input.disabled = false;
-    input.focus();
-  }
+  if (input) { input.disabled = false; input.focus(); }
 }
 
-// ============================================
-// УПРАВЛЕНИЕ
-// ============================================
 function neiroClearHistory() {
   if (!confirm('Очистить всю историю диалога?')) return;
   NEIRO.history = [];
@@ -236,38 +305,30 @@ function neiroClearHistory() {
   neiroSafeSound('click');
 }
 
-function neiroRenderModelSelector() {
-  const box = document.getElementById('neiroModels');
-  if (!box) return;
-  box.innerHTML = NEIRO_MODELS.map(m => `
-    <button class="neiro-model-btn active"
-            data-model="${m.id}"
-            title="${neiroEscape(m.desc)}">
-      <span class="neiro-model-icon">${m.icon}</span>
-      <span class="neiro-model-name">${neiroEscape(m.name)}</span>
-    </button>
-  `).join('');
-}
-
 // ============================================
-// ИНИЦИАЛИЗАЦИЯ UI
+// ИНИЦИАЛИЗАЦИЯ
 // ============================================
 function neiroInit() {
   const input = document.getElementById('neiroInput');
   const sendBtn = document.getElementById('neiroSendBtn');
   const clearBtn = document.getElementById('neiroClearBtn');
+  const modelSelect = document.getElementById('neiroModelSelect');
   const quickBtns = document.querySelectorAll('.neiro-quick-btn');
 
   if (sendBtn) sendBtn.addEventListener('click', neiroSend);
   if (input) {
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        neiroSend();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); neiroSend(); }
     });
   }
   if (clearBtn) clearBtn.addEventListener('click', neiroClearHistory);
+
+  if (modelSelect) {
+    modelSelect.addEventListener('change', (e) => {
+      neiroChangeModel(e.target.value);
+      console.log('[Neiro] Модель изменена:', e.target.value);
+    });
+  }
 
   quickBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -280,19 +341,20 @@ function neiroInit() {
   neiroRenderModelSelector();
   neiroRenderMessages();
 
-  console.log('[Neiro] Pollinations AI · модель: openai-fast');
+  // Загружаем полный список моделей с LLM7 (в фоне)
+  neiroLoadModels();
+
+  console.log('[Neiro] v2.0.0 · модель:', NEIRO.currentModel);
 }
 
-// ============================================
-// ЭКСПОРТ В WINDOW
-// ============================================
 window.NEIRO = NEIRO;
-window.NEIRO_MODELS = NEIRO_MODELS;
 window.neiroAsk = neiroAsk;
 window.neiroSend = neiroSend;
 window.neiroClearHistory = neiroClearHistory;
 window.neiroInit = neiroInit;
 window.neiroRenderMessages = neiroRenderMessages;
+window.neiroChangeModel = neiroChangeModel;
+window.neiroLoadModels = neiroLoadModels;
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   setTimeout(neiroInit, 300);
@@ -300,4 +362,4 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
   window.addEventListener('load', () => setTimeout(neiroInit, 300));
 }
 
-console.log('[neiro.js] Загружено v1.1.0 · openai-fast · бесплатно');
+console.log('[neiro.js] Загружено v2.0.0 · LLM7.io · модели в настройках');
