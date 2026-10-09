@@ -3,25 +3,25 @@
 // Кэширует ВСЁ: лаунчер, игры, утилиты, маскот
 // ============================================
 
-const CACHE_NAME = 'fireland-v27.5.1';
-const CACHE_VERSION = '27.5.1';
+const CACHE_NAME = 'fireland-v27.5.2';
+const CACHE_VERSION = '27.5.2';
 
 // Что кэшируем при установке
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './supabase.js?v=63',
-  './style.css?v=63',
-  './storage.js?v=63',
-  './games.js?v=63',
-  './profile.js?v=63',
-  './sound.js?v=63',
-  './streak.js?v=63',
-  './device.js?v=63',
-  './leaderboard.js?v=63',
-  './script.js?v=63',
-  './neiro.js?v=63',
-  './messenger.js?v=63',
+  './supabase.js?v=64',
+  './style.css?v=64',
+  './storage.js?v=64',
+  './games.js?v=64',
+  './profile.js?v=64',
+  './sound.js?v=64',
+  './streak.js?v=64',
+  './device.js?v=64',
+  './leaderboard.js?v=64',
+  './script.js?v=64',
+  './neiro.js?v=64',
+  './messenger.js?v=64',
   './manifest.json',
   './fireek.mp4'
 ];
@@ -73,13 +73,19 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (request.method !== 'GET') return;
 
+  // ✅ НЕ кэшируем range-запросы (видео/аудио 206)
+  if (request.headers.has('range')) return;
+
   // Network-first для HTML
   if (request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          // ✅ Проверяем, что 200 и НЕ partial
+          if (response.ok && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
           return response;
         })
         .catch(() => caches.match(request).then(r => r || caches.match('./index.html')))
@@ -92,13 +98,15 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then(cached => {
       if (cached) {
         fetch(request).then(response => {
-          if (response.ok) {
+          // ✅ Только 200, не 206
+          if (response.ok && response.status === 200) {
             caches.open(CACHE_NAME).then(cache => cache.put(request, response));
           }
         }).catch(() => {});
         return cached;
       }
       return fetch(request).then(response => {
+        // ✅ Только 200, не 206
         if (response.ok && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone));

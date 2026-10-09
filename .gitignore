@@ -23,3 +23,6 @@ node_modules/
 *.key
 *.env
 neiro-token.js
+
+supabase/.temp/
+supabase/.branches/
