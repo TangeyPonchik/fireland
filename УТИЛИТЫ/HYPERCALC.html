@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HYPERCALC — 20 режимов</title>
+<style>
+/* ================= БАЗА ================= */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cy:#00f0ff; --mg:#ff00e0; --lm:#7cff00;
+  --glass:rgba(10,20,35,.62);
+}
+html,body{height:100%}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  background:#04060b;color:#e6f7ff;
+  display:flex;justify-content:center;padding:18px;
+  min-height:100vh;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* ================= ФОН ================= */
+.bg{position:fixed;inset:-20%;z-index:-3;background:#04060b}
+.bg::before{
+  content:"";position:absolute;inset:0;
+  background:conic-gradient(from 0deg,#00f0ff40,#ff00e040,#7cff0030,#00f0ff40);
+  filter:blur(90px);animation:spin 26s linear infinite;
+}
+.bg::after{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(0,240,255,.20),transparent 45%),
+    radial-gradient(circle at 85% 80%,rgba(255,0,224,.20),transparent 45%),
+    radial-gradient(circle at 50% 50%,#04060b 55%,transparent 100%);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.grid-lines{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.28;
+  background-image:
+    linear-gradient(rgba(0,240,255,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,240,255,.09) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 85%);
+}
+.scan{
+  position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.25;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 1px,transparent 1px 4px);
+}
+
+/* ================= КАРКАС ================= */
+.app{width:min(1020px,100%);display:flex;flex-direction:column;gap:16px;position:relative;z-index:3}
+
+header{text-align:center;padding-top:6px}
+h1{
+  font-size:clamp(30px,7vw,56px);font-weight:900;letter-spacing:.14em;
+  background:linear-gradient(90deg,#00f0ff,#ff00e0,#7cff00,#00f0ff);
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:flow 7s linear infinite;
+  filter:drop-shadow(0 0 22px rgba(0,240,255,.55));
+}
+h1 span{filter:drop-shadow(0 0 22px rgba(255,0,224,.55))}
+@keyframes flow{to{background-position:300% 0}}
+.sub{font-size:12px;letter-spacing:.35em;text-transform:uppercase;color:#4fb9d8;margin-top:4px}
+
+/* ================= РЕЖИМЫ ================= */
+.modes{
+  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;
+  padding:10px;border-radius:18px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(0,240,255,.16);
+  backdrop-filter:blur(14px);
+}
+.mode{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:11px;cursor:pointer;
+  font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  color:#8fd7f0;background:rgba(0,240,255,.05);
+  border:1px solid rgba(0,240,255,.14);
+  transition:transform .15s,background .2s,box-shadow .2s,color .2s;
+  white-space:nowrap;font-family:inherit;
+}
+.mode:hover{background:rgba(0,240,255,.16);color:#dffbff;transform:translateY(-2px)}
+.mode.active{
+  color:#04060b;font-weight:800;
+  background:linear-gradient(135deg,#00f0ff,#ff00e0);
+  border-color:transparent;
+  box-shadow:0 0 22px rgba(0,240,255,.6),0 0 42px rgba(255,0,224,.35);
+  transform:translateY(-2px);
+}
+.mode span{font-size:15px}
+
+/* ================= ПАНЕЛЬ ================= */
+.panel{
+  position:relative;padding:20px;border-radius:26px;
+  background:var(--glass);
+  border:1px solid rgba(0,240,255,.22);
+  backdrop-filter:blur(22px);
+  box-shadow:0 0 50px rgba(0,240,255,.13),inset 0 0 80px rgba(0,240,255,.03);
+  animation:pop .35s cubic-bezier(.2,1.2,.4,1);
+  min-height:380px;
+}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.panel::before{
+  content:"";position:absolute;inset:-1px;border-radius:26px;padding:1px;
+  background:linear-gradient(135deg,rgba(0,240,255,.5),transparent 40%,transparent 60%,rgba(255,0,224,.5));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+
+/* ================= ДИСПЛЕЙ ================= */
+.display{
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(0,240,255,.28);
+  border-radius:18px;padding:16px 18px;
+  min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;
+  box-shadow:inset 0 0 40px rgba(0,240,255,.09);
+  overflow:hidden;
+}
+.display .expr{
+  font-family:ui-monospace,Consolas,monospace;
+  font-size:15px;color:#5fd3ff;min-height:20px;
+  word-break:break-all;opacity:.85;text-align:right;
+}
+.display .result{
+  font-family:ui-monospace,Consolas,monospace;
+  font-size:clamp(26px,7vw,44px);font-weight:800;text-align:right;
+  color:#fff;text-shadow:0 0 24px rgba(0,240,255,.85),0 0 60px rgba(0,240,255,.4);
+  word-break:break-all;line-height:1.1;
+}
+
+/* ================= КЛАВИШИ ================= */
+.keys{display:grid;gap:9px;margin-top:15px}
+.key{
+  font-family:inherit;
+  padding:17px 4px;border-radius:14px;cursor:pointer;
+  font-size:19px;font-weight:700;color:#d6f6ff;
+  border:1px solid rgba(0,240,255,.2);
+  background:linear-gradient(180deg,rgba(0,240,255,.09),rgba(0,240,255,.02));
+  transition:transform .1s,box-shadow .18s,background .18s;
+  user-select:none;
+}
+.key:hover{background:linear-gradient(180deg,rgba(0,240,255,.24),rgba(0,240,255,.07));box-shadow:0 0 20px rgba(0,240,255,.45)}
+.key:active{transform:scale(.93)}
+.key.op{color:#ff8ceb;border-color:rgba(255,0,224,.32);background:linear-gradient(180deg,rgba(255,0,224,.15),rgba(255,0,224,.03))}
+.key.op:hover{box-shadow:0 0 20px rgba(255,0,224,.5)}
+.key.fn{font-size:14px;color:#b6ff8a;border-color:rgba(124,255,0,.28);background:linear-gradient(180deg,rgba(124,255,0,.11),rgba(124,255,0,.02))}
+.key.fn:hover{box-shadow:0 0 20px rgba(124,255,0,.42)}
+.key.eq{
+  color:#04060b;font-weight:900;
+  background:linear-gradient(135deg,#00f0ff,#ff00e0);border-color:transparent;
+  box-shadow:0 0 26px rgba(0,240,255,.55);
+}
+
+/* ================= ТУЛБАР ================= */
+.toolbar{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.chip{
+  font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;
+  padding:7px 14px;border-radius:10px;cursor:pointer;
+  color:#8fd7f0;background:rgba(0,240,255,.06);
+  border:1px solid rgba(0,240,255,.2);transition:.2s;
+}
+.chip:hover{background:rgba(0,240,255,.16)}
+.chip.active{color:#04060b;background:linear-gradient(135deg,#00f0ff,#7cff00);border-color:transparent;box-shadow:0 0 18px rgba(0,240,255,.5)}
+.spacer{flex:1}
+.hint{font-size:11px;color:#4a8fa8;letter-spacing:.1em}
+
+/* ================= ФОРМЫ ================= */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{
+  font-size:11px;text-transform:uppercase;letter-spacing:.14em;
+  color:#57c9ec;font-weight:700;
+}
+input,select{
+  font-family:inherit;font-size:16px;font-weight:600;
+  width:100%;padding:12px 14px;border-radius:13px;outline:none;
+  color:#eaffff;background:rgba(0,0,0,.5);
+  border:1px solid rgba(0,240,255,.24);
+  transition:border-color .2s,box-shadow .2s;
+  appearance:none;
+}
+input:focus,select:focus{border-color:#00f0ff;box-shadow:0 0 18px rgba(0,240,255,.45)}
+select{
+  background-image:linear-gradient(45deg,transparent 50%,#00f0ff 50%),linear-gradient(135deg,#00f0ff 50%,transparent 50%);
+  background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+  padding-right:38px;cursor:pointer;
+}
+select option{background:#0a1420;color:#eaffff}
+input[type=date]{color-scheme:dark}
+
+.result-box{
+  margin-top:16px;padding:16px 18px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(0,240,255,.10),rgba(255,0,224,.07));
+  border:1px solid rgba(0,240,255,.3);
+  box-shadow:inset 0 0 40px rgba(0,240,255,.06);
+}
+.big{
+  font-family:ui-monospace,Consolas,monospace;
+  font-size:clamp(20px,5vw,30px);font-weight:800;color:#00f0ff;
+  text-shadow:0 0 18px rgba(0,240,255,.8);word-break:break-all;
+}
+.muted{font-size:12.5px;color:#6ba9c2;margin-top:8px;line-height:1.6}
+.rows{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:11px 15px;border-radius:12px;
+  background:rgba(0,240,255,.05);
+  border:1px solid rgba(0,240,255,.13);
+  font-size:14px;
+}
+.row b{
+  font-family:ui-monospace,Consolas,monospace;
+  color:#7cff00;font-size:16px;text-shadow:0 0 14px rgba(124,255,0,.6);
+  text-align:right;word-break:break-all;
+}
+.row span{color:#8fd7f0}
+.swap{
+  font-family:inherit;margin-top:14px;padding:11px 20px;border-radius:12px;cursor:pointer;
+  font-size:13px;font-weight:800;letter-spacing:.06em;
+  color:#04060b;background:linear-gradient(135deg,#7cff00,#00f0ff);
+  border:none;transition:.2s;box-shadow:0 0 20px rgba(124,255,0,.35);
+}
+.swap:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.sec-title{
+  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#ff6ee0;
+  font-weight:800;margin:20px 0 4px;text-shadow:0 0 14px rgba(255,0,224,.5);
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(0,240,255,.35);border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="grid-lines"></div>
+<div class="scan"></div>
+
+<div class="app">
+  <header>
+    <h1>HYPER<span>CALC</span></h1>
+    <p class="sub">20 режимов · один калькулятор</p>
+  </header>
+  <nav class="modes" id="modes"></nav>
+  <main class="panel" id="panel"></main>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════
+   УТИЛИТЫ
+   ═══════════════════════════════════════════════ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+function fmt(n) {
+  if (typeof n !== "number" || Number.isNaN(n)) return "Ошибка";
+  if (!isFinite(n)) return n > 0 ? "∞" : "−∞";
+  const a = Math.abs(n);
+  if (a !== 0 && (a < 1e-9 || a >= 1e15)) return n.toExponential(6);
+  return String(parseFloat(n.toPrecision(12)));
+}
+
+/* ═══════════════════════════════════════════════
+   ПАРСЕР МАТЕМАТИЧЕСКИХ ВЫРАЖЕНИЙ
+   ═══════════════════════════════════════════════ */
+function factorial(n) {
+  if (n < 0 || !Number.isInteger(n)) return NaN;
+  if (n > 170) return Infinity;
+  let r = 1;
+  for (let k = 2; k <= n; k++) r *= k;
+  return r;
+}
+
+function evalExpr(input, deg = false) {
+  let s = String(input)
+    .replace(/\s+/g, "")
+    .replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-")
+    .replace(/π/g, "pi");
+
+  let i = 0;
+  const fail = (m) => { throw new Error(m || "Ошибка"); };
+  const D = (x) => (deg ? (x * Math.PI) / 180 : x);
+  const A = (x) => (deg ? (x * 180) / Math.PI : x);
+
+  const F = {
+    sin: (x) => Math.sin(D(x)), cos: (x) => Math.cos(D(x)), tan: (x) => Math.tan(D(x)),
+    asin: (x) => A(Math.asin(x)), acos: (x) => A(Math.acos(x)), atan: (x) => A(Math.atan(x)),
+    sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+    ln: Math.log, log: Math.log10, sqrt: Math.sqrt, cbrt: Math.cbrt,
+    abs: Math.abs, exp: Math.exp, sign: Math.sign,
+    round: Math.round, floor: Math.floor, ceil: Math.ceil
+  };
+  const C = { pi: Math.PI, e: Math.E };
+
+  function pExpr() {
+    let v = pTerm();
+    for (;;) {
+      if (s[i] === "+") { i++; v += pTerm(); }
+      else if (s[i] === "-") { i++; v -= pTerm(); }
+      else return v;
+    }
+  }
+  function pTerm() {
+    let v = pUnary();
+    for (;;) {
+      if (s[i] === "*") { i++; v *= pUnary(); }
+      else if (s[i] === "/") { i++; v /= pUnary(); }
+      else if (s[i] === "%") { i++; v %= pUnary(); }
+      else return v;
+    }
+  }
+  function pUnary() {
+    if (s[i] === "-") { i++; return -pUnary(); }
+    if (s[i] === "+") { i++; return pUnary(); }
+    return pPower();
+  }
+  function pPower() {
+    const base = pAtom();
+    if (s[i] === "^") { i++; return Math.pow(base, pUnary()); }
+    return base;
+  }
+  function pAtom() {
+    let v;
+    if (s[i] === "(") {
+      i++;
+      v = pExpr();
+      if (s[i] !== ")") fail("Не закрыта скобка");
+      i++;
+    } else if (/[0-9.]/.test(s[i] || "")) {
+      const m = /^\d*\.?\d+(?:[eE][+-]?\d+)?/.exec(s.slice(i));
+      if (!m) fail("Ожидалось число");
+      v = parseFloat(m[0]);
+      i += m[0].length;
+    } else if (/[a-zA-Z]/.test(s[i] || "")) {
+      const m = /^[a-zA-Z]+/.exec(s.slice(i));
+      const name = m[0];
+      i += name.length;
+      if (name in C) v = C[name];
+      else if (name in F) {
+        if (s[i] !== "(") fail("Нужна скобка после " + name);
+        i++;
+        const arg = pExpr();
+        if (s[i] !== ")") fail("Не закрыта скобка");
+        i++;
+        v = F[name](arg);
+      } else fail("Неизвестно: " + name);
+    } else fail("Лишний символ: " + (s[i] || "конец"));
+
+    while (s[i] === "!") { i++; v = factorial(v); }
+    return v;
+  }
+
+  const out = pExpr();
+  if (i < s.length) fail("Лишнее: " + s.slice(i));
+  return out;
+}
+
+/* ═══════════════════════════════════════════════
+   КЛАВИАТУРЫ
+   ═══════════════════════════════════════════════ */
+const STD_KEYS = [
+  { label: "C",  act: "clear", cls: "fn" },
+  { label: "⌫",  act: "back",  cls: "fn" },
+  { label: "%",  ins: "/100",  cls: "fn" },
+  { label: "÷",  ins: "/",     cls: "op" },
+  { label: "7",  ins: "7" }, { label: "8", ins: "8" }, { label: "9", ins: "9" },
+  { label: "×",  ins: "*",     cls: "op" },
+  { label: "4",  ins: "4" }, { label: "5", ins: "5" }, { label: "6", ins: "6" },
+  { label: "−",  ins: "-",     cls: "op" },
+  { label: "1",  ins: "1" }, { label: "2", ins: "2" }, { label: "3", ins: "3" },
+  { label: "+",  ins: "+",     cls: "op" },
+  { label: "±",  act: "neg",   cls: "fn" },
+  { label: "0",  ins: "0" },
+  { label: ".",  ins: "." },
+  { label: "=",  act: "eq",    cls: "eq" }
+];
+
+const SCI_KEYS = [
+  { label: "C",   act: "clear", cls: "fn" },
+  { label: "⌫",   act: "back",  cls: "fn" },
+  { label: "(",   ins: "(", cls: "fn" },
+  { label: ")",   ins: ")", cls: "fn" },
+  { label: "÷",   ins: "/", cls: "op" },
+
+  { label: "sin", ins: "sin(", cls: "fn" },
+  { label: "cos", ins: "cos(", cls: "fn" },
+  { label: "tan", ins: "tan(", cls: "fn" },
+  { label: "π",   ins: "π",    cls: "fn" },
+  { label: "×",   ins: "*",    cls: "op" },
+
+  { label: "ln",  ins: "ln(",  cls: "fn" },
+  { label: "log", ins: "log(", cls: "fn" },
+  { label: "√",   ins: "sqrt(",cls: "fn" },
+  { label: "^",   ins: "^",    cls: "op" },
+  { label: "−",   ins: "-",    cls: "op" },
+
+  { label: "7", ins: "7" }, { label: "8", ins: "8" }, { label: "9", ins: "9" },
+  { label: "x²", ins: "^2", cls: "fn" },
+  { label: "+",  ins: "+",  cls: "op" },
+
+  { label: "4", ins: "4" }, { label: "5", ins: "5" }, { label: "6", ins: "6" },
+  { label: "!", ins: "!", cls: "fn" },
+  { label: "=", act: "eq", cls: "eq" },
+
+  { label: "1", ins: "1" }, { label: "2", ins: "2" }, { label: "3", ins: "3" },
+  { label: ".", ins: "." }, { label: "0", ins: "0" }
+];
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: КАЛЬКУЛЯТОР (стандарт / научный)
+   ═══════════════════════════════════════════════ */
+function calcMode(scientific) {
+  const st = { expr: "", deg: true, frozen: false, answer: 0 };
+  const keys = scientific ? SCI_KEYS : STD_KEYS;
+  const cols = scientific ? 5 : 4;
+
+  const preview = () => {
+    if (!st.expr) return 0;
+    try { return evalExpr(st.expr, st.deg); } catch (e) { return null; }
+  };
+
+  return {
+    html() {
+      return `
+      <div class="display">
+        <div class="expr" id="cexpr"></div>
+        <div class="result" id="cres">0</div>
+      </div>
+      ${scientific ? `
+      <div class="toolbar">
+        <button class="chip active" id="degBtn">DEG</button>
+        <button class="chip" id="radBtn">RAD</button>
+        <span class="spacer"></span>
+        <span class="hint">sin cos tan ln log √ ^ !</span>
+      </div>` : ""}
+      <div class="keys" id="ck" style="grid-template-columns:repeat(${cols},1fr)">
+        ${keys.map(k => `<button class="key ${k.cls || ""}" ${k.ins !== undefined
+          ? `data-ins="${k.ins}"` : `data-act="${k.act}"`}>${k.label}</button>`).join("")}
+      </div>`;
+    },
+    init(root) {
+      const exprEl = root.querySelector("#cexpr");
+      const resEl  = root.querySelector("#cres");
+
+      const paint = () => {
+        exprEl.textContent = st.expr;
+        if (st.frozen) {
+          resEl.textContent = fmt(st.answer);
+        } else {
+          const v = preview();
+          resEl.textContent = v === null ? (st.expr ? "…" : "0") : fmt(v);
+        }
+      };
+
+      const ins = (t) => {
+        if (st.frozen) {
+          if (t.length === 1 && "+-*/^%".includes(t)) st.expr = String(st.answer);
+          else st.expr = "";
+          st.frozen = false;
+        }
+        st.expr += t;
+        paint();
+      };
+
+      root.querySelector("#ck").addEventListener("click", (e) => {
+        const b = e.target.closest(".key");
+        if (!b) return;
+        if (b.dataset.ins !== undefined) { ins(b.dataset.ins); return; }
+        const act = b.dataset.act;
+        if (act === "clear") { st.expr = ""; st.frozen = false; st.answer = 0; }
+        else if (act === "back") {
+          if (st.frozen) { st.expr = ""; st.frozen = false; }
+          else st.expr = st.expr.slice(0, -1);
+        } else if (act === "neg") {
+          if (st.frozen) { st.expr = String(st.answer); st.frozen = false; }
+          st.expr = st.expr.startsWith("-") ? st.expr.slice(1) : "-" + st.expr;
+        } else if (act === "eq") {
+          const v = preview();
+          if (v !== null && st.expr) { st.answer = v; st.frozen = true; }
+        }
+        paint();
+      });
+
+      if (scientific) {
+        const d = root.querySelector("#degBtn");
+        const r = root.querySelector("#radBtn");
+        d.onclick = () => { st.deg = true;  d.classList.add("active"); r.classList.remove("active"); paint(); };
+        r.onclick = () => { st.deg = false; r.classList.add("active"); d.classList.remove("active"); paint(); };
+      }
+      paint();
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ПРОГРАММИСТ
+   ═══════════════════════════════════════════════ */
+function progMode() {
+  const st = { buf: "0", base: 10, acc: null, op: null, fresh: true };
+
+  const curVal = () => parseInt(st.buf || "0", st.base) || 0;
+
+  const apply = (a, b, o) => {
+    switch (o) {
+      case "+": return a + b;
+      case "-": return a - b;
+      case "*": return a * b;
+      case "/": return b === 0 ? NaN : Math.trunc(a / b);
+      case "AND": return a & b;
+      case "OR":  return a | b;
+      case "XOR": return a ^ b;
+      case "<<": return a << b;
+      case ">>": return a >> b;
+      default: return b;
+    }
+  };
+
+  const toBase = (n, b) => {
+    if (!isFinite(n)) return "—";
+    const v = Math.trunc(n);
+    return (b === 10 ? String(v) : (v < 0 ? "-" : "") + Math.abs(v).toString(b).toUpperCase());
+  };
+
+  const DIGITS = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
+
+  return {
+    html() {
+      return `
+      <div class="display">
+        <div class="expr" id="pexpr">DEC</div>
+        <div class="result" id="pres">0</div>
+      </div>
+      <div class="toolbar">
+        <button class="chip active" data-base="10">DEC</button>
+        <button class="chip" data-base="16">HEX</button>
+        <button class="chip" data-base="8">OCT</button>
+        <button class="chip" data-base="2">BIN</button>
+      </div>
+      <div class="keys" id="pkeys" style="grid-template-columns:repeat(5,1fr)">
+        ${["C","⌫","AND","OR","XOR",
+           "7","8","9","<<",">>",
+           "4","5","6","NOT","/",
+           "1","2","3","*","-",
+           "A","B","C","+","=",
+           "D","E","F","0",".back"].map(k => {
+          if (k === ".back") return "";
+          const isDigit = DIGITS.includes(k);
+          const cls = isDigit ? "" : (k === "=" ? "eq" : (["+","-","*","/"].includes(k) ? "op" : "fn"));
+          return `<button class="key ${cls}" data-k="${k}">${k}</button>`;
+        }).join("")}
+      </div>
+      <div class="rows" id="pbases"></div>`;
+    },
+    init(root) {
+      const resEl = root.querySelector("#pres");
+      const exprEl = root.querySelector("#pexpr");
+      const basesEl = root.querySelector("#pbases");
+
+      const paint = () => {
+        resEl.textContent = st.buf || "0";
+        exprEl.textContent = `БАЗА ${st.base} · ${st.acc !== null ? st.acc + " " + (st.op || "") : ""}`;
+        const v = curVal();
+        basesEl.innerHTML = [
+          ["DEC", toBase(v, 10)], ["HEX", toBase(v, 16)],
+          ["OCT", toBase(v, 8)],  ["BIN", toBase(v, 2)]
+        ].map(([n, val]) => `<div class="row"><span>${n}</span><b>${val}</b></div>`).join("");
+      };
+
+      root.querySelectorAll("[data-base]").forEach(b => {
+        b.onclick = () => {
+          const old = curVal();
+          st.base = +b.dataset.base;
+          st.buf = toBase(old, st.base);
+          root.querySelectorAll("[data-base]").forEach(x => x.classList.remove("active"));
+          b.classList.add("active");
+          paint();
+        };
+      });
+
+      root.querySelector("#pkeys").addEventListener("click", (e) => {
+        const b = e.target.closest(".key");
+        if (!b) return;
+        const k = b.dataset.k;
+        if (DIGITS.includes(k)) {
+          const d = DIGITS.indexOf(k);
+          if (d >= st.base) return;
+          if (st.fresh || st.buf === "0") { st.buf = k; st.fresh = false; }
+          else st.buf += k;
+        } else if (k === "C") {
+          st.buf = "0"; st.acc = null; st.op = null; st.fresh = true;
+        } else if (k === "⌫") {
+          st.buf = st.buf.length > 1 ? st.buf.slice(0, -1) : "0";
+        } else if (k === "NOT") {
+          const v = ~curVal();
+          st.buf = toBase(v, st.base); st.fresh = true;
+        } else if (k === "=") {
+          const v = curVal();
+          if (st.op !== null && st.acc !== null) {
+            const r = apply(st.acc, v, st.op);
+            st.buf = toBase(r, st.base);
+          }
+          st.acc = null; st.op = null; st.fresh = true;
+        } else {
+          const v = curVal();
+          if (st.acc === null) st.acc = v;
+          else if (st.op) st.acc = apply(st.acc, v, st.op);
+          st.op = k;
+          st.fresh = true;
+        }
+        paint();
+      });
+      paint();
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: КОНВЕРТЕР (универсальный)
+   ═══════════════════════════════════════════════ */
+function convMode(cfg) {
+  return {
+    html() {
+      const opts = Object.keys(cfg.units)
+        .map(u => `<option value="${u}">${u}</option>`).join("");
+      return `
+      <div class="grid2">
+        <div class="field">
+          <label>Значение</label>
+          <input type="number" class="cin" value="1" step="any">
+          <select class="cfrom">${opts}</select>
+        </div>
+        <div class="field">
+          <label>Результат</label>
+          <div class="result-box" style="margin-top:0">
+            <div class="big out">—</div>
+          </div>
+          <select class="cto">${opts}</select>
+        </div>
+      </div>
+      <button class="swap">⇅ Поменять единицы</button>
+      ${cfg.note ? `<p class="muted">${cfg.note}</p>` : ""}`;
+    },
+    init(root) {
+      const inp  = root.querySelector(".cin");
+      const from = root.querySelector(".cfrom");
+      const to   = root.querySelector(".cto");
+      const out  = root.querySelector(".out");
+      if (to.options.length > 1) to.selectedIndex = 1;
+
+      const upd = () => {
+        const v = parseFloat(inp.value);
+        if (!isFinite(v)) { out.textContent = "—"; return; }
+        let r;
+        if (cfg.conv) r = cfg.conv(v, from.value, to.value);
+        else r = (v * cfg.units[from.value]) / cfg.units[to.value];
+        out.textContent = fmt(r);
+      };
+      [inp, from, to].forEach(el => el.addEventListener("input", upd));
+      root.querySelector(".swap").onclick = () => {
+        const t = from.value; from.value = to.value; to.value = t; upd();
+      };
+      upd();
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   ДАННЫЕ ЕДИНИЦ
+   ═══════════════════════════════════════════════ */
+const LENGTH = {
+  "м":1,"км":1000,"см":0.01,"мм":0.001,"мкм":1e-6,
+  "миля":1609.344,"ярд":0.9144,"фут":0.3048,"дюйм":0.0254,
+  "мор. миля":1852,"а.е.":1.495978707e11,"свет. год":9.4607e15
+};
+const MASS = {
+  "кг":1,"г":0.001,"мг":1e-6,"т":1000,"центнер":100,
+  "фунт":0.45359237,"унция":0.028349523,"карат":0.0002,"стоун":6.35029318
+};
+const SPEED = {
+  "м/с":1,"км/ч":0.2777778,"миль/ч":0.44704,"узел":0.5144444,
+  "фут/с":0.3048,"км/с":1000,"мах":340.29
+};
+const AREA = {
+  "м²":1,"км²":1e6,"см²":1e-4,"га":10000,"ар":100,
+  "акр":4046.8564224,"фут²":0.09290304,"дюйм²":0.00064516,"миля²":2589988.11
+};
+const VOLUME = {
+  "литр":1,"мл":0.001,"м³":1000,"см³":0.001,
+  "галлон (US)":3.785411784,"пинта (US)":0.473176473,
+  "чашка (US)":0.2365882365,"жидк. унция":0.0295735296,"баррель нефти":158.9872949
+};
+const TIME = {
+  "секунда":1,"мс":0.001,"минута":60,"час":3600,"сутки":86400,
+  "неделя":604800,"месяц (30.44д)":2629800,"год (365.25д)":31557600,"век":3155760000
+};
+const DATA = {
+  "байт":1,"КБ":1024,"МБ":1048576,"ГБ":1073741824,"ТБ":1099511627776,
+  "ПБ":1125899906842624,"бит":0.125,"Кбит":128,"Мбит":131072,"Гбит":134217728
+};
+const CURRENCY = {
+  "USD $":1,"EUR €":0.92,"GBP £":0.79,"RUB ₽":0.0108,"CNY ¥":0.14,
+  "JPY ¥":0.0064,"KZT ₸":0.0021,"UAH ₴":0.024,"TRY ₺":0.031,
+  "BTC ₿":66000,"ETH Ξ":3100
+};
+
+const toC   = { "°C": v => v, "°F": v => (v - 32) * 5 / 9, "K": v => v - 273.15 };
+const fromC = { "°C": v => v, "°F": v => v * 9 / 5 + 32, "K": v => v + 273.15 };
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ИМТ
+   ═══════════════════════════════════════════════ */
+const bmiMode = {
+  html() {
+    return `
+    <div class="grid2">
+      <div class="field"><label>Вес, кг</label><input type="number" id="bw" value="70" step="0.1"></div>
+      <div class="field"><label>Рост, см</label><input type="number" id="bh" value="175" step="0.1"></div>
+    </div>
+    <div class="result-box">
+      <div class="big" id="bout">—</div>
+      <div class="muted" id="bcat"></div>
+    </div>
+    <div class="rows" id="brows"></div>`;
+  },
+  init(root) {
+    const w = root.querySelector("#bw"), h = root.querySelector("#bh");
+    const out = root.querySelector("#bout"), cat = root.querySelector("#bcat");
+    const rows = root.querySelector("#brows");
+    const upd = () => {
+      const kg = parseFloat(w.value), cm = parseFloat(h.value);
+      if (!(kg > 0) || !(cm > 0)) { out.textContent = "—"; cat.textContent = ""; rows.innerHTML = ""; return; }
+      const m = cm / 100;
+      const bmi = kg / (m * m);
+      out.textContent = bmi.toFixed(1);
+      let c, color;
+      if (bmi < 18.5)      { c = "Недостаточный вес"; color = "#00f0ff"; }
+      else if (bmi < 25)   { c = "Норма ✅";           color = "#7cff00"; }
+      else if (bmi < 30)   { c = "Избыточный вес";     color = "#ffd400"; }
+      else if (bmi < 35)   { c = "Ожирение I степени"; color = "#ff8c00"; }
+      else if (bmi < 40)   { c = "Ожирение II степени";color = "#ff3b3b"; }
+      else                 { c = "Ожирение III степени";color = "#ff00e0"; }
+      cat.textContent = c;
+      cat.style.color = color;
+      const idealMin = 18.5 * m * m, idealMax = 24.9 * m * m;
+      rows.innerHTML = `
+        <div class="row"><span>Идеальный вес</span><b>${idealMin.toFixed(1)} – ${idealMax.toFixed(1)} кг</b></div>
+        <div class="row"><span>До нормы</span><b>${kg < idealMin ? "+" + (idealMin - kg).toFixed(1) : kg > idealMax ? "−" + (kg - idealMax).toFixed(1) : "0"} кг</b></div>`;
+    };
+    [w, h].forEach(el => el.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: КРЕДИТ
+   ═══════════════════════════════════════════════ */
+const loanMode = {
+  html() {
+    return `
+    <div class="grid2">
+      <div class="field"><label>Сумма кредита</label><input type="number" id="lam" value="500000" step="1000"></div>
+      <div class="field"><label>Ставка, % годовых</label><input type="number" id="lrt" value="18" step="0.1"></div>
+      <div class="field"><label>Срок, месяцев</label><input type="number" id="lmo" value="36" step="1"></div>
+    </div>
+    <div class="result-box"><div class="big" id="lpay">—</div><div class="muted">Ежемесячный платёж (аннуитет)</div></div>
+    <div class="rows" id="lrows"></div>`;
+  },
+  init(root) {
+    const am = root.querySelector("#lam"), rt = root.querySelector("#lrt"), mo = root.querySelector("#lmo");
+    const pay = root.querySelector("#lpay"), rows = root.querySelector("#lrows");
+    const upd = () => {
+      const P = parseFloat(am.value), r = parseFloat(rt.value) / 100 / 12, n = parseFloat(mo.value);
+      if (!(P > 0) || !(n > 0)) { pay.textContent = "—"; rows.innerHTML = ""; return; }
+      let m;
+      if (r === 0) m = P / n;
+      else m = (P * r) / (1 - Math.pow(1 + r, -n));
+      const total = m * n, over = total - P;
+      pay.textContent = fmt(Math.round(m)) + " ₽";
+      rows.innerHTML = `
+        <div class="row"><span>Всего выплат</span><b>${fmt(Math.round(total))} ₽</b></div>
+        <div class="row"><span>Переплата</span><b>${fmt(Math.round(over))} ₽</b></div>
+        <div class="row"><span>Переплата в %</span><b>${((over / P) * 100).toFixed(1)} %</b></div>`;
+    };
+    [am, rt, mo].forEach(el => el.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ПРОЦЕНТЫ И СКИДКИ
+   ═══════════════════════════════════════════════ */
+const percentMode = {
+  html() {
+    return `
+    <div class="sec-title">Скидка</div>
+    <div class="grid2">
+      <div class="field"><label>Цена</label><input type="number" id="pc" value="10000"></div>
+      <div class="field"><label>Скидка, %</label><input type="number" id="pd" value="25"></div>
+    </div>
+    <div class="rows" id="prow1"></div>
+
+    <div class="sec-title">X% от Y</div>
+    <div class="grid2">
+      <div class="field"><label>Процент, %</label><input type="number" id="px" value="15"></div>
+      <div class="field"><label>Число</label><input type="number" id="py" value="2000"></div>
+    </div>
+    <div class="rows" id="prow2"></div>
+
+    <div class="sec-title">A от B — сколько %</div>
+    <div class="grid2">
+      <div class="field"><label>A</label><input type="number" id="pa" value="30"></div>
+      <div class="field"><label>B</label><input type="number" id="pb" value="240"></div>
+    </div>
+    <div class="rows" id="prow3"></div>`;
+  },
+  init(root) {
+    const g = id => root.querySelector(id);
+    const upd = () => {
+      const c = parseFloat(g("#pc").value) || 0, d = parseFloat(g("#pd").value) || 0;
+      const save = c * d / 100, fin = c - save;
+      g("#prow1").innerHTML = `
+        <div class="row"><span>К оплате</span><b>${fmt(fin)}</b></div>
+        <div class="row"><span>Экономия</span><b>${fmt(save)}</b></div>`;
+
+      const x = parseFloat(g("#px").value) || 0, y = parseFloat(g("#py").value) || 0;
+      g("#prow2").innerHTML = `<div class="row"><span>${x}% от ${y}</span><b>${fmt(x * y / 100)}</b></div>`;
+
+      const a = parseFloat(g("#pa").value) || 0, b = parseFloat(g("#pb").value) || 0;
+      g("#prow3").innerHTML = `<div class="row"><span>${a} от ${b}</span><b>${b === 0 ? "—" : (a / b * 100).toFixed(2) + " %"}</b></div>`;
+    };
+    root.querySelectorAll("input").forEach(i => i.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: РАЗНИЦА ДАТ
+   ═══════════════════════════════════════════════ */
+function ymdDiff(a, b) {
+  if (a > b) [a, b] = [b, a];
+  let y = b.getFullYear() - a.getFullYear();
+  let m = b.getMonth() - a.getMonth();
+  let d = b.getDate() - a.getDate();
+  if (d < 0) { m--; d += new Date(b.getFullYear(), b.getMonth(), 0).getDate(); }
+  if (m < 0) { y--; m += 12; }
+  return { y, m, d };
+}
+
+const dateMode = {
+  html() {
+    const t = new Date().toISOString().slice(0, 10);
+    return `
+    <div class="grid2">
+      <div class="field"><label>Дата 1</label><input type="date" id="d1" value="2000-01-01"></div>
+      <div class="field"><label>Дата 2</label><input type="date" id="d2" value="${t}"></div>
+    </div>
+    <div class="result-box"><div class="big" id="dout">—</div><div class="muted" id="dsub"></div></div>
+    <div class="rows" id="drows"></div>`;
+  },
+  init(root) {
+    const a = root.querySelector("#d1"), b = root.querySelector("#d2");
+    const out = root.querySelector("#dout"), sub = root.querySelector("#dsub"), rows = root.querySelector("#drows");
+    const upd = () => {
+      const A = new Date(a.value), B = new Date(b.value);
+      if (isNaN(A) || isNaN(B)) { out.textContent = "—"; rows.innerHTML = ""; return; }
+      const ms = Math.abs(B - A);
+      const days = Math.floor(ms / 86400000);
+      const { y, m, d } = ymdDiff(A, B);
+      out.textContent = `${days.toLocaleString("ru-RU")} дн.`;
+      sub.textContent = `${y} г. ${m} мес. ${d} дн.`;
+      rows.innerHTML = `
+        <div class="row"><span>Недель</span><b>${Math.floor(days / 7)}</b></div>
+        <div class="row"><span>Месяцев (прибл.)</span><b>${(days / 30.4375).toFixed(1)}</b></div>
+        <div class="row"><span>Часов</span><b>${(days * 24).toLocaleString("ru-RU")}</b></div>
+        <div class="row"><span>Минут</span><b>${(days * 1440).toLocaleString("ru-RU")}</b></div>`;
+    };
+    [a, b].forEach(el => el.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ЧАЕВЫЕ
+   ═══════════════════════════════════════════════ */
+const tipMode = {
+  html() {
+    return `
+    <div class="grid2">
+      <div class="field"><label>Сумма счёта</label><input type="number" id="tb" value="3000"></div>
+      <div class="field"><label>Чаевые, %</label><input type="number" id="tp" value="15"></div>
+      <div class="field"><label>Человек</label><input type="number" id="tn" value="4" min="1"></div>
+    </div>
+    <div class="result-box"><div class="big" id="tpay">—</div><div class="muted">С каждого</div></div>
+    <div class="rows" id="trows"></div>`;
+  },
+  init(root) {
+    const b = root.querySelector("#tb"), p = root.querySelector("#tp"), n = root.querySelector("#tn");
+    const out = root.querySelector("#tpay"), rows = root.querySelector("#trows");
+    const upd = () => {
+      const bill = parseFloat(b.value) || 0;
+      const tip  = bill * (parseFloat(p.value) || 0) / 100;
+      const people = Math.max(1, parseInt(n.value) || 1);
+      const total = bill + tip;
+      out.textContent = fmt(total / people);
+      rows.innerHTML = `
+        <div class="row"><span>Чаевые</span><b>${fmt(tip)}</b></div>
+        <div class="row"><span>Итого</span><b>${fmt(total)}</b></div>
+        <div class="row"><span>Чаевые с человека</span><b>${fmt(tip / people)}</b></div>`;
+    };
+    [b, p, n].forEach(el => el.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: СЛУЧАЙНЫЕ ЧИСЛА
+   ═══════════════════════════════════════════════ */
+const randomMode = {
+  html() {
+    return `
+    <div class="grid2">
+      <div class="field"><label>Минимум</label><input type="number" id="rmin" value="1"></div>
+      <div class="field"><label>Максимум</label><input type="number" id="rmax" value="100"></div>
+      <div class="field"><label>Количество</label><input type="number" id="rcnt" value="5" min="1" max="200"></div>
+      <div class="field"><label>Тип</label>
+        <select id="rtype"><option value="int">Целые</option><option value="float">Дробные</option></select>
+      </div>
+    </div>
+    <button class="swap" id="rgen">⚡ СГЕНЕРИРОВАТЬ</button>
+    <div class="result-box" style="margin-top:16px">
+      <div class="big" id="rout" style="font-size:18px;line-height:1.8">—</div>
+    </div>`;
+  },
+  init(root) {
+    const g = id => root.querySelector(id);
+    const gen = () => {
+      const a = parseFloat(g("#rmin").value) || 0;
+      const b = parseFloat(g("#rmax").value) || 0;
+      const n = Math.min(200, Math.max(1, parseInt(g("#rcnt").value) || 1));
+      const type = g("#rtype").value;
+      const lo = Math.min(a, b), hi = Math.max(a, b);
+      const out = [];
+      for (let k = 0; k < n; k++) {
+        out.push(type === "int"
+          ? Math.floor(Math.random() * (hi - lo + 1)) + lo
+          : +(Math.random() * (hi - lo) + lo).toFixed(4));
+      }
+      g("#rout").textContent = out.join("  ·  ");
+    };
+    g("#rgen").onclick = gen;
+    gen();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ТРИГОНОМЕТРИЯ
+   ═══════════════════════════════════════════════ */
+const trigMode = {
+  html() {
+    return `
+    <div class="grid2">
+      <div class="field"><label>Угол</label><input type="number" id="tang" value="30" step="any"></div>
+      <div class="field"><label>Единицы</label>
+        <select id="tunit"><option value="deg">Градусы</option><option value="rad">Радианы</option></select>
+      </div>
+    </div>
+    <div class="rows" id="trows"></div>`;
+  },
+  init(root) {
+    const ang = root.querySelector("#tang"), unit = root.querySelector("#tunit");
+    const rows = root.querySelector("#trows");
+    const upd = () => {
+      const v = parseFloat(ang.value);
+      if (!isFinite(v)) { rows.innerHTML = ""; return; }
+      const r = unit.value === "deg" ? v * Math.PI / 180 : v;
+      const s = Math.sin(r), c = Math.cos(r), t = Math.tan(r);
+      const data = [
+        ["sin", s], ["cos", c], ["tan", t],
+        ["cot", 1 / t], ["sec", 1 / c], ["csc", 1 / s],
+        ["asin", Math.asin(s)], ["acos", Math.acos(c)], ["atan", Math.atan(t)]
+      ];
+      rows.innerHTML = data.map(([n, val], idx) => {
+        let x = val;
+        if (unit.value === "deg" && idx >= 6) x = x * 180 / Math.PI;
+        return `<div class="row"><span>${n}</span><b>${Number.isFinite(x) ? x.toFixed(6) : "—"}</b></div>`;
+      }).join("");
+    };
+    [ang, unit].forEach(el => el.addEventListener("input", upd));
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕЖИМ: ВОЗРАСТ
+   ═══════════════════════════════════════════════ */
+const ageMode = {
+  html() {
+    return `
+    <div class="field"><label>Дата рождения</label><input type="date" id="abirth" value="2000-01-01"></div>
+    <div class="result-box"><div class="big" id="aout">—</div><div class="muted" id="asub"></div></div>
+    <div class="rows" id="arows"></div>`;
+  },
+  init(root) {
+    const inp = root.querySelector("#abirth");
+    const out = root.querySelector("#aout"), sub = root.querySelector("#asub"), rows = root.querySelector("#arows");
+    const upd = () => {
+      const b = new Date(inp.value);
+      if (isNaN(b)) { out.textContent = "—"; return; }
+      const now = new Date();
+      if (b > now) { out.textContent = "Ещё не родился 🚀"; sub.textContent = ""; rows.innerHTML = ""; return; }
+      const { y, m, d } = ymdDiff(b, now);
+      const days = Math.floor((now - b) / 86400000);
+      out.textContent = `${y} лет ${m} мес ${d} дн`;
+      sub.textContent = `Всего ${days.toLocaleString("ru-RU")} дней`;
+      // следующий день рождения
+      let nb = new Date(now.getFullYear(), b.getMonth(), b.getDate());
+      if (nb < now) nb = new Date(now.getFullYear() + 1, b.getMonth(), b.getDate());
+      const toBday = Math.ceil((nb - now) / 86400000);
+      rows.innerHTML = `
+        <div class="row"><span>Недель прожито</span><b>${Math.floor(days / 7).toLocaleString("ru-RU")}</b></div>
+        <div class="row"><span>Часов прожито</span><b>${(days * 24).toLocaleString("ru-RU")}</b></div>
+        <div class="row"><span>До дня рождения</span><b>${toBday} дн.</b></div>`;
+    };
+    inp.addEventListener("input", upd);
+    upd();
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   РЕГИСТРАЦИЯ 20 РЕЖИМОВ
+   ═══════════════════════════════════════════════ */
+const MODES = [
+  { icon: "🔢", name: "Стандарт",     mode: calcMode(false) },
+  { icon: "🧪", name: "Научный",      mode: calcMode(true) },
+  { icon: "💻", name: "Программист",  mode: progMode() },
+
+  { icon: "💱", name: "Валюты",       mode: convMode({ units: CURRENCY, note: "⚠️ Курсы демонстрационные — не для реальных сделок." }) },
+  { icon: "📏", name: "Длина",        mode: convMode({ units: LENGTH }) },
+  { icon: "⚖️", name: "Масса",        mode: convMode({ units: MASS }) },
+  { icon: "🌡️", name: "Температура",  mode: convMode({
+      units: { "°C": 1, "°F": 1, "K": 1 },
+      conv: (v, f, t) => fromC[t](toC[f](v))
+    }) },
+  { icon: "🚀", name: "Скорость",     mode: convMode({ units: SPEED }) },
+  { icon: "🗺️", name: "Площадь",      mode: convMode({ units: AREA }) },
+  { icon: "🧊", name: "Объём",        mode: convMode({ units: VOLUME }) },
+  { icon: "⏱️", name: "Время",        mode: convMode({ units: TIME }) },
+  { icon: "💾", name: "Данные",       mode: convMode({ units: DATA }) },
+
+  { icon: "🫀", name: "ИМТ",          mode: bmiMode },
+  { icon: "🏦", name: "Кредит",       mode: loanMode },
+  { icon: "🏷️", name: "Проценты",     mode: percentMode },
+  { icon: "📅", name: "Даты",         mode: dateMode },
+  { icon: "🍽️", name: "Чаевые",       mode: tipMode },
+  { icon: "🎲", name: "Рандом",       mode: randomMode },
+  { icon: "📐", name: "Тригонометрия",mode: trigMode },
+  { icon: "🎂", name: "Возраст",      mode: ageMode }
+];
+
+/* ═══════════════════════════════════════════════
+   РЕНДЕР
+   ═══════════════════════════════════════════════ */
+const modesEl = document.getElementById("modes");
+const panelEl = document.getElementById("panel");
+let current = 0;
+
+function renderModes() {
+  modesEl.innerHTML = MODES.map((m, i) =>
+    `<button class="mode ${i === current ? "active" : ""}" data-i="${i}">
+       <span>${m.icon}</span>${m.name}
+     </button>`).join("");
+}
+
+function renderPanel() {
+  const m = MODES[current].mode;
+  panelEl.style.animation = "none";
+  panelEl.innerHTML = m.html();
+  void panelEl.offsetWidth;
+  panelEl.style.animation = "";
+  if (m.init) m.init(panelEl);
+}
+
+modesEl.addEventListener("click", (e) => {
+  const b = e.target.closest(".mode");
+  if (!b) return;
+  current = +b.dataset.i;
+  renderModes();
+  renderPanel();
+});
+
+/* горячие клавиши для стандартного режима */
+document.addEventListener("keydown", (e) => {
+  if (current > 2) return;
+  const k = e.key;
+  if (/^[0-9.+\-*/()^!%]$/.test(k)) {
+    const btn = panelEl.querySelector(`.key[data-ins="${k}"]`);
+    if (btn) { btn.click(); e.preventDefault(); }
+  } else if (k === "Enter" || k === "=") {
+    const btn = panelEl.querySelector('.key[data-act="eq"]');
+    if (btn) { btn.click(); e.preventDefault(); }
+  } else if (k === "Backspace") {
+    const btn = panelEl.querySelector('.key[data-act="back"]');
+    if (btn) { btn.click(); e.preventDefault(); }
+  } else if (k === "Escape") {
+    const btn = panelEl.querySelector('.key[data-act="clear"]');
+    if (btn) { btn.click(); e.preventDefault(); }
+  }
+});
+
+renderModes();
+renderPanel();
+</script>
+</body>
+</html>

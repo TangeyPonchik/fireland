@@ -2971,3 +2971,51 @@ body[data-device="tv"] .neiro-model-btn { font-size: 15px; padding: 10px 18px; }
   color: var(--text);
   font-weight: 600;
 }
+
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Manrope', sans-serif;
+  height: 42px; /* Выравниваем по высоте с часами и шестеренкой */
+}
+
+.header-btn .btn-icon {
+  font-size: 18px;
+}
+
+/* При наведении */
+.header-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* Когда вкладка активна */
+.header-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(106, 138, 255, 0.4);
+}
+
+/* Скрываем текст на очень узких экранах (мобилки), чтобы не ломать шапку */
+@media (max-width: 600px) {
+  .header-btn .btn-text {
+    display: none;
+  }
+  .header-btn {
+    padding: 10px;
+    width: 42px;
+  }
+}

@@ -27,7 +27,17 @@ const GAMES = [
 
 const UTILITIES = [
 {id:'fireshop',name:'FireShop 3D',icon:'🎨',genre:'3D-редактор · Photoshop',difficulty:5,description:'Полноценный 3D/2D-редактор прямо в браузере. 3D-примитивы, свет, HDRI-окружение, покраска объектов, кисть-текстура, экспорт в GLB и PNG. 2D-режим с кистью, заливкой, фильтрами и текстом. Работает на Three.js.',bg:'linear-gradient(135deg, #ff6b35, #f7931e, #ffcd3c)',file:'УТИЛИТЫ/FireShop.html'},
-{id:'cpstest',name:'Тест автокликера',icon:'⚡',genre:'Утилита · Тест',difficulty:1,description:'Проверь скорость своего автокликера или мыши. Показывает количество кликов и CPS (клики в секунду) в реальном времени. Оценивает скорость как «медленно / быстро / супер-скорость».',bg:'linear-gradient(135deg, #1a1a2e, #e94560, #0f3460)',file:'УТИЛИТЫ/тест cps.html'}
+{id:'cpstest',name:'Тест автокликера',icon:'⚡',genre:'Утилита · Тест',difficulty:1,description:'Проверь скорость своего автокликера или мыши. Показывает количество кликов и CPS (клики в секунду) в реальном времени. Оценивает скорость как «медленно / быстро / супер-скорость».',bg:'linear-gradient(135deg, #1a1a2e, #e94560, #0f3460)',file:'УТИЛИТЫ/тест cps.html'},
+{
+  id: 'hypercalc', 
+  name: 'HYPERCALC', 
+  icon: '🧮', 
+  genre: 'Утилита · 20 в 1', 
+  difficulty: 4, 
+  description: 'Мощный калькулятор с 20 режимами в стиле киберпанк. Здесь есть всё: научные вычисления (sin, cos, log), программирование (HEX, BIN, OCT, битовые операции), конвертеры валют, длины, массы, температуры, а также ИМТ, кредитный калькулятор, расчёт чаевых и разница дат. Неоновый интерфейс, горячие клавиши и мгновенный результат.', 
+  bg: 'linear-gradient(135deg, #00f0ff, #ff00e0, #7cff00)', 
+  file: 'УТИЛИТЫ/HYPERCALC.html'
+}
 ];
 
 const GAME_FILES = {
@@ -46,7 +56,8 @@ dom2:'ИГРЫ/ДОМ 2.html',
 pcgamer:'ИГРЫ/Компьютер Геймера.html',
 snakebattle:'ИГРЫ/snakebattle.html',
 fireshop:'УТИЛИТЫ/FireShop.html',
-cpstest:'УТИЛИТЫ/тест cps.html'
+cpstest:'УТИЛИТЫ/тест cps.html',
+hypercalc: 'УТИЛИТЫ/HYPERCALC.html'
 };
 
 // ============================================
