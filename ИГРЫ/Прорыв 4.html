@@ -58,6 +58,48 @@
     background:linear-gradient(90deg,#8c1f26,#c9412f 50%,#e88a4a);
     transition:width .12s linear}
 
+  /* ---------- КНОПКА ПРОКСИ ---------- */
+  #proxyBtn{
+    position:absolute;right:calc(var(--u)*26);bottom:calc(var(--u)*26);
+    width:calc(var(--u)*96);height:calc(var(--u)*96);
+    border-radius:50%;cursor:pointer;pointer-events:auto;border:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:#0a0608;font-family:inherit;font-weight:800;
+    background:radial-gradient(circle at 35% 30%,#ffe6a0,#e0a84a 60%,#a06a1a);
+    box-shadow:0 calc(var(--u)*10) calc(var(--u)*26) rgba(0,0,0,.7),
+      inset 0 0 0 calc(var(--u)*2) rgba(255,240,200,.6),
+      inset 0 calc(var(--u)*-4) calc(var(--u)*10) rgba(120,70,10,.5);
+    transition:transform .14s,box-shadow .14s,filter .2s;
+    z-index:10;
+  }
+  #proxyBtn:hover{transform:translateY(calc(var(--u)*-2));}
+  #proxyBtn:active{transform:translateY(calc(var(--u)*1));}
+  #proxyBtn.ready{animation:proxyPulse 1.6s ease-in-out infinite;}
+  #proxyBtn.cd{
+    filter:grayscale(.7) brightness(.6);
+    cursor:not-allowed;
+  }
+  #proxyBtn.hidden{display:none;}
+  #proxyBtn .pvLabel{font-size:calc(var(--u)*10);letter-spacing:calc(var(--u)*1.6);opacity:.8}
+  #proxyBtn .pvLvl{font-size:calc(var(--u)*26);line-height:1;font-weight:900;
+    text-shadow:0 calc(var(--u)*2) 0 rgba(255,240,200,.5)}
+  #proxyBtn .pvCd{font-size:calc(var(--u)*11);letter-spacing:calc(var(--u)*1);opacity:.85;
+    margin-top:calc(var(--u)*1)}
+  #proxyBtn .pvKey{position:absolute;bottom:calc(var(--u)*-4);right:calc(var(--u)*-4);
+    background:#1a0f10;color:#f3cf95;font-size:calc(var(--u)*10);font-weight:800;
+    padding:calc(var(--u)*2) calc(var(--u)*5);border-radius:calc(var(--u)*4);
+    box-shadow:0 0 0 calc(var(--u)*1) rgba(255,215,130,.4)}
+  @keyframes proxyPulse{
+    0%,100%{box-shadow:0 calc(var(--u)*10) calc(var(--u)*26) rgba(0,0,0,.7),
+      inset 0 0 0 calc(var(--u)*2) rgba(255,240,200,.6),
+      inset 0 calc(var(--u)*-4) calc(var(--u)*10) rgba(120,70,10,.5),
+      0 0 0 0 rgba(255,215,130,.5)}
+    50%{box-shadow:0 calc(var(--u)*10) calc(var(--u)*26) rgba(0,0,0,.7),
+      inset 0 0 0 calc(var(--u)*2) rgba(255,240,200,.7),
+      inset 0 calc(var(--u)*-4) calc(var(--u)*10) rgba(120,70,10,.5),
+      0 0 0 calc(var(--u)*14) rgba(255,215,130,0)}
+  }
+
   #overlay{position:absolute;inset:0;display:grid;place-items:center;
     background:radial-gradient(ellipse at 50% 45%,rgba(12,6,18,.72),rgba(4,2,8,.95));
     backdrop-filter:blur(4px);opacity:1;transition:opacity .35s}
@@ -159,6 +201,13 @@
         <div class="bossname" id="bossname"></div>
         <div class="bossouter"><i class="bossfill" id="bossfill"></i></div>
       </div>
+
+      <button id="proxyBtn" class="hidden">
+        <span class="pvLabel">ПРОКСИ</span>
+        <span class="pvLvl" id="proxyLvl">1</span>
+        <span class="pvCd" id="proxyCd">Q</span>
+        <span class="pvKey">Q</span>
+      </button>
     </div>
 
     <div id="overlay"><div class="panel" id="panel"></div></div>
@@ -179,12 +228,12 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 /* ============================================================
    СОХРАНЕНИЯ
    ============================================================ */
-const SAVE_KEY='proyv4_save_v2';
+const SAVE_KEY='proyv4_save_v3';
 function saveGame(){
   try{
     if(G.lives>0&&G.level>=1&&G.level<=60){
       localStorage.setItem(SAVE_KEY,JSON.stringify({
-        level:G.level,lives:G.lives,vpn:G.vpn,crypto:G.crypto
+        level:G.level,lives:G.lives,vpn:G.vpn,crypto:G.crypto,proxy:G.proxy
       }));
     }else{
       localStorage.removeItem(SAVE_KEY);
@@ -200,8 +249,9 @@ function loadGame(){
     if(s.level<1||s.level>60||s.lives<1||s.lives>3) return null;
     return {
       level:s.level,lives:s.lives,
-      vpn:Math.max(1,Math.min(8,s.vpn||1)),
-      crypto:Math.max(0,s.crypto||0)
+      vpn:Math.max(1,Math.min(11,s.vpn||1)),
+      crypto:Math.max(0,s.crypto||0),
+      proxy:Math.max(0,Math.min(8,s.proxy||0))
     };
   }catch(e){return null;}
 }
@@ -228,6 +278,9 @@ const elCnt=document.getElementById('enemycount');
 const elBossBar=document.getElementById('bossbar');
 const elBossName=document.getElementById('bossname');
 const elBossFill=document.getElementById('bossfill');
+const elProxyBtn=document.getElementById('proxyBtn');
+const elProxyLvl=document.getElementById('proxyLvl');
+const elProxyCd=document.getElementById('proxyCd');
 
 function resize(){stage.style.setProperty('--u',(stage.clientWidth/1280)+'px');}
 addEventListener('resize',resize);
@@ -246,6 +299,9 @@ addEventListener('keydown',e=>{
     if(!e.repeat) togglePause();
     return;
   }
+  if(e.code==='KeyQ'&&!e.repeat){
+    activateProxy();
+  }
   if(!e.repeat) pressed[e.code]=true;
   keys[e.code]=true;
 });
@@ -262,6 +318,12 @@ cvs.addEventListener('mousedown',e=>{
 });
 addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false;});
 cvs.addEventListener('contextmenu',e=>e.preventDefault());
+
+elProxyBtn.addEventListener('click',e=>{
+  e.stopPropagation();
+  audioInit();acResume();
+  activateProxy();
+});
 
 /* ============================================================
    КОНСТАНТЫ
@@ -336,14 +398,15 @@ const SFX={
   uiClick(){tone({freq:520,type:'triangle',dur:0.05,vol:0.12});},
   buy(){tone({freq:660,type:'triangle',dur:0.07,vol:0.16});
         tone({freq:990,type:'triangle',dur:0.09,vol:0.14,delay:0.06});},
-  deny(){tone({freq:160,type:'square',dur:0.12,vol:0.18,slide:-60});}
+  deny(){tone({freq:160,type:'square',dur:0.12,vol:0.18,slide:-60});},
+  proxy(){tone({freq:180,type:'sawtooth',dur:0.4,vol:0.35,slide:-100});
+          noiseBurst({dur:0.3,vol:0.25,hp:300,delay:0.05});}
 };
 
 /* ============================================================
-   ПАЛИТРЫ (5 для главы 1 + 5 для главы 2)
+   ПАЛИТРЫ
    ============================================================ */
 const PALETTES=[
- /* 0-4 глава 1 */
  {sky0:'#1e1230',sky1:'#4a2348',sky2:'#9c4356',sky3:'#e39a63',sun:'#ffd9a6',
   far:'#3a2244',mid:'#241529',near:'#150b1c',win:'rgba(255,205,150,0.16)',fog:'rgba(20,10,26,0.95)'},
  {sky0:'#070d1f',sky1:'#10203f',sky2:'#1d3b5c',sky3:'#3f6f80',sun:'#cfe8f0',
@@ -354,7 +417,6 @@ const PALETTES=[
   far:'#3d3128',mid:'#26201a',near:'#14100d',win:'rgba(255,215,160,0.15)',fog:'rgba(16,12,10,0.95)'},
  {sky0:'#180608',sky1:'#3d0d12',sky2:'#7a1a1e',sky3:'#b8492c',sun:'#ffb070',
   far:'#40151a',mid:'#250c10',near:'#12060a',win:'rgba(255,170,110,0.16)',fog:'rgba(14,4,6,0.95)'},
- /* 5-9 глава 2 «Очистка» */
  {sky0:'#04140a',sky1:'#0a2a16',sky2:'#1a5a2a',sky3:'#3a9a44',sun:'#b0ffb0',
   far:'#0e2a16',mid:'#061a0c',near:'#020a06',win:'rgba(140,255,160,0.14)',fog:'rgba(2,12,6,0.95)'},
  {sky0:'#0d0420',sky1:'#220840',sky2:'#4a1a7a',sky3:'#8a3ad0',sun:'#e0b0ff',
@@ -367,29 +429,44 @@ const PALETTES=[
   far:'#1a1a28',mid:'#0e0e18',near:'#050508',win:'rgba(220,220,255,0.18)',fog:'rgba(6,6,10,0.96)'}
 ];
 
-/* ---- VPN уровни (1-5 глава 1, 6-8 глава 2) ---- */
+/* ---- VPN уровни 1-11 ---- */
 const VPN=[
-  /* 1-5 */ 
   {dmg:12,cd:14,  n:1,spread:0,   type:'bullet', name:'VPN · БАЗОВЫЙ'},
   {dmg:17,cd:12,  n:1,spread:0,   type:'bullet', name:'VPN · УСКОРЕННЫЙ'},
   {dmg:22,cd:10,  n:2,spread:0.10,type:'bullet', name:'VPN · ДВОЙНОЙ'},
   {dmg:28,cd:9,   n:2,spread:0.09,type:'bullet', name:'VPN · ШИФРОВАННЫЙ'},
   {dmg:36,cd:8,   n:3,spread:0.13,type:'bullet', name:'VPN · АБСОЛЮТНЫЙ'},
-  /* 6-8 глава 2 */
   {dmg:9, cd:6,   n:1,spread:0,   type:'beam',   name:'VPN · ЛУЧ',          beamLen:900},
   {dmg:7, cd:6,   n:3,spread:0.16,type:'beam',   name:'VPN · ТРОЙНОЙ ЛУЧ',  beamLen:900},
-  {dmg:38,cd:24,  n:4,spread:0,   type:'meteor', name:'VPN · МЕТЕОРИТЫ',    meteorRadius:70}
+  {dmg:38,cd:24,  n:4,spread:0,   type:'meteor', name:'VPN · МЕТЕОРИТЫ',    meteorRadius:70},
+  {dmg:70,cd:28,  n:2,spread:0,   type:'meteor', name:'VPN · ДВОЙНОЙ МЕТЕОРИТ', meteorRadius:110},
+  {dmg:90,cd:40,  n:10,spread:0,  type:'meteor', name:'VPN · ИСТРЕБИТЕЛЬ',  meteorRadius:70, meteorSpread:420},
+  {dmg:110,cd:46, n:20,spread:0,  type:'meteor', name:'VPN · ДВОЙНОЙ ИСТРЕБИТЕЛЬ', meteorRadius:90, meteorSpread:520}
 ];
 
-/* ---- Магазин (индекс = уровень-1) ---- */
-const VPN_COST=[0,50,200,600,1500, 3500,8000,18000];
+/* ---- VPN_COST индекс = уровень-1 ---- */
+const VPN_COST=[0,50,200,600,1500, 3500,8000,18000, 22000,45000,120000];
+
+/* ---- Прокси (уровни 1-8, 0 = не куплен) ---- */
+const PROXY=[
+  {dmg:35, radius:260, cost:0},
+  {dmg:50, radius:280, cost:65},
+  {dmg:65, radius:300, cost:260},
+  {dmg:80, radius:320, cost:780},
+  {dmg:100,radius:340, cost:1950},
+  {dmg:120,radius:360, cost:4550},
+  {dmg:140,radius:380, cost:10400},
+  {dmg:165,radius:400, cost:23400}
+];
+const PROXY_CD=900; /* 15 сек при 60 fps */
+
+/* ---- Аптечка / жизнь ---- */
 const HEAL_COST=40, LIFE_COST=400;
 
 /* ============================================================
    СЮЖЕТ
    ============================================================ */
 const STORY={
- /* глава 1 */
  1:['Цензура пала. Ты сделал это своими руками.',
     'РКН отступил. Интернет снова дышит.',
     'Ты вышел на улицу — просто купить хлеба.'],
@@ -427,7 +504,6 @@ const STORY={
      'Он ждал. Он всегда ждал.',
      'ПОСТАВЩИК ТСПУ.',
      '— Ну что, прорвёмся?'],
- /* глава 2 «Очистка» */
  31:['Поставщик остыл. Кабели оборваны.',
      'Но терминал за его спиной всё ещё мигает.',
      'На экране — одно слово: «ОЧИСТКА».',
@@ -473,10 +549,11 @@ function chapterName(n){return n<=30?'ГЛАВА 1 · ФИНАЛ':'ГЛАВА 2 
 const G={
   state:'menu',
   level:1,lives:3,vpn:1,crypto:0,
+  proxy:0,proxyCd:0,
   savedHp:100,
   player:null,
   platforms:[],enemies:[],bullets:[],particles:[],coins:[],
-  beams:[],meteors:[],
+  beams:[],meteors:[],proxyFx:[],
   boss:null,
   camX:0,camZoom:1,camZoomTarget:1,
   shake:0,hitstop:0,time:0,
@@ -592,6 +669,7 @@ function buildLevel(n){
   G.coins=[];
   G.beams=[];
   G.meteors=[];
+  G.proxyFx=[];
   G.boss=null;
   G.camX=0;
   G.shake=0;
@@ -599,7 +677,6 @@ function buildLevel(n){
   G.camZoom=1;
   G.camZoomTarget=1;
 
-  /* палитры */
   let palIdx;
   if(ch===1){
     palIdx=isBoss?4:((Math.floor((n-1)/3))%4);
@@ -622,11 +699,11 @@ function buildLevel(n){
     let x=430;
     while(x<width-340){
       const w=150+rng()*170;
+      /* под платформой минимум 54 px — игрок проходит */
       const y=430+rng()*70;
       G.platforms.push({x,y,w,h:22});
       x+=w+170+rng()*170;
     }
-    /* враги: глава 1 — старые, глава 2 — + новые */
     let count=3+Math.floor((ch===1?n:(n-30))*0.55);
     if(ch===2) count=Math.floor(count*1.25);
     const types=['grunt','grunt','grunt','heavy'];
@@ -656,8 +733,11 @@ function buildLevel(n){
       G.enemies.push(makeEnemy(tp,clamp(ex,140,width-260),ey,n));
     }
   }
-
   G.player=makePlayer(120,GROUND_Y-44);
+  /* HP с прошлого уровня */
+  if(typeof G.savedHp==='number'){
+    G.player.hp=clamp(G.savedHp,1,G.player.maxhp);
+  }
   mouse.down=false;
 }
 
@@ -665,7 +745,6 @@ const ENEMY_TYPES={
   grunt :{w:28,h:46,hp:34, speed:1.05,fireRate:105,bdmg:10,bspeed:5.0},
   heavy :{w:42,h:60,hp:78, speed:0.65,fireRate:130,bdmg:14,bspeed:4.6},
   runner:{w:24,h:40,hp:20, speed:2.30,fireRate:190,bdmg:8, bspeed:6.2},
-  /* глава 2 */
   drone :{w:34,h:28,hp:40, speed:1.20,fireRate:95, bdmg:11,bspeed:5.2,flying:true},
   shield:{w:40,h:54,hp:90, speed:0.55,fireRate:120,bdmg:16,bspeed:4.8,armored:true},
   splitter:{w:32,h:44,hp:44,speed:1.10,fireRate:140,bdmg:10,bspeed:5.0,split:true}
@@ -673,7 +752,6 @@ const ENEMY_TYPES={
 
 function makeEnemy(type,x,y,level){
   const b=ENEMY_TYPES[type];
-  /* в главе 2 базовый HP-скейл жёстче */
   const ch=chapterOf(level);
   const scale=(ch===1?1:1.15)*(1+level*0.055);
   return {
@@ -745,7 +823,7 @@ function moveAndCollide(e,f){
    ============================================================ */
 function spawnParticles(x,y,n,color,spd,size,grav){
   spd=spd||4;size=size||3;grav=(grav===undefined)?0.22:grav;
-  if(G.particles.length>420) return;
+  if(G.particles.length>500) return;
   for(let i=0;i<n;i++){
     const a=Math.random()*Math.PI*2;
     const s=Math.random()*spd;
@@ -838,11 +916,9 @@ function addBeam(x1,y1,x2,y2,dmg,color){
   G.beams.push({x1,y1,x2,y2,dmg,life:0.12,color:color||'#9affb0'});
 }
 function updateBeams(f){
-  const p=G.player;
   for(const bm of G.beams){
     bm.life-=f/60;
     if(bm.life<=0) continue;
-    /* урон по врагам вдоль луча */
     for(const e of G.enemies){
       if(e.dead) continue;
       if(segHitsRect(bm.x1,bm.y1,bm.x2,bm.y2,e.x,e.y,e.w,e.h)){
@@ -859,7 +935,6 @@ function updateBeams(f){
   G.beams=G.beams.filter(b=>b.life>0);
 }
 function segHitsRect(x1,y1,x2,y2,rx,ry,rw,rh){
-  /* быстрая проверка: пересечение отрезка и AABB через сэмплирование */
   const steps=Math.max(2,Math.ceil(Math.hypot(x2-x1,y2-y1)/12));
   for(let i=0;i<=steps;i++){
     const t=i/steps;
@@ -900,7 +975,6 @@ function updateMeteors(f){
     m.life-=f/60;
     m.x+=m.vx*f;m.y+=m.vy*f;
     m.vy+=0.5*f;
-    /* столкновение с землёй */
     let hit=false;
     for(const pl of G.platforms){
       if(m.x>pl.x&&m.x<pl.x+pl.w&&m.y>pl.y-4&&m.y<pl.y+pl.h){
@@ -908,7 +982,6 @@ function updateMeteors(f){
       }
     }
     if(hit||m.y>H+100){
-      /* взрыв */
       const R=m.radius;
       spawnParticles(m.x,m.y,18,'#ffb060',7,4,0.15);
       spawnParticles(m.x,m.y,10,'#ffe080',5,3,0.1);
@@ -936,7 +1009,6 @@ function drawMeteors(){
   for(const m of G.meteors){
     ctx.save();
     ctx.globalAlpha=0.9;
-    /* хвост */
     const g=ctx.createLinearGradient(m.x,m.y,m.x-m.vx*8,m.y-m.vy*8);
     g.addColorStop(0,'rgba(255,180,80,0.9)');
     g.addColorStop(1,'rgba(255,80,20,0)');
@@ -946,9 +1018,33 @@ function drawMeteors(){
     ctx.strokeStyle='rgba(255,180,80,0.5)';
     ctx.lineWidth=6;
     ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x-m.vx*6,m.y-m.vy*6);ctx.stroke();
-    /* ядро */
     ctx.fillStyle='#ffe0a0';
     ctx.beginPath();ctx.arc(m.x,m.y,6,0,7);ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ---- ПРОКСИ: кольцо-эффект ---- */
+function updateProxyFx(f){
+  for(const fx of G.proxyFx){
+    fx.life-=f/60;
+    fx.r=lerp(fx.r,fx.maxR,0.18*f);
+  }
+  G.proxyFx=G.proxyFx.filter(fx=>fx.life>0);
+}
+function drawProxyFx(){
+  for(const fx of G.proxyFx){
+    const a=clamp(fx.life/0.5,0,1);
+    ctx.save();
+    ctx.globalAlpha=a*0.85;
+    ctx.strokeStyle='#ffe0a0';
+    ctx.lineWidth=8;
+    ctx.shadowColor='#ffcf70';
+    ctx.shadowBlur=30;
+    ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r,0,7);ctx.stroke();
+    ctx.lineWidth=3;
+    ctx.strokeStyle='#fff8e0';
+    ctx.beginPath();ctx.arc(fx.x,fx.y,fx.r*0.85,0,7);ctx.stroke();
     ctx.restore();
   }
 }
@@ -1035,7 +1131,6 @@ function drawCoins(){
    УРОН
    ============================================================ */
 function damageEnemy(e,dmg){
-  /* щитоносец: урон снижен спереди, если игрок стреляет «в лицо» — упрощённо: -40% */
   let finalDmg=dmg;
   if(e.armored) finalDmg=Math.round(dmg*0.6);
   e.hp-=finalDmg;e.hitFlash=8;
@@ -1051,7 +1146,6 @@ function damageEnemy(e,dmg){
               e.type==='splitter'?rndi(8,14):
               e.type==='runner'?rndi(3,8):rndi(5,12);
     dropCoins(e.x+e.w/2,e.y+e.h/2,amt,3);
-    /* сплиттер делится */
     if(e.split){
       const cx=e.x+e.w/2, cy=e.y+e.h/2;
       for(let i=0;i<2;i++){
@@ -1104,6 +1198,63 @@ function playerDie(){
   spawnParticles(p.x+p.w/2,p.y+p.h/2,50,'#ff9a6a',9,5,0.18);
   G.bannerText='ВЫ ПОГИБЛИ';
   G.bannerSub=G.lives>0?('ОСТАЛОСЬ ЖИЗНЕЙ: '+G.lives):'ЖИЗНИ ЗАКОНЧИЛИСЬ';
+}
+
+/* ============================================================
+   ПРОКСИ: активация
+   ============================================================ */
+function activateProxy(){
+  if(G.state!=='playing') return;
+  if(G.proxy<=0) return;
+  if(G.proxyCd>0) return;
+  const p=G.player;
+  if(!p||p.dead) return;
+  const cfg=PROXY[G.proxy-1];
+  G.proxyCd=PROXY_CD;
+  SFX.proxy();
+  G.shake=Math.min(G.shake+16,26);
+  G.camZoomTarget=1.03;
+  const cx=p.x+p.w/2, cy=p.y+p.h/2;
+  G.proxyFx.push({x:cx,y:cy,r:20,maxR:cfg.radius,life:0.8});
+  spawnParticles(cx,cy,50,'#ffe0a0',9,5,0.15);
+  spawnParticles(cx,cy,30,'#ffcf70',7,4,0.1);
+  /* урон по врагам в радиусе */
+  for(const e of G.enemies){
+    if(e.dead) continue;
+    const ex=e.x+e.w/2, ey=e.y+e.h/2;
+    if(Math.hypot(ex-cx,ey-cy)<cfg.radius){
+      damageEnemy(e,cfg.dmg);
+      spawnParticles(ex,ey,6,'#ffe0a0',4,3,0.1);
+    }
+  }
+  const bo=G.boss;
+  if(bo&&!bo.defeated){
+    const bx=bo.x+bo.w/2, by=bo.y+bo.h/2;
+    if(Math.hypot(bx-cx,by-cy)<cfg.radius+bo.w/2){
+      damageBoss(bo,cfg.dmg);
+      spawnParticles(bx,by,10,'#ffe0a0',5,3.5,0.1);
+    }
+  }
+  updateProxyHUD();
+}
+
+function updateProxyHUD(){
+  if(G.proxy<=0){
+    elProxyBtn.classList.add('hidden');
+    return;
+  }
+  elProxyBtn.classList.remove('hidden');
+  elProxyLvl.textContent=G.proxy;
+  if(G.proxyCd>0){
+    elProxyBtn.classList.remove('ready');
+    elProxyBtn.classList.add('cd');
+    const secs=Math.ceil(G.proxyCd/60);
+    elProxyCd.textContent=secs+'с';
+  }else{
+    elProxyBtn.classList.remove('cd');
+    elProxyBtn.classList.add('ready');
+    elProxyCd.textContent='ГОТОВ';
+  }
 }
 
 /* ============================================================
@@ -1175,14 +1326,12 @@ function updatePlayer(f){
       G.shake=Math.min(G.shake+0.6,4);
     }
     else if(cfg.type==='beam'){
-      /* луч от игрока до курсора (или до стены) */
       const maxLen=cfg.beamLen||900;
       const ex=ox+Math.cos(ang)*maxLen;
       const ey=oy+Math.sin(ang)*maxLen;
       if(cfg.n===1){
         addBeam(ox,oy,ex,ey,cfg.dmg,'#9affb0');
       }else{
-        /* тройной луч */
         const spread=cfg.spread||0.16;
         for(let i=0;i<cfg.n;i++){
           const a=ang+(i-(cfg.n-1)/2)*spread*2;
@@ -1195,11 +1344,23 @@ function updatePlayer(f){
     }
     else if(cfg.type==='meteor'){
       /* метеоры над курсором */
-      const mx=wx, my=Math.max(80,wy-380);
+      const spread=cfg.meteorSpread||0;
       const n=cfg.n;
+      const baseY=Math.max(60,wy-380);
       for(let i=0;i<n;i++){
-        const off=(i-(n-1)/2)*90;
-        spawnMeteor(mx+off,my+rnd(40,-40),cfg.dmg,cfg.meteorRadius);
+        let mx,my;
+        if(spread>0){
+          /* истребитель: разброс по всей ширине */
+          const t=(i+0.5)/n;
+          mx=wx-spread/2+spread*t;
+          my=baseY+rnd(40,-40);
+        }else{
+          /* обычные метеоры: кластер над курсором */
+          const off=(i-(n-1)/2)*Math.max(50,cfg.meteorRadius*0.9);
+          mx=wx+off;
+          my=baseY+rnd(30,-30);
+        }
+        spawnMeteor(mx,my,cfg.dmg,cfg.meteorRadius);
       }
       p.vx-=Math.cos(ang)*1.0;
       G.shake=Math.min(G.shake+1.2,6);
@@ -1221,7 +1382,6 @@ function updateEnemies(f){
     e.anim+=f*0.1;
 
     if(e.flying){
-      /* дрон летает синусоидой */
       e.hoverPhase+=f*0.03;
       const dx=(p?p.x+e.w/2:e.x)-e.x;
       e.x+=Math.sign(dx)*e.speed*0.7*f;
@@ -1230,7 +1390,6 @@ function updateEnemies(f){
     }else{
       e.vy+=GRAV*f;
       if(e.vy>MAXFALL) e.vy=MAXFALL;
-
       const nx=e.x+e.dir*(e.w*0.5+8);
       let supported=false;
       for(const pl of G.platforms){
@@ -1239,7 +1398,6 @@ function updateEnemies(f){
       if(!supported&&e.onGround) e.dir*=-1;
       if(e.x<40) e.dir=1;
       if(e.x>G.levelWidth-e.w-40) e.dir=-1;
-
       e.vx=e.dir*e.speed;
       moveAndCollide(e,f);
       if(e.vx===0&&e.onGround) e.dir*=-1;
@@ -1288,14 +1446,12 @@ function updateBoss(f){
   const py=p?(p.y+p.h/2):b.y;
   const hpFrac=b.hp/b.maxhp;
 
-  /* --- типы 0..2 глава 1 (без изменений) --- */
   if(b.type===0){
     b.vy+=GRAV*f;
     if(b.vy>MAXFALL)b.vy=MAXFALL;
     const dir=Math.sign(px-(b.x+b.w/2))||1;
     b.vx=dir*1.5;
     moveAndCollide(b,f);
-
     b.atkCd-=f;
     if(b.atkCd<=0){
       b.atkCd=108;
@@ -1367,7 +1523,6 @@ function updateBoss(f){
     b.x=lerp(b.x,clamp(px-b.w/2+Math.sin(b.t*0.008)*250,80,G.levelWidth-b.w-80),0.020*f);
     b.y=lerp(b.y,targetY,0.045*f);
     b.vx=0;b.vy=0;
-
     if(hpFrac>0.6){
       b.atkCd-=f;
       if(b.atkCd<=0){
@@ -1421,15 +1576,12 @@ function updateBoss(f){
       }
     }
   }
-  /* --- типы 3..5 глава 2 --- */
   else if(b.type===3){
-    /* СТРАЖ ОЧИСТКИ: три фазы, луч-заряд, щит */
     b.hoverPhase+=f*0.02;
     const targetY=190+Math.sin(b.hoverPhase)*50;
     b.x=lerp(b.x,clamp(px-b.w/2+Math.sin(b.t*0.012)*260,80,G.levelWidth-b.w-80),0.03*f);
     b.y=lerp(b.y,targetY,0.06*f);
     b.vx=0;b.vy=0;
-
     if(hpFrac>0.66){
       b.atkCd-=f;
       if(b.atkCd<=0){
@@ -1476,13 +1628,11 @@ function updateBoss(f){
     }
   }
   else if(b.type===4){
-    /* КОНВЕЙЕР: спавнит врагов и стреляет веером */
     b.hoverPhase+=f*0.024;
     const targetY=200+Math.sin(b.hoverPhase)*40;
     b.x=lerp(b.x,clamp(px-b.w/2+Math.sin(b.t*0.007)*300,80,G.levelWidth-b.w-80),0.025*f);
     b.y=lerp(b.y,targetY,0.05*f);
     b.vx=0;b.vy=0;
-
     b.atkCd-=f;
     if(b.atkCd<=0){
       b.atkCd=hpFrac>0.5?64:42;
@@ -1506,15 +1656,12 @@ function updateBoss(f){
     }
   }
   else if(b.type===5){
-    /* ПРОИЗВОДИТЕЛЬ: финальный босс, 4 фазы */
     b.hoverPhase+=f*0.015;
     const targetY=170+Math.sin(b.hoverPhase)*50;
     b.x=lerp(b.x,clamp(px-b.w/2+Math.sin(b.t*0.006)*280,60,G.levelWidth-b.w-60),0.02*f);
     b.y=lerp(b.y,targetY,0.05*f);
     b.vx=0;b.vy=0;
-
     if(hpFrac>0.75){
-      /* фаза 1: спираль + одиночные лучи */
       b.atkCd-=f;
       if(b.atkCd<=0){
         b.atkCd=8;b.spiralA+=0.45;
@@ -1530,7 +1677,6 @@ function updateBoss(f){
         G.shake=10;
       }
     }else if(hpFrac>0.45){
-      /* фаза 2: веер + призыв */
       b.atkCd-=f;
       if(b.atkCd<=0){
         b.atkCd=62;
@@ -1551,7 +1697,6 @@ function updateBoss(f){
         G.enemies.push(e);
       }
     }else if(hpFrac>0.18){
-      /* фаза 3: луч-заряд через весь экран */
       b.atkCd-=f;
       if(b.atkCd<=0){
         b.atkCd=6;b.spiralA+=0.55;
@@ -1561,7 +1706,6 @@ function updateBoss(f){
       b.atk2-=f;
       if(b.atk2<=0){
         b.atk2=220;
-        /* луч по горизонтали через арену */
         const beamY=b.y+b.h*0.5;
         for(let bx=80;bx<G.levelWidth-80;bx+=60)
           spawnBullet(bx,beamY,Math.PI/2,3.0,10,'enemy','#ffd0b0',4);
@@ -1575,7 +1719,6 @@ function updateBoss(f){
         }
       }
     }else{
-      /* фаза 4: ярость — спираль, веер, призыв */
       b.atkCd-=f;
       if(b.atkCd<=0){
         b.atkCd=4;b.spiralA+=0.7;
@@ -1620,7 +1763,6 @@ function checkLevelClear(){
     if(!G.boss.defeated||G.boss.deathT<90) return;
   }
   if(G.enemies.some(e=>!e.dead)) return;
-  /* ждём, пока все монеты собраны/истекли */
   if(G.coins.length>0) return;
 
   G.state='levelclear';
@@ -1745,7 +1887,6 @@ function drawEnemy(e){
   const sw=Math.sin(e.anim*13)*0.7;
 
   if(e.type==='drone'){
-    /* дрон — треугольный корпус с пропеллерами */
     ctx.fillStyle='#3a1a2a';
     ctx.beginPath();
     ctx.moveTo(0,-e.h);
@@ -1763,7 +1904,6 @@ function drawEnemy(e){
     ctx.beginPath();ctx.moveTo(e.w*0.5,-e.h*0.4);ctx.lineTo(e.w*0.5+spin,-e.h*0.4);ctx.stroke();
   }
   else if(e.type==='shield'){
-    /* щитоносец — толстый, с щитом */
     ctx.fillStyle='#2a2a3a';
     ctx.fillRect(-e.w*0.42,-e.h*0.88,e.w*0.84,e.h*0.88);
     ctx.fillStyle='#6a6a8a';
@@ -1774,7 +1914,6 @@ function drawEnemy(e){
     ctx.beginPath();ctx.arc(0,-e.h*0.5,4,0,7);ctx.fill();
   }
   else if(e.type==='splitter'){
-    /* сплиттер — пузырь */
     ctx.fillStyle='#5a2a6a';
     ctx.beginPath();ctx.ellipse(0,-e.h*0.5,e.w*0.5,e.h*0.5,0,0,7);ctx.fill();
     ctx.fillStyle='#c060ff';
@@ -1784,7 +1923,6 @@ function drawEnemy(e){
     ctx.beginPath();ctx.arc(3,-e.h*0.55,3,0,7);ctx.fill();
   }
   else{
-    /* стандартные враги */
     ctx.fillStyle='#191922';
     ctx.fillRect(-e.w*0.32,-e.h*0.42,e.w*0.22,e.h*0.42);
     ctx.fillRect(e.w*0.10,-e.h*0.42,e.w*0.22,e.h*0.42);
@@ -1843,7 +1981,6 @@ function drawBoss(){
   const t=b.anim;
 
   if(b.type===0){
-    /* клон */
     ctx.fillStyle='#191922';
     ctx.fillRect(-b.w*0.30,-b.h*0.40,b.w*0.22,b.h*0.40);
     ctx.fillRect(b.w*0.08,-b.h*0.40,b.w*0.22,b.h*0.40);
@@ -1877,7 +2014,6 @@ function drawBoss(){
     ctx.restore();
   }
   else if(b.type===1){
-    /* цензура 2.0 */
     const float=Math.sin(t*1.4)*4;
     ctx.translate(0,float);
     const bg2=ctx.createLinearGradient(0,-b.h,0,0);
@@ -1914,7 +2050,6 @@ function drawBoss(){
     ctx.beginPath();ctx.arc(ex,-b.h*0.72,b.w*0.075,0,7);ctx.fill();
   }
   else if(b.type===2){
-    /* поставщик */
     const float=Math.sin(t*1.1)*5;
     ctx.translate(0,float);
     ctx.strokeStyle='rgba(140,140,160,0.45)';
@@ -1963,24 +2098,19 @@ function drawBoss(){
     ctx.lineTo(b.w*0.62,-b.h*0.42-Math.sin(t*1.5)*8);ctx.stroke();
   }
   else if(b.type===3){
-    /* страж очистки */
     const float=Math.sin(t*1.2)*4;
     ctx.translate(0,float);
-    /* щит-ореол */
     ctx.strokeStyle='rgba(140,255,160,0.35)';
     ctx.lineWidth=4;
     ctx.beginPath();ctx.arc(0,-b.h*0.5,b.w*0.7,0,7);ctx.stroke();
-    /* тело */
     const bg=ctx.createLinearGradient(-b.w*0.4,-b.h,b.w*0.4,0);
     bg.addColorStop(0,'#0a3a1a');bg.addColorStop(0.5,'#052010');bg.addColorStop(1,'#020a06');
     ctx.fillStyle=bg;
     rr(-b.w*0.42,-b.h*0.85,b.w*0.84,b.h*0.85,10);ctx.fill();
-    /* глаз-сканер */
     ctx.fillStyle='#0a2010';
     rr(-b.w*0.34,-b.h*0.95,b.w*0.68,b.h*0.18,6);ctx.fill();
     ctx.fillStyle='#a0ffb0';
     ctx.beginPath();ctx.arc(0,-b.h*0.86,b.w*0.06,0,7);ctx.fill();
-    /* «руки» */
     ctx.strokeStyle='#1a4a2a';
     ctx.lineWidth=10;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(-b.w*0.42,-b.h*0.6);
@@ -1989,10 +2119,8 @@ function drawBoss(){
     ctx.lineTo(b.w*0.62,-b.h*0.4-Math.sin(t*1.6)*6);ctx.stroke();
   }
   else if(b.type===4){
-    /* конвейер */
     const float=Math.sin(t*1.3)*3;
     ctx.translate(0,float);
-    /* корпус-конвейер */
     ctx.fillStyle='#2a1a08';
     rr(-b.w*0.5,-b.h*0.7,b.w*1.0,b.h*0.55,8);ctx.fill();
     ctx.fillStyle='#5a3a18';
@@ -2000,28 +2128,23 @@ function drawBoss(){
       const off=((t*60+i*30)%(b.w*1.0))-b.w*0.5;
       ctx.fillRect(off,-b.h*0.65,20,b.h*0.4);
     }
-    /* «голова» */
     ctx.fillStyle='#0a0508';
     rr(-b.w*0.28,-b.h*0.95,b.w*0.56,b.h*0.28,8);ctx.fill();
     ctx.fillStyle='#ffd090';
     ctx.beginPath();ctx.arc(0,-b.h*0.81,b.w*0.05,0,7);ctx.fill();
-    /* трубы */
     ctx.strokeStyle='rgba(200,150,80,0.45)';
     ctx.lineWidth=6;
     ctx.beginPath();ctx.moveTo(-b.w*0.5,-b.h*0.3);ctx.lineTo(-b.w*0.68,-b.h*0.05);ctx.stroke();
     ctx.beginPath();ctx.moveTo(b.w*0.5,-b.h*0.3);ctx.lineTo(b.w*0.68,-b.h*0.05);ctx.stroke();
   }
   else if(b.type===5){
-    /* производитель — финал */
     const float=Math.sin(t*1.0)*4;
     ctx.translate(0,float);
-    /* нимб */
     const hg=ctx.createRadialGradient(0,-b.h*0.55,b.w*0.3,0,-b.h*0.55,b.w*1.4);
     hg.addColorStop(0,'rgba(255,180,140,0.25)');
     hg.addColorStop(1,'rgba(255,180,140,0)');
     ctx.fillStyle=hg;
     ctx.beginPath();ctx.arc(0,-b.h*0.55,b.w*1.4,0,7);ctx.fill();
-    /* кабели */
     ctx.strokeStyle='rgba(255,180,140,0.5)';
     ctx.lineWidth=7;ctx.lineCap='round';
     for(let i=0;i<6;i++){
@@ -2032,25 +2155,21 @@ function drawBoss(){
         -b.w*0.7+i*b.w*0.28+Math.sin(t*1.8+i)*50,16);
       ctx.stroke();
     }
-    /* тело-ядро */
     const bg=ctx.createRadialGradient(0,-b.h*0.55,10,0,-b.h*0.55,b.w*0.6);
     bg.addColorStop(0,'#ffb0a0');
     bg.addColorStop(0.4,'#a0301a');
     bg.addColorStop(1,'#3a0810');
     ctx.fillStyle=bg;
     rr(-b.w*0.46,-b.h*0.85,b.w*0.92,b.h*0.85,14);ctx.fill();
-    /* «голова» */
     ctx.fillStyle='#0a0206';
     rr(-b.w*0.34,-b.h*1.0,b.w*0.68,b.h*0.32,10);ctx.fill();
     ctx.strokeStyle='rgba(255,180,140,0.7)';
     ctx.lineWidth=3;
     rr(-b.w*0.34,-b.h*1.0,b.w*0.68,b.h*0.32,10);ctx.stroke();
-    /* глаз */
     ctx.fillStyle='#ffd0b0';
     ctx.beginPath();ctx.arc(0,-b.h*0.84,b.w*0.07,0,7);ctx.fill();
     ctx.fillStyle='#1a0508';
     ctx.beginPath();ctx.arc(0,-b.h*0.84,b.w*0.03,0,7);ctx.fill();
-    /* «руки» */
     ctx.strokeStyle='#7a2018';
     ctx.lineWidth=14;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(-b.w*0.46,-b.h*0.55);
@@ -2114,6 +2233,7 @@ function render(){
   drawCoins();
   drawMeteors();
   drawBeams();
+  drawProxyFx();
   drawPlayer();
   drawBullets();
   drawParticles();
@@ -2165,6 +2285,8 @@ function updateHUD(){
   }else{
     elBossBar.classList.remove('on');
   }
+
+  updateProxyHUD();
 }
 
 /* ============================================================
@@ -2176,7 +2298,6 @@ function showOverlay(html){
 }
 function hideOverlay(){overlay.classList.add('hidden');}
 
-/* ---- ПАУЗА ---- */
 function togglePause(){
   if(G.state==='playing'){
     G.prevState='playing';G.state='paused';
@@ -2195,7 +2316,7 @@ function showPauseMenu(){
       Уровень <b style="color:#e79a5b">${G.level}</b> из 60<br>
       Жизней: <b style="color:#e79a5b">${G.lives}</b> &nbsp;·&nbsp;
       Крипта: <b style="color:#ffd966">₿ ${G.crypto}</b><br>
-      ${VPN[G.vpn-1].name}
+      ${VPN[G.vpn-1].name}${G.proxy>0?' &nbsp;·&nbsp; Прокси ур. '+G.proxy:''}
     </div>
     <div class="btnrow" style="margin-top:22px">
       <button class="btn" id="btnResume">ПРОДОЛЖИТЬ</button>
@@ -2222,15 +2343,14 @@ function showPauseMenu(){
   });
 }
 
-/* ---- МАГАЗИН ---- */
 function renderShop(onClose){
   G.state='shop';
   G.shopOnClose=onClose;
 
   const items=[];
-  const maxVpn=VPN.length;
 
-  if(G.vpn<maxVpn){
+  /* VPN */
+  if(G.vpn<VPN.length){
     const nextLvl=G.vpn+1;
     const cfg=VPN[nextLvl-1];
     const prev=VPN[G.vpn-1];
@@ -2238,7 +2358,7 @@ function renderShop(onClose){
     const can=G.crypto>=cost;
     const typeDesc=cfg.type==='bullet'?`Урон ${prev.dmg}→${cfg.dmg} · Задержка ${prev.cd}→${cfg.cd} · Пули ${prev.n}→${cfg.n}`
                   :cfg.type==='beam'?`ЛУЧ · Урон/тик ${cfg.dmg} · Задержка ${cfg.cd}`
-                  :`МЕТЕОРИТЫ · Урон ${cfg.dmg} · Радиус ${cfg.meteorRadius}`;
+                  :`МЕТЕОРИТ · Урон ${cfg.dmg} · Радиус ${cfg.meteorRadius} · Метеоров ${cfg.n}`;
     items.push({
       key:'vpn',
       name:cfg.name,
@@ -2250,11 +2370,34 @@ function renderShop(onClose){
     items.push({
       key:'vpnmax',
       name:'VPN · МАКСИМУМ',
-      desc:'Все уровни уже достигнуты',
+      desc:'Все 11 уровней достигнуты',
       price:0,can:false,maxed:true
     });
   }
 
+  /* Прокси */
+  if(G.proxy<PROXY.length){
+    const nextLvl=G.proxy+1;
+    const cfg=PROXY[nextLvl-1];
+    const cost=cfg.cost;
+    const can=G.crypto>=cost;
+    items.push({
+      key:'proxy',
+      name:'ПРОКСИ · УРОВЕНЬ '+nextLvl,
+      desc:`Урон ${cfg.dmg} · Радиус ${cfg.radius} · Перезарядка 15с`,
+      price:cost,can,
+      action:()=>{G.crypto-=cost;G.proxy=nextLvl;saveGame();}
+    });
+  }else{
+    items.push({
+      key:'proxymax',
+      name:'ПРОКСИ · МАКСИМУМ',
+      desc:'Все 8 уровней достигнуты',
+      price:0,can:false,maxed:true
+    });
+  }
+
+  /* Аптечка */
   const p=G.player;
   const hpFull=p&&p.hp>=p.maxhp;
   if(!hpFull){
@@ -2265,11 +2408,11 @@ function renderShop(onClose){
       desc:'Восстанавливает здоровье',
       price:HEAL_COST,can,
       action:()=>{
-  G.crypto-=HEAL_COST;
-  p.hp=Math.min(p.maxhp,p.hp+40);
-  G.savedHp=p.hp;          // ← запоминаем сразу после лечения
-  saveGame();
-}
+        G.crypto-=HEAL_COST;
+        p.hp=Math.min(p.maxhp,p.hp+40);
+        G.savedHp=p.hp;
+        saveGame();
+      }
     });
   }else{
     items.push({
@@ -2280,6 +2423,7 @@ function renderShop(onClose){
     });
   }
 
+  /* Жизнь */
   if(G.lives<3){
     const can=G.crypto>=LIFE_COST;
     items.push({
@@ -2343,7 +2487,6 @@ function renderShop(onClose){
   }
 }
 
-/* ---- ГЛАВНОЕ МЕНЮ ---- */
 function menuScreen(){
   G.state='menu';
   const save=loadGame();
@@ -2357,7 +2500,7 @@ function menuScreen(){
     <div class="sub" style="margin-top:14px">
       Глава 1 · Финал — 30 уровней · 3 босса.<br>
       Глава 2 · Очистка — 30 уровней · 3 босса.<br>
-      <span style="color:#ffd966">Крипта · Магазин · 8 уровней VPN</span>
+      <span style="color:#ffd966">Крипта · Магазин · Прокси · 11 уровней VPN</span>
     </div>
     <div class="btnrow" style="margin-top:28px">
       ${continueBtn}
@@ -2367,6 +2510,7 @@ function menuScreen(){
       <span><b>A / D</b> — движение</span>
       <span><b>W / ПРОБЕЛ</b> — прыжок</span>
       <span><b>ЛКМ / J</b> — огонь</span>
+      <span><b>Q / КНОПКА</b> — прокси</span>
       <span><b>ESC / P</b> — пауза</span>
     </div>
   `);
@@ -2376,6 +2520,7 @@ function menuScreen(){
       G.lives=save.lives;
       G.vpn=save.vpn;
       G.crypto=save.crypto;
+      G.proxy=save.proxy;
       startLevel(save.level);
     });
   }
@@ -2386,7 +2531,6 @@ function menuScreen(){
   });
 }
 
-/* ---- GAME OVER ---- */
 function gameOverScreen(){
   G.state='gameover';
   showOverlay(`
@@ -2403,7 +2547,6 @@ function gameOverScreen(){
   });
 }
 
-/* ---- VICTORY ---- */
 function victoryScreen(){
   G.state='victory';
   clearSave();
@@ -2424,7 +2567,6 @@ function victoryScreen(){
   });
 }
 
-/* ---- СЮЖЕТ ---- */
 let storyLines=[],storyIdx=0;
 function showStory(lines){
   storyLines=lines;storyIdx=0;
@@ -2460,16 +2602,14 @@ function startGame(){
   G.level=1;
   G.vpn=1;
   G.crypto=0;
+  G.proxy=0;
+  G.proxyCd=0;
   G.savedHp=100;
   startLevel(1);
 }
 function startLevel(n){
   G.level=n;
   buildLevel(n);
-  /* перенос HP с прошлого уровня */
-  if(typeof G.savedHp==='number' && G.player){
-    G.player.hp=clamp(G.savedHp,1,G.player.maxhp);
-  }
   G.state='playing';
   G.shake=0;
   G.hitstop=0;
@@ -2490,8 +2630,6 @@ function nextLevel(){
 }
 function afterDeath(){
   if(G.lives>0){
-    /* после смерти HP сбрасывается на 100? Нет — продолжаем с тем же HP,
-       что был на момент смерти (обычно 0), но даём минимум 1, чтобы не застрять */
     if(G.player) G.savedHp=Math.max(1,G.player.hp);
     startLevel(G.level);
   }else{
@@ -2532,7 +2670,9 @@ function update(dt){
     updateMeteors(f);
     updateCoins(f);
     updateParticles(f);
+    updateProxyFx(f);
     updateCamera(f);
+    if(G.proxyCd>0) G.proxyCd=Math.max(0,G.proxyCd-f);
     checkLevelClear();
   }
   else if(G.state==='levelclear'){
@@ -2541,6 +2681,7 @@ function update(dt){
     updateBullets(f);
     updateBeams(f);
     updateMeteors(f);
+    updateProxyFx(f);
     updateCamera(f);
     G.clearTimer-=dt;
     if(G.clearTimer<=0) nextLevel();
@@ -2551,6 +2692,7 @@ function update(dt){
     updateBullets(f);
     updateBeams(f);
     updateMeteors(f);
+    updateProxyFx(f);
     if(G.boss) updateBoss(f);
     G.deathTimer-=dt;
     if(G.deathTimer<=0) afterDeath();
