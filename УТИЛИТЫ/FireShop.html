@@ -3,532 +3,265 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>FireLand — 2D + 3D редактор</title>
+<title>FireLand v6 — 2D + 3D</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root {
-    --accent: #ff6b35;
-    --accent-2: #f7931e;
-    --glass-bg: rgba(255,255,255,0.72);
-    --glass-border: rgba(255,255,255,0.5);
-    --text: #1c1c1e;
-    --text-2: #6e6e73;
-    --text-3: #8e8e93;
-    --bg-page: #f2f2f7;
-    --shadow-md: 0 4px 20px rgba(0,0,0,.08);
-    --radius: 14px;
+    --accent:#ff6b35; --accent-2:#f7931e;
+    --glass-bg:rgba(255,255,255,0.72); --glass-border:rgba(255,255,255,0.5);
+    --text:#1c1c1e; --text-2:#6e6e73; --text-3:#8e8e93;
+    --bg-page:#f2f2f7; --shadow-md:0 4px 20px rgba(0,0,0,.08); --radius:14px;
   }
-  @media (prefers-color-scheme: dark) {
+  @media (prefers-color-scheme:dark) {
     :root {
-      --glass-bg: rgba(28,28,30,0.72);
-      --glass-border: rgba(255,255,255,0.08);
-      --text: #f2f2f7;
-      --text-2: #98989d;
-      --text-3: #636366;
-      --bg-page: #1c1c1e;
+      --glass-bg:rgba(28,28,30,0.72); --glass-border:rgba(255,255,255,0.08);
+      --text:#f2f2f7; --text-2:#98989d; --text-3:#636366; --bg-page:#1c1c1e;
     }
   }
-  html, body {
-    font-family: -apple-system, 'SF Pro Display', 'Segoe UI Variable', 'Segoe UI', Roboto, Arial, sans-serif;
-    background: var(--bg-page); color: var(--text);
-    height: 100vh; height: 100dvh; overflow: hidden;
-    overscroll-behavior: none;
-    user-select: none; -webkit-user-select: none;
-    -webkit-font-smoothing: antialiased;
+  html,body {
+    font-family:-apple-system,'SF Pro Display','Segoe UI Variable','Segoe UI',Roboto,Arial,sans-serif;
+    background:var(--bg-page); color:var(--text);
+    height:100vh; height:100dvh; overflow:hidden;
+    overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+    -webkit-font-smoothing:antialiased;
   }
-  body { display: flex; flex-direction: column; }
-  .bg-mesh { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-  .bg-mesh::before, .bg-mesh::after {
-    content: ''; position: absolute;
-    width: 70vmax; height: 70vmax; border-radius: 50%;
-    filter: blur(90px); opacity: .3;
-  }
-  .bg-mesh::before {
-    background: radial-gradient(circle, var(--accent), transparent 70%);
-    top: -30vmax; left: -20vmax;
-    animation: float1 22s ease-in-out infinite;
-  }
-  .bg-mesh::after {
-    background: radial-gradient(circle, #7c5cff, transparent 70%);
-    bottom: -30vmax; right: -20vmax;
-    animation: float2 26s ease-in-out infinite;
-  }
+  body { display:flex; flex-direction:column; }
+  .bg-mesh { position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  .bg-mesh::before,.bg-mesh::after { content:''; position:absolute; width:70vmax; height:70vmax; border-radius:50%; filter:blur(90px); opacity:.3; }
+  .bg-mesh::before { background:radial-gradient(circle,var(--accent),transparent 70%); top:-30vmax; left:-20vmax; animation:float1 22s ease-in-out infinite; }
+  .bg-mesh::after { background:radial-gradient(circle,#7c5cff,transparent 70%); bottom:-30vmax; right:-20vmax; animation:float2 26s ease-in-out infinite; }
   @keyframes float1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(8vmax,6vmax) scale(1.15)} }
   @keyframes float2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-10vmax,-8vmax) scale(1.2)} }
   .topbar {
-    position: relative; z-index: 50;
-    background: var(--glass-bg);
-    backdrop-filter: saturate(180%) blur(30px);
-    -webkit-backdrop-filter: saturate(180%) blur(30px);
-    border-bottom: 1px solid var(--glass-border);
-    display: flex; align-items: center;
-    overflow-x: auto; scrollbar-width: none;
-    flex-shrink: 0; min-height: 62px;
-    padding: 0 6px;
+    position:relative; z-index:50;
+    background:var(--glass-bg);
+    backdrop-filter:saturate(180%) blur(30px); -webkit-backdrop-filter:saturate(180%) blur(30px);
+    border-bottom:1px solid var(--glass-border);
+    display:flex; align-items:center;
+    overflow-x:auto; scrollbar-width:none;
+    flex-shrink:0; min-height:62px; padding:0 6px;
   }
-  .topbar::-webkit-scrollbar { display: none; }
-  .brand {
-    display: flex; align-items: center; gap: 10px;
-    padding: 0 18px 0 12px;
-    font-weight: 800; font-size: 15px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text; background-clip: text;
-    color: transparent; white-space: nowrap;
-    height: 100%;
-  }
-  .brand-icon {
-    width: 30px; height: 30px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 16px;
-    box-shadow: 0 4px 14px rgba(255,107,53,.4);
-  }
-  .mode-switch {
-    display: flex; background: rgba(0,0,0,.06);
-    border-radius: 12px; padding: 3px; margin: 0 8px;
-    flex-shrink: 0;
-  }
-  @media (prefers-color-scheme: dark) { .mode-switch { background: rgba(255,255,255,.08); } }
-  .mode-switch button {
-    background: transparent; border: none;
-    padding: 8px 16px; border-radius: 10px;
-    font-size: 13px; font-weight: 600;
-    color: var(--text-2); cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    font-family: inherit;
-    transition: all .3s cubic-bezier(.34,1.56,.64,1);
-  }
-  .mode-switch button:hover { color: var(--text); }
-  .mode-switch button.active {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(255,107,53,.4);
-    transform: scale(1.03);
-  }
-  .tabs { display: flex; height: 100%; gap: 4px; padding: 8px 4px; }
-  .tab {
-    background: transparent; border: none;
-    padding: 0 14px; height: 44px;
-    font-size: 13px; font-weight: 500;
-    color: var(--text-2); cursor: pointer; white-space: nowrap;
-    display: flex; align-items: center; gap: 6px;
-    border-radius: 12px;
-    font-family: inherit;
-    transition: all .25s cubic-bezier(.4,0,.2,1);
-  }
-  .tab:hover { background: rgba(255,107,53,.1); color: var(--text); }
-  .tab.active {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(255,107,53,.35);
-  }
-  .tab .ico { font-size: 17px; }
-  .topbar-right {
-    margin-left: auto; display: flex; align-items: center;
-    gap: 6px; padding-right: 12px;
-    flex-shrink: 0;
-  }
-  .topbar-right button, .topbar-right label {
-    background: rgba(255,255,255,.5);
-    border: 1px solid rgba(0,0,0,.06);
-    color: var(--text);
-    padding: 9px 13px; border-radius: 12px;
-    cursor: pointer; font-size: 13px; font-weight: 500;
-    white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: inherit;
-    backdrop-filter: blur(10px);
-    transition: all .25s cubic-bezier(.4,0,.2,1);
-  }
-  @media (prefers-color-scheme: dark) {
-    .topbar-right button, .topbar-right label {
-      background: rgba(255,255,255,.08);
-      border-color: rgba(255,255,255,.1);
-    }
-  }
-  .topbar-right button:hover, .topbar-right label:hover {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff; border-color: transparent;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255,107,53,.4);
-  }
-  .topbar-right button.primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff; border-color: transparent;
-    box-shadow: 0 4px 14px rgba(255,107,53,.35);
-  }
+  .topbar::-webkit-scrollbar { display:none; }
+  .brand { display:flex; align-items:center; gap:10px; padding:0 18px 0 12px; font-weight:800; font-size:15px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; white-space:nowrap; height:100%; }
+  .brand-icon { width:30px; height:30px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; box-shadow:0 4px 14px rgba(255,107,53,.4); }
+  .mode-switch { display:flex; background:rgba(0,0,0,.06); border-radius:12px; padding:3px; margin:0 8px; flex-shrink:0; }
+  @media (prefers-color-scheme:dark) { .mode-switch { background:rgba(255,255,255,.08); } }
+  .mode-switch button { background:transparent; border:none; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; color:var(--text-2); cursor:pointer; display:flex; align-items:center; gap:6px; font-family:inherit; transition:all .3s cubic-bezier(.34,1.56,.64,1); }
+  .mode-switch button:hover { color:var(--text); }
+  .mode-switch button.active { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; box-shadow:0 4px 12px rgba(255,107,53,.4); transform:scale(1.03); }
+  .tabs { display:flex; height:100%; gap:4px; padding:8px 4px; }
+  .tab { background:transparent; border:none; padding:0 14px; height:44px; font-size:13px; font-weight:500; color:var(--text-2); cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; border-radius:12px; font-family:inherit; transition:all .25s; }
+  .tab:hover { background:rgba(255,107,53,.1); color:var(--text); }
+  .tab.active { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; box-shadow:0 4px 12px rgba(255,107,53,.35); }
+  .tab .ico { font-size:17px; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:6px; padding-right:12px; flex-shrink:0; }
+  .topbar-right button,.topbar-right label { background:rgba(255,255,255,.5); border:1px solid rgba(0,0,0,.06); color:var(--text); padding:9px 13px; border-radius:12px; cursor:pointer; font-size:13px; font-weight:500; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; font-family:inherit; backdrop-filter:blur(10px); transition:all .25s; }
+  @media (prefers-color-scheme:dark) { .topbar-right button,.topbar-right label { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .topbar-right button:hover,.topbar-right label:hover { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; transform:translateY(-2px); box-shadow:0 6px 20px rgba(255,107,53,.4); }
+  .topbar-right button.primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(255,107,53,.35); }
   .topbar-right button:disabled { opacity:.4; cursor:not-allowed; transform:none; }
-  input[type="file"] { display: none; }
-  .workspace { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; z-index: 1; }
-  .stage-wrap {
-    flex: 1; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; padding: 20px;
-    min-width: 0; min-height: 0;
+  input[type="file"] { display:none; }
+  .workspace { flex:1; display:flex; overflow:hidden; position:relative; min-height:0; z-index:1; }
+  .stage-wrap { flex:1; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:20px; min-width:0; min-height:0; }
+  .canvas-container { position:relative; box-shadow:0 20px 60px rgba(0,0,0,.15),0 4px 16px rgba(0,0,0,.08); border-radius:4px; transform-origin:center; }
+  #canvas2d { display:block; background:#fff; border-radius:4px; touch-action:none; cursor:crosshair; }
+  .object-layer { position:absolute; inset:0; pointer-events:none; z-index:10; overflow:hidden; }
+  .object-item { position:absolute; pointer-events:auto; cursor:move; user-select:none; border:2px solid transparent; border-radius:6px; padding:2px; white-space:pre; line-height:1.1; }
+  .object-item.selected { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,.25); }
+  .object-item.text-object { font-weight:700; }
+  .object-item.sticker-object { font-size:64px; line-height:1; }
+  #canvas3d { position:absolute; inset:0; width:100%; height:100%; display:none; touch-action:none; cursor:grab; }
+
+  /* ===== ЛЕВАЯ ПАНЕЛЬ (Холст) ===== */
+  .panel-left {
+    width:280px;
+    background:var(--glass-bg);
+    backdrop-filter:saturate(180%) blur(30px);
+    -webkit-backdrop-filter:saturate(180%) blur(30px);
+    border-right:1px solid var(--glass-border);
+    display:flex; flex-direction:column;
+    flex-shrink:0; overflow:hidden;
+    z-index:20;
+    margin:12px 0 12px 12px;
+    border-radius:var(--radius);
+    box-shadow:
+      0 4px 20px rgba(0,0,0,.08),
+      4px 0 24px -12px rgba(255,107,53,.25);
   }
-  .canvas-container {
-    position: relative;
-    box-shadow: 0 20px 60px rgba(0,0,0,.15), 0 4px 16px rgba(0,0,0,.08);
-    border-radius: 4px;
-    transition: transform .15s ease-out;
-    transform-origin: center;
+  .panel-left .panel-content {
+    flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin;
   }
-  #canvas2d {
-    display: block;
-    background: #fff;
-    border-radius: 4px;
-    touch-action: none;
-    cursor: crosshair;
-  }
-  .object-layer {
-    position: absolute; inset: 0;
-    pointer-events: none; z-index: 10;
-    overflow: hidden;
-  }
-  .object-item {
-    position: absolute;
-    pointer-events: auto;
-    cursor: move;
-    user-select: none;
-    border: 2px solid transparent;
-    border-radius: 6px;
-    padding: 2px;
-    white-space: pre;
-    line-height: 1.1;
-  }
-  .object-item.selected {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(255,107,53,.25);
-  }
-  .object-item.text-object { font-weight: 700; }
-  .object-item.sticker-object { font-size: 64px; line-height: 1; }
-  #canvas3d { position: absolute; inset: 0; width: 100%; height: 100%; display: none; touch-action: none; cursor: grab; }
+  .panel-left .panel-content::-webkit-scrollbar { width:6px; }
+  .panel-left .panel-content::-webkit-scrollbar-thumb { background:rgba(0,0,0,.15); border-radius:3px; }
+  .panel-close-left { display:none; }
+  .mobile-toggle-left { display:none; }
+
+  /* ===== ПРАВАЯ ПАНЕЛЬ (Инструменты) ===== */
   .panel-right {
-    width: 320px;
-    background: var(--glass-bg);
-    backdrop-filter: saturate(180%) blur(30px);
-    -webkit-backdrop-filter: saturate(180%) blur(30px);
-    border-left: 1px solid var(--glass-border);
-    display: flex; flex-direction: column;
-    flex-shrink: 0; overflow: hidden;
-    z-index: 20;
-    margin: 12px 12px 12px 0;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-md);
+    width:320px;
+    background:var(--glass-bg);
+    backdrop-filter:saturate(180%) blur(30px);
+    -webkit-backdrop-filter:saturate(180%) blur(30px);
+    border-left:1px solid var(--glass-border);
+    display:flex; flex-direction:column;
+    flex-shrink:0; overflow:hidden;
+    z-index:20;
+    margin:12px 12px 12px 0;
+    border-radius:var(--radius);
+    box-shadow:
+      0 4px 20px rgba(0,0,0,.08),
+      -4px 0 24px -12px rgba(255,107,53,.25);
   }
-  .panel-content { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: thin; }
-  .panel-content::-webkit-scrollbar { width: 6px; }
-  .panel-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
-  .section-title {
-    font-size: 11px; color: var(--text-3);
-    margin: 20px 0 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .8px;
-  }
-  .section-title:first-child { margin-top: 0; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .tool-btn {
-    background: rgba(255,255,255,.6);
-    border: 1px solid rgba(0,0,0,.06);
-    border-radius: 14px;
-    padding: 12px 6px;
-    cursor: pointer;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 6px;
-    font-size: 10px; color: var(--text-2);
-    font-family: inherit;
-    transition: all .25s cubic-bezier(.34,1.56,.64,1);
-    touch-action: manipulation;
-  }
-  @media (prefers-color-scheme: dark) { .tool-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); } }
-  .tool-btn:hover {
-    background: rgba(255,107,53,.12);
-    border-color: rgba(255,107,53,.4);
-    color: var(--accent);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(255,107,53,.2);
-  }
-  .tool-btn:active { transform: scale(.95); }
-  .tool-btn.active {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 6px 18px rgba(255,107,53,.4);
-  }
-  .tool-btn .icon { font-size: 22px; line-height: 1; }
-  .tool-btn span { font-size: 9px; text-align: center; line-height: 1.2; font-weight: 500; }
-  .color-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 8px; }
-  .color-swatch {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all .2s cubic-bezier(.34,1.56,.64,1);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
-  }
-  .color-swatch:hover { transform: scale(1.15) rotate(-3deg); }
-  .color-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,107,53,.3); transform: scale(1.08); }
-  .current-color {
-    display: flex; gap: 12px; align-items: center;
-    margin-bottom: 12px; padding: 10px;
-    background: rgba(255,255,255,.4);
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,.05);
-  }
-  @media (prefers-color-scheme: dark) { .current-color { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); } }
-  .current-color .big {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    border: 2px solid rgba(255,255,255,.6);
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-    flex-shrink: 0;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-  }
-  .current-color .big input[type="color"] {
-    position: absolute; inset: -10px;
-    opacity: 0; cursor: pointer; border: none;
-  }
-  .current-color .info { flex: 1; min-width: 0; }
-  .current-color .info label { font-size: 10px; color: var(--text-3); display: block; margin-bottom: 4px; font-weight: 500; text-transform: uppercase; }
-  .current-color .info input {
-    width: 100%;
-    background: rgba(255,255,255,.6);
-    border: 1px solid rgba(0,0,0,.06);
-    border-radius: 8px;
-    padding: 7px 10px;
-    font-size: 12px; color: var(--text);
-    font-family: monospace;
-  }
-  @media (prefers-color-scheme: dark) { .current-color .info input { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); } }
-  .current-color .info input:focus { outline: none; border-color: var(--accent); }
-  .slider-row {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 10px; padding: 8px 10px;
-    background: rgba(255,255,255,.4);
-    border-radius: 12px;
-    border: 1px solid rgba(0,0,0,.04);
-  }
-  @media (prefers-color-scheme: dark) { .slider-row { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.06); } }
-  .slider-row label { font-size: 12px; color: var(--text-2); min-width: 70px; font-weight: 500; }
-  .slider-row input[type="range"] {
-    flex: 1; -webkit-appearance: none; appearance: none;
-    height: 6px; background: rgba(0,0,0,.08);
-    border-radius: 3px; outline: none;
-  }
-  @media (prefers-color-scheme: dark) { .slider-row input[type="range"] { background: rgba(255,255,255,.12); } }
-  .slider-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px; height: 18px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    cursor: grab; border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(255,107,53,.4);
-  }
-  .slider-row .val { font-size: 12px; color: var(--accent); font-weight: 700; min-width: 42px; text-align: right; }
-  .num-input {
-    flex: 1;
-    background: rgba(255,255,255,.6);
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 8px; padding: 8px;
-    color: var(--text); font-size: 13px; font-family: inherit;
-  }
-  @media (prefers-color-scheme: dark) { .num-input { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); } }
-  .num-input:focus { outline: none; border-color: var(--accent); }
-  .layers-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
-  .layer-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 8px;
-    background: rgba(255,255,255,.5);
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,.05);
-    cursor: pointer;
-    transition: all .2s; font-size: 12px;
-  }
-  @media (prefers-color-scheme: dark) { .layer-item { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.06); } }
-  .layer-item:hover { background: rgba(255,107,53,.1); }
-  .layer-item.active { background: rgba(255,107,53,.15); border-color: rgba(255,107,53,.5); }
-  .layer-item .thumb {
-    width: 36px; height: 28px;
-    border-radius: 6px; object-fit: cover;
-    background: #fff; border: 1px solid rgba(0,0,0,.1);
-    flex-shrink: 0;
-  }
-  .layer-item .eye, .layer-item .del {
-    background: transparent; border: none;
-    font-size: 14px; cursor: pointer;
-    opacity: .6; padding: 0 2px; color: var(--text);
-  }
-  .layer-item .del { color: #ff3b30; opacity: 0; }
-  .layer-item:hover .del { opacity: 1; }
-  .layer-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sticker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
-  @media (max-width: 400px) { .sticker-grid { grid-template-columns: repeat(4, 1fr); } }
-  .sticker-btn {
-    aspect-ratio: 1;
-    background: rgba(255,255,255,.6);
-    border: 1px solid rgba(0,0,0,.06);
-    border-radius: 10px;
-    font-size: 22px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .2s cubic-bezier(.34,1.56,.64,1);
-  }
-  @media (prefers-color-scheme: dark) { .sticker-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); } }
-  .sticker-btn:hover { transform: scale(1.15) rotate(-5deg); background: rgba(255,107,53,.15); }
-  .statusbar {
-    position: relative; z-index: 5;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
-    padding: 8px 18px; font-size: 11px;
-    color: var(--text-3);
-    display: flex; justify-content: space-between;
-    flex-shrink: 0; min-height: 32px; align-items: center;
-    font-weight: 500;
-  }
-  .statusbar .brand {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text; background-clip: text;
-    color: transparent; font-weight: 700;
-    padding: 0; font-size: 11px;
-  }
-  .spinner {
-    display: inline-block; width: 12px; height: 12px;
-    border: 2px solid rgba(0,0,0,.15);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    vertical-align: middle; margin-right: 6px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .modal-bg {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.5);
-    backdrop-filter: blur(12px);
-    display: none; align-items: center;
-    justify-content: center;
-    z-index: 1000; padding: 20px;
-    opacity: 0; transition: opacity .3s;
-  }
-  .modal-bg.show { display: flex; opacity: 1; }
-  .modal {
-    background: var(--glass-bg);
-    backdrop-filter: blur(30px);
-    border-radius: 20px;
-    padding: 26px;
-    width: min(460px, 100%);
-    max-height: 90vh; overflow-y: auto;
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 24px 80px rgba(0,0,0,.4);
-    animation: modalPop .35s cubic-bezier(.34,1.56,.64,1);
-  }
-  @keyframes modalPop { from { transform: scale(.9) translateY(20px); opacity: 0 } to { transform: scale(1) translateY(0); opacity: 1 } }
-  .modal h3 { font-size: 18px; margin-bottom: 16px; font-weight: 700; }
-  .modal input[type="text"] {
-    width: 100%;
-    background: rgba(255,255,255,.6);
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-size: 16px; color: var(--text);
-    margin-bottom: 16px; font-family: inherit;
-  }
-  @media (prefers-color-scheme: dark) { .modal input[type="text"] { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.1); } }
-  .modal input:focus { outline: none; border-color: var(--accent); }
-  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-  .modal-btns button {
-    padding: 11px 22px; border-radius: 12px;
-    border: 1px solid rgba(0,0,0,.08);
-    background: rgba(255,255,255,.6);
-    color: var(--text); cursor: pointer;
-    font-size: 14px; font-weight: 500;
-    font-family: inherit;
-  }
-  @media (prefers-color-scheme: dark) { .modal-btns button { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.12); } }
-  .modal-btns button.primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff; border-color: transparent; font-weight: 600;
-  }
-  .modal-btns button.danger { color: #ff3b30; }
-  .toast-container {
-    position: fixed; bottom: 44px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 2000;
-    display: flex; flex-direction: column;
-    gap: 8px; align-items: center;
-    pointer-events: none;
-  }
-  .toast {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 14px;
-    padding: 12px 20px;
-    font-size: 13px; color: var(--text);
-    box-shadow: 0 12px 40px rgba(0,0,0,.15);
-    font-weight: 500;
-    display: flex; align-items: center; gap: 8px;
-    animation: toastIn .4s cubic-bezier(.34,1.56,.64,1);
-  }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(.9) } to { opacity: 1; transform: translateY(0) scale(1) } }
-  .toast.out { animation: toastOut .3s ease forwards; }
-  @keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(.95) } }
-  .panel-tab { display: none; }
-  .panel-tab.active { display: block; animation: panelFade .3s ease; }
-  @keyframes panelFade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
-  .mobile-toggle {
-    position: absolute; top: 16px; right: 16px;
-    width: 52px; height: 52px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border: none; border-radius: 16px;
-    color: #fff; font-size: 24px;
-    cursor: pointer; z-index: 30;
-    display: none; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px rgba(255,107,53,.5);
-  }
-  .overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.4);
-    backdrop-filter: blur(4px);
-    z-index: 200; opacity: 0;
-    pointer-events: none;
-    transition: opacity .3s;
-  }
-  .overlay.show { opacity: 1; pointer-events: auto; }
-  .hide-mobile { display: inline; }
-  @media (max-width: 900px) {
-    .hide-mobile { display: none; }
-    .brand span { display: none; }
-    .tab { padding: 0 10px; height: 42px; font-size: 11px; }
-    .tab span:not(.ico) { display: none; }
-    .mode-switch button { padding: 6px 10px; font-size: 11px; }
-    .topbar-right button, .topbar-right label { padding: 7px 10px; font-size: 11px; }
+  .panel-content { flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin; }
+  .panel-content::-webkit-scrollbar { width:6px; }
+  .panel-content::-webkit-scrollbar-thumb { background:rgba(0,0,0,.15); border-radius:3px; }
+  .section-title { font-size:11px; color:var(--text-3); margin:20px 0 10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
+  .section-title:first-child { margin-top:0; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .tool-btn { background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:12px 6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:10px; color:var(--text-2); font-family:inherit; transition:all .25s; touch-action:manipulation; }
+  @media (prefers-color-scheme:dark) { .tool-btn { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .tool-btn:hover { background:rgba(255,107,53,.12); border-color:rgba(255,107,53,.4); color:var(--accent); transform:translateY(-3px); box-shadow:0 8px 20px rgba(255,107,53,.2); }
+  .tool-btn:active { transform:scale(.95); }
+  .tool-btn.active { background:linear-gradient(135deg,var(--accent),var(--accent-2)); border-color:transparent; color:#fff; box-shadow:0 6px 18px rgba(255,107,53,.4); }
+  .tool-btn .icon { font-size:22px; line-height:1; }
+  .tool-btn span { font-size:9px; text-align:center; line-height:1.2; font-weight:500; }
+  .color-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; margin-top:8px; }
+  .color-swatch { aspect-ratio:1; border-radius:8px; border:2px solid transparent; cursor:pointer; transition:all .2s; box-shadow:inset 0 0 0 1px rgba(0,0,0,.06); }
+  .color-swatch:hover { transform:scale(1.15) rotate(-3deg); }
+  .color-swatch.active { border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,107,53,.3); transform:scale(1.08); }
+  .current-color { display:flex; gap:12px; align-items:center; margin-bottom:12px; padding:10px; background:rgba(255,255,255,.4); border-radius:12px; border:1px solid rgba(0,0,0,.05); }
+  @media (prefers-color-scheme:dark) { .current-color { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.08); } }
+  .current-color .big { width:48px; height:48px; border-radius:12px; border:2px solid rgba(255,255,255,.6); box-shadow:0 4px 12px rgba(0,0,0,.15); flex-shrink:0; cursor:pointer; position:relative; overflow:hidden; }
+  .current-color .big input[type="color"] { position:absolute; inset:-10px; opacity:0; cursor:pointer; border:none; }
+  .current-color .info { flex:1; min-width:0; }
+  .current-color .info label { font-size:10px; color:var(--text-3); display:block; margin-bottom:4px; font-weight:500; text-transform:uppercase; }
+  .current-color .info input { width:100%; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.06); border-radius:8px; padding:7px 10px; font-size:12px; color:var(--text); font-family:monospace; }
+  @media (prefers-color-scheme:dark) { .current-color .info input { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .current-color .info input:focus { outline:none; border-color:var(--accent); }
+  .slider-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; padding:8px 10px; background:rgba(255,255,255,.4); border-radius:12px; border:1px solid rgba(0,0,0,.04); }
+  @media (prefers-color-scheme:dark) { .slider-row { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.06); } }
+  .slider-row label { font-size:12px; color:var(--text-2); min-width:70px; font-weight:500; }
+  .slider-row input[type="range"] { flex:1; -webkit-appearance:none; appearance:none; height:6px; background:rgba(0,0,0,.08); border-radius:3px; outline:none; }
+  @media (prefers-color-scheme:dark) { .slider-row input[type="range"] { background:rgba(255,255,255,.12); } }
+  .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); cursor:grab; border:2px solid #fff; box-shadow:0 2px 8px rgba(255,107,53,.4); }
+  .slider-row .val { font-size:12px; color:var(--accent); font-weight:700; min-width:42px; text-align:right; }
+  .num-input { flex:1; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.08); border-radius:8px; padding:8px; color:var(--text); font-size:13px; font-family:inherit; }
+  @media (prefers-color-scheme:dark) { .num-input { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .num-input:focus { outline:none; border-color:var(--accent); }
+  .layers-list { display:flex; flex-direction:column; gap:6px; max-height:300px; overflow-y:auto; }
+  .layer-item { display:flex; align-items:center; gap:8px; padding:6px 8px; background:rgba(255,255,255,.5); border-radius:10px; border:1px solid rgba(0,0,0,.05); cursor:pointer; transition:all .2s; font-size:12px; }
+  @media (prefers-color-scheme:dark) { .layer-item { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.06); } }
+  .layer-item:hover { background:rgba(255,107,53,.1); }
+  .layer-item.active { background:rgba(255,107,53,.15); border-color:rgba(255,107,53,.5); }
+  .layer-item .thumb { width:36px; height:28px; border-radius:6px; object-fit:cover; background:repeating-conic-gradient(rgba(0,0,0,.08) 0 25%, transparent 0 50%) 50%/8px 8px; border:1px solid rgba(0,0,0,.1); flex-shrink:0; }
+  .layer-item .eye,.layer-item .del { background:transparent; border:none; font-size:14px; cursor:pointer; opacity:.6; padding:0 2px; color:var(--text); }
+  .layer-item .del { color:#ff3b30; opacity:0; }
+  .layer-item:hover .del { opacity:1; }
+  .layer-item .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sticker-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:5px; }
+  @media (max-width:400px) { .sticker-grid { grid-template-columns:repeat(4,1fr); } }
+  .sticker-btn { aspect-ratio:1; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.06); border-radius:10px; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  @media (prefers-color-scheme:dark) { .sticker-btn { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .sticker-btn:hover { transform:scale(1.15) rotate(-5deg); background:rgba(255,107,53,.15); }
+  .statusbar { position:relative; z-index:5; background:var(--glass-bg); backdrop-filter:blur(20px); border-top:1px solid var(--glass-border); padding:8px 18px; font-size:11px; color:var(--text-3); display:flex; justify-content:space-between; flex-shrink:0; min-height:32px; align-items:center; font-weight:500; gap:12px; }
+  .statusbar .brand { background:linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:700; padding:0; font-size:11px; }
+  .statusbar .mem { font-variant-numeric:tabular-nums; }
+  .spinner { display:inline-block; width:12px; height:12px; border:2px solid rgba(0,0,0,.15); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; opacity:0; transition:opacity .3s; }
+  .modal-bg.show { display:flex; opacity:1; }
+  .modal { background:var(--glass-bg); backdrop-filter:blur(30px); border-radius:20px; padding:26px; width:min(460px,100%); max-height:90vh; overflow-y:auto; border:1px solid var(--glass-border); box-shadow:0 24px 80px rgba(0,0,0,.4); animation:modalPop .35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes modalPop { from { transform:scale(.9) translateY(20px); opacity:0 } to { transform:scale(1) translateY(0); opacity:1 } }
+  .modal h3 { font-size:18px; margin-bottom:16px; font-weight:700; }
+  .modal input[type="text"] { width:100%; background:rgba(255,255,255,.6); border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:14px 16px; font-size:16px; color:var(--text); margin-bottom:16px; font-family:inherit; }
+  @media (prefers-color-scheme:dark) { .modal input[type="text"] { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.1); } }
+  .modal input:focus { outline:none; border-color:var(--accent); }
+  .modal-btns { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .modal-btns button { padding:11px 22px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:rgba(255,255,255,.6); color:var(--text); cursor:pointer; font-size:14px; font-weight:500; font-family:inherit; }
+  @media (prefers-color-scheme:dark) { .modal-btns button { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.12); } }
+  .modal-btns button.primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; font-weight:600; }
+  .modal-btns button.danger { color:#ff3b30; }
+  .toast-container { position:fixed; bottom:44px; left:50%; transform:translateX(-50%); z-index:2000; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; }
+  .toast { background:var(--glass-bg); backdrop-filter:blur(20px); border:1px solid var(--glass-border); border-radius:14px; padding:12px 20px; font-size:13px; color:var(--text); box-shadow:0 12px 40px rgba(0,0,0,.15); font-weight:500; display:flex; align-items:center; gap:8px; animation:toastIn .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes toastIn { from { opacity:0; transform:translateY(20px) scale(.9) } to { opacity:1; transform:translateY(0) scale(1) } }
+  .toast.out { animation:toastOut .3s ease forwards; }
+  @keyframes toastOut { to { opacity:0; transform:translateY(-10px) scale(.95) } }
+  .panel-tab { display:none; }
+  .panel-tab.active { display:block; animation:panelFade .3s ease; }
+  @keyframes panelFade { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+  .mobile-toggle { position:absolute; top:16px; right:16px; width:52px; height:52px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); border:none; border-radius:16px; color:#fff; font-size:24px; cursor:pointer; z-index:30; display:none; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(255,107,53,.5); }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); z-index:200; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .overlay.show { opacity:1; pointer-events:auto; }
+  .hide-mobile { display:inline; }
+  .busy-overlay { position:absolute; inset:0; background:rgba(0,0,0,.1); z-index:100; display:none; cursor:wait; }
+  .busy-overlay.show { display:block; }
+
+  @media (max-width:900px) {
+    .hide-mobile { display:none; }
+    .brand span { display:none; }
+    .tab { padding:0 10px; height:42px; font-size:11px; }
+    .tab span:not(.ico) { display:none; }
+    .mode-switch button { padding:6px 10px; font-size:11px; }
+    .topbar-right button,.topbar-right label { padding:7px 10px; font-size:11px; }
+
+    .panel-left {
+      position:fixed; top:0; left:0; bottom:0;
+      width:min(320px,88vw);
+      margin:0;
+      border-radius:0 20px 20px 0;
+      transform:translateX(-100%);
+      transition:transform .35s cubic-bezier(.32,.72,0,1);
+      z-index:300;
+    }
+    .panel-left.open { transform:translateX(0); }
+    .panel-close-left {
+      position:absolute; top:14px; right:14px;
+      width:40px; height:40px;
+      background:rgba(0,0,0,.06); border:none;
+      border-radius:12px; font-size:18px;
+      cursor:pointer; color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+      z-index:10;
+    }
+    .panel-left .panel-content { padding-top:60px; }
+    .mobile-toggle-left {
+      position:absolute; top:16px; left:16px;
+      width:52px; height:52px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      border:none; border-radius:16px;
+      color:#fff; font-size:24px;
+      cursor:pointer; z-index:30;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 24px rgba(255,107,53,.5);
+    }
+
     .panel-right {
-      position: fixed; top: 0; right: 0; bottom: 0;
-      width: min(340px, 90vw);
-      margin: 0;
-      border-radius: 20px 0 0 20px;
-      transform: translateX(100%);
-      transition: transform .35s cubic-bezier(.32,.72,0,1);
-      z-index: 300;
+      position:fixed; top:0; right:0; bottom:0;
+      width:min(340px,90vw);
+      margin:0;
+      border-radius:20px 0 0 20px;
+      transform:translateX(100%);
+      transition:transform .35s cubic-bezier(.32,.72,0,1);
+      z-index:300;
     }
-    .panel-right.open { transform: translateX(0); }
-    .mobile-toggle { display: flex; }
+    .panel-right.open { transform:translateX(0); }
+    .mobile-toggle { display:flex; }
     .panel-close {
-      position: absolute; top: 14px; right: 14px;
-      width: 40px; height: 40px;
-      background: rgba(0,0,0,.06); border: none;
-      border-radius: 12px; font-size: 18px;
-      cursor: pointer; color: var(--text);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10;
+      position:absolute; top:14px; right:14px;
+      width:40px; height:40px;
+      background:rgba(0,0,0,.06); border:none;
+      border-radius:12px; font-size:18px;
+      cursor:pointer; color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+      z-index:10;
     }
-    .panel-content { padding-top: 60px; }
-    .stage-wrap { padding: 8px; }
+    .panel-content { padding-top:60px; }
+    .stage-wrap { padding:8px; }
   }
-  @media (min-width: 901px) {
-    .panel-close { display: none; }
-    .overlay { display: none; }
+  @media (min-width:901px) {
+    .panel-close, .panel-close-left { display:none; }
+    .overlay { display:none; }
   }
 </style>
 </head>
@@ -537,10 +270,7 @@
 <div class="bg-mesh"></div>
 
 <div class="topbar">
-  <div class="brand">
-    <div class="brand-icon">🔥</div>
-    <span>FireLand</span>
-  </div>
+  <div class="brand"><div class="brand-icon">🔥</div><span>FireLand</span></div>
   <div class="mode-switch">
     <button class="active" data-mode="2d"><span>🎨</span> 2D</button>
     <button data-mode="3d"><span>🧊</span> 3D</button>
@@ -551,9 +281,8 @@
     <button class="tab" data-tab="stickers"><span class="ico">🌟</span><span>Стикеры</span></button>
     <button class="tab" data-tab="text"><span class="ico">T</span><span>Текст</span></button>
     <button class="tab" data-tab="layers"><span class="ico">📚</span><span>Слои</span></button>
-    <button class="tab" data-tab="canvas"><span class="ico">🎨</span><span>Холст</span></button>
   </div>
-  <div class="tabs" id="tabs3d" style="display: none;">
+  <div class="tabs" id="tabs3d" style="display:none">
     <button class="tab active" data-tab="objects3d"><span class="ico">🧊</span><span>Объекты</span></button>
     <button class="tab" data-tab="text3d"><span class="ico">T</span><span>3D-текст</span></button>
     <button class="tab" data-tab="layers3d"><span class="ico">📚</span><span>Слои</span></button>
@@ -569,18 +298,50 @@
 </div>
 
 <div class="workspace">
+  <aside class="panel-left" id="panelLeft">
+    <button class="panel-close-left" id="btnPanelCloseLeft">✕</button>
+    <div class="panel-content">
+      <div class="section-title">Размер холста</div>
+      <div class="slider-row"><label>Ширина</label><input type="number" class="num-input" id="canvasW" value="1200" min="100" max="5000"></div>
+      <div class="slider-row"><label>Высота</label><input type="number" class="num-input" id="canvasH" value="800" min="100" max="5000"></div>
+      <button class="tool-btn" id="btnResizeCanvas" style="width:100%"><div class="icon">📐</div><span>Применить</span></button>
+      <div class="section-title">Операции</div>
+      <button class="tool-btn" id="btnFlipH" style="width:100%"><div class="icon">⇄</div><span>Отразить ⇄</span></button>
+      <button class="tool-btn" id="btnFlipV" style="width:100%"><div class="icon">⇅</div><span>Отразить ⇅</span></button>
+      <button class="tool-btn" id="btnRotate90" style="width:100%"><div class="icon">↻</div><span>Повернуть 90°</span></button>
+      <button class="tool-btn" id="btnToggleGrid2d" style="width:100%"><div class="icon">▦</div><span>Сетка: выкл</span></button>
+      <button class="tool-btn" id="btnClearCanvas" style="width:100%"><div class="icon">🧹</div><span>Очистить холст</span></button>
+      <div class="section-title">Цвет</div>
+      <div class="current-color">
+        <div class="big" id="currentColorBig" style="background:#ff6b35"><input type="color" id="customColorPicker" value="#ff6b35"></div>
+        <div class="info"><label>Основной</label><input type="text" id="currentColorHex" value="#ff6b35"></div>
+      </div>
+      <div class="color-grid" id="colorGrid"></div>
+      <div class="section-title">Фон холста</div>
+      <div class="current-color">
+        <div class="big" id="bgColorBig" style="background:#ffffff"><input type="color" id="bgColorPicker" value="#ffffff"></div>
+        <div class="info"><label>Цвет фона</label><input type="text" id="bgColorHex" value="#ffffff"></div>
+      </div>
+    </div>
+  </aside>
+
   <div class="stage-wrap" id="stageWrap">
     <div class="canvas-container" id="canvasContainer">
       <canvas id="canvas2d"></canvas>
       <div class="object-layer" id="objectLayer"></div>
     </div>
     <canvas id="canvas3d"></canvas>
+    <div class="busy-overlay" id="busyOverlay"></div>
+    <button class="mobile-toggle-left" id="btnMobilePanelLeft">📐</button>
     <button class="mobile-toggle" id="btnMobilePanel">⚙️</button>
   </div>
+
   <div class="overlay" id="overlay"></div>
+
   <div class="panel-right" id="panelRight">
     <button class="panel-close" id="btnPanelClose">✕</button>
     <div class="panel-content">
+
       <div class="panel-tab active" data-tab-content="tools">
         <div class="section-title">Инструменты</div>
         <div class="grid-3">
@@ -593,17 +354,10 @@
           <button class="tool-btn" data-tool="picker"><div class="icon">💧</div><span>Пипетка</span></button>
         </div>
         <div class="section-title">Кисть</div>
-        <div class="slider-row">
-          <label>Размер</label>
-          <input type="range" id="brushSize" min="1" max="100" value="6">
-          <span class="val" id="brushSizeVal">6</span>
-        </div>
-        <div class="slider-row">
-          <label>Прозрач.</label>
-          <input type="range" id="brushOpacity" min="1" max="100" value="100">
-          <span class="val" id="brushOpacityVal">100%</span>
-        </div>
+        <div class="slider-row"><label>Размер</label><input type="range" id="brushSize" min="1" max="100" value="6"><span class="val" id="brushSizeVal">6</span></div>
+        <div class="slider-row"><label>Прозрач.</label><input type="range" id="brushOpacity" min="1" max="100" value="100"><span class="val" id="brushOpacityVal">100%</span></div>
       </div>
+
       <div class="panel-tab" data-tab-content="shapes">
         <div class="section-title">2D Фигуры</div>
         <div class="grid-3">
@@ -618,31 +372,23 @@
           <button class="tool-btn" data-shape="pentagon"><div class="icon">⬟</div><span>Пятиуг.</span></button>
         </div>
         <div class="section-title">Настройки</div>
-        <div class="slider-row">
-          <label>Толщина</label>
-          <input type="range" id="shapeSize" min="1" max="50" value="4">
-          <span class="val" id="shapeSizeVal">4</span>
-        </div>
+        <div class="slider-row"><label>Толщина</label><input type="range" id="shapeSize" min="1" max="50" value="4"><span class="val" id="shapeSizeVal">4</span></div>
         <div class="grid-2">
           <button class="tool-btn active" id="shapeOutline"><div class="icon">□</div><span>Контур</span></button>
           <button class="tool-btn" id="shapeFilled"><div class="icon">■</div><span>Залить</span></button>
         </div>
       </div>
+
       <div class="panel-tab" data-tab-content="stickers">
-        <div class="section-title">Стикеры (тап → на холст)</div>
+        <div class="section-title">Стикеры</div>
         <div class="sticker-grid" id="stickerGrid"></div>
       </div>
+
       <div class="panel-tab" data-tab-content="text">
         <div class="section-title">Текст</div>
-        <button class="tool-btn" id="btnAddText" style="width: 100%; padding: 20px;">
-          <div class="icon">➕</div><span>Добавить текст</span>
-        </button>
+        <button class="tool-btn" id="btnAddText" style="width:100%;padding:20px"><div class="icon">➕</div><span>Добавить текст</span></button>
         <div class="section-title">Шрифт</div>
-        <div class="slider-row">
-          <label>Размер</label>
-          <input type="range" id="textSize" min="12" max="200" value="64">
-          <span class="val" id="textSizeVal">64</span>
-        </div>
+        <div class="slider-row"><label>Размер</label><input type="range" id="textSize" min="12" max="200" value="64"><span class="val" id="textSizeVal">64</span></div>
         <div class="grid-2">
           <button class="tool-btn" data-font="sans"><div class="icon">Aa</div><span>Без засечек</span></button>
           <button class="tool-btn" data-font="serif"><div class="icon">Aα</div><span>С засечками</span></button>
@@ -650,45 +396,16 @@
           <button class="tool-btn active" data-font="bold"><div class="icon"><b>Ab</b></div><span>Жирный</span></button>
         </div>
       </div>
+
       <div class="panel-tab" data-tab-content="layers">
         <div class="section-title">Слои</div>
         <div class="layers-list" id="layersList"></div>
-        <div class="grid-2" style="margin-top: 10px;">
+        <div class="grid-2" style="margin-top:10px">
           <button class="tool-btn" id="btnNewLayer"><div class="icon">➕</div><span>Слой</span></button>
           <button class="tool-btn" id="btnMergeLayers"><div class="icon">🔗</div><span>Объединить</span></button>
         </div>
       </div>
-      <div class="panel-tab" data-tab-content="canvas">
-        <div class="section-title">Размер холста</div>
-        <div class="slider-row">
-          <label>Ширина</label>
-          <input type="number" class="num-input" id="canvasW" value="1200" min="100" max="5000">
-        </div>
-        <div class="slider-row">
-          <label>Высота</label>
-          <input type="number" class="num-input" id="canvasH" value="800" min="100" max="5000">
-        </div>
-        <button class="tool-btn" id="btnResizeCanvas" style="width: 100%;">
-          <div class="icon">📐</div><span>Применить</span>
-        </button>
-        <div class="section-title">Операции</div>
-        <button class="tool-btn" id="btnFlipH" style="width: 100%;"><div class="icon">⇄</div><span>Отразить ⇄</span></button>
-        <button class="tool-btn" id="btnFlipV" style="width: 100%;"><div class="icon">⇅</div><span>Отразить ⇅</span></button>
-        <button class="tool-btn" id="btnRotate90" style="width: 100%;"><div class="icon">↻</div><span>Повернуть 90°</span></button>
-        <button class="tool-btn" id="btnToggleGrid2d" style="width: 100%;"><div class="icon">▦</div><span>Сетка: выкл</span></button>
-        <button class="tool-btn" id="btnClearCanvas" style="width: 100%;"><div class="icon">🧹</div><span>Очистить холст</span></button>
-        <div class="section-title">Цвет</div>
-        <div class="current-color">
-          <div class="big" id="currentColorBig" style="background:#ff6b35;">
-            <input type="color" id="customColorPicker" value="#ff6b35">
-          </div>
-          <div class="info">
-            <label>Основной</label>
-            <input type="text" id="currentColorHex" value="#ff6b35">
-          </div>
-        </div>
-        <div class="color-grid" id="colorGrid"></div>
-      </div>
+
       <div class="panel-tab" data-tab-content="objects3d">
         <div class="section-title">3D-примитивы</div>
         <div class="grid-3">
@@ -708,74 +425,52 @@
           <button class="tool-btn" data-transform="rotate"><div class="icon">↻</div><span>Rotate</span></button>
           <button class="tool-btn" data-transform="scale"><div class="icon">⤢</div><span>Scale</span></button>
         </div>
-        <div class="section-title">Выделено <span id="sel3dCount" style="color: var(--accent); font-size: 11px;"></span></div>
-        <div id="objProps3d" style="display: none;">
-          <div class="slider-row">
-            <label>Поворот</label>
-            <input type="range" id="objRotY3d" min="-180" max="180" value="0">
-            <span class="val" id="objRotY3dVal">0°</span>
-          </div>
-          <div class="slider-row">
-            <label>Размер</label>
-            <input type="range" id="objScale3d" min="30" max="300" value="100">
-            <span class="val" id="objScale3dVal">1.0×</span>
-          </div>
-          <div class="slider-row">
-            <label>Высота</label>
-            <input type="range" id="objY3d" min="-20" max="40" value="6">
-            <span class="val" id="objY3dVal">0.6</span>
-          </div>
-          <div class="grid-2" style="margin-top: 10px;">
+        <div class="section-title">Выделено <span id="sel3dCount" style="color:var(--accent);font-size:11px"></span></div>
+        <div id="objProps3d" style="display:none">
+          <div class="slider-row"><label>Поворот</label><input type="range" id="objRotY3d" min="-180" max="180" value="0"><span class="val" id="objRotY3dVal">0°</span></div>
+          <div class="slider-row"><label>Размер</label><input type="range" id="objScale3d" min="30" max="300" value="100"><span class="val" id="objScale3dVal">1.0×</span></div>
+          <div class="slider-row"><label>Высота</label><input type="range" id="objY3d" min="-20" max="40" value="6"><span class="val" id="objY3dVal">0.6</span></div>
+          <div class="grid-2" style="margin-top:10px">
             <button class="tool-btn" id="btnDup3d"><div class="icon">📋</div><span>Копия</span></button>
             <button class="tool-btn" id="btnDel3d"><div class="icon">🗑️</div><span>Удалить</span></button>
           </div>
         </div>
-        <div id="noSel3d" style="font-size: 12px; color: var(--text-3); text-align: center; padding: 16px; background: rgba(255,255,255,0.4); border-radius: 12px;">
-          Тапни по объекту<br><span style="font-size: 10px; opacity: .7;">Shift+клик = мульти · гизмо = трансформация</span>
+        <div id="noSel3d" style="font-size:12px;color:var(--text-3);text-align:center;padding:16px;background:rgba(255,255,255,0.4);border-radius:12px">
+          Тапни по объекту<br><span style="font-size:10px;opacity:.7">Shift+клик = мульти · гизмо = трансформация</span>
         </div>
       </div>
+
       <div class="panel-tab" data-tab-content="text3d">
         <div class="section-title">3D-текст</div>
-        <button class="tool-btn" id="btnAdd3dText" style="width: 100%; padding: 20px;">
-          <div class="icon">➕</div><span>Добавить 3D-текст</span>
-        </button>
+        <button class="tool-btn" id="btnAdd3dText" style="width:100%;padding:20px"><div class="icon">➕</div><span>Добавить 3D-текст</span></button>
         <div class="section-title">Цвет</div>
         <div class="current-color">
-          <div class="big" id="currentColorBig3d" style="background:#ff6b35;">
-            <input type="color" id="customColorPicker3d" value="#ff6b35">
-          </div>
-          <div class="info">
-            <label>Основной</label>
-            <input type="text" id="currentColorHex3d" value="#ff6b35">
-          </div>
+          <div class="big" id="currentColorBig3d" style="background:#ff6b35"><input type="color" id="customColorPicker3d" value="#ff6b35"></div>
+          <div class="info"><label>Основной</label><input type="text" id="currentColorHex3d" value="#ff6b35"></div>
         </div>
         <div class="color-grid" id="colorGrid3d"></div>
       </div>
+
       <div class="panel-tab" data-tab-content="layers3d">
         <div class="section-title">Объекты сцены</div>
         <div class="layers-list" id="layersList3d"></div>
       </div>
+
       <div class="panel-tab" data-tab-content="scene3d">
         <div class="section-title">Сцена</div>
-        <button class="tool-btn" id="btnToggleGrid3d" style="width: 100%;">
-          <div class="icon">▦</div><span>Сетка: вкл</span>
-        </button>
-        <button class="tool-btn" id="btnToggleSnap3d" style="width: 100%;">
-          <div class="icon">📐</div><span>Снап: вкл</span>
-        </button>
-        <button class="tool-btn" id="btnResetCam3d" style="width: 100%;">
-          <div class="icon">🎯</div><span>Сбросить камеру</span>
-        </button>
-        <button class="tool-btn" id="btnClearScene3d" style="width: 100%;">
-          <div class="icon">🧹</div><span>Очистить сцену</span>
-        </button>
+        <button class="tool-btn" id="btnToggleGrid3d" style="width:100%"><div class="icon">▦</div><span>Сетка: вкл</span></button>
+        <button class="tool-btn" id="btnToggleSnap3d" style="width:100%"><div class="icon">📐</div><span>Снап: вкл</span></button>
+        <button class="tool-btn" id="btnResetCam3d" style="width:100%"><div class="icon">🎯</div><span>Сбросить камеру</span></button>
+        <button class="tool-btn" id="btnClearScene3d" style="width:100%"><div class="icon">🧹</div><span>Очистить сцену</span></button>
       </div>
+
     </div>
   </div>
 </div>
 
 <div class="statusbar">
   <span id="status">Готово</span>
+  <span class="mem" id="memInfo"></span>
   <span class="brand">🔥 FireLand</span>
 </div>
 
@@ -806,7 +501,7 @@
 <div class="modal-bg" id="confirmModal">
   <div class="modal">
     <h3 id="confirmTitle">Подтверждение</h3>
-    <p id="confirmText" style="font-size:14px; color:var(--text-2); margin-bottom:18px;"></p>
+    <p id="confirmText" style="font-size:14px;color:var(--text-2);margin-bottom:18px"></p>
     <div class="modal-btns">
       <button id="confirmCancel">Отмена</button>
       <button class="primary danger" id="confirmOk">ОК</button>
@@ -822,10 +517,8 @@
 (function() {
 'use strict';
 
-// =====================================================================
-// КОНСТАНТЫ
-// =====================================================================
-const MAX_HISTORY = 20;
+const HISTORY_MAX_COUNT = 15;
+const HISTORY_MAX_BYTES = 120 * 1024 * 1024;
 const PALETTE = [
   '#ffffff','#e5e5ea','#c7c7cc','#8e8e93','#48484a','#1c1c1e','#000000','#ff6b35',
   '#f7931e','#ffcc00','#34c759','#30d158','#00c7be','#32ade6','#007aff','#5856d6',
@@ -837,122 +530,102 @@ const STICKERS = ['😀','😍','😂','🥳','😎','🤔','😴','🤩','🥰'
                   '🌸','🌺','🌻','🍀','🌹','🌴','🍁','🍄','🌷','💐','🌵','🍃',
                   '🐶','🐱','🐼','🦊','🐸','🐝','🦋','🐙','🦄','🐢','🐧','🐨'];
 
-// =====================================================================
-// DOM
-// =====================================================================
 const $ = id => document.getElementById(id);
-const status = $('status');
+const statusEl = $('status');
+const memInfoEl = $('memInfo');
 const toastContainer = $('toastContainer');
 const panelRight = $('panelRight');
+const panelLeft = $('panelLeft');
 const overlayEl = $('overlay');
 const stageWrap = $('stageWrap');
 const canvasContainer = $('canvasContainer');
+const busyOverlay = $('busyOverlay');
 const canvas2d = $('canvas2d');
 const ctx2d = canvas2d.getContext('2d', { willReadFrequently: true });
 const objectLayer = $('objectLayer');
 const canvas3d = $('canvas3d');
 
-// =====================================================================
-// СОСТОЯНИЕ 2D
-// =====================================================================
 const S2 = {
-  color: '#ff6b35',
-  logicalW: 1200, logicalH: 800,
-  dpr: Math.max(window.devicePixelRatio || 1, 1),
-  tool: 'brush',
-  brushSize: 6, brushOpacity: 1,
-  shapeSize: 4, shapeFilled: false,
-  textSize: 64, textFont: 'bold',
-  layers: [], activeLayerId: null, layerCounter: 0,
-  objects: [], selectedObjectId: null,
-  showGrid2d: false
+  color:'#ff6b35', bgColor:'#ffffff',
+  logicalW:1200, logicalH:800,
+  dpr:Math.max(window.devicePixelRatio||1,1),
+  zoom:1, panX:0, panY:0,
+  tool:'brush',
+  brushSize:6, brushOpacity:1,
+  shapeSize:4, shapeFilled:false,
+  textSize:64, textFont:'bold',
+  layers:[], activeLayerId:null, layerCounter:0,
+  objects:[], selectedIds:[],
+  showGrid2d:false
 };
 
-// =====================================================================
-// СОСТОЯНИЕ 3D
-// =====================================================================
 const S3 = {
-  init: false,
-  scene: null, camera: null, renderer: null,
-  orbit: null, transform: null,
-  grid: null, ground: null,
-  objects: [], selected: [],
-  raycaster: null,
-  transformMode: 'translate',
-  snapEnabled: true,
-  spawnAngle: 0,
-  drag: { active: false, plane: null, lastPoint: null, pendingSnap: null }
+  init:false, scene:null, camera:null, renderer:null,
+  orbit:null, transform:null,
+  grid:null, ground:null,
+  objects:[], selected:[],
+  raycaster:null, transformMode:'translate', snapEnabled:true, spawnAngle:0
 };
 
-// =====================================================================
-// ИСТОРИЯ
-// =====================================================================
 const History = {
-  stack: [],
-  redoStack: [],
-  pendingSnapshot: null,
-
+  stack:[], redoStack:[], pendingSnapshot:null,
+  _snapBytes(snap) {
+    if (!snap) return 0;
+    if (snap.mode === '2d' && snap.layers) {
+      let total = 0;
+      for (const l of snap.layers) if (l.data) total += l.data.width * l.data.height * 4;
+      return total;
+    }
+    return 1024;
+  },
+  _totalBytes() {
+    let t = 0;
+    for (const s of this.stack) t += this._snapBytes(s);
+    return t;
+  },
   push(snap) {
     if (!snap) return;
     this.stack.push(snap);
     this.redoStack.length = 0;
-    while (this.stack.length > MAX_HISTORY) this.stack.shift();
-    updateUndoButtons();
+    while (this.stack.length > HISTORY_MAX_COUNT) this.stack.shift();
+    while (this.stack.length > 1 && this._totalBytes() > HISTORY_MAX_BYTES) this.stack.shift();
+    updateUndoButtons(); updateMemInfo();
   },
-
-  begin() {
-    // Захват "до" изменения
-    this.pendingSnapshot = currentMode === '2d' ? capture2D() : capture3D();
-  },
-
-  commit() {
-    // Пуш "до" в стек, если оно отличается от текущего
-    if (!this.pendingSnapshot) return;
-    this.push(this.pendingSnapshot);
-    this.pendingSnapshot = null;
-  },
-
-  cancel() {
-    this.pendingSnapshot = null;
-  },
-
-  clear() {
-    this.stack.length = 0;
-    this.redoStack.length = 0;
-    this.pendingSnapshot = null;
-    updateUndoButtons();
-  }
+  begin() { this.pendingSnapshot = currentMode === '2d' ? capture2D() : capture3D(); },
+  commit() { if (!this.pendingSnapshot) return; this.push(this.pendingSnapshot); this.pendingSnapshot = null; },
+  cancel() { this.pendingSnapshot = null; },
+  clear() { this.stack.length = 0; this.redoStack.length = 0; this.pendingSnapshot = null; updateUndoButtons(); updateMemInfo(); }
 };
 
 let currentMode = '2d';
+let busy = false;
 
 function updateUndoButtons() {
-  $('btnUndo').disabled = History.stack.length === 0;
-  $('btnRedo').disabled = History.redoStack.length === 0;
+  $('btnUndo').disabled = busy || History.stack.length === 0;
+  $('btnRedo').disabled = busy || History.redoStack.length === 0;
+}
+function updateMemInfo() {
+  const mb = (History._totalBytes()/(1024*1024)).toFixed(1);
+  memInfoEl.textContent = '📊 ' + mb + ' МБ · ' + History.stack.length + '/' + HISTORY_MAX_COUNT;
 }
 
-// =====================================================================
-// УТИЛИТЫ
-// =====================================================================
+function escapeHtml(s) {
+  return String(s).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function toast(msg, icon) {
   const t = document.createElement('div');
   t.className = 'toast';
-  t.innerHTML = `<span>${icon || '✓'}</span><span>${String(msg).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</span>`;
+  t.innerHTML = `<span>${icon||'✓'}</span><span>${escapeHtml(msg)}</span>`;
   toastContainer.appendChild(t);
-  setTimeout(() => {
-    t.classList.add('out');
-    setTimeout(() => t.remove(), 300);
-  }, 1600);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 1600);
 }
-
-let busy = false;
 function setBusy(on, msg) {
   busy = on;
-  status.innerHTML = on ? '<span class="spinner"></span>' + (msg || '...') : (msg || 'Готово');
-  ['btnUndo','btnRedo','btnSave','btnSaveProject'].forEach(id => { $(id).disabled = on; });
-  if (!on) updateUndoButtons();
+  statusEl.innerHTML = on ? '<span class="spinner"></span>' + escapeHtml(msg||'...') : escapeHtml(msg||'Готово');
+  busyOverlay.classList.toggle('show', on);
+  ['btnSave','btnSaveProject'].forEach(id => { $(id).disabled = on; });
+  updateUndoButtons();
 }
-
 function confirmAsync(title, text) {
   return new Promise(resolve => {
     $('confirmTitle').textContent = title;
@@ -961,106 +634,84 @@ function confirmAsync(title, text) {
     const ok = $('confirmOk'), cancel = $('confirmCancel');
     let done = false;
     function finish(val) {
-      if (done) return;
-      done = true;
+      if (done) return; done = true;
       $('confirmModal').classList.remove('show');
       ok.removeEventListener('click', onOk);
       cancel.removeEventListener('click', onCancel);
       document.removeEventListener('keydown', onKey);
       resolve(val);
     }
-    function onOk() { finish(true); }
-    function onCancel() { finish(false); }
-    function onKey(e) {
-      if (e.key === 'Escape') finish(false);
-      if (e.key === 'Enter') finish(true);
+    function onOk(){finish(true);}
+    function onCancel(){finish(false);}
+    function onKey(e){
+      if (e.key === 'Escape'){e.preventDefault();finish(false);}
+      if (e.key === 'Enter'){
+        if (!document.activeElement || document.activeElement === document.body || document.activeElement === ok){
+          e.preventDefault(); finish(true);
+        }
+      }
     }
     ok.addEventListener('click', onOk);
     cancel.addEventListener('click', onCancel);
     document.addEventListener('keydown', onKey);
+    setTimeout(() => cancel.focus(), 50);
   });
 }
 
-// =====================================================================
-// 2D: ЗАХВАТ / ПРИМЕНЕНИЕ СНИМКА
-// =====================================================================
 function capture2D() {
   return {
-    mode: '2d',
-    logicalW: S2.logicalW,
-    logicalH: S2.logicalH,
-    layerCounter: S2.layerCounter,
-    activeLayerId: S2.activeLayerId,
-    showGrid2d: S2.showGrid2d,
-    layers: S2.layers.map(l => ({
-      id: l.id, name: l.name, visible: l.visible,
-      data: l.ctx.getImageData(0, 0, l.canvas.width, l.canvas.height)
+    mode:'2d',
+    logicalW:S2.logicalW, logicalH:S2.logicalH,
+    layerCounter:S2.layerCounter, activeLayerId:S2.activeLayerId,
+    showGrid2d:S2.showGrid2d, bgColor:S2.bgColor,
+    layers:S2.layers.map(l => ({
+      id:l.id, name:l.name, visible:l.visible,
+      data:l.ctx.getImageData(0,0,l.canvas.width,l.canvas.height)
     })),
-    objects: JSON.parse(JSON.stringify(S2.objects)),
-    selectedObjectId: S2.selectedObjectId
+    objects:JSON.parse(JSON.stringify(S2.objects)),
+    selectedIds:S2.selectedIds.slice()
   };
 }
-
 function apply2D(snap) {
-  S2.logicalW = snap.logicalW;
-  S2.logicalH = snap.logicalH;
+  S2.logicalW = snap.logicalW; S2.logicalH = snap.logicalH;
   S2.layerCounter = snap.layerCounter;
   S2.showGrid2d = snap.showGrid2d;
-
-  // Пересоздаём canvas
+  S2.bgColor = snap.bgColor || '#ffffff';
   canvas2d.width = Math.round(S2.logicalW * S2.dpr);
   canvas2d.height = Math.round(S2.logicalH * S2.dpr);
   canvas2d.style.width = S2.logicalW + 'px';
   canvas2d.style.height = S2.logicalH + 'px';
-  ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-
-  // Пересоздаём слои
+  ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
   S2.layers = snap.layers.map(s => {
     const c = document.createElement('canvas');
-    c.width = s.data.width;
-    c.height = s.data.height;
-    const cx = c.getContext('2d', { willReadFrequently: true });
-    cx.putImageData(s.data, 0, 0);
-    cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-    return { id: s.id, name: s.name, visible: s.visible, canvas: c, ctx: cx };
+    c.width = s.data.width; c.height = s.data.height;
+    const cx = c.getContext('2d',{willReadFrequently:true});
+    cx.putImageData(s.data,0,0);
+    cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+    return { id:s.id, name:s.name, visible:s.visible, canvas:c, ctx:cx, _thumbDirty:true };
   });
   S2.activeLayerId = snap.activeLayerId;
-  S2.objects = JSON.parse(JSON.stringify(snap.objects));
-  S2.selectedObjectId = snap.selectedObjectId;
-  if (S2.selectedObjectId && !S2.objects.find(o => o.id === S2.selectedObjectId)) {
-    S2.selectedObjectId = null;
+  if (!S2.layers.find(l => l.id === S2.activeLayerId) && S2.layers.length) {
+    S2.activeLayerId = S2.layers[S2.layers.length-1].id;
   }
-
-  renderLayersList();
-  renderObjects();
-  composite2D();
-  fit2DToStage();
+  S2.objects = JSON.parse(JSON.stringify(snap.objects));
+  S2.selectedIds = (snap.selectedIds||[]).filter(id => S2.objects.find(o => o.id===id));
+  renderLayersList(); renderObjects(); composite2D(); fit2DToStage();
 }
 
-// =====================================================================
-// 2D: СЛОИ
-// =====================================================================
 function createLayer(name) {
   S2.layerCounter++;
   const c = document.createElement('canvas');
   c.width = Math.round(S2.logicalW * S2.dpr);
   c.height = Math.round(S2.logicalH * S2.dpr);
-  const cx = c.getContext('2d', { willReadFrequently: true });
-  cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-  const layer = {
-    id: 'layer_' + S2.layerCounter,
-    name: name || ('Слой ' + S2.layerCounter),
-    visible: true,
-    canvas: c, ctx: cx
-  };
+  const cx = c.getContext('2d',{willReadFrequently:true});
+  cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+  const layer = { id:'layer_'+S2.layerCounter, name:name||('Слой '+S2.layerCounter), visible:true, canvas:c, ctx:cx, _thumbDirty:true };
   S2.layers.push(layer);
   S2.activeLayerId = layer.id;
   return layer;
 }
-
-function getActiveLayer() {
-  return S2.layers.find(l => l.id === S2.activeLayerId) || null;
-}
+function getActiveLayer() { return S2.layers.find(l => l.id === S2.activeLayerId) || null; }
 
 function renderLayersList() {
   const list = $('layersList');
@@ -1069,234 +720,183 @@ function renderLayersList() {
     const div = document.createElement('div');
     div.className = 'layer-item' + (layer.id === S2.activeLayerId ? ' active' : '');
     const thumb = document.createElement('canvas');
-    thumb.className = 'thumb';
-    thumb.width = 36; thumb.height = 28;
-    thumb.getContext('2d').drawImage(layer.canvas, 0, 0, 36, 28);
+    thumb.className = 'thumb'; thumb.width = 36; thumb.height = 28;
+    if (layer._thumbDirty || !layer._thumbData) {
+      const tc = thumb.getContext('2d');
+      tc.clearRect(0,0,36,28);
+      tc.drawImage(layer.canvas,0,0,36,28);
+      layer._thumbData = thumb.toDataURL();
+      layer._thumbDirty = false;
+    }
+    const tctx = thumb.getContext('2d');
+    const img = new Image();
+    img.onload = () => { tctx.clearRect(0,0,36,28); tctx.drawImage(img,0,0); };
+    img.src = layer._thumbData;
     div.appendChild(thumb);
-
     const eye = document.createElement('button');
-    eye.className = 'eye';
-    eye.textContent = layer.visible ? '👁' : '🚫';
+    eye.className = 'eye'; eye.textContent = layer.visible ? '👁' : '🚫';
     eye.addEventListener('click', e => {
-      e.stopPropagation();
-      History.begin();
-      layer.visible = !layer.visible;
-      History.commit();
-      renderLayersList();
-      composite2D();
+      e.stopPropagation(); History.begin(); layer.visible = !layer.visible;
+      layer._thumbDirty = true; History.commit(); renderLayersList(); composite2D();
     });
     div.appendChild(eye);
-
     const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = layer.name;
+    name.className = 'name'; name.textContent = layer.name;
     div.appendChild(name);
-
     const del = document.createElement('button');
-    del.className = 'del';
-    del.textContent = '✕';
+    del.className = 'del'; del.textContent = '✕';
     del.addEventListener('click', e => {
       e.stopPropagation();
-      if (S2.layers.length <= 1) { toast('Нельзя удалить единственный слой', '⚠️'); return; }
+      if (S2.layers.length <= 1) { toast('Нельзя удалить единственный слой','⚠️'); return; }
       History.begin();
       S2.layers = S2.layers.filter(l => l.id !== layer.id);
-      if (S2.activeLayerId === layer.id) {
-        S2.activeLayerId = S2.layers[S2.layers.length - 1].id;
-      }
-      History.commit();
-      renderLayersList();
-      composite2D();
+      if (S2.activeLayerId === layer.id) S2.activeLayerId = S2.layers[S2.layers.length-1].id;
+      History.commit(); renderLayersList(); composite2D();
     });
     div.appendChild(del);
-
-    div.addEventListener('click', () => {
-      S2.activeLayerId = layer.id;
-      renderLayersList();
-    });
+    div.addEventListener('click', () => { S2.activeLayerId = layer.id; renderLayersList(); });
     list.appendChild(div);
   });
 }
 
 function composite2D() {
-  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
-  ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height);
+  ctx2d.setTransform(1,0,0,1,0,0);
+  ctx2d.fillStyle = S2.bgColor;
+  ctx2d.fillRect(0,0,canvas2d.width,canvas2d.height);
   for (const layer of S2.layers) {
     if (!layer.visible) continue;
-    ctx2d.drawImage(layer.canvas, 0, 0);
+    ctx2d.drawImage(layer.canvas,0,0);
   }
   if (S2.showGrid2d) {
-    ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-    ctx2d.strokeStyle = 'rgba(0,0,0,.08)';
-    ctx2d.lineWidth = 1;
-    for (let x = 0; x <= S2.logicalW; x += 50) {
-      ctx2d.beginPath(); ctx2d.moveTo(x, 0); ctx2d.lineTo(x, S2.logicalH); ctx2d.stroke();
-    }
-    for (let y = 0; y <= S2.logicalH; y += 50) {
-      ctx2d.beginPath(); ctx2d.moveTo(0, y); ctx2d.lineTo(S2.logicalW, y); ctx2d.stroke();
-    }
+    ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+    ctx2d.strokeStyle = 'rgba(0,0,0,.08)'; ctx2d.lineWidth = 1;
+    for (let x=0; x<=S2.logicalW; x+=50) { ctx2d.beginPath(); ctx2d.moveTo(x,0); ctx2d.lineTo(x,S2.logicalH); ctx2d.stroke(); }
+    for (let y=0; y<=S2.logicalH; y+=50) { ctx2d.beginPath(); ctx2d.moveTo(0,y); ctx2d.lineTo(S2.logicalW,y); ctx2d.stroke(); }
   }
 }
-
 function fit2DToStage() {
   const r = stageWrap.getBoundingClientRect();
-  const scale = Math.min(
-    (r.width - 40) / S2.logicalW,
-    (r.height - 40) / S2.logicalH,
-    1
-  );
-  canvasContainer.style.transform = `scale(${scale})`;
+  const fitScale = Math.min((r.width-40)/S2.logicalW, (r.height-40)/S2.logicalH, 1);
+  const totalScale = fitScale * S2.zoom;
+  canvasContainer.style.transform = `translate(${S2.panX}px, ${S2.panY}px) scale(${totalScale})`;
 }
-
-// =====================================================================
-// 2D: КООРДИНАТЫ (без двойного масштаба)
-// =====================================================================
 function getCanvasPos2D(e) {
   const r = canvas2d.getBoundingClientRect();
   return {
-    x: (e.clientX - r.left) * (canvas2d.width / r.width) / S2.dpr,
-    y: (e.clientY - r.top) * (canvas2d.height / r.height) / S2.dpr
+    x:(e.clientX - r.left) * (canvas2d.width / r.width) / S2.dpr,
+    y:(e.clientY - r.top) * (canvas2d.height / r.height) / S2.dpr
   };
 }
 
-// =====================================================================
-// 2D: РИСОВАНИЕ
-// =====================================================================
 let drawing2D = false;
-let lastPoint2D = { x: 0, y: 0 };
-let startPoint2D = { x: 0, y: 0 };
+let lastPoint2D = {x:0,y:0};
+let startPoint2D = {x:0,y:0};
 let shapeSnapshot2D = null;
+let strokeCommitted = false;
 
 canvas2d.addEventListener('pointerdown', e => {
   if (currentMode !== '2d' || busy) return;
+  if (e.button === 1) return;
   const tool = S2.tool;
-
   if (tool === 'picker') {
     const p = getCanvasPos2D(e);
-    const px = ctx2d.getImageData(
-      Math.round(p.x * S2.dpr),
-      Math.round(p.y * S2.dpr), 1, 1
-    ).data;
-    setColor('#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+    const px = ctx2d.getImageData(Math.round(p.x*S2.dpr), Math.round(p.y*S2.dpr), 1, 1).data;
+    setColor('#' + [px[0],px[1],px[2]].map(v => v.toString(16).padStart(2,'0')).join(''));
     return;
   }
-
   if (tool === 'fill') {
     const p = getCanvasPos2D(e);
     History.begin();
-    floodFill2D(p.x, p.y, S2.color);
+    try { floodFill2D(p.x, p.y, S2.color); }
+    catch (err) { console.error(err); toast('Ошибка заливки','⚠️'); }
     History.commit();
     return;
   }
-
   const isBrush = ['brush','pencil','marker','spray','eraser'].includes(tool);
   const isShape = tool.startsWith('shape_');
   if (!isBrush && !isShape) return;
-
   e.preventDefault();
   canvas2d.setPointerCapture(e.pointerId);
-
-  // Снимок "до" — ключевое для правильного Undo
   History.begin();
-
+  strokeCommitted = false;
   drawing2D = true;
   const p = getCanvasPos2D(e);
-  lastPoint2D = p;
-  startPoint2D = p;
-
+  lastPoint2D = p; startPoint2D = p;
   if (isShape) {
     const layer = getActiveLayer();
-    if (layer) shapeSnapshot2D = layer.ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+    if (layer) shapeSnapshot2D = layer.ctx.getImageData(0,0,layer.canvas.width,layer.canvas.height);
   } else {
     drawStroke(p, p, true);
   }
 });
-
 canvas2d.addEventListener('pointermove', e => {
   if (!drawing2D) return;
   e.preventDefault();
   const p = getCanvasPos2D(e);
   const isShape = S2.tool.startsWith('shape_');
-
   if (isShape) {
     const layer = getActiveLayer();
     if (!layer || !shapeSnapshot2D) return;
     layer.ctx.putImageData(shapeSnapshot2D, 0, 0);
-    drawShape(layer.ctx, startPoint2D, p, S2.tool.replace('shape_', ''));
+    drawShape(layer.ctx, startPoint2D, p, S2.tool.replace('shape_',''));
   } else {
     drawStroke(lastPoint2D, p, false);
   }
   lastPoint2D = p;
 });
-
-function endStroke() {
+function endStroke2D() {
   if (!drawing2D) return;
   drawing2D = false;
   shapeSnapshot2D = null;
-  History.commit();
+  if (!strokeCommitted) {
+    History.commit();
+    strokeCommitted = true;
+    const al = getActiveLayer();
+    if (al) al._thumbDirty = true;
+  }
   composite2D();
 }
-
-canvas2d.addEventListener('pointerup', endStroke);
-canvas2d.addEventListener('pointercancel', () => {
-  drawing2D = false;
-  shapeSnapshot2D = null;
-  History.cancel();
-});
+canvas2d.addEventListener('pointerup', endStroke2D);
+canvas2d.addEventListener('pointercancel', () => { drawing2D = false; shapeSnapshot2D = null; History.cancel(); });
 
 function drawStroke(from, to, isDot) {
   const layer = getActiveLayer();
   if (!layer) return;
   const lc = layer.ctx;
   const isEraser = S2.tool === 'eraser';
-
   lc.save();
   lc.globalAlpha = S2.brushOpacity;
   if (isEraser) {
     lc.globalCompositeOperation = 'destination-out';
-    lc.strokeStyle = '#000';
-    lc.fillStyle = '#000';
+    lc.strokeStyle = '#000'; lc.fillStyle = '#000';
   } else {
-    lc.strokeStyle = S2.color;
-    lc.fillStyle = S2.color;
+    lc.strokeStyle = S2.color; lc.fillStyle = S2.color;
   }
-  lc.lineCap = 'round';
-  lc.lineJoin = 'round';
+  lc.lineCap = 'round'; lc.lineJoin = 'round';
   lc.lineWidth = S2.brushSize;
-
   if (S2.tool === 'spray') {
     const steps = 5;
-    for (let s = 0; s <= steps; s++) {
-      const t = s / steps;
-      const cx = from.x + (to.x - from.x) * t;
-      const cy = from.y + (to.y - from.y) * t;
-      for (let i = 0; i < 6; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.random() * S2.brushSize;
-        lc.fillRect(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1.5, 1.5);
+    for (let s=0; s<=steps; s++) {
+      const t = s/steps;
+      const cx = from.x + (to.x-from.x)*t;
+      const cy = from.y + (to.y-from.y)*t;
+      for (let i=0; i<6; i++) {
+        const a = Math.random()*Math.PI*2;
+        const r = Math.random()*S2.brushSize;
+        lc.fillRect(cx + Math.cos(a)*r, cy + Math.sin(a)*r, 1.5, 1.5);
       }
     }
   } else if (S2.tool === 'marker') {
     lc.globalAlpha = S2.brushOpacity * 0.5;
     lc.lineWidth = S2.brushSize * 2;
-    lc.beginPath();
-    lc.moveTo(from.x, from.y);
-    lc.lineTo(to.x, to.y);
-    lc.stroke();
+    lc.beginPath(); lc.moveTo(from.x,from.y); lc.lineTo(to.x,to.y); lc.stroke();
   } else if (S2.tool === 'pencil') {
     lc.lineWidth = Math.max(1, S2.brushSize * 0.5);
-    lc.beginPath();
-    lc.moveTo(from.x, from.y);
-    lc.lineTo(to.x, to.y);
-    lc.stroke();
+    lc.beginPath(); lc.moveTo(from.x,from.y); lc.lineTo(to.x,to.y); lc.stroke();
   } else if (isDot) {
-    lc.beginPath();
-    lc.arc(to.x, to.y, S2.brushSize / 2, 0, Math.PI * 2);
-    lc.fill();
+    lc.beginPath(); lc.arc(to.x,to.y,S2.brushSize/2,0,Math.PI*2); lc.fill();
   } else {
-    lc.beginPath();
-    lc.moveTo(from.x, from.y);
-    lc.lineTo(to.x, to.y);
-    lc.stroke();
+    lc.beginPath(); lc.moveTo(from.x,from.y); lc.lineTo(to.x,to.y); lc.stroke();
   }
   lc.restore();
   composite2D();
@@ -1304,92 +904,63 @@ function drawStroke(from, to, isDot) {
 
 function drawShape(lc, start, end, shape) {
   lc.save();
-  lc.strokeStyle = S2.color;
-  lc.fillStyle = S2.color;
-  lc.lineWidth = S2.shapeSize;
-  lc.lineCap = 'round';
-  lc.lineJoin = 'round';
-
-  const x = Math.min(start.x, end.x), y = Math.min(start.y, end.y);
-  const w = Math.abs(end.x - start.x), h = Math.abs(end.y - start.y);
-  const cx = (start.x + end.x) / 2, cy = (start.y + end.y) / 2;
+  lc.strokeStyle = S2.color; lc.fillStyle = S2.color;
+  lc.lineWidth = S2.shapeSize; lc.lineCap = 'round'; lc.lineJoin = 'round';
+  const x = Math.min(start.x,end.x), y = Math.min(start.y,end.y);
+  const w = Math.abs(end.x-start.x), h = Math.abs(end.y-start.y);
+  const cx = (start.x+end.x)/2, cy = (start.y+end.y)/2;
   lc.beginPath();
-
   switch (shape) {
-    case 'line':
-      lc.moveTo(start.x, start.y); lc.lineTo(end.x, end.y); lc.stroke();
-      break;
-    case 'rect':
-      if (S2.shapeFilled) lc.fillRect(x, y, w, h); else lc.strokeRect(x, y, w, h);
-      break;
-    case 'circle': {
-      const r = Math.min(w, h) / 2;
-      lc.arc(cx, cy, r, 0, Math.PI * 2);
-      if (S2.shapeFilled) lc.fill(); else lc.stroke();
-      break;
-    }
-    case 'ellipse':
-      lc.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2);
-      if (S2.shapeFilled) lc.fill(); else lc.stroke();
-      break;
-    case 'triangle':
-      lc.moveTo(cx, y); lc.lineTo(x + w, y + h); lc.lineTo(x, y + h); lc.closePath();
-      if (S2.shapeFilled) lc.fill(); else lc.stroke();
-      break;
-    case 'star':
-      drawStar(lc, cx, cy, Math.max(w, h) / 2, Math.max(w, h) / 5, 5);
-      if (S2.shapeFilled) lc.fill(); else lc.stroke();
-      break;
+    case 'line': lc.moveTo(start.x,start.y); lc.lineTo(end.x,end.y); lc.stroke(); break;
+    case 'rect': if (S2.shapeFilled) lc.fillRect(x,y,w,h); else lc.strokeRect(x,y,w,h); break;
+    case 'circle': { const r = Math.min(w,h)/2; lc.arc(cx,cy,r,0,Math.PI*2); if (S2.shapeFilled) lc.fill(); else lc.stroke(); break; }
+    case 'ellipse': lc.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2); if (S2.shapeFilled) lc.fill(); else lc.stroke(); break;
+    case 'triangle': lc.moveTo(cx,y); lc.lineTo(x+w,y+h); lc.lineTo(x,y+h); lc.closePath(); if (S2.shapeFilled) lc.fill(); else lc.stroke(); break;
+    case 'star': drawStar(lc,cx,cy,Math.max(w,h)/2,Math.max(w,h)/5,5); if (S2.shapeFilled) lc.fill(); else lc.stroke(); break;
     case 'arrow': {
-      const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const len = Math.hypot(end.x - start.x, end.y - start.y);
-      const headLen = Math.min(30, len * 0.3);
-      lc.moveTo(start.x, start.y); lc.lineTo(end.x, end.y);
-      lc.moveTo(end.x, end.y);
-      lc.lineTo(end.x - headLen * Math.cos(angle - Math.PI / 7), end.y - headLen * Math.sin(angle - Math.PI / 7));
-      lc.moveTo(end.x, end.y);
-      lc.lineTo(end.x - headLen * Math.cos(angle + Math.PI / 7), end.y - headLen * Math.sin(angle + Math.PI / 7));
+      const angle = Math.atan2(end.y-start.y, end.x-start.x);
+      const len = Math.hypot(end.x-start.x, end.y-start.y);
+      const headLen = Math.min(30, len*0.3);
+      lc.moveTo(start.x,start.y); lc.lineTo(end.x,end.y);
+      lc.moveTo(end.x,end.y);
+      lc.lineTo(end.x - headLen*Math.cos(angle-Math.PI/7), end.y - headLen*Math.sin(angle-Math.PI/7));
+      lc.moveTo(end.x,end.y);
+      lc.lineTo(end.x - headLen*Math.cos(angle+Math.PI/7), end.y - headLen*Math.sin(angle+Math.PI/7));
       lc.stroke();
       break;
     }
     case 'heart': {
-      const sz = Math.max(w, h) / 2;
-      lc.moveTo(cx, cy - sz * 0.3);
-      lc.bezierCurveTo(cx, cy - sz * 0.7, cx - sz, cy - sz * 0.7, cx - sz, cy);
-      lc.bezierCurveTo(cx - sz, cy + sz * 0.4, cx, cy + sz * 0.7, cx, cy + sz);
-      lc.bezierCurveTo(cx, cy + sz * 0.7, cx + sz, cy + sz * 0.4, cx + sz, cy);
-      lc.bezierCurveTo(cx + sz, cy - sz * 0.7, cx, cy - sz * 0.7, cx, cy - sz * 0.3);
+      const sz = Math.max(w,h)/2;
+      lc.moveTo(cx,cy-sz*0.3);
+      lc.bezierCurveTo(cx,cy-sz*0.7,cx-sz,cy-sz*0.7,cx-sz,cy);
+      lc.bezierCurveTo(cx-sz,cy+sz*0.4,cx,cy+sz*0.7,cx,cy+sz);
+      lc.bezierCurveTo(cx,cy+sz*0.7,cx+sz,cy+sz*0.4,cx+sz,cy);
+      lc.bezierCurveTo(cx+sz,cy-sz*0.7,cx,cy-sz*0.7,cx,cy-sz*0.3);
       if (S2.shapeFilled) lc.fill(); else lc.stroke();
       break;
     }
-    case 'pentagon':
-      drawPolygon(lc, cx, cy, Math.min(w, h) / 2, 5);
-      if (S2.shapeFilled) lc.fill(); else lc.stroke();
-      break;
+    case 'pentagon': drawPolygon(lc,cx,cy,Math.min(w,h)/2,5); if (S2.shapeFilled) lc.fill(); else lc.stroke(); break;
   }
-  lc.restore();
-  composite2D();
+  lc.restore(); composite2D();
 }
-
-function drawStar(c, cx, cy, outer, inner, pts) {
+function drawStar(c,cx,cy,outer,inner,pts) {
   c.beginPath();
-  for (let i = 0; i < pts * 2; i++) {
-    const r = i % 2 === 0 ? outer : inner;
-    const a = (i * Math.PI) / pts - Math.PI / 2;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r;
-    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+  for (let i=0; i<pts*2; i++) {
+    const r = i%2===0 ? outer : inner;
+    const a = (i*Math.PI)/pts - Math.PI/2;
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if (i===0) c.moveTo(x,y); else c.lineTo(x,y);
   }
   c.closePath();
 }
-
-function drawPolygon(c, cx, cy, r, sides) {
+function drawPolygon(c,cx,cy,r,sides) {
   c.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r;
-    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+  for (let i=0; i<sides; i++) {
+    const a = (i*2*Math.PI)/sides - Math.PI/2;
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if (i===0) c.moveTo(x,y); else c.lineTo(x,y);
   }
   c.closePath();
 }
@@ -1397,57 +968,51 @@ function drawPolygon(c, cx, cy, r, sides) {
 function floodFill2D(x, y, hexColor) {
   const layer = getActiveLayer();
   if (!layer) return;
-  const px = Math.round(x * S2.dpr);
-  const py = Math.round(y * S2.dpr);
+  const px = Math.round(x*S2.dpr), py = Math.round(y*S2.dpr);
   const W = canvas2d.width, H = canvas2d.height;
-  if (px < 0 || py < 0 || px >= W || py >= H) return;
-
-  // Целевой цвет — из композита
-  const comp = ctx2d.getImageData(px, py, 1, 1).data;
-  const tr = comp[0], tg = comp[1], tb = comp[2], ta = comp[3];
-
-  const m = hexColor.replace('#', '').match(/.{2}/g);
-  const nr = parseInt(m[0], 16), ng = parseInt(m[1], 16), nb = parseInt(m[2], 16);
-  if (tr === nr && tg === ng && tb === nb && ta === 255) return;
-
-  // Пишем в активный слой
-  const imgData = layer.ctx.getImageData(0, 0, W, H);
-  const data = imgData.data;
-  const tol = 40;
-  const visited = new Uint8Array(W * H);
-  const stack = [px, py];
-
-  while (stack.length) {
-    const cy = stack.pop();
-    const cx = stack.pop();
-    if (cx < 0 || cy < 0 || cx >= W || cy >= H) continue;
-    const idx = cy * W + cx;
+  if (px<0 || py<0 || px>=W || py>=H) return;
+  const compData = ctx2d.getImageData(0,0,W,H).data;
+  const layerImg = layer.ctx.getImageData(0,0,W,H);
+  const layerData = layerImg.data;
+  const ti = (py*W+px)*4;
+  const tr = compData[ti], tg = compData[ti+1], tb = compData[ti+2], ta = compData[ti+3];
+  const m = hexColor.replace('#','').match(/.{2}/g);
+  const nr = parseInt(m[0],16), ng = parseInt(m[1],16), nb = parseInt(m[2],16);
+  if (tr===nr && tg===ng && tb===nb && ta===255) return;
+  const tol = 25;
+  const visited = new Uint8Array(W*H);
+  const stack = new Int32Array(W*H);
+  let sp = 0;
+  stack[sp++] = py*W+px;
+  let painted = 0;
+  const MAX = W*H;
+  while (sp>0 && painted<MAX) {
+    const idx = stack[--sp];
     if (visited[idx]) continue;
     visited[idx] = 1;
-
-    // Сравниваем с композитом
-    const ci = idx * 4;
-    const cd = ctx2d.getImageData(cx, cy, 1, 1).data;
-    if (Math.abs(cd[0] - tr) > tol || Math.abs(cd[1] - tg) > tol || Math.abs(cd[2] - tb) > tol) continue;
-
-    data[ci] = nr; data[ci+1] = ng; data[ci+2] = nb; data[ci+3] = 255;
-    stack.push(cx+1, cy, cx-1, cy, cx, cy+1, cx, cy-1);
+    const ci = idx*4;
+    if (Math.abs(compData[ci]-tr)>tol || Math.abs(compData[ci+1]-tg)>tol ||
+        Math.abs(compData[ci+2]-tb)>tol || Math.abs(compData[ci+3]-ta)>tol) continue;
+    layerData[ci]=nr; layerData[ci+1]=ng; layerData[ci+2]=nb; layerData[ci+3]=255;
+    painted++;
+    const cx = idx%W, cy = (idx/W)|0;
+    if (cx>0) stack[sp++] = idx-1;
+    if (cx<W-1) stack[sp++] = idx+1;
+    if (cy>0) stack[sp++] = idx-W;
+    if (cy<H-1) stack[sp++] = idx+W;
   }
-
-  layer.ctx.setTransform(1, 0, 0, 1, 0, 0);
-  layer.ctx.putImageData(imgData, 0, 0);
-  layer.ctx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+  layer.ctx.setTransform(1,0,0,1,0,0);
+  layer.ctx.putImageData(layerImg,0,0);
+  layer.ctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+  layer._thumbDirty = true;
   composite2D();
 }
 
-// =====================================================================
-// 2D: ОБЪЕКТЫ
-// =====================================================================
 function renderObjects() {
   objectLayer.innerHTML = '';
   for (const obj of S2.objects) {
     const el = document.createElement('div');
-    el.className = 'object-item ' + (obj.type === 'text' ? 'text-object' : 'sticker-object');
+    el.className = 'object-item ' + (obj.type==='text'?'text-object':'sticker-object');
     el.dataset.id = obj.id;
     el.textContent = obj.text;
     el.style.left = obj.x + 'px';
@@ -1461,7 +1026,7 @@ function renderObjects() {
       else if (obj.font === 'serif') el.style.fontFamily = 'Georgia, serif';
       else if (obj.font === 'mono') el.style.fontFamily = 'monospace';
     }
-    if (obj.id === S2.selectedObjectId) el.classList.add('selected');
+    if (S2.selectedIds.includes(obj.id)) el.classList.add('selected');
     el.addEventListener('pointerdown', e => startObjectDrag2D(e, obj));
     objectLayer.appendChild(el);
   }
@@ -1469,47 +1034,83 @@ function renderObjects() {
 
 function startObjectDrag2D(e, obj) {
   e.stopPropagation();
-  e.preventDefault();
-  S2.selectedObjectId = obj.id;
-  renderObjects();
-
+  if (busy) return;
+  if (e.shiftKey) {
+    const i = S2.selectedIds.indexOf(obj.id);
+    if (i >= 0) S2.selectedIds.splice(i,1); else S2.selectedIds.push(obj.id);
+  } else if (!S2.selectedIds.includes(obj.id)) {
+    S2.selectedIds = [obj.id];
+  }
+  objectLayer.querySelectorAll('.object-item').forEach(el => {
+    el.classList.toggle('selected', S2.selectedIds.includes(el.dataset.id));
+  });
+  if (!S2.selectedIds.length) return;
   const rect = canvas2d.getBoundingClientRect();
   const scale = rect.width / S2.logicalW;
   const startX = e.clientX, startY = e.clientY;
-  const origX = obj.x, origY = obj.y;
-
-  History.begin();
-  let moved = false;
-  let raf = null;
-
+  const items = S2.selectedIds.map(id => {
+    const o = S2.objects.find(x => x.id === id);
+    const el = objectLayer.querySelector(`[data-id="${id}"]`);
+    return o ? { obj:o, el, x:o.x, y:o.y } : null;
+  }).filter(Boolean);
+  let didBegin = false;
   function onMove(ev) {
-    obj.x = origX + (ev.clientX - startX) / scale;
-    obj.y = origY + (ev.clientY - startY) / scale;
-    moved = true;
-    if (!raf) raf = requestAnimationFrame(() => { renderObjects(); raf = null; });
+    if (!didBegin) { History.begin(); didBegin = true; }
+    const dx = (ev.clientX - startX) / scale;
+    const dy = (ev.clientY - startY) / scale;
+    for (const item of items) {
+      item.obj.x = item.x + dx;
+      item.obj.y = item.y + dy;
+      if (item.el) {
+        item.el.style.left = item.obj.x + 'px';
+        item.el.style.top = item.obj.y + 'px';
+      }
+    }
   }
   function onUp() {
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
-    if (raf) { cancelAnimationFrame(raf); renderObjects(); }
-    if (moved) History.commit(); else History.cancel();
+    document.removeEventListener('pointercancel', onUp);
+    if (didBegin) History.commit();
   }
   document.addEventListener('pointermove', onMove);
   document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
 }
 
-function deleteSelectedObject2D() {
-  if (!S2.selectedObjectId) return;
+function deleteSelected2D() {
+  if (!S2.selectedIds.length) return;
   History.begin();
-  S2.objects = S2.objects.filter(o => o.id !== S2.selectedObjectId);
-  S2.selectedObjectId = null;
+  S2.objects = S2.objects.filter(o => !S2.selectedIds.includes(o.id));
+  S2.selectedIds = [];
   History.commit();
   renderObjects();
 }
 
-// =====================================================================
-// 2D: ЦВЕТ
-// =====================================================================
+let clipboard2D = null;
+function copySelected2D() {
+  if (!S2.selectedIds.length) return false;
+  clipboard2D = S2.objects.filter(o => S2.selectedIds.includes(o.id)).map(o => JSON.parse(JSON.stringify(o)));
+  toast('Скопировано: ' + clipboard2D.length, '📋');
+  return true;
+}
+function paste2D() {
+  if (!clipboard2D || !clipboard2D.length) return false;
+  History.begin();
+  S2.selectedIds = [];
+  for (const o of clipboard2D) {
+    const copy = JSON.parse(JSON.stringify(o));
+    copy.id = 'obj_' + Date.now() + Math.random();
+    copy.x += 20; copy.y += 20;
+    S2.objects.push(copy);
+    S2.selectedIds.push(copy.id);
+  }
+  History.commit();
+  renderObjects();
+  toast('Вставлено: ' + clipboard2D.length, '📋');
+  return true;
+}
+
 function setColor(hex) {
   S2.color = hex;
   $('currentColorBig').style.background = hex;
@@ -1522,7 +1123,13 @@ function setColor(hex) {
     s.classList.toggle('active', s.dataset.color === hex);
   });
 }
-
+function setBgColor(hex) {
+  S2.bgColor = hex;
+  $('bgColorBig').style.background = hex;
+  $('bgColorHex').value = hex;
+  $('bgColorPicker').value = hex;
+  composite2D();
+}
 function buildPalette(grid, onPick) {
   for (const c of PALETTE) {
     const sw = document.createElement('div');
@@ -1535,137 +1142,79 @@ function buildPalette(grid, onPick) {
   }
 }
 
-// =====================================================================
-// 2D: ИНИЦИАЛИЗАЦИЯ
-// =====================================================================
 function initCanvas2D() {
   canvas2d.width = Math.round(S2.logicalW * S2.dpr);
   canvas2d.height = Math.round(S2.logicalH * S2.dpr);
   canvas2d.style.width = S2.logicalW + 'px';
   canvas2d.style.height = S2.logicalH + 'px';
-  ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-
+  ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
   createLayer('Фон');
-  const bg = getActiveLayer();
-  bg.ctx.fillStyle = '#fff';
-  bg.ctx.fillRect(0, 0, S2.logicalW, S2.logicalH);
-
   renderLayersList();
   composite2D();
   fit2DToStage();
 }
 
-// =====================================================================
-// 3D: ИНИЦИАЛИЗАЦИЯ
-// =====================================================================
 function init3D() {
   if (S3.init) return true;
-  if (typeof THREE === 'undefined') { toast('Three.js не загрузился', '⚠️'); return false; }
-
-  const renderer = new THREE.WebGLRenderer({
-    canvas: canvas3d, antialias: true, preserveDrawingBuffer: true, alpha: true
-  });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x000000, 0);
+  if (typeof THREE === 'undefined') { toast('Three.js не загрузился','⚠️'); return false; }
+  const renderer = new THREE.WebGLRenderer({ canvas:canvas3d, antialias:true, preserveDrawingBuffer:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setClearColor(0x000000,0);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
-
   const scene = new THREE.Scene();
   const r = stageWrap.getBoundingClientRect();
-  const camera = new THREE.PerspectiveCamera(45, (r.width || 1) / (r.height || 1), 0.1, 500);
-  camera.position.set(0, 6, 11);
-
+  const camera = new THREE.PerspectiveCamera(45, (r.width||1)/(r.height||1), 0.1, 500);
+  camera.position.set(0,6,11);
   const orbit = new THREE.OrbitControls(camera, canvas3d);
-  orbit.enableDamping = true;
-  orbit.dampingFactor = 0.08;
-  orbit.target.set(0, 0.5, 0);
-  orbit.minDistance = 3;
-  orbit.maxDistance = 40;
+  orbit.enableDamping = true; orbit.dampingFactor = 0.08;
+  orbit.target.set(0,0.5,0); orbit.minDistance = 3; orbit.maxDistance = 40;
   orbit.screenSpacePanning = true;
-  orbit.maxPolarAngle = Math.PI / 2.05;
-  orbit.minPolarAngle = 0.15;
-
-  // Свет
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.85));
-  const key = new THREE.DirectionalLight(0xffffff, 0.9);
-  key.position.set(6, 12, 8);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.camera.near = 0.5;
-  key.shadow.camera.far = 40;
-  key.shadow.camera.left = -15;
-  key.shadow.camera.right = 15;
-  key.shadow.camera.top = 15;
-  key.shadow.camera.bottom = -15;
+  orbit.maxPolarAngle = Math.PI/2.05; orbit.minPolarAngle = 0.15;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x888888,0.85));
+  const key = new THREE.DirectionalLight(0xffffff,0.9);
+  key.position.set(6,12,8); key.castShadow = true;
+  key.shadow.mapSize.set(1024,1024);
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 40;
+  key.shadow.camera.left = -15; key.shadow.camera.right = 15;
+  key.shadow.camera.top = 15; key.shadow.camera.bottom = -15;
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xb0c8ff, 0.4);
-  fill.position.set(-8, 5, -6);
+  const fill = new THREE.DirectionalLight(0xb0c8ff,0.4);
+  fill.position.set(-8,5,-6);
   scene.add(fill);
-
-  const grid = new THREE.GridHelper(30, 30, 0xcccccc, 0xdddddd);
-  grid.material.opacity = 0.4;
-  grid.material.transparent = true;
+  const grid = new THREE.GridHelper(30,30,0xcccccc,0xdddddd);
+  grid.material.opacity = 0.4; grid.material.transparent = true;
   scene.add(grid);
-
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    new THREE.ShadowMaterial({ opacity: 0.15 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.ShadowMaterial({opacity:0.15}));
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
   scene.add(ground);
-
-  // TransformControls — ГИЗМО
   const transform = new THREE.TransformControls(camera, canvas3d);
   transform.setSize(0.9);
-  transform.addEventListener('dragging-changed', e => {
-    orbit.enabled = !e.value;
-  });
-  transform.addEventListener('mouseDown', () => {
-    History.begin();
-  });
-  transform.addEventListener('mouseUp', () => {
-    History.commit();
-  });
-  transform.addEventListener('objectChange', () => {
-    update3DPropsPanel();
-  });
+  transform.addEventListener('dragging-changed', e => { orbit.enabled = !e.value; });
+  transform.addEventListener('objectChange', () => update3DPropsPanel());
   scene.add(transform);
-
-  S3.scene = scene;
-  S3.camera = camera;
-  S3.renderer = renderer;
-  S3.orbit = orbit;
-  S3.transform = transform;
-  S3.grid = grid;
-  S3.ground = ground;
+  S3.scene = scene; S3.camera = camera; S3.renderer = renderer;
+  S3.orbit = orbit; S3.transform = transform;
+  S3.grid = grid; S3.ground = ground;
   S3.raycaster = new THREE.Raycaster();
   S3.init = true;
-
-  applySnapSettings();
-  setup3DInput();
-  animate3D();
-
-  // Стартовые
-  addPrimitive3D('box', { x: -2, y: 0.6, z: 1.5 }, true);
-  addPrimitive3D('torus', { x: 2, y: 0.6, z: 1.5 }, true);
-  addText3D('FireLand', { x: 0, y: 1.2, z: -1.5 }, true);
-  render3DLayers();
-  update3DPropsPanel();
+  applySnapSettings(); setup3DInput(); animate3D();
+  addPrimitive3D('box', {x:-2,y:0.6,z:1.5}, true);
+  addPrimitive3D('torus', {x:2,y:0.6,z:1.5}, true);
+  addText3D('FireLand', {x:0,y:1.2,z:-1.5}, true);
+  render3DLayers(); update3DPropsPanel();
   return true;
 }
-
 function resize3D() {
   if (!S3.renderer) return;
   const r = stageWrap.getBoundingClientRect();
-  const w = Math.max(2, r.width), h = Math.max(2, r.height);
-  S3.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  S3.renderer.setSize(w, h, true);
-  S3.camera.aspect = w / h;
+  const w = Math.max(2,r.width), h = Math.max(2,r.height);
+  S3.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  S3.renderer.setSize(w,h,true);
+  S3.camera.aspect = w/h;
   S3.camera.updateProjectionMatrix();
 }
-
 function animate3D() {
   requestAnimationFrame(() => {
     if (currentMode === '3d' && S3.renderer) {
@@ -1675,32 +1224,21 @@ function animate3D() {
     animate3D();
   });
 }
-
-// =====================================================================
-// 3D: ЗАХВАТ / ПРИМЕНЕНИЕ СНИМКА
-// =====================================================================
 function capture3D() {
   return {
-    mode: '3d',
-    objects: S3.objects.map(o => ({
-      userType: o.userData.type,
-      prim: o.userData.prim,
-      text: o.userData.text,
-      position: o.position.toArray(),
-      rotation: [o.rotation.x, o.rotation.y, o.rotation.z],
-      scale: o.scale.toArray(),
-      color: o.userData.baseColor,
-      visible: o.visible
+    mode:'3d',
+    objects:S3.objects.map(o => ({
+      userType:o.userData.type, prim:o.userData.prim, text:o.userData.text,
+      position:o.position.toArray(),
+      rotation:[o.rotation.x, o.rotation.y, o.rotation.z],
+      scale:o.scale.toArray(),
+      color:o.userData.baseColor, visible:o.visible
     }))
   };
 }
-
 function apply3D(snap) {
-  // Detach гизмо
   S3.transform.detach();
   S3.selected = [];
-
-  // Удаляем все объекты
   for (const o of S3.objects) {
     S3.scene.remove(o);
     o.traverse(c => {
@@ -1712,15 +1250,10 @@ function apply3D(snap) {
     });
   }
   S3.objects = [];
-
-  // Пересоздаём
   for (const s of snap.objects) {
     let obj;
-    if (s.userType === 'text3d') {
-      obj = createText3DObject(s.text, s.color);
-    } else {
-      obj = createPrimitive3DObject(s.prim, s.color);
-    }
+    if (s.userType === 'text3d') obj = createText3DObject(s.text, s.color);
+    else obj = createPrimitive3DObject(s.prim, s.color);
     obj.position.fromArray(s.position);
     obj.rotation.set(s.rotation[0], s.rotation[1], s.rotation[2]);
     obj.scale.fromArray(s.scale);
@@ -1728,49 +1261,35 @@ function apply3D(snap) {
     S3.scene.add(obj);
     S3.objects.push(obj);
   }
-  render3DLayers();
-  update3DPropsPanel();
+  render3DLayers(); update3DPropsPanel(); updateSelectionVisual();
 }
-
-// =====================================================================
-// 3D: СОЗДАНИЕ ОБЪЕКТОВ (чистые функции)
-// =====================================================================
 function makeGeometry(type) {
   switch (type) {
-    case 'box': return new THREE.BoxGeometry(1.2, 1.2, 1.2);
-    case 'sphere': return new THREE.SphereGeometry(0.7, 32, 24);
-    case 'cylinder': return new THREE.CylinderGeometry(0.55, 0.55, 1.3, 32);
-    case 'cone': return new THREE.ConeGeometry(0.7, 1.4, 32);
-    case 'torus': return new THREE.TorusGeometry(0.6, 0.24, 20, 40);
-    case 'pyramid': return new THREE.ConeGeometry(0.85, 1.3, 4);
-    case 'capsule': return THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.45, 0.9, 8, 16) : new THREE.CylinderGeometry(0.45, 0.45, 1.5, 16);
-    case 'hemisphere': return new THREE.SphereGeometry(0.75, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    case 'box': return new THREE.BoxGeometry(1.2,1.2,1.2);
+    case 'sphere': return new THREE.SphereGeometry(0.7,32,24);
+    case 'cylinder': return new THREE.CylinderGeometry(0.55,0.55,1.3,32);
+    case 'cone': return new THREE.ConeGeometry(0.7,1.4,32);
+    case 'torus': return new THREE.TorusGeometry(0.6,0.24,20,40);
+    case 'pyramid': return new THREE.ConeGeometry(0.85,1.3,4);
+    case 'capsule': return THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.45,0.9,8,16) : new THREE.CylinderGeometry(0.45,0.45,1.5,16);
+    case 'hemisphere': return new THREE.SphereGeometry(0.75,24,16,0,Math.PI*2,0,Math.PI/2);
     case 'tetra': return new THREE.TetrahedronGeometry(0.85);
-    default: return new THREE.BoxGeometry(1, 1, 1);
+    default: return new THREE.BoxGeometry(1,1,1);
   }
 }
-
 function primLabel(type) {
-  return { box:'Куб', sphere:'Сфера', cylinder:'Цилиндр', cone:'Конус',
-    torus:'Тор', pyramid:'Пирамида', capsule:'Капсула',
-    hemisphere:'Полусфера', tetra:'Тетраэдр' }[type] || 'Объект';
+  return {box:'Куб',sphere:'Сфера',cylinder:'Цилиндр',cone:'Конус',torus:'Тор',pyramid:'Пирамида',capsule:'Капсула',hemisphere:'Полусфера',tetra:'Тетраэдр'}[type] || 'Объект';
 }
-
 function createPrimitive3DObject(type, color) {
   const geo = makeGeometry(type);
-  const mat = new THREE.MeshStandardMaterial({
-    color: color || S2.color, metalness: 0.15, roughness: 0.5
-  });
+  const mat = new THREE.MeshStandardMaterial({ color:color||S2.color, metalness:0.15, roughness:0.5 });
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.userData.type = 'prim';
-  mesh.userData.prim = type;
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.userData.type = 'prim'; mesh.userData.prim = type;
   mesh.userData.name = primLabel(type);
   mesh.userData.baseColor = color || S2.color;
   return mesh;
 }
-
 function createText3DObject(text, color) {
   const group = new THREE.Group();
   const col = new THREE.Color(color || S2.color);
@@ -1783,104 +1302,71 @@ function createText3DObject(text, color) {
   cv.height = fontSize * 1.5;
   const c2 = cv.getContext('2d');
   c2.font = '700 ' + fontSize + 'px Arial, sans-serif';
-  c2.fillStyle = '#fff';
-  c2.textBaseline = 'middle';
-  c2.fillText(text, 20, cv.height / 2);
-
+  c2.fillStyle = '#fff'; c2.textBaseline = 'middle';
+  c2.fillText(text, 20, cv.height/2);
   const tex = new THREE.CanvasTexture(cv);
   tex.minFilter = THREE.LinearFilter;
-  const pw = cv.width / 100, ph = cv.height / 100;
+  const pw = cv.width/100, ph = cv.height/100;
   const depthLayers = 12, depthStep = 0.035;
-
-  for (let i = depthLayers; i > 0; i--) {
+  for (let i=depthLayers; i>0; i--) {
     const m = new THREE.MeshStandardMaterial({
-      map: tex, transparent: true,
-      color: col.clone().multiplyScalar(0.4 + (i / depthLayers) * 0.3),
-      roughness: 0.6, metalness: 0.1
+      map:tex, transparent:true,
+      color:col.clone().multiplyScalar(0.4 + (i/depthLayers)*0.3),
+      roughness:0.6, metalness:0.1
     });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m);
-    mesh.position.z = -i * depthStep;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(pw,ph), m);
+    mesh.position.z = -i*depthStep;
     group.add(mesh);
   }
-  const frontMat = new THREE.MeshStandardMaterial({
-    map: tex, transparent: true, color: col, roughness: 0.5, metalness: 0.1
-  });
-  group.add(new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), frontMat));
-
+  const frontMat = new THREE.MeshStandardMaterial({ map:tex, transparent:true, color:col, roughness:0.5, metalness:0.1 });
+  group.add(new THREE.Mesh(new THREE.PlaneGeometry(pw,ph), frontMat));
   group.userData.type = 'text3d';
   group.userData.text = text;
   group.userData.name = 'Текст: ' + text;
   group.userData.baseColor = color || S2.color;
   return group;
 }
-
-// =====================================================================
-// 3D: ДОБАВЛЕНИЕ (с undo)
-// =====================================================================
 function nextSpawn() {
   S3.spawnAngle += 0.9;
   const r = 1.5 + (S3.objects.length % 4) * 0.7;
-  return { x: Math.cos(S3.spawnAngle) * r, y: 0.6, z: Math.sin(S3.spawnAngle) * r };
+  return {x:Math.cos(S3.spawnAngle)*r, y:0.6, z:Math.sin(S3.spawnAngle)*r};
 }
-
 function addPrimitive3D(type, pos, silent) {
   if (!silent) History.begin();
   const obj = createPrimitive3DObject(type);
   const p = pos || nextSpawn();
   obj.position.set(p.x, p.y ?? 0.6, p.z ?? 0);
-  S3.scene.add(obj);
-  S3.objects.push(obj);
+  S3.scene.add(obj); S3.objects.push(obj);
   if (!silent) {
-    select3D(obj, false);
-    History.commit();
-    render3DLayers();
+    select3D(obj, false); History.commit(); render3DLayers();
     toast('Добавлено: ' + obj.userData.name, '📦');
   }
   return obj;
 }
-
 function addText3D(text, pos, silent) {
   if (!silent) History.begin();
   const obj = createText3DObject(text);
   const p = pos || nextSpawn();
   obj.position.set(p.x, p.y ?? 1, p.z ?? 0);
-  S3.scene.add(obj);
-  S3.objects.push(obj);
+  S3.scene.add(obj); S3.objects.push(obj);
   if (!silent) {
-    select3D(obj, false);
-    History.commit();
-    render3DLayers();
+    select3D(obj, false); History.commit(); render3DLayers();
     toast('3D-текст добавлен', 'T');
   }
   return obj;
 }
-
-// =====================================================================
-// 3D: ВЫДЕЛЕНИЕ
-// =====================================================================
 function select3D(obj, additive) {
-  if (!obj) {
-    S3.selected = [];
-  } else if (additive) {
+  if (!obj) S3.selected = [];
+  else if (additive) {
     const i = S3.selected.indexOf(obj);
-    if (i >= 0) S3.selected.splice(i, 1);
-    else S3.selected.push(obj);
+    if (i >= 0) S3.selected.splice(i,1); else S3.selected.push(obj);
   } else {
     S3.selected = [obj];
   }
-
-  // Attach гизмо только для одного
-  if (S3.selected.length === 1) {
-    S3.transform.attach(S3.selected[0]);
-  } else {
-    S3.transform.detach();
-  }
-
-  updateSelectionVisual();
-  render3DLayers();
-  update3DPropsPanel();
+  if (S3.selected.length === 1) S3.transform.attach(S3.selected[0]);
+  else S3.transform.detach();
+  updateSelectionVisual(); render3DLayers(); update3DPropsPanel();
 }
-
 function updateSelectionVisual() {
   for (const o of S3.objects) {
     const isSel = S3.selected.includes(o);
@@ -1891,14 +1377,10 @@ function updateSelectionVisual() {
     });
   }
 }
-
-// =====================================================================
-// 3D: УДАЛЕНИЕ
-// =====================================================================
 function remove3D(obj, silent) {
   if (!silent) History.begin();
   if (S3.selected.includes(obj)) {
-    S3.transform.detach();
+    if (S3.transform.object === obj) S3.transform.detach();
     S3.selected = S3.selected.filter(o => o !== obj);
   }
   S3.scene.remove(obj);
@@ -1911,57 +1393,42 @@ function remove3D(obj, silent) {
   });
   S3.objects = S3.objects.filter(o => o !== obj);
   if (!silent) {
-    History.commit();
-    render3DLayers();
-    update3DPropsPanel();
+    History.commit(); render3DLayers(); update3DPropsPanel(); updateSelectionVisual();
     toast('Удалено', '🗑️');
   }
 }
-
-// =====================================================================
-// 3D: ВВОД
-// =====================================================================
+let tcSnapshot = null;
 function setup3DInput() {
+  S3.transform.addEventListener('mouseDown', () => { tcSnapshot = capture3D(); });
+  S3.transform.addEventListener('mouseUp', () => {
+    if (!tcSnapshot) return;
+    const after = capture3D();
+    if (JSON.stringify(tcSnapshot.objects) !== JSON.stringify(after.objects)) {
+      History.push(tcSnapshot);
+    }
+    tcSnapshot = null;
+  });
   canvas3d.addEventListener('pointerdown', e => {
-    // Если мышь над гизмо — не трогаем
     if (S3.transform.axis) return;
-
     const hit = pick3D(e.clientX, e.clientY);
     if (hit) {
-      if (e.shiftKey) {
-        select3D(hit, true);
-      } else if (!S3.selected.includes(hit)) {
-        select3D(hit, false);
-      }
-      // Начинаем drag только если не shift и один объект
-      if (!e.shiftKey && S3.selected.length === 1 && S3.selected[0] === hit) {
-        startDrag3D(e);
-      }
+      if (e.shiftKey) select3D(hit, true);
+      else if (!S3.selected.includes(hit)) select3D(hit, false);
     } else {
       if (!e.shiftKey) select3D(null);
     }
   });
-
-  canvas3d.addEventListener('pointermove', e => {
-    if (S3.drag.active) updateDrag3D(e);
-  });
-  canvas3d.addEventListener('pointerup', endDrag3D);
-  canvas3d.addEventListener('pointercancel', endDrag3D);
-
   canvas3d.addEventListener('dblclick', e => {
     if (S3.transform.axis) return;
     const hit = pick3D(e.clientX, e.clientY);
-    if (!hit) {
-      resetCamera();
-    }
+    if (!hit) resetCamera();
   });
 }
-
 function pick3D(clientX, clientY) {
   const r = canvas3d.getBoundingClientRect();
   const ndc = {
-    x: ((clientX - r.left) / r.width) * 2 - 1,
-    y: -((clientY - r.top) / r.height) * 2 + 1
+    x: ((clientX-r.left)/r.width)*2 - 1,
+    y: -((clientY-r.top)/r.height)*2 + 1
   };
   S3.raycaster.setFromCamera(ndc, S3.camera);
   const meshes = [];
@@ -1976,70 +1443,12 @@ function pick3D(clientX, clientY) {
   while (obj.parent && obj.parent !== S3.scene && !S3.objects.includes(obj)) obj = obj.parent;
   return S3.objects.includes(obj) ? obj : null;
 }
-
-function startDrag3D(e) {
-  canvas3d.setPointerCapture(e.pointerId);
-  S3.orbit.enabled = false;
-  History.begin();
-
-  const y0 = S3.selected[0]?.position.y ?? 0;
-  S3.drag.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -y0);
-
-  const r = canvas3d.getBoundingClientRect();
-  const ndc = {
-    x: ((e.clientX - r.left) / r.width) * 2 - 1,
-    y: -((e.clientY - r.top) / r.height) * 2 + 1
-  };
-  S3.raycaster.setFromCamera(ndc, S3.camera);
-  const p = new THREE.Vector3();
-  S3.raycaster.ray.intersectPlane(S3.drag.plane, p);
-  S3.drag.lastPoint = p;
-  S3.drag.active = true;
-  S3.drag.moved = false;
-  canvas3d.style.cursor = 'grabbing';
-}
-
-function updateDrag3D(e) {
-  const r = canvas3d.getBoundingClientRect();
-  const ndc = {
-    x: ((e.clientX - r.left) / r.width) * 2 - 1,
-    y: -((e.clientY - r.top) / r.height) * 2 + 1
-  };
-  S3.raycaster.setFromCamera(ndc, S3.camera);
-  const p = new THREE.Vector3();
-  if (!S3.raycaster.ray.intersectPlane(S3.drag.plane, p)) return;
-  const delta = p.clone().sub(S3.drag.lastPoint);
-  if (delta.lengthSq() > 1e-6) S3.drag.moved = true;
-  for (const o of S3.selected) {
-    o.position.add(delta);
-    if (S3.snapEnabled) {
-      o.position.x = Math.round(o.position.x * 2) / 2;
-      o.position.z = Math.round(o.position.z * 2) / 2;
-    }
-  }
-  S3.drag.lastPoint = p;
-  update3DPropsPanel();
-}
-
-function endDrag3D() {
-  if (!S3.drag.active) return;
-  S3.drag.active = false;
-  S3.orbit.enabled = true;
-  canvas3d.style.cursor = 'grab';
-  if (S3.drag.moved) History.commit();
-  else History.cancel();
-}
-
 function resetCamera() {
-  S3.camera.position.set(0, 6, 11);
-  S3.orbit.target.set(0, 0.5, 0);
+  S3.camera.position.set(0,6,11);
+  S3.orbit.target.set(0,0.5,0);
   S3.orbit.update();
   toast('Камера сброшена', '🎯');
 }
-
-// =====================================================================
-// 3D: ПАНЕЛЬ
-// =====================================================================
 function render3DLayers() {
   const list = $('layersList3d');
   list.innerHTML = '';
@@ -2047,66 +1456,42 @@ function render3DLayers() {
     const div = document.createElement('div');
     div.className = 'layer-item' + (S3.selected.includes(obj) ? ' active' : '');
     const eye = document.createElement('button');
-    eye.className = 'eye';
-    eye.textContent = obj.visible ? '👁' : '🚫';
+    eye.className = 'eye'; eye.textContent = obj.visible ? '👁' : '🚫';
     eye.addEventListener('click', e => {
-      e.stopPropagation();
-      History.begin();
+      e.stopPropagation(); History.begin();
       obj.visible = !obj.visible;
-      History.commit();
-      render3DLayers();
+      History.commit(); render3DLayers();
     });
     div.appendChild(eye);
-
     const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = obj.userData.name;
+    name.className = 'name'; name.textContent = obj.userData.name;
     div.appendChild(name);
-
     const del = document.createElement('button');
-    del.className = 'del';
-    del.textContent = '✕';
-    del.addEventListener('click', e => {
-      e.stopPropagation();
-      remove3D(obj);
-    });
+    del.className = 'del'; del.textContent = '✕';
+    del.addEventListener('click', e => { e.stopPropagation(); remove3D(obj); });
     div.appendChild(del);
-
     div.addEventListener('click', e => {
-      if (e.shiftKey) select3D(obj, true);
-      else select3D(obj, false);
+      if (e.shiftKey) select3D(obj, true); else select3D(obj, false);
     });
     list.appendChild(div);
   });
 }
-
 function update3DPropsPanel() {
-  const panel = $('objProps3d');
-  const noSel = $('noSel3d');
-  const count = $('sel3dCount');
-
+  const panel = $('objProps3d'), noSel = $('noSel3d'), count = $('sel3dCount');
   if (S3.selected.length === 0) {
-    panel.style.display = 'none';
-    noSel.style.display = 'block';
-    count.textContent = '';
+    panel.style.display = 'none'; noSel.style.display = 'block'; count.textContent = '';
     return;
   }
-  panel.style.display = 'block';
-  noSel.style.display = 'none';
+  panel.style.display = 'block'; noSel.style.display = 'none';
   count.textContent = S3.selected.length > 1 ? `(${S3.selected.length})` : '';
-
   const o = S3.selected[0];
   $('objRotY3d').value = Math.round(THREE.MathUtils.radToDeg(o.rotation.y));
   $('objRotY3dVal').textContent = Math.round(THREE.MathUtils.radToDeg(o.rotation.y)) + '°';
-  $('objScale3d').value = Math.round(o.scale.x * 100);
+  $('objScale3d').value = Math.round(o.scale.x*100);
   $('objScale3dVal').textContent = o.scale.x.toFixed(2) + '×';
-  $('objY3d').value = Math.round(o.position.y * 10);
+  $('objY3d').value = Math.round(o.position.y*10);
   $('objY3dVal').textContent = o.position.y.toFixed(1);
 }
-
-// =====================================================================
-// 3D: SNAP + РЕЖИМ ГИЗМО
-// =====================================================================
 function applySnapSettings() {
   if (!S3.transform) return;
   if (S3.snapEnabled) {
@@ -2119,7 +1504,6 @@ function applySnapSettings() {
     S3.transform.setScaleSnap(null);
   }
 }
-
 function setTransformMode(mode) {
   S3.transformMode = mode;
   if (S3.transform) S3.transform.setMode(mode);
@@ -2127,52 +1511,28 @@ function setTransformMode(mode) {
     b.classList.toggle('active', b.dataset.transform === mode);
   });
 }
-
-// =====================================================================
-// UNDO / REDO
-// =====================================================================
 function undo() {
-  if (busy || !History.stack.length) {
-    if (!busy) toast('Нечего отменять', '↶');
-    return;
-  }
-  // Текущее состояние в redo
+  if (busy) return;
+  if (!History.stack.length) { toast('Нечего отменять', '↶'); return; }
   const current = currentMode === '2d' ? capture2D() : capture3D();
   History.redoStack.push(current);
-
   const snap = History.stack.pop();
-  if (snap.mode === '2d') {
-    apply2D(snap);
-  } else {
-    if (!S3.init) init3D();
-    apply3D(snap);
-  }
-  updateUndoButtons();
+  if (snap.mode === '2d') apply2D(snap);
+  else { if (!S3.init) init3D(); apply3D(snap); }
+  updateUndoButtons(); updateMemInfo();
   toast('Отменено', '↶');
 }
-
 function redo() {
-  if (busy || !History.redoStack.length) {
-    if (!busy) toast('Нечего возвращать', '↷');
-    return;
-  }
+  if (busy) return;
+  if (!History.redoStack.length) { toast('Нечего возвращать', '↷'); return; }
   const current = currentMode === '2d' ? capture2D() : capture3D();
   History.stack.push(current);
-
   const snap = History.redoStack.pop();
-  if (snap.mode === '2d') {
-    apply2D(snap);
-  } else {
-    if (!S3.init) init3D();
-    apply3D(snap);
-  }
-  updateUndoButtons();
+  if (snap.mode === '2d') apply2D(snap);
+  else { if (!S3.init) init3D(); apply3D(snap); }
+  updateUndoButtons(); updateMemInfo();
   toast('Возвращено', '↷');
 }
-
-// =====================================================================
-// ЭКСПОРТ / ИМПОРТ
-// =====================================================================
 function savePNG() {
   if (busy) return;
   setBusy(true, 'Сохранение...');
@@ -2183,19 +1543,19 @@ function savePNG() {
         out.width = Math.round(S2.logicalW * S2.dpr);
         out.height = Math.round(S2.logicalH * S2.dpr);
         const o = out.getContext('2d');
+        o.fillStyle = S2.bgColor; o.fillRect(0,0,out.width,out.height);
         for (const layer of S2.layers) {
           if (!layer.visible) continue;
           o.drawImage(layer.canvas, 0, 0);
         }
         for (const obj of S2.objects) {
           o.save();
-          o.translate(obj.x * S2.dpr, obj.y * S2.dpr);
-          o.rotate(obj.rotation * Math.PI / 180);
+          o.translate(obj.x*S2.dpr, obj.y*S2.dpr);
+          o.rotate(obj.rotation*Math.PI/180);
           o.scale(obj.scale, obj.scale);
-          o.font = (obj.font === 'bold' ? '700 ' : '') + (obj.fontSize * S2.dpr) + 'px ' +
-                   (obj.font === 'serif' ? 'Georgia' : obj.font === 'mono' ? 'monospace' : 'Arial');
-          o.fillStyle = obj.color;
-          o.textBaseline = 'top';
+          o.font = (obj.font==='bold'?'700 ':'') + (obj.fontSize*S2.dpr) + 'px ' +
+            (obj.font==='serif'?'Georgia':obj.font==='mono'?'monospace':'Arial');
+          o.fillStyle = obj.color; o.textBaseline = 'top';
           o.fillText(obj.text, 0, 0);
           o.restore();
         }
@@ -2205,13 +1565,13 @@ function savePNG() {
         link.click();
         toast('PNG сохранён', '💾');
       } else {
-        if (!S3.renderer) { toast('3D не инициализирован', '⚠️'); return; }
+        if (!S3.renderer) { toast('3D не инициализирован','⚠️'); return; }
         const prevPR = S3.renderer.getPixelRatio();
         const prevSize = S3.renderer.getSize(new THREE.Vector2());
         const prevAspect = S3.camera.aspect;
         S3.renderer.setPixelRatio(1);
         S3.renderer.setSize(1920, 1080, false);
-        S3.camera.aspect = 1920 / 1080;
+        S3.camera.aspect = 1920/1080;
         S3.camera.updateProjectionMatrix();
         S3.renderer.render(S3.scene, S3.camera);
         const link = document.createElement('a');
@@ -2233,24 +1593,23 @@ function savePNG() {
     }
   }, 50);
 }
-
 function saveProject() {
-  setBusy(true, 'Сохранение...');
+  setBusy(true, 'Сохранение проекта...');
   try {
     const project = {
-      version: 3,
-      canvas2d: {
-        logicalW: S2.logicalW, logicalH: S2.logicalH,
-        layerCounter: S2.layerCounter,
-        layers: S2.layers.map(l => ({
-          id: l.id, name: l.name, visible: l.visible,
-          data: l.canvas.toDataURL('image/png')
+      version:6,
+      canvas2d:{
+        logicalW:S2.logicalW, logicalH:S2.logicalH,
+        layerCounter:S2.layerCounter, bgColor:S2.bgColor,
+        layers:S2.layers.map(l => ({
+          id:l.id, name:l.name, visible:l.visible,
+          data:l.canvas.toDataURL('image/png')
         })),
-        objects: S2.objects
+        objects:S2.objects
       },
-      scene3d: S3.init ? capture3D().objects : null
+      scene3d:S3.init ? capture3D().objects : null
     };
-    const blob = new Blob([JSON.stringify(project)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(project)], {type:'application/json'});
     const link = document.createElement('a');
     link.download = 'fireland_' + Date.now() + '.json';
     link.href = URL.createObjectURL(blob);
@@ -2262,59 +1621,49 @@ function saveProject() {
     setBusy(false);
   }
 }
-
 async function loadProject(file) {
-  setBusy(true, 'Загрузка...');
+  setBusy(true, 'Загрузка проекта...');
   try {
     const text = await file.text();
     const proj = JSON.parse(text);
     if (!proj.version) throw new Error('Неверный формат');
-
-    // 2D
     const c2 = proj.canvas2d;
-    S2.logicalW = c2.logicalW;
-    S2.logicalH = c2.logicalH;
+    S2.logicalW = c2.logicalW; S2.logicalH = c2.logicalH;
     S2.layerCounter = c2.layerCounter || c2.layers.length;
+    S2.bgColor = c2.bgColor || '#ffffff';
     S2.objects = c2.objects || [];
-    S2.selectedObjectId = null;
-
-    const newLayers = [];
-    await Promise.all(c2.layers.map(l => new Promise(res => {
+    S2.selectedIds = [];
+    const results = await Promise.all(c2.layers.map((l,i) => new Promise(res => {
       const img = new Image();
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = Math.round(c2.logicalW * S2.dpr);
-        c.height = Math.round(c2.logicalH * S2.dpr);
-        const cx = c.getContext('2d', { willReadFrequently: true });
-        cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-        cx.drawImage(img, 0, 0, c2.logicalW, c2.logicalH);
-        newLayers.push({ id: l.id, name: l.name, visible: l.visible, canvas: c, ctx: cx });
-        res();
-      };
-      img.onerror = () => res();
+      img.onload = () => res({i, l, img});
+      img.onerror = () => res({i, l, img:null});
       img.src = l.data;
     })));
-
+    const newLayers = [];
+    for (const r of results.sort((a,b) => a.i - b.i)) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(S2.logicalW * S2.dpr);
+      c.height = Math.round(S2.logicalH * S2.dpr);
+      const cx = c.getContext('2d', {willReadFrequently:true});
+      cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+      if (r.img) cx.drawImage(r.img, 0, 0, S2.logicalW, S2.logicalH);
+      newLayers.push({ id:r.l.id, name:r.l.name, visible:r.l.visible, canvas:c, ctx:cx, _thumbDirty:true });
+    }
     if (newLayers.length === 0) throw new Error('Не удалось загрузить слои');
     S2.layers = newLayers;
-    S2.activeLayerId = newLayers[newLayers.length - 1].id;
-
+    S2.activeLayerId = newLayers[newLayers.length-1].id;
     canvas2d.width = Math.round(S2.logicalW * S2.dpr);
     canvas2d.height = Math.round(S2.logicalH * S2.dpr);
     canvas2d.style.width = S2.logicalW + 'px';
     canvas2d.style.height = S2.logicalH + 'px';
-    ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-    renderLayersList();
-    renderObjects();
-    composite2D();
-    fit2DToStage();
-
-    // 3D
+    ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+    S2.zoom = 1; S2.panX = 0; S2.panY = 0;
+    setBgColor(S2.bgColor);
+    renderLayersList(); renderObjects(); composite2D(); fit2DToStage();
     if (proj.scene3d && proj.scene3d.length) {
       if (!S3.init) init3D();
-      if (S3.init) apply3D({ mode: '3d', objects: proj.scene3d });
+      if (S3.init) apply3D({mode:'3d', objects:proj.scene3d});
     }
-
     History.clear();
     toast('Проект загружен', '📂');
   } catch (e) {
@@ -2325,13 +1674,10 @@ async function loadProject(file) {
   }
 }
 
-// =====================================================================
-// UI BINDINGS
-// =====================================================================
 function bindTabs(containerId) {
-  document.querySelectorAll('#' + containerId + ' .tab').forEach(tab => {
+  document.querySelectorAll('#'+containerId+' .tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('#' + containerId + ' .tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#'+containerId+' .tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       document.querySelectorAll('.panel-tab').forEach(p => {
         p.classList.toggle('active', p.dataset.tabContent === tab.dataset.tab);
@@ -2341,11 +1687,7 @@ function bindTabs(containerId) {
 }
 
 function bindAll() {
-  // Вкладки
-  bindTabs('tabs2d');
-  bindTabs('tabs3d');
-
-  // Режим
+  bindTabs('tabs2d'); bindTabs('tabs3d');
   document.querySelectorAll('.mode-switch button').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
@@ -2358,9 +1700,9 @@ function bindAll() {
         canvas3d.style.display = 'block';
         $('tabs2d').style.display = 'none';
         $('tabs3d').style.display = 'flex';
-        document.querySelectorAll('#tabs3d .tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+        document.querySelectorAll('#tabs3d .tab').forEach((t,i) => t.classList.toggle('active', i===0));
         document.querySelectorAll('.panel-tab').forEach(p => p.classList.toggle('active', p.dataset.tabContent === 'objects3d'));
-        status.textContent = '🧊 3D · клик = выделить · гизмо = трансформация · dblclick = камера';
+        statusEl.textContent = '🧊 3D · клик = выделить · гизмо = трансформация · dblclick = камера';
         setTimeout(resize3D, 50);
       } else {
         currentMode = '2d';
@@ -2369,16 +1711,14 @@ function bindAll() {
         canvas3d.style.display = 'none';
         $('tabs2d').style.display = 'flex';
         $('tabs3d').style.display = 'none';
-        document.querySelectorAll('#tabs2d .tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+        document.querySelectorAll('#tabs2d .tab').forEach((t,i) => t.classList.toggle('active', i===0));
         document.querySelectorAll('.panel-tab').forEach(p => p.classList.toggle('active', p.dataset.tabContent === 'tools'));
-        status.textContent = '🎨 2D';
+        statusEl.textContent = '🎨 2D';
         setTimeout(fit2DToStage, 50);
       }
       updateUndoButtons();
     });
   });
-
-  // Инструменты
   document.querySelectorAll('[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
@@ -2393,41 +1733,38 @@ function bindAll() {
       S2.tool = 'shape_' + btn.dataset.shape;
     });
   });
-  $('brushSize').addEventListener('input', e => {
-    S2.brushSize = +e.target.value;
-    $('brushSizeVal').textContent = e.target.value;
-  });
-  $('brushOpacity').addEventListener('input', e => {
-    S2.brushOpacity = +e.target.value / 100;
-    $('brushOpacityVal').textContent = e.target.value + '%';
-  });
-  $('shapeSize').addEventListener('input', e => {
-    S2.shapeSize = +e.target.value;
-    $('shapeSizeVal').textContent = e.target.value;
-  });
-  $('shapeFilled').addEventListener('click', () => {
-    S2.shapeFilled = true;
-    $('shapeFilled').classList.add('active');
-    $('shapeOutline').classList.remove('active');
-  });
-  $('shapeOutline').addEventListener('click', () => {
-    S2.shapeFilled = false;
-    $('shapeOutline').classList.add('active');
-    $('shapeFilled').classList.remove('active');
-  });
+  $('brushSize').addEventListener('input', e => { S2.brushSize = +e.target.value; $('brushSizeVal').textContent = e.target.value; });
+  $('brushOpacity').addEventListener('input', e => { S2.brushOpacity = +e.target.value / 100; $('brushOpacityVal').textContent = e.target.value + '%'; });
+  $('shapeSize').addEventListener('input', e => { S2.shapeSize = +e.target.value; $('shapeSizeVal').textContent = e.target.value; });
+  $('shapeFilled').addEventListener('click', () => { S2.shapeFilled = true; $('shapeFilled').classList.add('active'); $('shapeOutline').classList.remove('active'); });
+  $('shapeOutline').addEventListener('click', () => { S2.shapeFilled = false; $('shapeOutline').classList.add('active'); $('shapeFilled').classList.remove('active'); });
   $('textSize').addEventListener('input', e => {
     S2.textSize = +e.target.value;
     $('textSizeVal').textContent = e.target.value;
+    if (S2.selectedIds.length) {
+      History.begin();
+      for (const id of S2.selectedIds) {
+        const o = S2.objects.find(o => o.id === id);
+        if (o && o.type === 'text') o.fontSize = S2.textSize;
+      }
+      History.commit(); renderObjects();
+    }
   });
   document.querySelectorAll('[data-font]').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('[data-font]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       S2.textFont = btn.dataset.font;
+      if (S2.selectedIds.length) {
+        History.begin();
+        for (const id of S2.selectedIds) {
+          const o = S2.objects.find(o => o.id === id);
+          if (o && o.type === 'text') o.font = S2.textFont;
+        }
+        History.commit(); renderObjects();
+      }
     });
   });
-
-  // Стикеры
   for (const s of STICKERS) {
     const b = document.createElement('button');
     b.className = 'sticker-btn';
@@ -2435,21 +1772,18 @@ function bindAll() {
     b.addEventListener('click', () => {
       History.begin();
       const obj = {
-        id: 'obj_' + Date.now() + Math.random(),
-        type: 'sticker', text: s,
-        x: S2.logicalW / 2 - 32, y: S2.logicalH / 2 - 32,
-        fontSize: 64, color: '#000', rotation: 0, scale: 1
+        id:'obj_'+Date.now()+Math.random(),
+        type:'sticker', text:s,
+        x:S2.logicalW/2-32, y:S2.logicalH/2-32,
+        fontSize:64, color:'#000', rotation:0, scale:1
       };
       S2.objects.push(obj);
-      S2.selectedObjectId = obj.id;
-      History.commit();
-      renderObjects();
+      S2.selectedIds = [obj.id];
+      History.commit(); renderObjects();
       toast('Стикер добавлен', '🌟');
     });
     $('stickerGrid').appendChild(b);
   }
-
-  // Текст 2D
   $('btnAddText').addEventListener('click', () => {
     $('textInput').value = '';
     $('textModal').classList.add('show');
@@ -2460,30 +1794,24 @@ function bindAll() {
     if (t) {
       History.begin();
       const obj = {
-        id: 'obj_' + Date.now() + Math.random(),
-        type: 'text', text: t,
-        x: S2.logicalW / 2 - 100, y: S2.logicalH / 2 - 30,
-        fontSize: S2.textSize, font: S2.textFont, color: S2.color,
-        rotation: 0, scale: 1
+        id:'obj_'+Date.now()+Math.random(),
+        type:'text', text:t,
+        x:S2.logicalW/2-100, y:S2.logicalH/2-30,
+        fontSize:S2.textSize, font:S2.textFont, color:S2.color,
+        rotation:0, scale:1
       };
       S2.objects.push(obj);
-      S2.selectedObjectId = obj.id;
-      History.commit();
-      renderObjects();
+      S2.selectedIds = [obj.id];
+      History.commit(); renderObjects();
       toast('Текст добавлен', 'T');
     }
     $('textModal').classList.remove('show');
   });
   $('textCancel').addEventListener('click', () => $('textModal').classList.remove('show'));
   $('textInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('textOk').click(); });
-
-  // Слои 2D
   $('btnNewLayer').addEventListener('click', () => {
-    History.begin();
-    createLayer();
-    History.commit();
-    renderLayersList();
-    composite2D();
+    History.begin(); createLayer(); History.commit();
+    renderLayersList(); composite2D();
     toast('Новый слой', '📚');
   });
   $('btnMergeLayers').addEventListener('click', () => {
@@ -2491,41 +1819,35 @@ function bindAll() {
     if (visible.length < 2) { toast('Нечего объединять', '⚠️'); return; }
     History.begin();
     const base = visible[0];
-    for (let i = 1; i < visible.length; i++) base.ctx.drawImage(visible[i].canvas, 0, 0);
+    for (let i=1; i<visible.length; i++) base.ctx.drawImage(visible[i].canvas, 0, 0);
+    base._thumbDirty = true;
     S2.layers = S2.layers.filter(l => !visible.includes(l) || l === base);
     base.name = 'Объединённый';
     S2.activeLayerId = base.id;
-    History.commit();
-    renderLayersList();
-    composite2D();
+    History.commit(); renderLayersList(); composite2D();
     toast('Слои объединены', '🔗');
   });
-
-  // Холст
   $('btnResizeCanvas').addEventListener('click', () => {
     const w = Math.max(100, Math.min(5000, parseInt($('canvasW').value) || 1200));
     const h = Math.max(100, Math.min(5000, parseInt($('canvasH').value) || 800));
     if (w === S2.logicalW && h === S2.logicalH) { toast('Размер не изменился', 'ℹ️'); return; }
     History.begin();
     S2.logicalW = w; S2.logicalH = h;
-    canvas2d.width = Math.round(w * S2.dpr);
-    canvas2d.height = Math.round(h * S2.dpr);
+    canvas2d.width = Math.round(w*S2.dpr);
+    canvas2d.height = Math.round(h*S2.dpr);
     canvas2d.style.width = w + 'px';
     canvas2d.style.height = h + 'px';
-    ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+    ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
     for (const layer of S2.layers) {
       const c = document.createElement('canvas');
-      c.width = Math.round(w * S2.dpr);
-      c.height = Math.round(h * S2.dpr);
-      const cx = c.getContext('2d', { willReadFrequently: true });
-      cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+      c.width = Math.round(w*S2.dpr);
+      c.height = Math.round(h*S2.dpr);
+      const cx = c.getContext('2d', {willReadFrequently:true});
+      cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
       cx.drawImage(layer.canvas, 0, 0, layer.canvas.width, layer.canvas.height, 0, 0, w, h);
-      layer.canvas = c;
-      layer.ctx = cx;
+      layer.canvas = c; layer.ctx = cx; layer._thumbDirty = true;
     }
-    History.commit();
-    composite2D();
-    fit2DToStage();
+    History.commit(); composite2D(); fit2DToStage();
     toast(`Холст: ${w}×${h}`, '📐');
   });
   $('btnFlipH').addEventListener('click', () => {
@@ -2534,17 +1856,16 @@ function bindAll() {
       const tmp = document.createElement('canvas');
       tmp.width = layer.canvas.width; tmp.height = layer.canvas.height;
       const tc = tmp.getContext('2d');
-      tc.translate(tmp.width, 0); tc.scale(-1, 1);
+      tc.translate(tmp.width,0); tc.scale(-1,1);
       tc.drawImage(layer.canvas, 0, 0);
       layer.ctx.setTransform(1,0,0,1,0,0);
-      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-      layer.ctx.drawImage(tmp, 0, 0);
+      layer.ctx.clearRect(0,0,layer.canvas.width,layer.canvas.height);
+      layer.ctx.drawImage(tmp,0,0);
       layer.ctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+      layer._thumbDirty = true;
     }
-    for (const o of S2.objects) o.x = S2.logicalW - o.x;
-    History.commit();
-    renderObjects();
-    composite2D();
+    for (const o of S2.objects) { o.x = S2.logicalW - o.x; o.rotation = -o.rotation; }
+    History.commit(); renderObjects(); composite2D();
     toast('Отражено ⇄', '⇄');
   });
   $('btnFlipV').addEventListener('click', () => {
@@ -2553,17 +1874,16 @@ function bindAll() {
       const tmp = document.createElement('canvas');
       tmp.width = layer.canvas.width; tmp.height = layer.canvas.height;
       const tc = tmp.getContext('2d');
-      tc.translate(0, tmp.height); tc.scale(1, -1);
-      tc.drawImage(layer.canvas, 0, 0);
+      tc.translate(0,tmp.height); tc.scale(1,-1);
+      tc.drawImage(layer.canvas,0,0);
       layer.ctx.setTransform(1,0,0,1,0,0);
-      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-      layer.ctx.drawImage(tmp, 0, 0);
+      layer.ctx.clearRect(0,0,layer.canvas.width,layer.canvas.height);
+      layer.ctx.drawImage(tmp,0,0);
       layer.ctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+      layer._thumbDirty = true;
     }
-    for (const o of S2.objects) o.y = S2.logicalH - o.y;
-    History.commit();
-    renderObjects();
-    composite2D();
+    for (const o of S2.objects) { o.y = S2.logicalH - o.y; o.rotation = -o.rotation; }
+    History.commit(); renderObjects(); composite2D();
     toast('Отражено ⇅', '⇅');
   });
   $('btnRotate90').addEventListener('click', () => {
@@ -2573,27 +1893,26 @@ function bindAll() {
       const tmp = document.createElement('canvas');
       tmp.width = layer.canvas.height; tmp.height = layer.canvas.width;
       const tc = tmp.getContext('2d');
-      tc.translate(tmp.width, 0); tc.rotate(Math.PI / 2);
-      tc.drawImage(layer.canvas, 0, 0);
+      tc.translate(tmp.width,0); tc.rotate(Math.PI/2);
+      tc.drawImage(layer.canvas,0,0);
       layer.canvas = tmp;
-      layer.ctx = tmp.getContext('2d', { willReadFrequently: true });
-      layer.ctx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+      layer.ctx = tmp.getContext('2d', {willReadFrequently:true});
+      layer.ctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+      layer._thumbDirty = true;
     }
     for (const o of S2.objects) {
-      const nx = S2.logicalH - o.y, ny = o.x;
+      const nx = S2.logicalH - o.y;
+      const ny = o.x;
       o.x = nx; o.y = ny;
       o.rotation = (o.rotation + 90) % 360;
     }
     S2.logicalW = h; S2.logicalH = w;
-    canvas2d.width = Math.round(h * S2.dpr);
-    canvas2d.height = Math.round(w * S2.dpr);
+    canvas2d.width = Math.round(h*S2.dpr);
+    canvas2d.height = Math.round(w*S2.dpr);
     canvas2d.style.width = h + 'px';
     canvas2d.style.height = w + 'px';
-    ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-    History.commit();
-    renderObjects();
-    composite2D();
-    fit2DToStage();
+    ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+    History.commit(); renderObjects(); composite2D(); fit2DToStage();
     toast('Повёрнуто на 90°', '↻');
   });
   $('btnToggleGrid2d').addEventListener('click', () => {
@@ -2606,23 +1925,14 @@ function bindAll() {
     History.begin();
     for (const layer of S2.layers) {
       layer.ctx.setTransform(1,0,0,1,0,0);
-      layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+      layer.ctx.clearRect(0,0,layer.canvas.width,layer.canvas.height);
       layer.ctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+      layer._thumbDirty = true;
     }
-    if (S2.layers[0]) {
-      S2.layers[0].ctx.fillStyle = '#fff';
-      S2.layers[0].ctx.fillRect(0, 0, S2.logicalW, S2.logicalH);
-    }
-    S2.objects = [];
-    S2.selectedObjectId = null;
-    History.commit();
-    renderObjects();
-    renderLayersList();
-    composite2D();
+    S2.objects = []; S2.selectedIds = [];
+    History.commit(); renderObjects(); renderLayersList(); composite2D();
     toast('Очищено', '🧹');
   });
-
-  // Палитра
   buildPalette($('colorGrid'), c => setColor(c));
   buildPalette($('colorGrid3d'), c => {
     setColor(c);
@@ -2632,53 +1942,42 @@ function bindAll() {
       History.commit();
     }
   });
-  $('currentColorHex').addEventListener('change', e => {
-    if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setColor(e.target.value);
-  });
-  $('currentColorHex3d').addEventListener('change', e => {
-    if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setColor(e.target.value);
-  });
+  $('currentColorHex').addEventListener('change', e => { if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setColor(e.target.value); });
+  $('currentColorHex3d').addEventListener('change', e => { if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setColor(e.target.value); });
   $('customColorPicker').addEventListener('input', e => setColor(e.target.value));
   $('customColorPicker3d').addEventListener('input', e => setColor(e.target.value));
-
-  // 3D примитивы
+  $('bgColorPicker').addEventListener('input', e => setBgColor(e.target.value));
+  $('bgColorHex').addEventListener('change', e => { if (/^#[0-9a-f]{6}$/i.test(e.target.value)) setBgColor(e.target.value); });
   document.querySelectorAll('[data-3dprim]').forEach(btn => {
     btn.addEventListener('click', () => addPrimitive3D(btn.dataset['3dprim']));
   });
-
-  // 3D режим гизмо
   document.querySelectorAll('[data-transform]').forEach(btn => {
     btn.addEventListener('click', () => setTransformMode(btn.dataset.transform));
   });
-
-  // 3D свойства
-  let sliderSnap = null;
-  function startSlider() { if (!sliderSnap) sliderSnap = capture3D(); }
-  function endSlider() {
-    if (sliderSnap) { History.push(sliderSnap); sliderSnap = null; }
-  }
+  let sliderSnap = null, sliderChanged = false;
+  function startSlider() { if (!sliderSnap) { sliderSnap = capture3D(); sliderChanged = false; } }
+  function endSlider() { if (sliderSnap && sliderChanged) History.push(sliderSnap); sliderSnap = null; sliderChanged = false; }
   $('objRotY3d').addEventListener('input', e => {
-    startSlider();
+    startSlider(); sliderChanged = true;
     const deg = +e.target.value;
     for (const o of S3.selected) o.rotation.y = THREE.MathUtils.degToRad(deg);
     $('objRotY3dVal').textContent = deg + '°';
   });
   $('objRotY3d').addEventListener('change', endSlider);
   $('objScale3d').addEventListener('input', e => {
-    startSlider();
+    startSlider(); sliderChanged = true;
     const s = +e.target.value / 100;
     for (const o of S3.selected) o.scale.setScalar(s);
     $('objScale3dVal').textContent = s.toFixed(2) + '×';
   });
   $('objScale3d').addEventListener('change', endSlider);
   $('objY3d').addEventListener('input', e => {
-    startSlider();
+    startSlider(); sliderChanged = true;
     const y = +e.target.value / 10;
     for (const o of S3.selected) o.position.y = y;
     $('objY3dVal').textContent = y.toFixed(1);
   });
   $('objY3d').addEventListener('change', endSlider);
-
   $('btnDup3d').addEventListener('click', () => {
     if (!S3.selected.length) return;
     History.begin();
@@ -2690,28 +1989,21 @@ function bindAll() {
           else c.material = c.material.clone();
         }
       });
-      dup.position.x += 0.8;
-      dup.position.z += 0.8;
+      dup.position.x += 0.8; dup.position.z += 0.8;
       dup.userData.name = o.userData.name + ' (копия)';
       dup.userData.baseColor = o.userData.baseColor;
-      S3.scene.add(dup);
-      S3.objects.push(dup);
+      S3.scene.add(dup); S3.objects.push(dup);
     }
-    History.commit();
-    render3DLayers();
+    History.commit(); render3DLayers();
     toast('Дублировано', '📋');
   });
   $('btnDel3d').addEventListener('click', () => {
     if (!S3.selected.length) return;
     History.begin();
     [...S3.selected].forEach(o => remove3D(o, true));
-    History.commit();
-    render3DLayers();
-    update3DPropsPanel();
+    History.commit(); render3DLayers(); update3DPropsPanel();
     toast('Удалено', '🗑️');
   });
-
-  // 3D текст
   $('btnAdd3dText').addEventListener('click', () => {
     $('text3dInput').value = '';
     $('text3dModal').classList.add('show');
@@ -2724,8 +2016,6 @@ function bindAll() {
   });
   $('text3dCancel').addEventListener('click', () => $('text3dModal').classList.remove('show'));
   $('text3dInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('text3dOk').click(); });
-
-  // 3D сцена
   $('btnToggleGrid3d').addEventListener('click', () => {
     S3.grid.visible = !S3.grid.visible;
     $('btnToggleGrid3d').querySelector('span').textContent = 'Сетка: ' + (S3.grid.visible ? 'вкл' : 'выкл');
@@ -2740,33 +2030,30 @@ function bindAll() {
     if (!await confirmAsync('Очистить сцену?', 'Все 3D-объекты будут удалены.')) return;
     History.begin();
     [...S3.objects].forEach(o => remove3D(o, true));
-    History.commit();
-    render3DLayers();
-    update3DPropsPanel();
+    History.commit(); render3DLayers(); update3DPropsPanel();
     toast('Сцена очищена', '🧹');
   });
-
-  // Верхние кнопки
   $('btnUndo').addEventListener('click', undo);
   $('btnRedo').addEventListener('click', redo);
   $('btnSave').addEventListener('click', savePNG);
   $('btnSaveProject').addEventListener('click', saveProject);
-
-  // Мобильная панель
   $('btnMobilePanel').addEventListener('click', () => {
-    panelRight.classList.add('open');
-    overlayEl.classList.add('show');
+    panelRight.classList.add('open'); overlayEl.classList.add('show');
+  });
+  $('btnMobilePanelLeft').addEventListener('click', () => {
+    panelLeft.classList.add('open'); overlayEl.classList.add('show');
   });
   $('btnPanelClose').addEventListener('click', () => {
-    panelRight.classList.remove('open');
-    overlayEl.classList.remove('show');
+    panelRight.classList.remove('open'); overlayEl.classList.remove('show');
+  });
+  $('btnPanelCloseLeft').addEventListener('click', () => {
+    panelLeft.classList.remove('open'); overlayEl.classList.remove('show');
   });
   overlayEl.addEventListener('click', () => {
     panelRight.classList.remove('open');
+    panelLeft.classList.remove('open');
     overlayEl.classList.remove('show');
   });
-
-  // Resize
   window.addEventListener('resize', () => {
     if (currentMode === '2d') fit2DToStage();
     else resize3D();
@@ -2777,12 +2064,18 @@ function bindAll() {
       else resize3D();
     }, 300);
   });
-
-  // Файл
+  stageWrap.addEventListener('wheel', e => {
+    if (currentMode !== '2d') return;
+    if (e.target.closest('.panel-right') || e.target.closest('.panel-left')) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    S2.zoom = Math.max(0.1, Math.min(5, S2.zoom * delta));
+    fit2DToStage();
+  }, {passive:false});
   $('fileInput').addEventListener('change', e => {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.name.endsWith('.json')) {
+    if (f.name.toLowerCase().endsWith('.json')) {
       loadProject(f);
       e.target.value = '';
       return;
@@ -2791,39 +2084,32 @@ function bindAll() {
     r.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        setBusy(true, 'Загрузка...');
+        setBusy(true, 'Загрузка изображения...');
         try {
           let w = img.width, h = img.height;
           const maxDim = 3000;
           if (w > maxDim || h > maxDim) {
-            const k = maxDim / Math.max(w, h);
-            w = Math.round(w * k); h = Math.round(h * k);
+            const k = maxDim / Math.max(w,h);
+            w = Math.round(w*k); h = Math.round(h*k);
           }
           if (currentMode !== '2d') document.querySelector('.mode-switch button[data-mode="2d"]').click();
           History.begin();
           S2.logicalW = w; S2.logicalH = h;
-          canvas2d.width = Math.round(w * S2.dpr);
-          canvas2d.height = Math.round(h * S2.dpr);
+          canvas2d.width = Math.round(w*S2.dpr);
+          canvas2d.height = Math.round(h*S2.dpr);
           canvas2d.style.width = w + 'px';
           canvas2d.style.height = h + 'px';
-          ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+          ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
           const lc = document.createElement('canvas');
           lc.width = canvas2d.width; lc.height = canvas2d.height;
-          const lctx = lc.getContext('2d', { willReadFrequently: true });
-          lctx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
-          lctx.fillStyle = '#fff';
-          lctx.fillRect(0, 0, w, h);
-          lctx.drawImage(img, 0, 0, w, h);
+          const lctx = lc.getContext('2d', {willReadFrequently:true});
+          lctx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+          lctx.drawImage(img,0,0,w,h);
           S2.layerCounter = 1;
-          S2.layers = [{ id: 'layer_1', name: 'Фон', visible: true, canvas: lc, ctx: lctx }];
+          S2.layers = [{id:'layer_1', name:'Фон', visible:true, canvas:lc, ctx:lctx, _thumbDirty:true}];
           S2.activeLayerId = 'layer_1';
-          S2.objects = [];
-          S2.selectedObjectId = null;
-          History.commit();
-          renderLayersList();
-          renderObjects();
-          composite2D();
-          fit2DToStage();
+          S2.objects = []; S2.selectedIds = [];
+          History.commit(); renderLayersList(); renderObjects(); composite2D(); fit2DToStage();
           toast('Загружено', '📁');
         } catch (err) {
           console.error(err);
@@ -2839,8 +2125,6 @@ function bindAll() {
     r.readAsDataURL(f);
     e.target.value = '';
   });
-
-  // Клавиатура
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
       if (e.key === 'Escape') e.target.blur();
@@ -2848,43 +2132,40 @@ function bindAll() {
     }
     const ctrl = e.ctrlKey || e.metaKey;
     if (ctrl) {
-      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
-      if (e.key === 's') { e.preventDefault(); savePNG(); }
-      if (e.key === 'o') { e.preventDefault(); $('fileInput').click(); }
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+      if (e.key === 's') { e.preventDefault(); savePNG(); return; }
+      if (e.key === 'o') { e.preventDefault(); $('fileInput').click(); return; }
+      if (e.key === 'c' && currentMode === '2d') { e.preventDefault(); copySelected2D(); return; }
+      if (e.key === 'v' && currentMode === '2d') { e.preventDefault(); paste2D(); return; }
     }
     if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (currentMode === '2d' && S2.selectedObjectId) {
-        e.preventDefault(); deleteSelectedObject2D();
-      } else if (currentMode === '3d' && S3.selected.length) {
+      if (currentMode === '2d' && S2.selectedIds.length) { e.preventDefault(); deleteSelected2D(); }
+      else if (currentMode === '3d' && S3.selected.length) {
         e.preventDefault();
         History.begin();
         [...S3.selected].forEach(o => remove3D(o, true));
-        History.commit();
-        render3DLayers();
-        update3DPropsPanel();
+        History.commit(); render3DLayers(); update3DPropsPanel();
       }
     }
     if (e.key === 'Escape') {
       panelRight.classList.remove('open');
+      panelLeft.classList.remove('open');
       overlayEl.classList.remove('show');
       document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+      if (currentMode === '2d') { S2.selectedIds = []; renderObjects(); }
+      else if (currentMode === '3d') select3D(null);
     }
-    // 3D хоткеи
     if (currentMode === '3d') {
       if (e.key === '1') setTransformMode('translate');
       if (e.key === '2') setTransformMode('rotate');
       if (e.key === '3') setTransformMode('scale');
-      if (e.key === 'g' || e.key === 'G') { /* placeholder */ }
     }
-    // 2D хоткеи
     if (currentMode === '2d') {
-      const map = { b:'brush', e:'eraser', p:'pencil', m:'marker', f:'fill', i:'picker' };
+      const map = {b:'brush', e:'eraser', p:'pencil', m:'marker', f:'fill', i:'picker'};
       if (map[e.key] && !ctrl) {
         S2.tool = map[e.key];
-        document.querySelectorAll('[data-tool]').forEach(b => {
-          b.classList.toggle('active', b.dataset.tool === S2.tool);
-        });
+        document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === S2.tool));
       }
       if (e.key === 't' && !ctrl) { e.preventDefault(); $('btnAddText').click(); }
     }
@@ -2901,9 +2182,6 @@ function paint3D(obj, color) {
   obj.userData.baseColor = color;
 }
 
-// =====================================================================
-// СТАРТ
-// =====================================================================
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof THREE === 'undefined') {
     $('status').textContent = '❌ Three.js не загрузился';
@@ -2912,8 +2190,10 @@ window.addEventListener('DOMContentLoaded', () => {
   try {
     bindAll();
     initCanvas2D();
+    setBgColor('#ffffff');
     updateUndoButtons();
-    status.textContent = '🔥 FireLand — 2D + 3D';
+    updateMemInfo();
+    statusEl.textContent = '🔥 FireLand v6 · цвет фона работает';
     toast('Готово', '🔥');
   } catch (err) {
     console.error(err);
