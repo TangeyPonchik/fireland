@@ -2,13 +2,14 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ПРОРЫВ 4 · ФИНАЛ + ОЧИСТКА</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%;overflow:hidden;background:#07050b;
     font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
-    color:#f3e9dc;-webkit-font-smoothing:antialiased;user-select:none}
+    color:#f3e9dc;-webkit-font-smoothing:antialiased;user-select:none;
+    -webkit-tap-highlight-color:transparent}
   #wrap{position:fixed;inset:0;display:grid;place-items:center;
     background:radial-gradient(ellipse at 50% 30%,#1a1226 0%,#07050b 72%)}
   #stage{position:relative;overflow:hidden;border-radius:10px;
@@ -58,7 +59,7 @@
   .bossbar.epic .bossouter{height:calc(var(--u)*10)}
   .bossfill{display:block;height:100%;width:100%;border-radius:inherit;
     background:linear-gradient(90deg,#8c1f26,#c9412f 50%,#e88a4a);
-    transition:width .12s linear}
+    transition:width .12s linear, background .3s}
   .bossbar.epic .bossfill{background:linear-gradient(90deg,#7a1f6a,#c941a0 50%,#e88ad0)}
 
   #proxyBtn{
@@ -87,10 +88,6 @@
     text-shadow:0 calc(var(--u)*2) 0 rgba(255,240,200,.5)}
   #proxyBtn .pvCd{font-size:calc(var(--u)*11);letter-spacing:calc(var(--u)*1);opacity:.85;
     margin-top:calc(var(--u)*1)}
-  #proxyBtn .pvKey{position:absolute;bottom:calc(var(--u)*-4);right:calc(var(--u)*-4);
-    background:#1a0f10;color:#f3cf95;font-size:calc(var(--u)*10);font-weight:800;
-    padding:calc(var(--u)*2) calc(var(--u)*5);border-radius:calc(var(--u)*4);
-    box-shadow:0 0 0 calc(var(--u)*1) rgba(255,215,130,.4)}
   @keyframes proxyPulse{
     0%,100%{box-shadow:0 calc(var(--u)*10) calc(var(--u)*26) rgba(0,0,0,.7),
       inset 0 0 0 calc(var(--u)*2) rgba(255,240,200,.6),
@@ -208,7 +205,6 @@
         <span class="pvLabel">ПРОКСИ</span>
         <span class="pvLvl" id="proxyLvl">1</span>
         <span class="pvCd" id="proxyCd">Q</span>
-        <span class="pvKey">Q</span>
       </button>
     </div>
 
@@ -230,7 +226,7 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 /* ============================================================
    СОХРАНЕНИЯ
    ============================================================ */
-const SAVE_KEY='proyv4_save_v4';
+const SAVE_KEY='proyv4_save_v6';
 function saveGame(){
   try{
     if(G.lives>0&&G.level>=1&&G.level<=60){
@@ -284,8 +280,12 @@ const elProxyBtn=document.getElementById('proxyBtn');
 const elProxyLvl=document.getElementById('proxyLvl');
 const elProxyCd=document.getElementById('proxyCd');
 
-function resize(){stage.style.setProperty('--u',(stage.clientWidth/1280)+'px');}
+function resize(){
+  if(!stage) return;
+  stage.style.setProperty('--u',(stage.clientWidth/1280)+'px');
+}
 addEventListener('resize',resize);
+addEventListener('orientationchange',()=>setTimeout(resize,100));
 
 /* ============================================================
    ВВОД
@@ -433,7 +433,6 @@ const PALETTES=[
   far:'#1a1a28',mid:'#0e0e18',near:'#050508',win:'rgba(220,220,255,0.18)',fog:'rgba(6,6,10,0.96)'}
 ];
 
-/* ---- VPN 1-11 ---- */
 const VPN=[
   {dmg:12,cd:14,  n:1,spread:0,   type:'bullet', name:'VPN · БАЗОВЫЙ'},
   {dmg:18,cd:10,  n:1,spread:0,   type:'bullet', name:'VPN · УСКОРЕННЫЙ'},
@@ -450,7 +449,6 @@ const VPN=[
 
 const VPN_COST=[0,50,200,600,1500, 3500,8000,18000, 22000,45000,120000];
 
-/* ---- Прокси ---- */
 const PROXY=[
   {dmg:35, radius:260, cost:0},
   {dmg:50, radius:280, cost:65},
@@ -544,7 +542,6 @@ const STORY={
 
 function chapterOf(n){return n<=30?1:2;}
 function chapterName(n){return n<=30?'ГЛАВА 1 · ФИНАЛ':'ГЛАВА 2 · ОЧИСТКА';}
-/* эпик на 5,15,25,35,45,55 */
 function isEpicLevel(n){return n%10===5;}
 
 /* ============================================================
@@ -700,11 +697,9 @@ function buildLevel(n){
     G.platforms.push({x:width/2-150,y:352,w:300,h:24});
     spawnBoss(n);
   }else if(isEpic){
-    /* эпик-арена: пара платформ по краям */
     G.platforms.push({x:180,y:472,w:220,h:24});
     G.platforms.push({x:width-400,y:472,w:220,h:24});
     spawnEpic(n);
-    /* немного обычных врагов, чтобы не было пусто */
     const cnt=2+Math.floor(n*0.15);
     for(let i=0;i<cnt;i++){
       const tp=['grunt','runner','heavy'][rndi(0,2)];
@@ -832,6 +827,7 @@ function spawnEpic(n){
    ФИЗИКА
    ============================================================ */
 function moveAndCollide(e,f){
+  // 1. Движение по X
   e.x+=e.vx*f;
   for(const pl of G.platforms){
     if(aabb(e,pl)){
@@ -840,12 +836,20 @@ function moveAndCollide(e,f){
       e.vx=0;
     }
   }
+  
+  // 2. Движение по Y (ОТКАТ: твердые платформы)
   e.y+=e.vy*f;
   e.onGround=false;
   for(const pl of G.platforms){
     if(aabb(e,pl)){
-      if(e.vy>0){e.y=pl.y-e.h;e.vy=0;e.onGround=true;}
-      else if(e.vy<0){e.y=pl.y+pl.h;e.vy=0;}
+      if(e.vy>0){
+        e.y=pl.y-e.h;
+        e.vy=0;
+        e.onGround=true;
+      }else if(e.vy<0){
+        e.y=pl.y+pl.h;
+        e.vy=0;
+      }
     }
   }
 }
@@ -894,6 +898,7 @@ function updateBullets(f){
   const p=G.player;
   for(const b of G.bullets){
     b.age+=f;b.x+=b.vx*f;b.y+=b.vy*f;b.life-=f;
+    
     if(b.age>6){
       for(const pl of G.platforms){
         if(b.x>pl.x&&b.x<pl.x+pl.w&&b.y>pl.y&&b.y<pl.y+pl.h){
@@ -902,6 +907,7 @@ function updateBullets(f){
       }
     }
     if(b.life<=0) continue;
+    
     if(b.owner==='player'){
       for(const e of G.enemies){
         if(e.dead) continue;
@@ -922,9 +928,12 @@ function updateBullets(f){
         SFX.bossHit();
       }
     }else{
+      // ФИКС УРОНА: Теперь проверяем пересечение пули (AABB) с игроком
       if(p&&!p.dead&&p.invuln<=0&&
-         b.x>p.x&&b.x<p.x+p.w&&b.y>p.y&&b.y<p.y+p.h){
-        hurtPlayer(b.dmg);b.life=0;
+         b.x+b.r > p.x && b.x-b.r < p.x+p.w &&
+         b.y+b.r > p.y && b.y-b.r < p.y+p.h){
+        hurtPlayer(b.dmg);
+        b.life=0;
       }
     }
   }
@@ -943,7 +952,6 @@ function drawBullets(){
   }
 }
 
-/* ---- проверка линии огня ---- */
 function hasLineOfSight(x1,y1,x2,y2){
   const steps=Math.max(4,Math.ceil(Math.hypot(x2-x1,y2-y1)/24));
   for(let i=1;i<steps;i++){
@@ -959,7 +967,6 @@ function hasLineOfSight(x1,y1,x2,y2){
   return true;
 }
 
-/* ---- ЛУЧИ ---- */
 function addBeam(x1,y1,x2,y2,dmg,color){
   G.beams.push({x1,y1,x2,y2,dmg,life:0.12,color:color||'#9affb0'});
 }
@@ -1009,7 +1016,6 @@ function drawBeams(){
   }
 }
 
-/* ---- МЕТЕОРИТЫ ---- */
 function spawnMeteor(x,y,dmg,radius){
   G.meteors.push({
     x,y,vx:rnd(2,-2),vy:8,
@@ -1072,7 +1078,6 @@ function drawMeteors(){
   }
 }
 
-/* ---- ПРОКСИ FX ---- */
 function updateProxyFx(f){
   for(const fx of G.proxyFx){
     fx.life-=f/60;
@@ -1097,7 +1102,7 @@ function drawProxyFx(){
   }
 }
 
-/* ---- КРИПТА ---- */
+// ФИКС МОНЕТОК: они больше не теряются
 function dropCoins(x,y,total,count){
   count=count||3;
   const per=Math.max(1,Math.floor(total/count));
@@ -1107,7 +1112,7 @@ function dropCoins(x,y,total,count){
     G.coins.push({
       x:x+rnd(20,-20),y:y+rnd(10,-10),
       vx:rnd(4,-4),vy:rnd(-3,-9),
-      amount:amt,life:30,
+      amount:amt,life:999, // Живут вечно, пока не соберут
       phase:rnd(Math.PI*2),collected:false
     });
   }
@@ -1115,19 +1120,22 @@ function dropCoins(x,y,total,count){
 function updateCoins(f){
   const p=G.player;
   for(const c of G.coins){
-    if(G.state!=='levelclear') c.life-=f/60;
-    if(c.life<=0){c.collected=true;continue;}
+    // Если собрана - пропускаем
+    if(c.collected) continue;
+
     if(p&&!p.dead){
       const dx=(p.x+p.w/2)-c.x;
       const dy=(p.y+p.h/2)-c.y;
       const d=Math.hypot(dx,dy)||1;
-      const radius=(G.state==='levelclear')?340:110;
+      const radius=(G.state==='levelclear')?999:160; // На финише притягиваются со всей карты
+      
       if(d<radius){
-        const pull=(G.state==='levelclear'?26:16)*(1-d/radius);
+        const pull=(G.state==='levelclear'?40:22)*(1-d/radius);
         c.vx+=(dx/d)*pull*f;
         c.vy+=(dy/d)*pull*f;
       }
-      if(d<24){
+      // Если близко - собираем
+      if(d<30){
         G.crypto+=c.amount;
         c.collected=true;
         spawnParticles(c.x,c.y,5,'#ffd966',3,2.2,0.05);
@@ -1135,10 +1143,14 @@ function updateCoins(f){
         continue;
       }
     }
+    
+    // Физика падения
     c.vy+=0.45*f;
     c.x+=c.vx*f;
     c.y+=c.vy*f;
     c.vx*=Math.pow(0.94,f);
+    
+    // Коллизия с полом
     for(const pl of G.platforms){
       if(c.x>pl.x&&c.x<pl.x+pl.w&&c.y>pl.y-8&&c.y<pl.y+pl.h){
         c.y=pl.y;c.vy=-c.vy*0.35;
@@ -1147,11 +1159,11 @@ function updateCoins(f){
       }
     }
   }
+  // Удаляем только собранные
   G.coins=G.coins.filter(c=>!c.collected);
 }
 function drawCoins(){
   for(const c of G.coins){
-    if(c.life<3&&Math.floor(c.life*8)%2===0) continue;
     const bob=Math.sin(G.time*6+c.phase)*2;
     ctx.save();
     ctx.translate(c.x,c.y+bob);
@@ -1254,6 +1266,7 @@ function playerDie(){
    ============================================================ */
 function activateProxy(){
   if(G.state!=='playing') return;
+  if(G.hitstop>0) return; // Нельзя юзать во время заморозки кадра
   if(G.proxy<=0) return;
   if(G.proxyCd>0) return;
   const p=G.player;
@@ -1362,7 +1375,6 @@ function updatePlayer(f){
     const oy=p.y+p.h*0.70+Math.sin(ang)*18;
 
     if(cfg.type==='bullet'){
-      /* скорость пули растёт с уровнем VPN */
       const bulletSpeed=15+(G.vpn-1)*0.8;
       for(let i=0;i<cfg.n;i++){
         let a=ang;
@@ -1457,14 +1469,13 @@ function updateEnemies(f){
       if(d<820){
         e.shootCd-=f;
         if(e.shootCd<=0){
-          /* проверяем линию огня только при готовности выстрела */
           if(hasLineOfSight(e.x+e.w/2,e.y+e.h*0.42,p.x+p.w/2,p.y+p.h/2)){
             e.shootCd=e.fireRate*rnd(1.25,0.8);
             const a=Math.atan2(dy,dx)+rnd(0.09,-0.09);
             spawnBullet(e.x+e.w/2+Math.cos(a)*14,e.y+e.h*0.42+Math.sin(a)*14,
               a,e.bspeed,e.bdmg,'enemy','#ff9a6a',5);
           }else{
-            e.shootCd=18; /* подождать и перепроверить */
+            e.shootCd=18;
           }
         }
       }else{
@@ -1498,10 +1509,8 @@ function updateBoss(f){
   const py=p?(p.y+p.h/2):b.y;
   const hpFrac=b.hp/b.maxhp;
 
-  /* ---- ЭПИК ---- */
   if(b.type===6){
     b.hoverPhase+=f*0.03;
-    /* рывок к игроку */
     if(b.dashing>0){
       b.dashing-=f;
       b.x+=b.dashDir*7*f;
@@ -2081,10 +2090,8 @@ function drawBoss(){
   const t=b.anim;
 
   if(b.type===6){
-    /* ЭПИК — треугольный робот с пульсирующим ядром */
     const float=Math.sin(t*1.4)*3;
     ctx.translate(0,float);
-    /* корпус */
     const bg=ctx.createLinearGradient(-b.w*0.5,-b.h,b.w*0.5,0);
     bg.addColorStop(0,'#3a1a4a');bg.addColorStop(0.5,'#1e0828');bg.addColorStop(1,'#0a020e');
     ctx.fillStyle=bg;
@@ -2095,18 +2102,15 @@ function drawBoss(){
     ctx.lineTo(-b.w*0.36,0);
     ctx.lineTo(-b.w*0.48,-b.h*0.55);
     ctx.closePath();ctx.fill();
-    /* глаз-сканер */
     ctx.fillStyle='#0a020e';
     rr(-b.w*0.28,-b.h*0.7,b.w*0.56,b.h*0.18,6);ctx.fill();
     ctx.fillStyle='#ff60c0';
     ctx.beginPath();ctx.arc(0,-b.h*0.61,b.w*0.06,0,7);ctx.fill();
-    /* ядро */
     const pulse=0.7+Math.sin(t*3)*0.3;
     const cg=ctx.createRadialGradient(0,-b.h*0.32,2,0,-b.h*0.32,b.w*0.25*pulse);
     cg.addColorStop(0,'#ffd0f0');cg.addColorStop(0.5,'#e050b0');cg.addColorStop(1,'rgba(120,20,80,0)');
     ctx.fillStyle=cg;
     ctx.beginPath();ctx.arc(0,-b.h*0.32,b.w*0.25*pulse,0,7);ctx.fill();
-    /* руки-манипуляторы */
     ctx.strokeStyle='#2a0a38';
     ctx.lineWidth=8;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(-b.w*0.44,-b.h*0.55);
@@ -2318,9 +2322,6 @@ function drawBoss(){
   ctx.restore();
 }
 
-/* ============================================================
-   БАННЕР
-   ============================================================ */
 function drawBanner(){
   if(G.state!=='levelclear'&&G.state!=='dying') return;
   const a=G.state==='dying'
@@ -2721,7 +2722,6 @@ function advanceStory(){
   if(storyIdx>=storyLines.length){
     hideOverlay();
     G.state='playing';
-    /* гасим нажатие, сделанное внутри стори */
     for(const k in pressed) delete pressed[k];
   }else{
     renderStory();
@@ -2761,7 +2761,7 @@ function startLevel(n){
   updateHUD();
 }
 function nextLevel(){
-  if(G.player) G.savedHp=G.player.hp;
+  if(G.player) G.savedHp = Math.min(G.player.maxhp, Math.max(50, Math.floor(G.player.hp * 0.7)));
   const n=G.level+1;
   if(n>60){victoryScreen();return;}
   renderShop(()=>{startLevel(n);});
@@ -2790,7 +2790,6 @@ function update(dt){
       updateParticles(f);
       updateCamera(f);
     }
-    /* НЕ очищаем pressed — пусть обработается на следующем кадре */
     mouse.clicked=false;
     updateHUD();
     return;
@@ -2861,14 +2860,18 @@ function loop(now){
 /* ============================================================
    СТАРТ
    ============================================================ */
-resize();
-G.palette=PALETTES[0];
-G.layers=buildBackground(991);
-G.levelWidth=W;
-G.platforms=[{x:-200,y:GROUND_Y,w:W+400,h:260,ground:true}];
-menuScreen();
-updateHUD();
-requestAnimationFrame(loop);
+// Первичный вызов resize, чтобы --u не был 0px
+requestAnimationFrame(() => {
+  resize();
+  
+  G.palette=PALETTES[0];
+  G.layers=buildBackground(991);
+  G.levelWidth=W;
+  G.platforms=[{x:-200,y:GROUND_Y,w:W+400,h:260,ground:true}];
+  menuScreen();
+  updateHUD();
+  requestAnimationFrame(loop);
+});
 </script>
 </body>
 </html>

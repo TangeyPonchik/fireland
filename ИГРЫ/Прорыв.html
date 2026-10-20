@@ -1,665 +1,737 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ПРОРЫВ</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #0a0a10; color: #e0e0ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 12px; touch-action: manipulation; }
-        .game {
-            background: #12121c;
-            padding: 16px;
-            border-radius: 28px;
-            border: 2px solid #ffaa44;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 0 40px rgba(255, 170, 68, 0.1);
-        }
-        .title { font-size: 28px; font-weight: 900; color: #ffaa44; text-align: center; margin-bottom: 4px; }
-        .subtitle { text-align: center; font-size: 11px; color: #888; margin-bottom: 12px; }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
-            background: #1a1a2a;
-            padding: 10px;
-            border-radius: 14px;
-            border: 1px solid #ffaa4444;
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-        .hp-bar { height: 6px; background: #2a1a2a; border-radius: 4px; overflow: hidden; margin: 4px 0 0; grid-column: 1 / -1; }
-        .hp-fill { height: 100%; background: #ffaa44; transition: 0.2s; }
-        .tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 10px 4px;
-            background: transparent;
-            border: 1px solid #3a3a2a;
-            border-radius: 12px;
-            color: #aaa;
-            cursor: pointer;
-            font-size: 14px;
-            text-align: center;
-            transition: 0.2s;
-            touch-action: manipulation;
-        }
-        .tab-btn.active { background: #ffaa4422; border-color: #ffaa44; color: #ffaa44; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .enemy-box {
-            background: #1a1a0a;
-            border-radius: 12px;
-            padding: 12px;
-            border: 1px solid #ffaa4444;
-            margin: 6px 0 10px;
-        }
-        .enemy-name { font-size: 18px; font-weight: 700; color: #ffcc66; }
-        .enemy-hint { font-size: 13px; color: #ffaa4488; margin: 4px 0; font-style: italic; }
-        .enemy-hp { font-size: 14px; margin: 4px 0; }
-        .enemy-hp-bar { height: 4px; background: #2a1a0a; border-radius: 2px; overflow: hidden; }
-        .enemy-hp-fill { height: 100%; background: #ff8844; transition: 0.2s; }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px 12px;
-            margin: 6px 0;
-            border-radius: 30px;
-            border: 1px solid #3a3a2a;
-            background: transparent;
-            color: #ddd;
-            cursor: pointer;
-            font-size: 16px;
-            transition: 0.2s;
-            text-align: center;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn:active { transform: scale(0.97); background: #1a1a0a; }
-        .btn-vpn { border-color: #44ff88; color: #44ff88; }
-        .btn-fake { border-color: #4488ff; color: #4488ff; }
-        .btn-tea { border-color: #ff6644; color: #ff6644; }
-        .log {
-            background: #0f0f1a;
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1px solid #ffaa4444;
-            font-size: 13px;
-            color: #ffcc66;
-            min-height: 22px;
-            margin-top: 6px;
-        }
-        .shop-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin-top: 10px;
-        }
-        .shop-item {
-            background: #1a1a2a;
-            border: 1px solid #3a3a2a;
-            border-radius: 14px;
-            padding: 10px;
-            text-align: center;
-        }
-        .shop-item.owned { border-color: #44ff88; background: #0a1a0a; }
-        .shop-item .cost { color: #ffaa44; font-size: 14px; }
-        .shop-item .name { font-size: 15px; font-weight: 700; color: #ffcc66; }
-        .shop-item .bonus { font-size: 11px; color: #888; }
-        .shop-btn {
-            background: #ffaa44;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-weight: bold;
-            color: #0a0a10;
-            cursor: pointer;
-            margin-top: 4px;
-            font-size: 13px;
-            width: 100%;
-            touch-action: manipulation;
-        }
-        .shop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .shop-btn.owned-btn { background: #44ff88; }
-        .inventory {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 8px 12px;
-            background: #1a1a2a;
-            border-radius: 12px;
-            border: 1px solid #3a3a2a;
-            margin-top: 8px;
-        }
-        .inv-item {
-            background: #2a2a1a;
-            padding: 4px 12px;
-            border-radius: 12px;
-            border: 1px solid #4a4a2a;
-            cursor: pointer;
-            font-size: 13px;
-            touch-action: manipulation;
-        }
-        .inv-item:active { background: #3a3a1a; }
-        .ending-good { background: #0a1a0a; border: 2px solid #44ff88; color: #44ff88; padding: 20px; border-radius: 16px; text-align: center; }
-        .ending-bad { background: #1a0a0a; border: 2px solid #ff6644; color: #ff6644; padding: 20px; border-radius: 16px; text-align: center; }
-        .btn-reset {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 10px 24px;
-            border: 1px solid #44ff88;
-            border-radius: 30px;
-            background: transparent;
-            color: #44ff88;
-            cursor: pointer;
-            font-size: 16px;
-            touch-action: manipulation;
-        }
-        .btn-reset:active { background: #0a1a0a; }
-        .counter { text-align: center; font-size: 13px; color: #ffaa4488; margin-bottom: 6px; }
-        .hidden { display: none !important; }
-        .btn, .shop-btn, .btn-reset, .inv-item { min-height: 48px; }
-        .btn { font-size: 18px; }
-        .stats { font-size: 14px; }
-        .saved-badge {
-            font-size: 11px;
-            color: #44ff88;
-            text-align: center;
-            margin-top: 4px;
-            opacity: 0.7;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ПРОРЫВ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+  body {
+    background: #1a1613;
+    color: #e7e5e4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 12px;
+    touch-action: manipulation;
+  }
+  .game {
+    background: #24201c;
+    padding: 18px;
+    border-radius: 20px;
+    border: 1px solid #3d3833;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .title {
+    font-size: 26px; font-weight: 800; color: #d4a259;
+    text-align: center; margin-bottom: 4px; letter-spacing: 2px;
+  }
+  .subtitle {
+    text-align: center; font-size: 11px; color: #a8a29e; margin-bottom: 14px;
+  }
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px;
+    background: #1a1613; padding: 12px; border-radius: 12px;
+    border: 1px solid #3d3833; font-size: 13px; margin-bottom: 12px;
+  }
+  .stat-item {
+    display: flex; align-items: center; gap: 5px; color: #d6d3d1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stat-item .val { color: #d4a259; font-weight: 600; font-size: 12px; }
+  .hp-bar {
+    height: 6px; background: #3d3833; border-radius: 3px; overflow: hidden;
+    margin-top: 4px; grid-column: 1 / -1;
+  }
+  .hp-fill {
+    height: 100%; background: linear-gradient(90deg, #6b7d4c, #8fa563);
+    transition: width 0.3s ease; border-radius: 3px;
+  }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab-btn {
+    flex: 1; padding: 12px 4px; background: transparent;
+    border: 1px solid #3d3833; border-radius: 10px; color: #a8a29e;
+    cursor: pointer; font-size: 13px; font-weight: 600; text-align: center;
+    transition: all 0.2s; touch-action: manipulation;
+  }
+  .tab-btn.active {
+    background: rgba(212, 162, 89, 0.15);
+    border-color: #d4a259; color: #d4a259;
+  }
+  .tab-btn:active { transform: scale(0.97); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .enemy-box {
+    background: #1a1613; border-radius: 14px; padding: 14px;
+    border: 1px solid #3d3833; margin: 6px 0 12px;
+  }
+  .enemy-name {
+    font-size: 17px; font-weight: 700; color: #d4a259; margin-bottom: 4px;
+  }
+  .enemy-hint {
+    font-size: 12px; color: #a8a29e; margin: 6px 0;
+    font-style: italic; line-height: 1.4;
+  }
+  .enemy-hp-text { font-size: 13px; color: #d6d3d1; margin: 8px 0 4px; }
+  .enemy-hp-bar {
+    height: 6px; background: #3d3833; border-radius: 3px; overflow: hidden;
+  }
+  .enemy-hp-fill {
+    height: 100%; background: linear-gradient(90deg, #b85c4a, #d98040);
+    transition: width 0.3s ease; border-radius: 3px;
+  }
+  .reward-text {
+    font-size: 12px; color: #b8b2a8; margin-top: 10px;
+  }
+  .reward-text .val { color: #d4a259; font-weight: 600; }
+  .btn {
+    display: block; width: 100%; padding: 14px 12px; margin: 8px 0;
+    border-radius: 12px; border: 1px solid #3d3833;
+    background: #24201c; color: #e7e5e4; cursor: pointer;
+    font-size: 15px; font-weight: 600; transition: all 0.15s;
+    text-align: center; touch-action: manipulation;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.98); background: #2e2925; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-vpn { border-color: #5a7a9d; color: #a4c0d4; }
+  .btn-vpn:active { background: #2a3540; }
+  .btn-fake { border-color: #b78b47; color: #d4a259; }
+  .btn-fake:active { background: #3a2e1a; }
+  .btn-tea { border-color: #8b6a4a; color: #c9875a; }
+  .btn-tea:active { background: #3a2820; }
+  .log {
+    background: #1a1613; padding: 10px 14px; border-radius: 12px;
+    border: 1px solid #3d3833; font-size: 13px; color: #d6d3d1;
+    min-height: 40px; margin-top: 8px; line-height: 1.4;
+    transition: background-color 0.3s;
+  }
+  .log.flash { background: #2e2925; }
+  .shop-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-top: 10px;
+  }
+  .shop-item {
+    background: #1a1613; border: 1px solid #3d3833;
+    border-radius: 12px; padding: 12px 10px; text-align: center;
+    transition: all 0.2s;
+  }
+  .shop-item.owned { border-color: #6b7d4c; background: #1e2419; }
+  .shop-item.current {
+    border-color: #d4a259; background: #24201a;
+    box-shadow: 0 0 0 1px rgba(212, 162, 89, 0.3);
+  }
+  .shop-item.locked { opacity: 0.55; }
+  .shop-item .name {
+    font-size: 13px; font-weight: 700; color: #e7e5e4;
+    margin-bottom: 6px; line-height: 1.3;
+  }
+  .shop-item .bonus {
+    font-size: 11px; color: #a8a29e; margin-bottom: 6px; line-height: 1.35;
+  }
+  .shop-item .cost {
+    color: #d4a259; font-size: 12px; font-weight: 600; margin-bottom: 6px;
+  }
+  .shop-btn {
+    background: #d4a259; border: none; padding: 8px 12px;
+    border-radius: 8px; font-weight: 700; color: #1a1613;
+    cursor: pointer; font-size: 12px; width: 100%;
+    transition: all 0.15s; touch-action: manipulation; min-height: 32px;
+  }
+  .shop-btn:hover:not(:disabled) { background: #e0b068; }
+  .shop-btn:active:not(:disabled) { transform: scale(0.97); }
+  .shop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .shop-btn.owned-btn { background: #6b7d4c; color: #e7e5e4; }
+  .inventory {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 12px; background: #1a1613; border-radius: 12px;
+    border: 1px solid #3d3833; margin-top: 8px; min-height: 52px;
+  }
+  .inv-empty { color: #78716c; font-size: 13px; font-style: italic; }
+  .inv-item {
+    background: #2e2925; padding: 8px 14px; border-radius: 20px;
+    border: 1px solid #57534e; cursor: pointer; font-size: 13px;
+    color: #d6d3d1; transition: all 0.15s; touch-action: manipulation;
+    user-select: none;
+  }
+  .inv-item:hover { background: #3a3532; }
+  .inv-item:active { background: #44403c; transform: scale(0.97); }
+  .ending { padding: 24px 20px; border-radius: 14px; text-align: center; margin-top: 8px; }
+  .ending-good { background: #1e2419; border: 1px solid #6b7d4c; color: #b8c99c; }
+  .ending-bad { background: #241a18; border: 1px solid #b85c4a; color: #d4a098; }
+  .ending-title { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
+  .ending-text { font-size: 14px; line-height: 1.5; }
+  .btn-reset {
+    display: inline-block; margin-top: 16px; padding: 10px 24px;
+    border: 1px solid #d4a259; border-radius: 10px; background: transparent;
+    color: #d4a259; cursor: pointer; font-size: 15px; font-weight: 600;
+    transition: all 0.2s; touch-action: manipulation;
+  }
+  .btn-reset:hover { background: rgba(212, 162, 89, 0.1); }
+  .btn-reset:active { background: rgba(212, 162, 89, 0.2); transform: scale(0.97); }
+  .counter {
+    text-align: center; font-size: 13px; color: #a8a29e;
+    margin-bottom: 8px; font-weight: 500;
+  }
+  .hidden { display: none !important; }
+  .saved-badge {
+    font-size: 11px; color: #78716c; text-align: center;
+    margin-top: 8px; opacity: 0.8;
+  }
+  .section-title {
+    color: #d4a259; font-size: 16px; font-weight: 700; margin-bottom: 10px;
+  }
+  .shop-coins {
+    font-size: 13px; color: #d6d3d1; margin-bottom: 10px;
+    padding: 10px 14px; background: #1a1613; border-radius: 10px;
+    border: 1px solid #3d3833;
+  }
+  .shop-coins .val { color: #d4a259; font-weight: 700; font-size: 14px; }
+</style>
 </head>
 <body>
 
 <div class="game">
-    <div class="title">💰 ПРОРЫВ</div>
-    <div class="subtitle">Пройди 20 врагов — купи КИБЕРПОРТАЛ X</div>
+  <div class="title">ПРОРЫВ</div>
+  <div class="subtitle">Пройди 20 врагов — купи КИБЕРПОРТАЛ X</div>
 
-    <div class="stats">
-        <span>❤️ <span id="hpDisplay">100</span></span>
-        <span>💰 <span id="coinsDisplay">0</span></span>
-        <span>🔓 <span id="vpnDisplay">VPNfy</span></span>
-        <span>⚡ <span id="progDisplay">0%</span></span>
-        <span>💀 <span id="deathDisplay">0</span></span>
-        <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width:100%"></div></div>
-    </div>
+  <div class="stats">
+    <div class="stat-item">❤️ <span class="val" id="hpDisplay">100/100</span></div>
+    <div class="stat-item">💰 <span class="val" id="coinsDisplay">0</span></div>
+    <div class="stat-item">🔓 <span class="val" id="vpnDisplay">VPNfy</span></div>
+    <div class="stat-item">⚡ <span class="val" id="progDisplay">0%</span></div>
+    <div class="stat-item">💀 <span class="val" id="deathDisplay">0</span></div>
+    <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width:100%"></div></div>
+  </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('fight')">⚔️ Бой</button>
-        <button class="tab-btn" onclick="switchTab('shop')">🛒 Магазин</button>
-        <button class="tab-btn" onclick="switchTab('inventory')">🎒 Инвентарь</button>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="fight">⚔️ Бой</button>
+    <button class="tab-btn" data-tab="shop">🛒 Магазин</button>
+    <button class="tab-btn" data-tab="inventory">🎒 Инвентарь</button>
+  </div>
 
-    <div id="fight" class="tab-content active">
-        <div class="counter" id="enemyCounter">Враг 1 из 20</div>
-        <div id="enemyContainer"></div>
-        <div id="buttonsContainer">
-            <button class="btn btn-vpn" onclick="attack('vpn')">💥 ВПН-удар</button>
-            <button class="btn btn-fake" onclick="attack('fake')">📖 Фальшивый пропуск</button>
-            <button class="btn btn-tea" onclick="attack('tea')">☕ Предложить чай</button>
-        </div>
-        <div class="log" id="logArea">💰 Начинай прорыв!</div>
-        <div class="saved-badge" id="saveBadge">💾 Прогресс сохраняется автоматически</div>
+  <div id="fight" class="tab-content active">
+    <div class="counter" id="enemyCounter">Враг 1 из 20</div>
+    <div id="enemyContainer"></div>
+    <div id="buttonsContainer">
+      <button class="btn btn-vpn" data-attack="vpn">💥 ВПН-удар</button>
+      <button class="btn btn-fake" data-attack="fake">📖 Фальшивый пропуск</button>
+      <button class="btn btn-tea" data-attack="tea">☕ Предложить чай</button>
     </div>
+    <div class="log" id="logArea">💰 Начинай прорыв!</div>
+    <div class="saved-badge">💾 Прогресс сохраняется автоматически</div>
+  </div>
 
-    <div id="shop" class="tab-content">
-        <h3 style="color:#ffaa44;margin-bottom:8px;">🛒 Магазин ВПН</h3>
-        <div style="font-size:12px;color:#888;margin-bottom:8px;">💰 РКНкоинов: <span id="shopCoins">0</span></div>
-        <div class="shop-grid" id="shopGrid"></div>
-    </div>
+  <div id="shop" class="tab-content">
+    <div class="section-title">🛒 Магазин ВПН</div>
+    <div class="shop-coins">💰 РКНкоинов: <span class="val" id="shopCoins">0</span></div>
+    <div class="shop-grid" id="shopGrid"></div>
+  </div>
 
-    <div id="inventory" class="tab-content">
-        <h3 style="color:#ffaa44;margin-bottom:8px;">🎒 Инвентарь</h3>
-        <div class="inventory" id="inventoryPanel">
-            <span id="inventoryList" style="color:#aaa;">пусто</span>
-        </div>
-    </div>
+  <div id="inventory" class="tab-content">
+    <div class="section-title">🎒 Инвентарь</div>
+    <div class="inventory" id="inventoryPanel"></div>
+  </div>
 </div>
 
 <script>
-    // ============================================================
-    //  ВСЕ ВРАГИ (20 ШТУК)
-    // ============================================================
-    const ENEMIES = [
-        { name: 'Охранник РКН', hp: 30, damage: 8, defense: 1, weakTo: 'vpn', hint: '💬 "Мой список блокировок не прошибить простым ударом..."', coins: 12 },
-        { name: 'Секретарша', hp: 28, damage: 6, defense: 0, weakTo: 'fake', hint: '💬 "Без бумажки ты — никто!"', coins: 14 },
-        { name: 'Младший инспектор', hp: 32, damage: 9, defense: 1, weakTo: 'tea', hint: '💬 "Мне нужен кофе... или чай..."', coins: 16 },
-        { name: 'Начальник отдела', hp: 38, damage: 11, defense: 2, weakTo: 'vpn', hint: '💬 "Только очень сильный поток пробьёт её!"', coins: 22 },
-        { name: 'Замдиректора', hp: 40, damage: 12, defense: 2, weakTo: 'fake', hint: '💬 "...или обманешь?"', coins: 25 },
-        { name: 'Архивариус', hp: 35, damage: 10, defense: 1, weakTo: 'vpn', hint: '💬 "Только цифровой штурм их возьмёт!"', coins: 20 },
-        { name: 'Юрист РКН', hp: 42, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или не проверю?"', coins: 28 },
-        { name: 'Системный аналитик', hp: 45, damage: 14, defense: 2, weakTo: 'tea', hint: '💬 "Мне бы чашечку чая..."', coins: 30 },
-        { name: 'Техник', hp: 34, damage: 9, defense: 1, weakTo: 'vpn', hint: '💬 "Он не выдержит прямого потока данных!"', coins: 18 },
-        { name: 'Секретарь приёмной', hp: 30, damage: 7, defense: 0, weakTo: 'fake', hint: '💬 "...хотя я не проверяю его внимательно"', coins: 14 },
-        { name: 'Делопроизводитель', hp: 38, damage: 11, defense: 1, weakTo: 'tea', hint: '💬 "Может, выпить чего?"', coins: 24 },
-        { name: 'Методист', hp: 40, damage: 12, defense: 2, weakTo: 'vpn', hint: '💬 "Новый протокол её обходит!"', coins: 26 },
-        { name: 'Куратор', hp: 44, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "...или проведёт?"', coins: 32 },
-        { name: 'Аудитор', hp: 48, damage: 15, defense: 3, weakTo: 'tea', hint: '💬 "Хоть бы кто-то чай предложил..."', coins: 36 },
-        { name: 'Начальник серверной', hp: 50, damage: 16, defense: 3, weakTo: 'vpn', hint: '💬 "Если кто-то сможет их взломать..."', coins: 40 },
-        { name: 'Замначальника', hp: 46, damage: 14, defense: 2, weakTo: 'fake', hint: '💬 "Ну, может, за 500 метров..."', coins: 34 },
-        { name: 'Специалист по трафику', hp: 42, damage: 13, defense: 2, weakTo: 'tea', hint: '💬 "Чай бы не помешал..."', coins: 30 },
-        { name: 'Администратор БД', hp: 52, damage: 17, defense: 3, weakTo: 'vpn', hint: '💬 "Только прямой взлом её возьмёт!"', coins: 45 },
-        { name: 'Инспектор по жалобам', hp: 45, damage: 13, defense: 2, weakTo: 'fake', hint: '💬 "...или проходят, если красиво написаны?"', coins: 32 },
-        { name: 'Максут Шадаев', hp: 60, damage: 18, defense: 4, weakTo: 'tea', hint: '💬 "Может, просто выпьем чаю?"', coins: 80 }
-    ];
+'use strict';
 
-    // ============================================================
-    //  ВПН (перебалансировано — можно копить)
-    // ============================================================
-    const VPNS = [
-        { name: 'VPNfy',         cost: 0,   damage: 2,  defense: 0, coinBonus: 0 },
-        { name: 'TipTopVPN',     cost: 25,  damage: 4,  defense: 1, coinBonus: 1 },
-        { name: 'NotVPN',        cost: 60,  damage: 6,  defense: 1, coinBonus: 2 },
-        { name: 'AmneziaVPN',    cost: 120, damage: 8,  defense: 2, coinBonus: 3 },
-        { name: 'PortalWG',      cost: 200, damage: 10, defense: 3, coinBonus: 4 },
-        { name: 'AmneziaWG',     cost: 320, damage: 12, defense: 4, coinBonus: 5 },
-        { name: 'КИБЕРЩИТ',      cost: 500, damage: 16, defense: 5, coinBonus: 7 },
-        { name: 'КИБЕРПОРТАЛ X', cost: 800, damage: 22, defense: 7, coinBonus: 10 }
-    ];
+// ============================================================
+//  КОНСТАНТЫ
+// ============================================================
+const SAVE_KEY = 'proryv_save_v2';
+const SAVE_VERSION = 2;
 
-    // ============================================================
-    //  СОСТОЯНИЕ
-    // ============================================================
-    let player = {
-        hp: 100,
-        maxHp: 100,
-        coins: 0,
-        vpnLevel: 0,
-        progress: 0,
-        deaths: 0,
-        inventory: [],
-        defeated: 0
-    };
+const HEAL_PER_KILL = 15;
+const MEDKIT_HEAL = 30;
+const MEDKIT_DROP = 0.55;
+const WEAKNESS_BONUS = 6;
+const BASE_DAMAGE = 8;
+const VARIANCE = 5;
+const DEFEAT_BONUS_DIV = 2;
 
-    let currentIdx = 0;
-    let enemyHp = 0;
-    let enemyMaxHp = 0;
-    let busy = false;
-    let gameOver = false;
+const ENEMIES = [
+  { name: 'Охранник РКН',        hp: 30, damage: 8,  defense: 1, weakTo: 'vpn',  hint: '«Мой список блокировок не прошибить простым ударом...»', coins: 36 },
+  { name: 'Секретарша',          hp: 28, damage: 6,  defense: 0, weakTo: 'fake', hint: '«Без бумажки ты — никто!»', coins: 42 },
+  { name: 'Младший инспектор',   hp: 32, damage: 9,  defense: 1, weakTo: 'tea',  hint: '«Мне нужен кофе... или чай...»', coins: 48 },
+  { name: 'Начальник отдела',    hp: 38, damage: 11, defense: 2, weakTo: 'vpn',  hint: '«Только очень сильный поток пробьёт её!»', coins: 66 },
+  { name: 'Замдиректора',        hp: 40, damage: 12, defense: 2, weakTo: 'fake', hint: '«...или обманешь?»', coins: 74 },
+  { name: 'Архивариус',          hp: 35, damage: 10, defense: 1, weakTo: 'vpn',  hint: '«Только цифровой штурм их возьмёт!»', coins: 60 },
+  { name: 'Юрист РКН',           hp: 42, damage: 13, defense: 2, weakTo: 'fake', hint: '«...или не проверю?»', coins: 84 },
+  { name: 'Системный аналитик',  hp: 45, damage: 14, defense: 2, weakTo: 'tea',  hint: '«Мне бы чашечку чая...»', coins: 90 },
+  { name: 'Техник',              hp: 34, damage: 9,  defense: 1, weakTo: 'vpn',  hint: '«Он не выдержит прямого потока данных!»', coins: 54 },
+  { name: 'Секретарь приёмной',  hp: 30, damage: 7,  defense: 0, weakTo: 'fake', hint: '«...хотя я не проверяю его внимательно»', coins: 42 },
+  { name: 'Делопроизводитель',   hp: 38, damage: 11, defense: 1, weakTo: 'tea',  hint: '«Может, выпить чего?»', coins: 72 },
+  { name: 'Методист',            hp: 40, damage: 12, defense: 2, weakTo: 'vpn',  hint: '«Новый протокол её обходит!»', coins: 78 },
+  { name: 'Куратор',             hp: 44, damage: 14, defense: 2, weakTo: 'fake', hint: '«...или проведёт?»', coins: 96 },
+  { name: 'Аудитор',             hp: 48, damage: 15, defense: 3, weakTo: 'tea',  hint: '«Хоть бы кто-то чай предложил...»', coins: 108 },
+  { name: 'Начальник серверной', hp: 50, damage: 16, defense: 3, weakTo: 'vpn',  hint: '«Если кто-то сможет их взломать...»', coins: 120 },
+  { name: 'Замначальника',       hp: 46, damage: 14, defense: 2, weakTo: 'fake', hint: '«Ну, может, за 500 метров...»', coins: 102 },
+  { name: 'Специалист по трафику', hp: 42, damage: 13, defense: 2, weakTo: 'tea', hint: '«Чай бы не помешал...»', coins: 90 },
+  { name: 'Администратор БД',    hp: 52, damage: 17, defense: 3, weakTo: 'vpn',  hint: '«Только прямой взлом её возьмёт!»', coins: 134 },
+  { name: 'Инспектор по жалобам', hp: 45, damage: 13, defense: 2, weakTo: 'fake', hint: '«...или проходят, если красиво написаны?»', coins: 96 },
+  { name: 'Максут Шадаев',       hp: 60, damage: 18, defense: 4, weakTo: 'tea',  hint: '«Может, просто выпьем чаю?»', coins: 240 }
+];
 
-    // ============================================================
-    //  DOM
-    // ============================================================
-    function $(id) { return document.getElementById(id); }
+const VPNS = [
+  { name: 'VPNfy',         cost: 0,   damage: 2,  defense: 0, coinBonus: 0  },
+  { name: 'TipTopVPN',     cost: 20,  damage: 5,  defense: 1, coinBonus: 1  },
+  { name: 'NotVPN',        cost: 50,  damage: 8,  defense: 2, coinBonus: 2  },
+  { name: 'AmneziaVPN',    cost: 90,  damage: 11, defense: 3, coinBonus: 3  },
+  { name: 'PortalWG',      cost: 150, damage: 15, defense: 4, coinBonus: 5  },
+  { name: 'AmneziaWG',     cost: 230, damage: 19, defense: 5, coinBonus: 7  },
+  { name: 'КИБЕРЩИТ',      cost: 340, damage: 24, defense: 6, coinBonus: 10 },
+  { name: 'КИБЕРПОРТАЛ X', cost: 480, damage: 30, defense: 8, coinBonus: 15 }
+];
 
-    function updateUI() {
-        $('hpDisplay').textContent = Math.floor(player.hp);
-        $('coinsDisplay').textContent = player.coins;
-        $('vpnDisplay').textContent = VPNS[player.vpnLevel].name;
-        $('progDisplay').textContent = Math.min(100, Math.floor(player.progress)) + '%';
-        $('deathDisplay').textContent = player.deaths;
-        $('hpFill').style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
-        $('enemyCounter').textContent = `Враг ${Math.min(player.defeated + 1, ENEMIES.length)} из ${ENEMIES.length}`;
-        renderInventory();
-        renderShop();
-        $('shopCoins').textContent = player.coins;
-        saveProgress();
-    }
+// ============================================================
+//  СОСТОЯНИЕ
+// ============================================================
+const player = {
+  hp: 100,
+  coins: 0,
+  vpnLevel: 0,
+  defeated: 0,
+  deaths: 0,
+  inventory: []
+};
 
-    // ============================================================
-    //  СОХРАНЕНИЕ
-    // ============================================================
-    function saveProgress() {
+const combat = {
+  idx: 0,
+  enemyHp: 0,
+  enemyMaxHp: 0,
+  gameOver: false,
+  busy: false
+};
+
+// ============================================================
+//  УТИЛИТЫ
+// ============================================================
+const $ = id => document.getElementById(id);
+const randInt = n => Math.floor(Math.random() * n);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const maxHp = () => 100 + player.vpnLevel * 10;
+
+// ============================================================
+//  ЗВУК (общий контекст)
+// ============================================================
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return null; }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playSound(type) {
+  const ctx = getAudio();
+  if (!ctx) return;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    let freq = 600, vol = 0.12, dur = 0.08;
+    if (type === 'hit')       { freq = 620; vol = 0.10; dur = 0.06; }
+    else if (type === 'damage'){ freq = 200; vol = 0.12; dur = 0.14; }
+    else if (type === 'click') { freq = 800; vol = 0.05; dur = 0.04; }
+    else if (type === 'win')   { freq = 523; vol = 0.09; dur = 0.12; }
+    osc.frequency.value = freq;
+    gain.gain.value = vol;
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + dur);
+    if (type === 'win') {
+      setTimeout(() => {
         try {
-            const data = {
-                coins: player.coins,
-                vpnLevel: player.vpnLevel,
-                progress: player.progress,
-                deaths: player.deaths,
-                defeated: player.defeated,
-                inventory: player.inventory,
-                hp: player.hp
-            };
-            localStorage.setItem('proryv_save', JSON.stringify(data));
+          const o2 = ctx.createOscillator();
+          const g2 = ctx.createGain();
+          o2.connect(g2); g2.connect(ctx.destination);
+          o2.frequency.value = 659;
+          g2.gain.value = 0.09;
+          o2.start(ctx.currentTime);
+          o2.stop(ctx.currentTime + 0.10);
         } catch(e) {}
+      }, 100);
     }
+  } catch(e) {}
+}
+function vibrate(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+}
 
-    function loadProgress() {
-        try {
-            const raw = localStorage.getItem('proryv_save');
-            if (!raw) return false;
-            const data = JSON.parse(raw);
-            player.coins = data.coins || 0;
-            player.vpnLevel = data.vpnLevel || 0;
-            player.progress = data.progress || 0;
-            player.deaths = data.deaths || 0;
-            player.defeated = data.defeated || 0;
-            player.inventory = data.inventory || [];
-            player.hp = data.hp || 100;
-            return true;
-        } catch(e) { return false; }
-    }
+// ============================================================
+//  ЛОГ
+// ============================================================
+function log(msg) {
+  const el = $('logArea');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
 
-    // ============================================================
-    //  ЗВУКИ И ВИБРАЦИЯ
-    // ============================================================
-    function playSound(type) {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            if (type === 'hit') {
-                osc.frequency.value = 600;
-                gain.gain.value = 0.15;
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.08);
-            } else if (type === 'damage') {
-                osc.frequency.value = 200;
-                gain.gain.value = 0.2;
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.15);
-            } else if (type === 'click') {
-                osc.frequency.value = 800;
-                gain.gain.value = 0.08;
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.04);
-            } else if (type === 'win') {
-                osc.frequency.value = 523;
-                gain.gain.value = 0.12;
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.1);
-                setTimeout(() => {
-                    const osc2 = ctx.createOscillator();
-                    const gain2 = ctx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(ctx.destination);
-                    osc2.frequency.value = 659;
-                    gain2.gain.value = 0.12;
-                    osc2.start(ctx.currentTime + 0.1);
-                    osc2.stop(ctx.currentTime + 0.2);
-                }, 100);
-            }
-        } catch(e) {}
-    }
+// ============================================================
+//  СОХРАНЕНИЕ
+// ============================================================
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        version: SAVE_VERSION,
+        coins: player.coins,
+        vpnLevel: player.vpnLevel,
+        defeated: player.defeated,
+        deaths: player.deaths,
+        inventory: player.inventory,
+        hp: player.hp
+      }));
+    } catch(e) {}
+  }, 250);
+}
 
-    function vibrate(ms) {
-        try {
-            if (navigator.vibrate) navigator.vibrate(ms);
-        } catch(e) {}
-    }
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data.version !== SAVE_VERSION) return false;
+    player.coins = Number(data.coins) || 0;
+    player.vpnLevel = clamp(Number(data.vpnLevel) || 0, 0, VPNS.length - 1);
+    player.defeated = clamp(Number(data.defeated) || 0, 0, ENEMIES.length);
+    player.deaths = Number(data.deaths) || 0;
+    player.inventory = Array.isArray(data.inventory) ? data.inventory : [];
+    const hp = Number(data.hp);
+    player.hp = Number.isFinite(hp) && hp > 0 ? Math.min(hp, maxHp()) : maxHp();
+    return true;
+  } catch(e) { return false; }
+}
 
-    // ============================================================
-    //  ИНВЕНТАРЬ
-    // ============================================================
-    function renderInventory() {
-        const list = $('inventoryList');
-        if (player.inventory.length === 0) { list.textContent = 'пусто'; return; }
-        list.innerHTML = player.inventory.map((item, idx) =>
-            `<span class="inv-item" onclick="useItem(${idx})">${item}</span>`
-        ).join(' ');
-    }
+// ============================================================
+//  UI
+// ============================================================
+function renderStats() {
+  $('hpDisplay').textContent = `${Math.ceil(player.hp)}/${maxHp()}`;
+  $('coinsDisplay').textContent = player.coins;
+  $('vpnDisplay').textContent = VPNS[player.vpnLevel].name;
+  $('progDisplay').textContent = Math.floor((player.defeated / ENEMIES.length) * 100) + '%';
+  $('deathDisplay').textContent = player.deaths;
+  $('hpFill').style.width = clamp((player.hp / maxHp()) * 100, 0, 100) + '%';
+  const idx = Math.min(player.defeated + 1, ENEMIES.length);
+  $('enemyCounter').textContent = `Враг ${idx} из ${ENEMIES.length}`;
+  $('shopCoins').textContent = player.coins;
+}
 
-    function addItem(name) {
-        player.inventory.push(name);
-        log(`🎒 ${name}`);
-        updateUI();
-    }
+function renderInventory() {
+  const el = $('inventoryPanel');
+  if (player.inventory.length === 0) {
+    el.innerHTML = '<span class="inv-empty">пусто</span>';
+    return;
+  }
+  el.innerHTML = player.inventory.map((item, i) =>
+    `<span class="inv-item" data-inv-idx="${i}">${item}</span>`
+  ).join('');
+}
 
-    function useItem(idx) {
-        if (gameOver || busy) return;
-        const item = player.inventory[idx];
-        if (!item || !item.includes('Аптечка')) return;
-        player.hp = Math.min(player.maxHp, player.hp + 15);
-        player.inventory.splice(idx, 1);
-        log('🧪 +15 HP');
-        playSound('click');
-        updateUI();
-    }
-
-    // ============================================================
-    //  МАГАЗИН
-    // ============================================================
-    function renderShop() {
-        const grid = $('shopGrid');
-        grid.innerHTML = '';
-        VPNS.forEach((vpn, idx) => {
-            const owned = idx <= player.vpnLevel;
-            const canBuy = idx === player.vpnLevel + 1 && player.coins >= vpn.cost;
-            const div = document.createElement('div');
-            div.className = 'shop-item' + (owned ? ' owned' : '');
-            div.innerHTML = `
-                <div class="name">${vpn.name}</div>
-                <div class="bonus">⚔️ +${vpn.damage} | 🛡️ +${vpn.defense} | 💰 +${vpn.coinBonus}</div>
-                <div class="cost">💰 ${vpn.cost} РКН</div>
-                ${owned ? '<button class="shop-btn owned-btn" disabled>✅</button>' :
-                  (idx === player.vpnLevel + 1 ? `<button class="shop-btn" onclick="buyVPN(${idx})" ${!canBuy ? 'disabled' : ''}>🛒</button>` :
-                   `<button class="shop-btn" disabled style="opacity:0.3;">🔒</button>`)}
-            `;
-            grid.appendChild(div);
-        });
-        $('shopCoins').textContent = player.coins;
-    }
-
-    function buyVPN(idx) {
-        if (idx !== player.vpnLevel + 1) return;
-        const vpn = VPNS[idx];
-        if (player.coins < vpn.cost) { log('❌ Не хватает РКН!'); return; }
-        player.coins -= vpn.cost;
-        player.vpnLevel = idx;
-        log(`✅ Куплен ${vpn.name}!`);
-        playSound('click');
-        updateUI();
-    }
-
-    function log(msg) {
-        $('logArea').textContent = msg;
-    }
-
-    // ============================================================
-    //  ПОКАЗАТЬ ВРАГА
-    // ============================================================
-    function showEnemy(index) {
-        if (gameOver) return;
-        if (player.hp <= 0) {
-            player.deaths++;
-            showEnding('bad', '💀 Ты погиб. Смертей: ' + player.deaths);
-            return;
-        }
-        if (index >= ENEMIES.length) {
-            showEnding('good', '🏆 ТЫ ПРОШЁЛ ВСЕХ 20 ВРАГОВ! СВОБОДА! Можешь идти пить чай. 🍵');
-            return;
-        }
-
-        currentIdx = index;
-        const e = ENEMIES[index];
-        enemyMaxHp = e.hp;
-        enemyHp = e.hp;
-        busy = false;
-
-        const container = $('enemyContainer');
-        container.innerHTML = `
-            <div class="enemy-box">
-                <div class="enemy-name">${e.name}</div>
-                <div class="enemy-hint">${e.hint}</div>
-                <div class="enemy-hp">❤️ <span id="enemyHpText">${e.hp}</span> / <span id="enemyMaxHpText">${e.hp}</span></div>
-                <div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemyHpFill" style="width:100%"></div></div>
-                <div style="font-size:12px;color:#ffaa4488;margin-top:4px;">💰 Награда: <span id="enemyCoins">${e.coins}</span> РКН</div>
-            </div>
-        `;
-        $('buttonsContainer').classList.remove('hidden');
-
-        updateUI();
-        log(`⚔️ ${e.name} появился! HP: ${e.hp}/${e.hp}`);
-    }
-
-    // ============================================================
-    //  АТАКА
-    // ============================================================
-    function attack(type) {
-        if (gameOver) return;
-        if (busy) return;
-        if (player.hp <= 0) {
-            player.deaths++;
-            showEnding('bad', '💀 Ты погиб.');
-            return;
-        }
-        if (enemyHp <= 0) {
-            // защита от перескока: если врага уже нет — показать текущего
-            showEnemy(currentIdx);
-            return;
-        }
-
-        busy = true;
-        playSound('click');
-        const e = ENEMIES[currentIdx];
-        const vpn = VPNS[player.vpnLevel];
-
-        let bonus = 0;
-        if (type === e.weakTo) {
-            bonus += 6;
-            log('💡 Слабость! +6 урона!');
-        } else {
-            log('⚠️ Не очень эффективно...');
-        }
-
-        let dmg = 8 + vpn.damage + Math.floor(Math.random() * 5) + bonus;
-        dmg = Math.max(1, dmg - e.defense);
-        enemyHp -= dmg;
-        if (enemyHp < 0) enemyHp = 0;
-        log(`💥 Ты нанёс ${dmg} урона!`);
-        playSound('hit');
-        vibrate(20);
-        const enemyHpText = $('enemyHpText');
-        const enemyHpFill = $('enemyHpFill');
-        if (enemyHpText) enemyHpText.textContent = enemyHp;
-        if (enemyHpFill) enemyHpFill.style.width = Math.max(0, (enemyHp / enemyMaxHp) * 100) + '%';
-        updateUI();
-
-        if (enemyHp <= 0) {
-            // Бонус монет: награда врага + бонус ВПН + бонус за прогресс
-            let reward = e.coins + (vpn.coinBonus || 0) + Math.floor(player.defeated / 2);
-            player.coins += reward;
-            player.defeated++;
-            player.progress += Math.floor(100 / ENEMIES.length);
-            log(`✅ ${e.name} повержен! +${reward} РКН!`);
-            playSound('win');
-            vibrate(50);
-            // Аптечка падает с шансом 55%
-            if (Math.random() < 0.55) addItem('🧪 Аптечка (+15 HP)');
-            busy = false;
-            if (currentIdx + 1 >= ENEMIES.length) {
-                showEnding('good', '🏆 ТЫ ПРОШЁЛ ВСЕХ 20 ВРАГОВ! СВОБОДА! Можешь идти пить чай. 🍵');
-            } else {
-                showEnemy(currentIdx + 1);
-            }
-            return;
-        }
-
-        let enemyDmg = Math.max(1, e.damage + Math.floor(Math.random() * 5) - Math.floor(vpn.defense / 2));
-        player.hp -= enemyDmg;
-        if (player.hp < 0) player.hp = 0;
-        log(`🤖 ${e.name} нанёс ${enemyDmg} урона!`);
-        playSound('damage');
-        vibrate(30);
-        updateUI();
-
-        if (player.hp <= 0) {
-            player.deaths++;
-            busy = false;
-            showEnding('bad', '💀 Ты погиб. Смертей: ' + player.deaths);
-            return;
-        }
-
-        busy = false;
-        const ehpText = $('enemyHpText');
-        const ehpFill = $('enemyHpFill');
-        if (ehpText) ehpText.textContent = enemyHp;
-        if (ehpFill) ehpFill.style.width = Math.max(0, (enemyHp / enemyMaxHp) * 100) + '%';
-        updateUI();
-    }
-
-    // ============================================================
-    //  КОНЦОВКИ
-    // ============================================================
-    function showEnding(type, text) {
-        gameOver = true;
-        busy = false;
-        const container = $('enemyContainer');
-        const cls = type === 'good' ? 'ending-good' : 'ending-bad';
-        const title = type === 'good' ? '✅ ПОБЕДА' : '💀 ПОРАЖЕНИЕ';
-        container.innerHTML = `
-            <div class="${cls}">
-                <div style="font-size:22px;font-weight:900;">${title}</div>
-                <div style="margin-top:8px;">${text}</div>
-                <button class="btn-reset" onclick="resetGame()">🔄 Начать заново</button>
-            </div>
-        `;
-        $('buttonsContainer').classList.add('hidden');
-        log('🏁 Игра окончена.');
-        if (type === 'good') {
-            playSound('win');
-            vibrate(100);
-        }
-    }
-
-    // ============================================================
-    //  СБРОС (главный фикс бага перескока врага)
-    // ============================================================
-    function resetGame() {
-        // сброс игрока
-        player.hp = 100;
-        player.maxHp = 100;
-        player.coins = 0;
-        player.vpnLevel = 0;
-        player.progress = 0;
-        player.deaths = 0;
-        player.inventory = [];
-        player.defeated = 0;
-
-        // КРИТИЧНО: сброс боевого состояния
-        currentIdx = 0;
-        enemyHp = 0;
-        enemyMaxHp = 0;
-        gameOver = false;
-        busy = false;
-
-        // очистка UI
-        $('enemyContainer').innerHTML = '';
-        $('buttonsContainer').classList.remove('hidden');
-        $('logArea').textContent = '💰 Новая игра!';
-
-        // сброс вкладок на "Бой"
-        switchTab('fight');
-
-        // показать первого врага
-        showEnemy(0);
-        updateUI();
-    }
-
-    // ============================================================
-    //  ВКЛАДКИ
-    // ============================================================
-    function switchTab(id) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        const content = document.getElementById(id);
-        if (content) content.classList.add('active');
-        const btn = document.querySelector(`.tab-btn[onclick*="${id}"]`);
-        if (btn) btn.classList.add('active');
-        if (id === 'shop') renderShop();
-        if (id === 'inventory') renderInventory();
-    }
-
-    // ============================================================
-    //  СТАРТ + ЗАГРУЗКА СОХРАНЕНИЯ
-    // ============================================================
-    const loaded = loadProgress();
-    if (loaded && player.hp > 0) {
-        log('💾 Прогресс загружен!');
-        showEnemy(player.defeated);
+function renderShop() {
+  const grid = $('shopGrid');
+  grid.innerHTML = '';
+  VPNS.forEach((vpn, i) => {
+    const owned = i <= player.vpnLevel;
+    const isNext = i === player.vpnLevel + 1;
+    const canAfford = player.coins >= vpn.cost;
+    const div = document.createElement('div');
+    div.className = 'shop-item' +
+      (owned ? ' owned' : '') +
+      (isNext ? ' current' : '') +
+      (!owned && !isNext ? ' locked' : '');
+    let btn;
+    if (owned) {
+      btn = '<button class="shop-btn owned-btn" disabled>✅ Куплено</button>';
+    } else if (isNext) {
+      btn = `<button class="shop-btn" data-buy="${i}" ${!canAfford ? 'disabled' : ''}>🛒 Купить</button>`;
     } else {
-        showEnemy(0);
-        log('💰 Пройди всех 20 врагов!');
+      btn = '<button class="shop-btn" disabled>🔒 Закрыто</button>';
     }
+    div.innerHTML = `
+      <div class="name">${vpn.name}</div>
+      <div class="bonus">⚔️ +${vpn.damage} · 🛡️ ${vpn.defense} · 💰 +${vpn.coinBonus}</div>
+      <div class="cost">${vpn.cost > 0 ? '💰 ' + vpn.cost : 'бесплатно'}</div>
+      ${btn}
+    `;
+    grid.appendChild(div);
+  });
+  $('shopCoins').textContent = player.coins;
+}
+
+function updateUI() {
+  renderStats();
+  renderInventory();
+  renderShop();
+  save();
+}
+
+// ============================================================
+//  ИНВЕНТАРЬ
+// ============================================================
+function useItem(idx) {
+  if (combat.gameOver) return;
+  const item = player.inventory[idx];
+  if (!item || !item.includes('Аптечка')) return;
+  if (player.hp >= maxHp()) { log('❤️ Здоровье уже полное'); return; }
+  const healed = Math.min(MEDKIT_HEAL, maxHp() - player.hp);
+  player.hp += healed;
+  player.inventory.splice(idx, 1);
+  log(`🧪 +${healed} HP (${Math.ceil(player.hp)}/${maxHp()})`);
+  playSound('click');
+  vibrate(15);
+  updateUI();
+}
+
+// ============================================================
+//  МАГАЗИН
+// ============================================================
+function buyVPN(idx) {
+  if (idx !== player.vpnLevel + 1) return;
+  const vpn = VPNS[idx];
+  if (player.coins < vpn.cost) { log('❌ Не хватает РКНкоинов'); return; }
+  const oldMax = maxHp();
+  player.coins -= vpn.cost;
+  player.vpnLevel = idx;
+  const newMax = maxHp();
+  player.hp = Math.min(newMax, player.hp + (newMax - oldMax));
+  log(`✅ Куплен ${vpn.name}! Макс. HP: ${newMax}`);
+  playSound('win');
+  vibrate(30);
+  updateUI();
+}
+
+// ============================================================
+//  БОЙ
+// ============================================================
+function renderEnemy() {
+  const e = ENEMIES[combat.idx];
+  if (!e) return;
+  const pct = combat.enemyMaxHp > 0 ? (combat.enemyHp / combat.enemyMaxHp) * 100 : 0;
+  $('enemyContainer').innerHTML = `
+    <div class="enemy-box">
+      <div class="enemy-name">${e.name}</div>
+      <div class="enemy-hint">${e.hint}</div>
+      <div class="enemy-hp-text">❤️ <span id="enemyHpText">${combat.enemyHp}</span> / ${combat.enemyMaxHp}</div>
+      <div class="enemy-hp-bar"><div class="enemy-hp-fill" id="enemyHpFill" style="width:${pct}%"></div></div>
+      <div class="reward-text">💰 Награда: <span class="val">${e.coins}</span>+ РКН</div>
+    </div>
+  `;
+}
+
+function updateEnemyBar() {
+  const t = $('enemyHpText');
+  const f = $('enemyHpFill');
+  if (t) t.textContent = combat.enemyHp;
+  if (f) f.style.width = clamp((combat.enemyHp / combat.enemyMaxHp) * 100, 0, 100) + '%';
+}
+
+function startFight(idx) {
+  combat.gameOver = false;
+  combat.busy = false;
+  if (player.hp <= 0) { gameOverBad(); return; }
+  if (idx >= ENEMIES.length) { gameOverGood(); return; }
+  combat.idx = idx;
+  const e = ENEMIES[idx];
+  combat.enemyMaxHp = e.hp;
+  combat.enemyHp = e.hp;
+  $('buttonsContainer').classList.remove('hidden');
+  renderEnemy();
+  renderStats();
+  log(`⚔️ ${e.name} — ${e.hp} HP`);
+}
+
+function playerAttack(type) {
+  if (combat.gameOver || combat.busy) return;
+  if (player.hp <= 0) { gameOverBad(); return; }
+  if (combat.enemyHp <= 0) return;
+
+  combat.busy = true;
+  playSound('click');
+  const e = ENEMIES[combat.idx];
+  const vpn = VPNS[player.vpnLevel];
+
+  const isWeak = type === e.weakTo;
+  let dmg = BASE_DAMAGE + vpn.damage + randInt(VARIANCE) + (isWeak ? WEAKNESS_BONUS : 0);
+  dmg = Math.max(1, dmg - e.defense);
+  combat.enemyHp = Math.max(0, combat.enemyHp - dmg);
+
+  log(`${isWeak ? '💡 Слабость! ' : '⚠️ '}Ты нанёс ${dmg} урона.`);
+  playSound('hit');
+  vibrate(20);
+  updateEnemyBar();
+
+  if (combat.enemyHp <= 0) {
+    const reward = e.coins + vpn.coinBonus + Math.floor(player.defeated / DEFEAT_BONUS_DIV);
+    player.coins += reward;
+    player.defeated += 1;
+    player.hp = Math.min(maxHp(), player.hp + HEAL_PER_KILL);
+
+    log(`✅ ${e.name} повержен! +${reward} РКН, +${HEAL_PER_KILL} HP`);
+    playSound('win');
+    vibrate(50);
+
+    if (Math.random() < MEDKIT_DROP) player.inventory.push('🧪 Аптечка (+30 HP)');
+
+    combat.busy = false;
+    save();
+    renderStats();
+    renderInventory();
+    renderShop();
+
+    if (player.defeated >= ENEMIES.length) {
+      gameOverGood();
+    } else {
+      combat.busy = true;
+      setTimeout(() => startFight(player.defeated), 400);
+    }
+    return;
+  }
+
+  const enemyDmg = Math.max(1, e.damage + randInt(VARIANCE) - Math.floor(vpn.defense / 2));
+  player.hp = Math.max(0, player.hp - enemyDmg);
+  playSound('damage');
+  vibrate(30);
+  log(`🤖 ${e.name} бьёт на ${enemyDmg} HP. У тебя ${Math.ceil(player.hp)}/${maxHp()}.`);
+  renderStats();
+
+  if (player.hp <= 0) { combat.busy = false; gameOverBad(); return; }
+  combat.busy = false;
+  save();
+}
+
+// ============================================================
+//  КОНЦОВКИ
+// ============================================================
+function gameOverGood() {
+  combat.gameOver = true;
+  combat.busy = false;
+  const hasPortal = player.vpnLevel >= VPNS.length - 1;
+  let text;
+  if (hasPortal) {
+    text = `🏆 Ты прорвался через все 20 врагов и купил КИБЕРПОРТАЛ X!<br>Свобода получена. Можешь идти пить чай. 🍵`;
+  } else if (player.coins >= VPNS[VPNS.length - 1].cost) {
+    text = `🏆 Ты прошёл всех 20 врагов!<br>У тебя ${player.coins} РКН — хватит на КИБЕРПОРТАЛ X. Загляни в магазин!`;
+  } else {
+    text = `🏆 Ты прошёл всех 20 врагов!<br>Но КИБЕРПОРТАЛ X (${VPNS[VPNS.length - 1].cost} РКН) так и не куплен. У тебя ${player.coins} РКН.<br>Сможешь сэкономить в следующий раз?`;
+  }
+  $('enemyContainer').innerHTML = `
+    <div class="ending ending-good">
+      <div class="ending-title">✅ ПОБЕДА</div>
+      <div class="ending-text">${text}</div>
+      <button class="btn-reset" id="resetBtn">🔄 Начать заново</button>
+    </div>
+  `;
+  $('buttonsContainer').classList.add('hidden');
+  log('🏁 Победа!');
+  $('resetBtn').addEventListener('click', resetGame);
+  playSound('win');
+  vibrate(100);
+  save();
+}
+
+function gameOverBad() {
+  player.deaths += 1;
+  combat.gameOver = true;
+  combat.busy = false;
+  $('enemyContainer').innerHTML = `
+    <div class="ending ending-bad">
+      <div class="ending-title">💀 ПОРАЖЕНИЕ</div>
+      <div class="ending-text">
+        Ты погиб на враге ${player.defeated + 1}.<br>
+        Дойди до конца в следующий раз!<br><br>
+        Смертей: ${player.deaths}
+      </div>
+      <button class="btn-reset" id="resetBtn">🔄 Начать заново</button>
+    </div>
+  `;
+  $('buttonsContainer').classList.add('hidden');
+  log('💀 Игра окончена.');
+  $('resetBtn').addEventListener('click', resetGame);
+  vibrate(80);
+  save();
+}
+
+// ============================================================
+//  СБРОС
+// ============================================================
+function resetGame() {
+  player.hp = 100;
+  player.coins = 0;
+  player.vpnLevel = 0;
+  player.defeated = 0;
+  player.inventory = [];
+
+  combat.idx = 0;
+  combat.enemyHp = 0;
+  combat.enemyMaxHp = 0;
+  combat.gameOver = false;
+  combat.busy = false;
+
+  $('enemyContainer').innerHTML = '';
+  $('buttonsContainer').classList.remove('hidden');
+
+  switchTab('fight');
+  startFight(0);
+  updateUI();
+}
+
+// ============================================================
+//  ВКЛАДКИ
+// ============================================================
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  const content = document.getElementById(id);
+  if (content) content.classList.add('active');
+  const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if (btn) btn.classList.add('active');
+  if (id === 'shop') renderShop();
+  if (id === 'inventory') renderInventory();
+}
+
+// ============================================================
+//  СОБЫТИЯ
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab))
+);
+document.querySelectorAll('[data-attack]').forEach(btn =>
+  btn.addEventListener('click', () => playerAttack(btn.dataset.attack))
+);
+$('shopGrid').addEventListener('click', e => {
+  const t = e.target.closest('[data-buy]');
+  if (t) buyVPN(Number(t.dataset.buy));
+});
+$('inventoryPanel').addEventListener('click', e => {
+  const t = e.target.closest('[data-inv-idx]');
+  if (t) useItem(Number(t.dataset.invIdx));
+});
+
+// ============================================================
+//  ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+(function init() {
+  if (load()) log('💾 Прогресс загружен!');
+  startFight(player.defeated);
+  renderStats();
+})();
 </script>
 </body>
 </html>

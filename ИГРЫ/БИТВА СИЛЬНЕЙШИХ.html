@@ -20,520 +20,155 @@
     --font-title: 'Russo One', sans-serif;
     --font-pixel: 'Press Start 2P', monospace;
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-
 html, body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #000;
-    font-family: var(--font-title);
-    color: #d0e2f5;
+    width: 100vw; height: 100vh; overflow: hidden;
+    background: #000; font-family: var(--font-title); color: #d0e2f5;
 }
-
-/* === ВНЕШНИЙ БЕЗЕЛЬ === */
-.arcade {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-        radial-gradient(ellipse at center, #10192a 0%, #05080f 70%, #000 100%);
-}
-
-.stage {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #000;
-    box-shadow:
-        inset 0 0 200px rgba(0,0,0,0.9),
-        inset 0 0 60px rgba(95,211,255,0.06);
-}
-
-canvas#gameCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    image-rendering: pixelated;
-    background: #0d1726;
-}
-
-/* === CRT-СЛОЙ === */
-.crt-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-    background:
-        repeating-linear-gradient(
-            0deg,
-            rgba(0,0,0,0.18) 0px,
-            rgba(0,0,0,0.18) 1px,
-            transparent 1px,
-            transparent 3px
-        );
-    mix-blend-mode: multiply;
-    opacity: 0.7;
-}
-.vignette {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 6;
-    background: radial-gradient(ellipse at center,
-        transparent 40%,
-        rgba(0,0,0,0.55) 100%);
-}
-.scan-line {
-    position: absolute;
-    left: 0; right: 0;
-    height: 80px;
-    pointer-events: none;
-    z-index: 7;
-    background: linear-gradient(180deg,
-        transparent,
-        rgba(95,211,255,0.05),
-        transparent);
-    animation: scanMove 8s linear infinite;
-}
-@keyframes scanMove {
-    0% { top: -80px; }
-    100% { top: 100%; }
-}
-
-/* === HUD === */
-.hud {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    pointer-events: none;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    padding: 18px 26px 20px;
-    gap: 8px;
-}
-
-.hud-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-}
-
-.hud-bottom {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px;
-}
-
-/* === ИГРОК === */
-.fighter-panel {
-    flex: 1;
-    max-width: 460px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    pointer-events: auto;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
-}
+.arcade { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, #10192a 0%, #05080f 70%, #000 100%); }
+.stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000;
+    box-shadow: inset 0 0 200px rgba(0,0,0,0.9), inset 0 0 60px rgba(95,211,255,0.06); }
+canvas#gameCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+    image-rendering: pixelated; background: #0d1726; }
+.crt-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode: multiply; opacity: 0.5; }
+.vignette { position: absolute; inset: 0; pointer-events: none; z-index: 6;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%); }
+.scan-line { position: absolute; left: 0; right: 0; height: 80px; pointer-events: none; z-index: 7;
+    background: linear-gradient(180deg, transparent, rgba(95,211,255,0.04), transparent);
+    animation: scanMove 8s linear infinite; }
+@keyframes scanMove { 0% { top: -80px; } 100% { top: 100%; } }
+.hud { position: absolute; inset: 0; z-index: 10; pointer-events: none;
+    display: grid; grid-template-rows: auto 1fr auto; padding: 18px 26px 20px; gap: 8px; }
+.hud-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.hud-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.fighter-panel { flex: 1; max-width: 460px; display: flex; flex-direction: column; gap: 6px;
+    pointer-events: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7)); }
 .fighter-panel.right { align-items: flex-end; }
-
-.fighter-name {
-    font-family: var(--font-title);
-    font-size: 26px;
-    letter-spacing: 2px;
-    color: var(--fighter-color);
-    text-shadow:
-        0 0 12px var(--fighter-color),
-        0 0 30px color-mix(in srgb, var(--fighter-color) 50%, transparent),
-        0 2px 0 rgba(0,0,0,0.7);
-    padding: 2px 10px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.15));
-    border-top: 2px solid var(--fighter-color);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(4px);
-    transition: transform 0.15s ease;
-}
+.fighter-name { font-family: var(--font-title); font-size: 26px; letter-spacing: 2px;
+    color: var(--fighter-color); text-shadow: 0 0 12px var(--fighter-color), 0 2px 0 rgba(0,0,0,0.7);
+    padding: 2px 10px; background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.15));
+    border-top: 2px solid var(--fighter-color); border-bottom: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(4px); }
 .fighter-panel.right .fighter-name { text-align: right; }
-.fighter-name.flash { animation: nameFlash 0.5s ease; }
-@keyframes nameFlash {
-    0%,100% { transform: scale(1); }
-    50% { transform: scale(1.08); filter: brightness(1.4); }
-}
-
-.hp-bar {
-    width: 100%;
-    height: 26px;
-    background: linear-gradient(180deg, #0a0f18, #050a12);
-    border: 2px solid rgba(255,255,255,0.15);
-    border-top-color: var(--fighter-color);
-    position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
-}
-.hp-fill {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg,
-        var(--fighter-color) 0%,
-        color-mix(in srgb, var(--fighter-color) 60%, white) 100%);
-    transform-origin: left center;
-    transition: transform 0.25s cubic-bezier(.2,.9,.3,1.2), background 0.3s;
-    will-change: transform;
-}
+.hp-bar { width: 100%; height: 26px; background: linear-gradient(180deg, #0a0f18, #050a12);
+    border: 2px solid rgba(255,255,255,0.15); border-top-color: var(--fighter-color);
+    position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.8); }
+.hp-fill { position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--fighter-color) 0%, color-mix(in srgb, var(--fighter-color) 60%, white) 100%);
+    transform-origin: left center; transition: transform 0.25s cubic-bezier(.2,.9,.3,1.2); will-change: transform; }
 .fighter-panel.right .hp-fill { transform-origin: right center; }
-.hp-fill.low {
-    animation: lowHp 0.6s ease-in-out infinite;
-    background: linear-gradient(90deg, var(--hp-low), #ff8080);
-}
-@keyframes lowHp {
-    0%,100% { filter: brightness(1); }
-    50% { filter: brightness(1.8); }
-}
-.hp-text {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    font-family: var(--font-pixel);
-    font-size: 11px;
-    color: #fff;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    letter-spacing: 1px;
-}
+.hp-fill.low { animation: lowHp 0.6s ease-in-out infinite; background: linear-gradient(90deg, var(--hp-low), #ff8080); }
+@keyframes lowHp { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.8); } }
+.hp-text { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 10px;
+    font-family: var(--font-pixel); font-size: 11px; color: #fff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; letter-spacing: 1px; }
 .fighter-panel.right .hp-text { justify-content: flex-end; }
-
-/* === КУЛДАУНЫ === */
-.cooldowns {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-}
-.cd {
-    flex: 1;
-    height: 30px;
-    background: linear-gradient(180deg, #1a0f0f, #0d0808);
-    border: 1px solid rgba(255,255,255,0.1);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-pixel);
-    font-size: 9px;
-    color: #fff;
-    text-shadow: 1px 1px 0 #000;
-    transition: border-color 0.2s;
-}
-.cd .cd-icon {
-    position: absolute;
-    left: 6px;
-    font-size: 14px;
-    filter: drop-shadow(0 0 3px rgba(0,0,0,0.9));
-}
-.cd .cd-fill {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, var(--hp-good), #2fc46f);
-    transform-origin: left center;
-    transition: transform 0.08s linear;
-}
+.cooldowns { display: flex; gap: 6px; width: 100%; }
+.cd { flex: 1; height: 30px; background: linear-gradient(180deg, #1a0f0f, #0d0808);
+    border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-pixel);
+    font-size: 9px; color: #fff; text-shadow: 1px 1px 0 #000; transition: border-color 0.2s; }
+.cd .cd-icon { position: absolute; left: 6px; font-size: 14px; filter: drop-shadow(0 0 3px rgba(0,0,0,0.9)); }
+.cd .cd-fill { position: absolute; inset: 0; background: linear-gradient(180deg, var(--hp-good), #2fc46f);
+    transform-origin: left center; transition: transform 0.08s linear; }
 .cd.ready { border-color: var(--hp-good); box-shadow: 0 0 12px rgba(74,255,160,0.4); }
 .cd.ready .cd-fill { background: linear-gradient(180deg, #4affa0, #1e9d5a); }
-.cd .cd-label {
-    position: relative;
-    z-index: 2;
-    margin-left: 14px;
-    mix-blend-mode: difference;
-}
+.cd .cd-label { position: relative; z-index: 2; margin-left: 14px; mix-blend-mode: difference; }
 .fighter-panel.right .cooldowns { flex-direction: row-reverse; }
 .fighter-panel.right .cd .cd-icon { left: auto; right: 6px; }
 .fighter-panel.right .cd .cd-label { margin-left: 0; margin-right: 14px; }
 .fighter-panel.right .cd .cd-fill { transform-origin: right center; }
-
-/* === ЦЕНТР — СЧЁТ И РАУНД === */
-.center-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 22px;
+.center-block { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 22px;
     background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3));
-    border: 2px solid rgba(95,211,255,0.25);
-    border-top-color: var(--gold);
-    border-bottom-color: var(--gold);
-    box-shadow:
-        0 0 30px rgba(95,211,255,0.15),
-        inset 0 0 20px rgba(0,0,0,0.8);
-    backdrop-filter: blur(6px);
-}
-.round-label {
-    font-family: var(--font-pixel);
-    font-size: 10px;
-    color: var(--neon);
-    letter-spacing: 3px;
-    text-shadow: 0 0 8px var(--neon);
-}
-.score {
-    font-family: var(--font-title);
-    font-size: 44px;
-    letter-spacing: 6px;
-    color: var(--gold);
-    text-shadow:
-        0 0 18px var(--gold),
-        0 0 40px rgba(245,229,107,0.4),
-        0 4px 0 rgba(0,0,0,0.9);
-    line-height: 1;
-}
+    border: 2px solid rgba(95,211,255,0.25); border-top-color: var(--gold); border-bottom-color: var(--gold);
+    box-shadow: 0 0 30px rgba(95,211,255,0.15), inset 0 0 20px rgba(0,0,0,0.8); backdrop-filter: blur(6px); }
+.round-label { font-family: var(--font-pixel); font-size: 10px; color: var(--neon);
+    letter-spacing: 3px; text-shadow: 0 0 8px var(--neon); }
+.score { font-family: var(--font-title); font-size: 44px; letter-spacing: 6px; color: var(--gold);
+    text-shadow: 0 0 18px var(--gold), 0 0 40px rgba(245,229,107,0.4), 0 4px 0 rgba(0,0,0,0.9);
+    line-height: 1; }
 .score.tick { animation: scoreTick 0.3s ease; }
-@keyframes scoreTick {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.25); filter: brightness(1.6); }
-    100% { transform: scale(1); }
-}
-.vs {
-    font-family: var(--font-title);
-    font-size: 14px;
-    color: var(--neon);
-    letter-spacing: 3px;
-    opacity: 0.7;
-    animation: vsPulse 2.5s ease-in-out infinite;
-}
-@keyframes vsPulse {
-    0%,100% { opacity: 0.5; letter-spacing: 3px; }
-    50% { opacity: 1; letter-spacing: 5px; }
-}
-
-/* === КНОПКИ === */
-.controls {
-    position: absolute;
-    top: 18px;
-    right: 26px;
-    display: flex;
-    gap: 8px;
-    pointer-events: auto;
-    z-index: 20;
-}
-.btn {
-    font-family: var(--font-title);
-    font-size: 13px;
-    letter-spacing: 1.5px;
-    padding: 8px 16px;
-    color: #dceafc;
-    background: linear-gradient(180deg, #1b2d44, #0e1a28);
-    border: 1px solid rgba(95,211,255,0.35);
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.12s ease;
-    box-shadow:
-        0 3px 0 rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.08);
-    position: relative;
-    overflow: hidden;
-}
-.btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(95,211,255,0.25), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.5s;
-}
-.btn:hover {
-    transform: translateY(-2px);
-    border-color: var(--neon);
-    box-shadow:
-        0 5px 0 rgba(0,0,0,0.6),
-        0 0 18px rgba(95,211,255,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.15);
-    color: #fff;
-}
-.btn:hover::before { transform: translateX(100%); }
-.btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 rgba(0,0,0,0.6);
-}
-.btn.danger {
-    border-color: rgba(255,74,74,0.5);
-    background: linear-gradient(180deg, #3a1414, #1d0a0a);
-}
-.btn.danger:hover {
-    border-color: #ff4a4a;
-    box-shadow: 0 5px 0 rgba(0,0,0,0.6), 0 0 18px rgba(255,74,74,0.5);
-}
-
-/* === НИЖНЯЯ ПАНЕЛЬ === */
-.bottom-info {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    font-family: var(--font-pixel);
-    font-size: 9px;
-    color: #6f88a3;
-    letter-spacing: 1px;
-    padding: 6px 14px;
+@keyframes scoreTick { 0% { transform: scale(1); } 40% { transform: scale(1.25); filter: brightness(1.6); } 100% { transform: scale(1); } }
+.vs { font-family: var(--font-title); font-size: 14px; color: var(--neon); letter-spacing: 3px;
+    opacity: 0.7; animation: vsPulse 2.5s ease-in-out infinite; }
+@keyframes vsPulse { 0%,100% { opacity: 0.5; letter-spacing: 3px; } 50% { opacity: 1; letter-spacing: 5px; } }
+.controls { position: absolute; top: 18px; right: 26px; display: flex; gap: 8px; pointer-events: auto; z-index: 20; }
+.btn { font-family: var(--font-title); font-size: 13px; letter-spacing: 1.5px; padding: 8px 16px;
+    color: #dceafc; background: linear-gradient(180deg, #1b2d44, #0e1a28);
+    border: 1px solid rgba(95,211,255,0.35); cursor: pointer; text-transform: uppercase;
+    transition: all 0.12s ease; box-shadow: 0 3px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    position: relative; overflow: hidden; }
+.btn:hover { transform: translateY(-2px); border-color: var(--neon);
+    box-shadow: 0 5px 0 rgba(0,0,0,0.6), 0 0 18px rgba(95,211,255,0.5); color: #fff; }
+.btn:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,0.6); }
+.btn.danger { border-color: rgba(255,74,74,0.5); background: linear-gradient(180deg, #3a1414, #1d0a0a); }
+.btn.danger:hover { border-color: #ff4a4a; box-shadow: 0 5px 0 rgba(0,0,0,0.6), 0 0 18px rgba(255,74,74,0.5); }
+.bottom-info { display: flex; align-items: center; gap: 18px; font-family: var(--font-pixel);
+    font-size: 9px; color: #6f88a3; letter-spacing: 1px; padding: 6px 14px;
     background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
-    border: 1px solid rgba(95,211,255,0.15);
-    backdrop-filter: blur(4px);
-    pointer-events: auto;
-}
+    border: 1px solid rgba(95,211,255,0.15); backdrop-filter: blur(4px); pointer-events: auto; }
 .gp-status { display: flex; gap: 16px; }
 .gp-item { display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
 .gp-item.on { color: #6fff9d; text-shadow: 0 0 8px rgba(111,255,157,0.6); }
 .gp-item.off { color: #ff6b6b; }
-.dot {
-    width: 8px; height: 8px;
-    background: currentColor;
-    box-shadow: 0 0 8px currentColor;
-    animation: dotPulse 1.5s ease-in-out infinite;
-}
+.dot { width: 8px; height: 8px; background: currentColor; box-shadow: 0 0 8px currentColor;
+    animation: dotPulse 1.5s ease-in-out infinite; }
 @keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
 .hint { color: #4a6076; }
-.save-badge {
-    color: #6a8f5a;
-    transition: color 0.3s;
-}
-.save-badge.saving { color: #ffd23f; }
-
-/* === ОВЕРЛЕЙ ПОБЕДЫ === */
-.win-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 30;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    background: radial-gradient(ellipse at center,
-        rgba(0,0,0,0.75), rgba(0,0,0,0.95));
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-}
+.save-badge { color: #6a8f5a; transition: color 0.3s; }
+.win-overlay { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.75), rgba(0,0,0,0.95));
+    pointer-events: none; opacity: 0; transition: opacity 0.4s ease; }
 .win-overlay.show { opacity: 1; }
-.win-title {
-    font-family: var(--font-title);
-    font-size: 92px;
-    letter-spacing: 4px;
+.win-title { font-family: var(--font-title); font-size: 82px; letter-spacing: 4px;
     color: var(--winner-color, var(--gold));
-    text-shadow:
-        0 0 30px var(--winner-color, var(--gold)),
-        0 0 80px color-mix(in srgb, var(--winner-color, var(--gold)) 40%, transparent),
-        0 8px 0 rgba(0,0,0,0.9);
-    animation: slamIn 0.6s cubic-bezier(.2,.9,.3,1.4);
-    text-align: center;
-    padding: 0 30px;
-}
+    text-shadow: 0 0 30px var(--winner-color, var(--gold)), 0 8px 0 rgba(0,0,0,0.9);
+    animation: slamIn 0.6s cubic-bezier(.2,.9,.3,1.4); text-align: center; padding: 0 30px; }
 @keyframes slamIn {
     0% { transform: scale(3) rotate(-8deg); opacity: 0; filter: blur(20px); }
     60% { transform: scale(0.92) rotate(2deg); opacity: 1; filter: blur(0); }
     100% { transform: scale(1) rotate(0); }
 }
-.win-sub {
-    font-family: var(--font-pixel);
-    font-size: 14px;
-    color: var(--neon);
-    letter-spacing: 4px;
-    text-shadow: 0 0 12px var(--neon);
-    animation: subIn 0.6s 0.3s both;
-}
-@keyframes subIn {
-    0% { opacity: 0; transform: translateY(20px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-/* === ПАУЗА === */
-.pause-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: linear-gradient(180deg,
-        rgba(5,8,15,0.92), rgba(5,8,15,0.97));
-    backdrop-filter: blur(8px);
-}
+.win-sub { font-family: var(--font-pixel); font-size: 14px; color: var(--neon); letter-spacing: 4px;
+    text-shadow: 0 0 12px var(--neon); animation: subIn 0.6s 0.3s both; }
+@keyframes subIn { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+.pause-overlay { position: absolute; inset: 0; z-index: 40; display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(180deg, rgba(5,8,15,0.92), rgba(5,8,15,0.97)); backdrop-filter: blur(8px); }
 .pause-overlay.show { display: flex; }
-.pause-title {
-    font-family: var(--font-title);
-    font-size: 72px;
-    letter-spacing: 8px;
-    color: var(--gold);
-    text-shadow: 0 0 40px var(--gold), 0 6px 0 rgba(0,0,0,0.9);
-    margin-bottom: 30px;
-    animation: pauseFloat 3s ease-in-out infinite;
-}
-@keyframes pauseFloat {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-}
-.menu-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 520px;
-}
-.menu-item {
-    font-family: var(--font-title);
-    font-size: 26px;
-    letter-spacing: 2px;
-    color: #7a94ae;
-    padding: 12px 30px;
-    text-align: center;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-    cursor: pointer;
-}
-.menu-item:hover,
-.menu-item.selected {
-    color: var(--gold);
-    border-color: rgba(245,229,107,0.4);
-    background: linear-gradient(90deg,
-        transparent, rgba(245,229,107,0.08), transparent);
-    text-shadow: 0 0 20px rgba(245,229,107,0.7);
-    letter-spacing: 4px;
-}
-.menu-hint {
-    margin-top: 30px;
-    font-family: var(--font-pixel);
-    font-size: 10px;
-    color: #4a6076;
-    letter-spacing: 2px;
-}
+.pause-title { font-family: var(--font-title); font-size: 72px; letter-spacing: 8px; color: var(--gold);
+    text-shadow: 0 0 40px var(--gold), 0 6px 0 rgba(0,0,0,0.9); margin-bottom: 30px;
+    animation: pauseFloat 3s ease-in-out infinite; }
+@keyframes pauseFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.menu-list { display: flex; flex-direction: column; gap: 6px; min-width: 520px; }
+.menu-item { font-family: var(--font-title); font-size: 24px; letter-spacing: 2px; color: #7a94ae;
+    padding: 12px 30px; text-align: center; border: 1px solid transparent;
+    transition: all 0.15s ease; cursor: pointer; }
+.menu-item:hover, .menu-item.selected { color: var(--gold); border-color: rgba(245,229,107,0.4);
+    background: linear-gradient(90deg, transparent, rgba(245,229,107,0.08), transparent);
+    text-shadow: 0 0 20px rgba(245,229,107,0.7); letter-spacing: 4px; }
+.menu-hint { margin-top: 30px; font-family: var(--font-pixel); font-size: 10px; color: #4a6076; letter-spacing: 2px; }
 </style>
 </head>
 <body>
 <div class="arcade">
 <div class="stage" id="stage">
     <canvas id="gameCanvas" width="1920" height="1080"></canvas>
-
     <div class="crt-overlay"></div>
     <div class="scan-line"></div>
     <div class="vignette"></div>
 
-    <!-- КНОПКИ УПРАВЛЕНИЯ -->
     <div class="controls">
         <button class="btn" id="pauseBtn">⏸ ПАУЗА</button>
         <button class="btn danger" id="resetProgressBtn">🗑 СБРОС</button>
     </div>
 
-    <!-- HUD -->
     <div class="hud" id="hud">
         <div class="hud-top">
-            <!-- ИГРОК 1 -->
             <div class="fighter-panel" id="panel1" style="--fighter-color: var(--p1-color);">
                 <div class="fighter-name" id="p1Name">АБДУЛЛА</div>
                 <div class="hp-bar">
@@ -541,20 +176,18 @@ canvas#gameCanvas {
                     <div class="hp-text" id="p1HpText">100 / 100</div>
                 </div>
                 <div class="cooldowns">
-                    <div class="cd" id="p1CdFist"><div class="cd-fill"></div><span class="cd-icon">👊</span><span class="cd-label">КУЛАК</span></div>
-                    <div class="cd" id="p1CdKnife"><div class="cd-fill"></div><span class="cd-icon">🔪</span><span class="cd-label">НОЖ</span></div>
-                    <div class="cd" id="p1CdGun"><div class="cd-fill"></div><span class="cd-icon">🔫</span><span class="cd-label">ПИСТОЛЕТ</span></div>
+                    <div class="cd" id="p1CdFist"><div class="cd-fill"></div><span class="cd-icon">👊</span><span class="cd-label">F</span></div>
+                    <div class="cd" id="p1CdKnife"><div class="cd-fill"></div><span class="cd-icon">🔪</span><span class="cd-label">G</span></div>
+                    <div class="cd" id="p1CdGun"><div class="cd-fill"></div><span class="cd-icon">🔫</span><span class="cd-label">H</span></div>
                 </div>
             </div>
 
-            <!-- ЦЕНТР -->
             <div class="center-block">
                 <div class="round-label" id="roundLabel">РАУНД 1</div>
                 <div class="score" id="score">0 : 0</div>
                 <div class="vs">VS</div>
             </div>
 
-            <!-- ИГРОК 2 -->
             <div class="fighter-panel right" id="panel2" style="--fighter-color: var(--p2-color);">
                 <div class="fighter-name" id="p2Name">АЗИЗА</div>
                 <div class="hp-bar">
@@ -562,35 +195,32 @@ canvas#gameCanvas {
                     <div class="hp-text" id="p2HpText">100 / 100</div>
                 </div>
                 <div class="cooldowns">
-                    <div class="cd" id="p2CdFist"><div class="cd-fill"></div><span class="cd-icon">👊</span><span class="cd-label">КУЛАК</span></div>
-                    <div class="cd" id="p2CdKnife"><div class="cd-fill"></div><span class="cd-icon">🔪</span><span class="cd-label">НОЖ</span></div>
-                    <div class="cd" id="p2CdGun"><div class="cd-fill"></div><span class="cd-icon">🔫</span><span class="cd-label">ПИСТОЛЕТ</span></div>
+                    <div class="cd" id="p2CdFist"><div class="cd-fill"></div><span class="cd-icon">👊</span><span class="cd-label">1</span></div>
+                    <div class="cd" id="p2CdKnife"><div class="cd-fill"></div><span class="cd-icon">🔪</span><span class="cd-label">2</span></div>
+                    <div class="cd" id="p2CdGun"><div class="cd-fill"></div><span class="cd-icon">🔫</span><span class="cd-label">3</span></div>
                 </div>
             </div>
         </div>
-
         <div></div>
-
         <div class="hud-bottom">
             <div class="bottom-info">
                 <div class="gp-status">
                     <div class="gp-item off" id="gp1Item"><span class="dot"></span><span>P1</span></div>
                     <div class="gp-item off" id="gp2Item"><span class="dot"></span><span>P2</span></div>
                 </div>
-                <span class="hint">🎮 СТИК · 1 КУЛАК · 3 НОЖ · 2 ПИСТОЛЕТ</span>
+                <span class="hint">⌨ P1: A/D · W · F/G/H</span>
+                <span class="hint">P2: ←/→ · ↑ · 1/2/3</span>
                 <span class="hint">E ПАУЗА · R РЕСТАРТ</span>
                 <span class="save-badge" id="saveStatus">💾 СОХРАНЕНО</span>
             </div>
         </div>
     </div>
 
-    <!-- ОВЕРЛЕЙ ПОБЕДЫ -->
     <div class="win-overlay" id="winOverlay">
         <div class="win-title" id="winTitle">ПОБЕДА</div>
         <div class="win-sub" id="winSub">РАУНД 1 НАЧИНАЕТСЯ...</div>
     </div>
 
-    <!-- ПАУЗА -->
     <div class="pause-overlay" id="pauseOverlay">
         <div class="pause-title">ПАУЗА</div>
         <div class="menu-list" id="menuList"></div>
@@ -607,9 +237,9 @@ canvas#gameCanvas {
 //  КОНСТАНТЫ
 // ============================================================
 const W = 1920, H = 1080;
-const GROUND_Y = H * 0.82;
-const CUBE_SIZE = 56;
-const TARGET_FPS = 75;
+const GROUND_Y = H * 0.86;
+const CUBE_SIZE = 58;
+const TARGET_FPS = 60;
 const FRAME_TIME = 1000 / TARGET_FPS;
 
 const CHARS = {
@@ -620,22 +250,30 @@ const CHARS = {
 };
 const CHAR_NAMES = Object.keys(CHARS);
 
-const JUMP = -9.5;
-const GRAV = 0.55;
-const SPEED = 4.2;
-const MAX_ROUNDS = 2;
+const JUMP = -15;
+const GRAV = 0.85;
+const SPEED = 6;
+const MAX_WINS = 2;            // best of 3
 const ROUND_TRANSITION_TIME = 140;
 
-const FIST_COOLDOWN = 10;
-const KNIFE_COOLDOWN = 25;
-const GUN_COOLDOWN = 70;
+const FIST_COOLDOWN = 12;
+const KNIFE_COOLDOWN = 28;
+const GUN_COOLDOWN = 75;
 
-const FIST_RANGE = 80;
-const KNIFE_RANGE = 72;
+const FIST_RANGE = 92;
+const KNIFE_RANGE = 84;
 const DEADZONE = 0.15;
-const BULLET_SPEED = 13;
+const BULLET_SPEED = 22;
 
 const STORAGE_KEY = 'bitva_silneyshih_save';
+
+// 3 платформы
+const PLATFORMS = [
+    { x: W * 0.15, y: GROUND_Y - 220, w: 320, h: 22, hue: '#5fd3ff' },
+    { x: W * 0.5 - 200, y: GROUND_Y - 360, w: 400, h: 22, hue: '#f5e56b' },
+    { x: W * 0.85 - 320, y: GROUND_Y - 220, w: 320, h: 22, hue: '#9B59B6' }
+];
+PLATFORMS.forEach(p => { p.hue = p.hue || '#5fd3ff'; });
 
 // ============================================================
 //  DOM
@@ -689,6 +327,9 @@ let screenShake = 0;
 let screenFlash = 0;
 let flashColor = '255,255,255';
 
+// ИИ
+let aiEnabled = true;
+
 // ============================================================
 //  SAVE
 // ============================================================
@@ -702,6 +343,7 @@ function loadSave() {
         if (typeof p.p1Wins === 'number') p1Wins = p.p1Wins;
         if (typeof p.p2Wins === 'number') p2Wins = p.p2Wins;
         if (typeof p.round === 'number' && p.round > 0) round = p.round;
+        if (typeof p.aiEnabled === 'boolean') aiEnabled = p.aiEnabled;
         setSaveStatus('💾 ЗАГРУЖЕНО');
         return true;
     } catch (e) { console.warn(e); return false; }
@@ -710,7 +352,7 @@ function loadSave() {
 function saveProgress() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            p1Char, p2Char, p1Wins, p2Wins, round, timestamp: Date.now()
+            p1Char, p2Char, p1Wins, p2Wins, round, aiEnabled, timestamp: Date.now()
         }));
         setSaveStatus('💾 СОХРАНЕНО');
     } catch (e) { console.warn(e); }
@@ -718,11 +360,7 @@ function saveProgress() {
 
 function setSaveStatus(text) {
     els.saveStatus.textContent = text;
-    if (text.includes('СОХРАН')) {
-        els.saveStatus.classList.remove('saving');
-    } else {
-        els.saveStatus.classList.add('saving');
-    }
+    els.saveStatus.classList.remove('saving');
 }
 
 function resetProgress() {
@@ -730,6 +368,7 @@ function resetProgress() {
     localStorage.removeItem(STORAGE_KEY);
     p1Char = 'АБДУЛЛА'; p2Char = 'АЗИЗА';
     p1Wins = 0; p2Wins = 0; round = 1;
+    aiEnabled = true;
     matchEnded = false; isTransitioning = false; transitionTimer = 0;
     makePlayers(); resetRound(); updatePauseMenu();
     setSaveStatus('🗑 СБРОШЕНО');
@@ -754,6 +393,31 @@ function ax(gp, i) { if (!gp) return 0; const v = gp.axes[i] || 0; return Math.a
 function btn(gp, b) { if (!gp) return false; const t = gp.buttons[b]; return t ? t.pressed : false; }
 
 // ============================================================
+//  КЛАВИАТУРА
+// ============================================================
+const keys = {}, keysPrev = {};
+
+function keyDown(code) { keys[code] = true; }
+function keyUp(code) { keys[code] = false; }
+function keyPressed(code) { return keys[code] && !keysPrev[code]; }
+
+document.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    const code = e.code;
+    keys[code] = true;
+    if (['w','a','s','d','f','g','h','arrowup','arrowdown','arrowleft','arrowright','1','2','3',' ','enter'].includes(k)) {
+        e.preventDefault();
+    }
+});
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+});
+
+function snapshotKeys() {
+    for (const k in keys) keysPrev[k] = keys[k];
+}
+
+// ============================================================
 //  ЧАСТИЦЫ / TRAILS / ЭФФЕКТЫ
 // ============================================================
 function spawnParticles(x, y, color, count, power) {
@@ -769,7 +433,7 @@ function spawnParticles(x, y, color, count, power) {
             maxLife: 45,
             size: (2 + Math.random() * 4) * power,
             color,
-            grav: 0.12,
+            grav: 0.15,
             shape: Math.random() < 0.3 ? 'spark' : 'square'
         });
     }
@@ -823,7 +487,8 @@ function makePlayers() {
         hitTmr: 0, attackTmr: 0, attackType: null,
         side: 1, grounded: true, vy: 0,
         squash: 1, squashV: 0,
-        hurtShake: 0
+        hurtShake: 0,
+        combo: 0, comboTmr: 0
     }, {
         name: p2Char,
         x: W * 0.75,
@@ -836,7 +501,8 @@ function makePlayers() {
         hitTmr: 0, attackTmr: 0, attackType: null,
         side: -1, grounded: true, vy: 0,
         squash: 1, squashV: 0,
-        hurtShake: 0
+        hurtShake: 0,
+        combo: 0, comboTmr: 0
     }];
     projectiles = []; particles = []; trails = [];
     gameOver = false; winner = null; roundWinner = null;
@@ -865,6 +531,7 @@ function resetRound() {
         p.side = i === 0 ? 1 : -1;
         p.vy = 0; p.grounded = true;
         p.squash = 1; p.squashV = 0; p.hurtShake = 0;
+        p.combo = 0; p.comboTmr = 0;
     });
     projectiles = []; particles = []; trails = [];
     gameOver = false; winner = null; roundWinner = null;
@@ -887,8 +554,6 @@ function resetGame() {
 
 function startRoundTransition(winnerIdx) {
     roundWinner = winnerIdx;
-    isTransitioning = true;
-    transitionTimer = ROUND_TRANSITION_TIME;
     gameOver = true;
     if (winnerIdx === 0) p1Wins++; else p2Wins++;
     updateScore(true);
@@ -901,13 +566,15 @@ function startRoundTransition(winnerIdx) {
     els.winOverlay.style.setProperty('--winner-color', winnerColor);
     els.winOverlay.classList.add('show');
 
-    if (p1Wins >= MAX_ROUNDS || p2Wins >= MAX_ROUNDS) {
+    if (p1Wins >= MAX_WINS || p2Wins >= MAX_WINS) {
         matchEnded = true;
         isTransitioning = false;
         transitionTimer = 0;
         els.winTitle.textContent = '🏆 ' + winnerName + ' ЧЕМПИОН! 🏆';
         els.winSub.textContent = 'R — НОВАЯ ИГРА · E — ПАУЗА';
     } else {
+        isTransitioning = true;
+        transitionTimer = ROUND_TRANSITION_TIME;
         els.winSub.textContent = 'РАУНД ' + (round + 1) + ' НАЧИНАЕТСЯ...';
     }
 }
@@ -923,9 +590,10 @@ function spawnProjectile(shooter, target) {
     const vy = Math.sin(angle) * BULLET_SPEED;
     projectiles.push({
         x: sx, y: sy, vx, vy, angle,
+        px: sx, py: sy,          // prev pos для sweep
         life: 80,
         owner: shooter === players[0] ? 0 : 1,
-        damage: 15
+        damage: 14
     });
     screenShake = Math.max(screenShake, 4);
     spawnSparks(sx, sy, 6, angle);
@@ -939,15 +607,21 @@ function applyDamage(defender, dmg, attackerIdx, hitColor) {
     defender.hitTmr = 10;
     defender.hurtShake = 8;
     hitStop = 4;
-    screenShake = Math.max(screenShake, 6);
+    screenShake = Math.max(screenShake, 7);
     spawnParticles(defender.x, defender.y, hitColor, 14, 1.2);
     spawnSparks(defender.x, defender.y, 10,
         Math.atan2(defender.y - players[attackerIdx].y, defender.x - players[attackerIdx].x));
+
+    // комбо
+    const att = players[attackerIdx];
+    att.combo++;
+    att.comboTmr = 60;
+
     if (defender.hp <= 0 && !gameOver) {
         gameOver = true;
         winner = attackerIdx;
         screenFlash = 1;
-        flashColor = defender.color === '#FFD700' ? '255,215,0' : '155,89,182';
+        flashColor = '255,255,255';
         startRoundTransition(attackerIdx);
     }
 }
@@ -968,13 +642,13 @@ function meleeAttack(attacker, defender, idx, cfg) {
 function doFist(a, d, idx) {
     return meleeAttack(a, d, idx, {
         cdKey: 'fistCD', cooldown: FIST_COOLDOWN, range: FIST_RANGE,
-        dmgMin: 7, dmgMax: 13, hitColor: '#ff9040', type: 'fist'
+        dmgMin: 6, dmgMax: 10, hitColor: '#ff9040', type: 'fist'
     });
 }
 function doKnife(a, d, idx) {
     return meleeAttack(a, d, idx, {
         cdKey: 'knifeCD', cooldown: KNIFE_COOLDOWN, range: KNIFE_RANGE,
-        dmgMin: 14, dmgMax: 22, hitColor: '#ff2a2a', type: 'knife'
+        dmgMin: 12, dmgMax: 18, hitColor: '#ff2a2a', type: 'knife'
     });
 }
 function doGun(a, idx) {
@@ -986,7 +660,148 @@ function doGun(a, idx) {
 }
 
 // ============================================================
-//  ОБНОВЛЕНИЕ
+//  ФИЗИКА: ПЛАТФОРМЫ
+// ============================================================
+function checkPlatformLanding(p, oldY, oldVy) {
+    if (p.vy < 0) return false; // летим вверх — платформы не ловят
+    const pTop = p.y - p.size / 2;
+    const oldTop = oldY - p.size / 2;
+    for (const pl of PLATFORMS) {
+        const withinX = p.x + p.size * 0.35 > pl.x && p.x - p.size * 0.35 < pl.x + pl.w;
+        if (!withinX) continue;
+        // пересекаем верх платформы сверху вниз
+        if (oldTop <= pl.y && pTop >= pl.y - 2 && oldTop < pl.y + pl.h) {
+            if (oldVy >= 0) {
+                p.y = pl.y - p.size / 2;
+                p.vy = 0;
+                p.grounded = true;
+                p.squash = 0.7;
+                p.squashV = 0;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function isOnPlatform(p) {
+    if (!p.grounded) return false;
+    const pBottom = p.y + p.size / 2;
+    for (const pl of PLATFORMS) {
+        if (Math.abs(pBottom - pl.y) < 3) {
+            if (p.x + p.size * 0.35 > pl.x && p.x - p.size * 0.35 < pl.x + pl.w) return true;
+        }
+    }
+    return false;
+}
+
+// ============================================================
+//  РАСТАЛКИВАНИЕ
+// ============================================================
+function separatePlayers() {
+    const a = players[0], b = players[1];
+    const minDist = (a.size + b.size) * 0.45;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    if (Math.abs(dy) > a.size * 0.8) return; // на разных высотах — не сталкиваем
+    const dist = Math.abs(dx);
+    if (dist < minDist && dist > 0.01) {
+        const push = (minDist - dist) / 2 + 0.5;
+        const dir = dx > 0 ? 1 : -1;
+        a.x -= dir * push;
+        b.x += dir * push;
+        a.x = Math.max(a.size / 2 + 40, Math.min(W - a.size / 2 - 40, a.x));
+        b.x = Math.max(b.size / 2 + 40, Math.min(W - b.size / 2 - 40, b.x));
+    }
+}
+
+// ============================================================
+//  УПРАВЛЕНИЕ ИГРОКОМ
+// ============================================================
+function readHumanInput(idx) {
+    const out = { mx: 0, jump: false, fist: false, knife: false, gun: false };
+    if (idx === 0) {
+        if (keys['KeyA']) out.mx -= 1;
+        if (keys['KeyD']) out.mx += 1;
+        if (keyPressed('KeyW') || keyPressed('Space')) out.jump = true;
+        if (keyPressed('KeyF')) out.fist = true;
+        if (keyPressed('KeyG')) out.knife = true;
+        if (keyPressed('KeyH')) out.gun = true;
+    } else {
+        if (keys['ArrowLeft']) out.mx -= 1;
+        if (keys['ArrowRight']) out.mx += 1;
+        if (keyPressed('ArrowUp')) out.jump = true;
+        if (keyPressed('Digit1') || keyPressed('Numpad1')) out.fist = true;
+        if (keyPressed('Digit2') || keyPressed('Numpad2')) out.knife = true;
+        if (keyPressed('Digit3') || keyPressed('Numpad3')) out.gun = true;
+    }
+    // геймпад как дополнительный ввод
+    const gp = gps[idx];
+    if (gp && gpCon[idx]) {
+        const axv = ax(gp, 0);
+        if (Math.abs(axv) > 0.2) out.mx = axv;
+        if (ax(gp, 1) < -0.5) out.jump = true;
+        if (btn(gp, 1)) out.fist = true;
+        if (btn(gp, 3)) out.knife = true;
+        if (btn(gp, 2)) out.gun = true;
+    }
+    return out;
+}
+
+// ============================================================
+//  ИИ
+// ============================================================
+function readAIInput(idx) {
+    const me = players[idx];
+    const target = players[1 - idx];
+    const out = { mx: 0, jump: false, fist: false, knife: false, gun: false };
+
+    const dx = target.x - me.x;
+    const dy = target.y - me.y;
+    const dist = Math.hypot(dx, dy);
+    const dir = Math.sign(dx) || 1;
+
+    // дистанция для атаки
+    const wantDist = 70;
+
+    // решение по движению
+    if (dist > wantDist + 30) {
+        out.mx = dir;
+    } else if (dist < wantDist - 20) {
+        out.mx = -dir; // отступаем
+    } else {
+        // в зоне — атакуем
+        if (me.fistCD <= 0) out.fist = true;
+        else if (me.knifeCD <= 0 && Math.random() < 0.5) out.knife = true;
+    }
+
+    // стрельба с дистанции
+    if (dist > 280 && me.gunCD <= 0 && Math.random() < 0.08) {
+        out.gun = true;
+    }
+
+    // прыжок: если цель выше и мы на земле
+    if (target.y < me.y - 80 && me.grounded && Math.random() < 0.12) {
+        out.jump = true;
+    }
+    // прыжок на платформу если цель на платформе
+    if (me.grounded && !isOnPlatform(me)) {
+        for (const pl of PLATFORMS) {
+            if (Math.abs(target.y - (pl.y - target.size / 2)) < 30 &&
+                Math.abs(pl.x + pl.w / 2 - me.x) < 260 &&
+                me.y > pl.y) {
+                if (Math.random() < 0.15) out.jump = true;
+            }
+        }
+    }
+    // случайный прыжок уклонения
+    if (me.grounded && Math.random() < 0.01) out.jump = true;
+
+    return out;
+}
+
+// ============================================================
+//  ОБНОВЛЕНИЕ ИГРОКА
 // ============================================================
 function updatePlayer(p, idx) {
     if (p.fistCD > 0) p.fistCD--;
@@ -995,6 +810,7 @@ function updatePlayer(p, idx) {
     if (p.hitTmr > 0) p.hitTmr--;
     if (p.attackTmr > 0) p.attackTmr--; else p.attackType = null;
     if (p.hurtShake > 0) p.hurtShake--;
+    if (p.comboTmr > 0) { p.comboTmr--; if (p.comboTmr === 0) p.combo = 0; }
 
     p.squashV += (1 - p.squash) * 0.35;
     p.squashV *= 0.75;
@@ -1002,31 +818,39 @@ function updatePlayer(p, idx) {
 
     if (gameOver || isTransitioning || matchEnded) return;
 
-    let mx = 0, jump = false, fist = false, knife = false, gun = false;
-    const gp = gps[idx];
-    if (gp && gpCon[idx]) {
-        const axv = ax(gp, 0), ayv = ax(gp, 1);
-        if (Math.abs(axv) > 0.2) mx = axv;
-        if (ayv < -0.5 && p.grounded) jump = true;
-        if (btn(gp, 1)) fist = true;
-        if (btn(gp, 3)) knife = true;
-        if (btn(gp, 2)) gun = true;
-    }
+    const inp = (idx === 1 && aiEnabled) ? readAIInput(idx) : readHumanInput(idx);
 
-    if (jump && p.grounded) {
+    const oldY = p.y;
+    const oldVy = p.vy;
+
+    if (inp.jump && p.grounded) {
         p.vy = JUMP; p.grounded = false;
         p.squash = 1.25; p.squashV = 0;
+        // сбрасываем grounded если были на платформе
     }
-    if (!p.grounded) p.vy += GRAV;
-    p.y += p.vy;
+
+    if (!p.grounded) {
+        p.vy += GRAV;
+        p.y += p.vy;
+    }
+
+    // земля
     if (p.y + p.size / 2 >= GROUND_Y) {
         if (!p.grounded) { p.squash = 0.7; p.squashV = 0; }
         p.y = GROUND_Y - p.size / 2;
         p.vy = 0; p.grounded = true;
     }
 
-    if (mx !== 0) {
-        const n = Math.abs(mx) > 1 ? mx / Math.abs(mx) : mx;
+    // платформы (только при падении)
+    if (!p.grounded || p.vy >= 0) {
+        if (p.vy >= 0 && checkPlatformLanding(p, oldY, oldVy)) {
+            // приземлились на платформу
+        }
+    }
+
+    // движение
+    if (inp.mx !== 0) {
+        const n = Math.abs(inp.mx) > 1 ? Math.sign(inp.mx) : inp.mx;
         p.x += n * SPEED;
         if (n > 0.1) p.side = 1;
         else if (n < -0.1) p.side = -1;
@@ -1034,22 +858,51 @@ function updatePlayer(p, idx) {
     const m = 40;
     p.x = Math.min(W - p.size / 2 - m, Math.max(p.size / 2 + m, p.x));
 
+    // атаки
     const target = players[1 - idx];
-    if (fist) doFist(p, target, idx);
-    if (knife) doKnife(p, target, idx);
-    if (gun) doGun(p, idx);
+    if (inp.fist) doFist(p, target, idx);
+    if (inp.knife) doKnife(p, target, idx);
+    if (inp.gun) doGun(p, idx);
+
+    // grounded на платформе: проверяем что под нами всё ещё платформа
+    if (p.grounded) {
+        const pBottom = p.y + p.size / 2;
+        let onPlat = false;
+        for (const pl of PLATFORMS) {
+            if (Math.abs(pBottom - pl.y) < 3 &&
+                p.x + p.size * 0.35 > pl.x && p.x - p.size * 0.35 < pl.x + pl.w) {
+                onPlat = true; break;
+            }
+        }
+        if (!onPlat && Math.abs(pBottom - GROUND_Y) > 3) {
+            p.grounded = false; // сошли с платформы
+        }
+    }
 }
 
 function updateProjectiles() {
     if (isTransitioning || matchEnded) return;
     for (let i = projectiles.length - 1; i >= 0; i--) {
         const pr = projectiles[i];
+        pr.px = pr.x; pr.py = pr.y;
         trails.push({ x: pr.x, y: pr.y, angle: pr.angle, life: 10, maxLife: 10, owner: pr.owner });
         pr.x += pr.vx; pr.y += pr.vy;
         pr.life--;
         const target = players[1 - pr.owner];
-        const dx = pr.x - target.x, dy = pr.y - target.y;
-        if (Math.abs(dx) < target.size / 2 + 12 && Math.abs(dy) < target.size / 2 + 12) {
+
+        // sweep-проверка: проверяем несколько точек на отрезке
+        let hit = false;
+        const steps = 4;
+        for (let s = 0; s <= steps; s++) {
+            const t = s / steps;
+            const cx = pr.px + (pr.x - pr.px) * t;
+            const cy = pr.py + (pr.y - pr.py) * t;
+            const dx = cx - target.x, dy = cy - target.y;
+            if (Math.abs(dx) < target.size / 2 + 14 && Math.abs(dy) < target.size / 2 + 14) {
+                hit = true; break;
+            }
+        }
+        if (hit) {
             applyDamage(target, pr.damage, pr.owner, '#ff4444');
             projectiles.splice(i, 1);
             continue;
@@ -1060,7 +913,7 @@ function updateProjectiles() {
 }
 
 // ============================================================
-//  HUD ОБНОВЛЕНИЕ (DOM)
+//  HUD ОБНОВЛЕНИЕ
 // ============================================================
 function updateHpBar(fill, text, hp, maxHp) {
     const pct = Math.max(0, hp / maxHp);
@@ -1119,56 +972,82 @@ function updateScore(animate) {
 //  РИСОВАНИЕ
 // ============================================================
 function drawBackground() {
+    // стена арены
     const g = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
     g.addColorStop(0, '#0a1220');
     g.addColorStop(0.6, '#132438');
-    g.addColorStop(1, '#1f3d57');
+    g.addColorStop(1, '#1a2f44');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, GROUND_Y);
 
-    ctx.fillStyle = 'rgba(20,40,60,0.7)';
-    ctx.beginPath();
-    ctx.moveTo(0, GROUND_Y);
-    for (let i = 0; i <= 12; i++) {
-        const x = (W / 12) * i;
-        const h = 100 + Math.sin(i * 1.7) * 80 + Math.cos(i * 0.9) * 40;
-        ctx.lineTo(x, GROUND_Y - h);
-        ctx.lineTo(x + W / 24, GROUND_Y);
+    // вертикальные бетонные панели
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 2;
+    for (let i = 1; i < 8; i++) {
+        ctx.beginPath();
+        ctx.moveTo((W / 8) * i, 0);
+        ctx.lineTo((W / 8) * i, GROUND_Y);
+        ctx.stroke();
     }
-    ctx.lineTo(W, GROUND_Y);
-    ctx.closePath();
-    ctx.fill();
 
-    ctx.globalAlpha = 0.12;
-    for (let i = 0; i < 6; i++) {
-        const y = 100 + i * 90;
-        const hue = i % 2 === 0 ? '95,211,255' : '245,229,107';
-        ctx.fillStyle = 'rgba(' + hue + ',1)';
-        ctx.fillRect(0, y, W, 2);
+    // неоновые полосы
+    ctx.globalAlpha = 0.10;
+    for (let i = 0; i < 5; i++) {
+        const y = 100 + i * 120;
+        ctx.fillStyle = (i % 2 === 0) ? '#5fd3ff' : '#f5e56b';
+        ctx.fillRect(0, y, W, 3);
     }
     ctx.globalAlpha = 1;
 
-    const gf = ctx.createLinearGradient(0, GROUND_Y - 30, 0, H);
+    // земля
+    const gf = ctx.createLinearGradient(0, GROUND_Y - 10, 0, H);
     gf.addColorStop(0, '#1f3d57');
     gf.addColorStop(0.5, '#142b3f');
     gf.addColorStop(1, '#0a1825');
     ctx.fillStyle = gf;
     ctx.fillRect(0, GROUND_Y - 10, W, H - GROUND_Y + 10);
 
-    ctx.fillStyle = '#2d4b66';
-    ctx.fillRect(0, GROUND_Y - 14, W, 8);
-
-    for (let i = 0; i < 64; i++) {
-        ctx.fillStyle = (i % 2 === 0) ? '#406885' : '#1f3d57';
-        ctx.fillRect(i * 30, GROUND_Y - 10, 15, 6);
-    }
-
+    // неоновая кромка пола
     ctx.save();
     ctx.shadowBlur = 20;
     ctx.shadowColor = '#5fd3ff';
-    ctx.fillStyle = 'rgba(95,211,255,0.5)';
-    ctx.fillRect(0, GROUND_Y - 16, W, 2);
+    ctx.fillStyle = 'rgba(95,211,255,0.7)';
+    ctx.fillRect(0, GROUND_Y - 12, W, 3);
     ctx.restore();
+
+    // полосы разметки
+    for (let i = 0; i < 64; i++) {
+        ctx.fillStyle = (i % 2 === 0) ? 'rgba(64,104,133,0.5)' : 'rgba(31,61,87,0.3)';
+        ctx.fillRect(i * 30, GROUND_Y - 8, 15, 4);
+    }
+}
+
+function drawPlatforms() {
+    for (const pl of PLATFORMS) {
+        ctx.save();
+        // свечение
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = pl.hue;
+
+        // основа
+        const grd = ctx.createLinearGradient(0, pl.y, 0, pl.y + pl.h);
+        grd.addColorStop(0, pl.hue);
+        grd.addColorStop(0.5, 'rgba(20,40,60,0.9)');
+        grd.addColorStop(1, 'rgba(10,25,40,0.95)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+
+        // верхняя кромка
+        ctx.fillStyle = pl.hue;
+        ctx.fillRect(pl.x, pl.y, pl.w, 3);
+
+        // боковые опоры
+        ctx.fillStyle = 'rgba(20,40,60,0.7)';
+        ctx.fillRect(pl.x + 8, pl.y + pl.h, 10, 24);
+        ctx.fillRect(pl.x + pl.w - 18, pl.y + pl.h, 10, 24);
+
+        ctx.restore();
+    }
 }
 
 function drawCube(p) {
@@ -1183,8 +1062,14 @@ function drawCube(p) {
 
     ctx.save();
 
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = p.hitTmr > 0 ? '#ffffff' : p.accent;
+    // аура атаки
+    if (p.attackTmr > 0) {
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = p.attackType === 'gun' ? '#ffae40' : (p.attackType === 'knife' ? '#ff4a4a' : '#ffd700');
+    } else {
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = p.accent;
+    }
 
     const grd = ctx.createLinearGradient(ox, oy, ox, oy + drawH);
     grd.addColorStop(0, baseColor);
@@ -1197,69 +1082,94 @@ function drawCube(p) {
     ctx.lineWidth = 3;
     ctx.strokeRect(ox, oy, drawW, drawH);
 
+    // блик
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.fillRect(ox + 3, oy + 3, drawW - 6, 4);
 
+    // пояс (как у бойца)
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(ox, oy + drawH * 0.75, drawW, 5);
+    ctx.fillStyle = p.accent;
+    ctx.fillRect(ox + drawW * 0.3, oy + drawH * 0.75, drawW * 0.4, 5);
+
+    // глаза
     const eyeSize = Math.max(8, drawW * 0.2);
-    const eyeY = oy + drawH * 0.42;
+    const eyeY = oy + drawH * 0.35;
     const pupilOff = p.side === 1 ? 4 : -4;
+    const blink = p.hitTmr > 0 ? 0.5 : 1;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(ox + drawW * 0.1, eyeY, eyeSize, eyeSize);
-    ctx.fillRect(ox + drawW * 0.7, eyeY, eyeSize, eyeSize);
+    ctx.fillRect(ox + drawW * 0.1, eyeY, eyeSize, eyeSize * blink);
+    ctx.fillRect(ox + drawW * 0.7, eyeY, eyeSize, eyeSize * blink);
 
     ctx.fillStyle = '#0a0f1a';
-    ctx.fillRect(ox + drawW * 0.14 + pupilOff, eyeY + 3, 4, 4);
-    ctx.fillRect(ox + drawW * 0.74 + pupilOff, eyeY + 3, 4, 4);
+    if (blink > 0.7) {
+        ctx.fillRect(ox + drawW * 0.14 + pupilOff, eyeY + 3, 4, 4);
+        ctx.fillRect(ox + drawW * 0.74 + pupilOff, eyeY + 3, 4, 4);
+    }
 
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(ox + drawW * 0.15 + pupilOff, eyeY + 2, 2, 2);
-    ctx.fillRect(ox + drawW * 0.75 + pupilOff, eyeY + 2, 2, 2);
-
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    // рот — эмоция
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     const mouthY = eyeY + eyeSize + 8;
-    ctx.moveTo(ox + drawW * 0.3, mouthY);
-    ctx.lineTo(ox + drawW * 0.7, mouthY);
-    ctx.stroke();
+    if (p.hitTmr > 0) {
+        // рот открыт (боль)
+        ctx.arc(ox + drawW * 0.5, mouthY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fill();
+    } else if (p.attackTmr > 0) {
+        // оскал
+        ctx.moveTo(ox + drawW * 0.35, mouthY);
+        ctx.lineTo(ox + drawW * 0.65, mouthY);
+        ctx.lineTo(ox + drawW * 0.5, mouthY + 6);
+        ctx.closePath();
+        ctx.stroke();
+    } else {
+        // нейтрально
+        ctx.moveTo(ox + drawW * 0.3, mouthY);
+        ctx.lineTo(ox + drawW * 0.7, mouthY);
+        ctx.stroke();
+    }
 
+    // оружие / кулак
     if (p.attackTmr > 0 && p.attackType) {
         const t = p.attackTmr / 8;
         ctx.save();
         if (p.attackType === 'fist') {
             ctx.fillStyle = '#ffd8a0';
             const fx = p.side === 1 ? ox + drawW + 4 + (1 - t) * 12 : ox - 20 - (1 - t) * 12;
-            ctx.fillRect(fx, oy + drawH * 0.45, 16, 14);
+            ctx.fillRect(fx, oy + drawH * 0.45, 18, 16);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
-            ctx.strokeRect(fx, oy + drawH * 0.45, 16, 14);
+            ctx.strokeRect(fx, oy + drawH * 0.45, 18, 16);
         } else if (p.attackType === 'knife') {
             ctx.fillStyle = '#dddddd';
             const kx = p.side === 1 ? ox + drawW + 2 + (1 - t) * 10 : ox - 18 - (1 - t) * 10;
             ctx.beginPath();
             ctx.moveTo(kx, oy + drawH * 0.45);
-            ctx.lineTo(kx + (p.side === 1 ? 24 : -24), oy + drawH * 0.45 + 7);
-            ctx.lineTo(kx, oy + drawH * 0.45 + 14);
+            ctx.lineTo(kx + (p.side === 1 ? 26 : -26), oy + drawH * 0.45 + 8);
+            ctx.lineTo(kx, oy + drawH * 0.45 + 16);
             ctx.closePath();
             ctx.fill();
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 1.5;
             ctx.stroke();
             ctx.fillStyle = '#8a5a2b';
-            ctx.fillRect(kx - 4, oy + drawH * 0.45 + 4, 6, 6);
+            ctx.fillRect(kx - 4, oy + drawH * 0.45 + 4, 6, 8);
         } else if (p.attackType === 'gun') {
             ctx.fillStyle = '#2a2a2a';
-            const gx = p.side === 1 ? ox + drawW - 2 : ox - 18;
-            ctx.fillRect(gx, oy + drawH * 0.5 - 3, 20, 8);
+            const gx = p.side === 1 ? ox + drawW - 2 : ox - 20;
+            ctx.fillRect(gx, oy + drawH * 0.5 - 4, 22, 10);
             ctx.fillStyle = '#666';
-            ctx.fillRect(p.side === 1 ? gx + 16 : gx - 6, oy + drawH * 0.5 - 2, 6, 6);
+            ctx.fillRect(p.side === 1 ? gx + 18 : gx - 6, oy + drawH * 0.5 - 3, 6, 8);
         }
         ctx.restore();
     }
 
     ctx.restore();
 
+    // имя
     ctx.save();
     ctx.font = '600 18px "Russo One", sans-serif';
     ctx.textAlign = 'center';
@@ -1268,6 +1178,18 @@ function drawCube(p) {
     ctx.fillStyle = p.hitTmr > 0 ? '#fff' : '#d0e2f5';
     ctx.fillText(p.name, p.x, oy + drawH + 21);
     ctx.restore();
+
+    // комбо
+    if (p.combo > 1 && p.comboTmr > 0) {
+        ctx.save();
+        ctx.font = 'bold 26px "Russo One", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffd23f';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#ffd23f';
+        ctx.fillText('x' + p.combo, p.x, oy - 14);
+        ctx.restore();
+    }
 }
 
 function drawBullet(pr) {
@@ -1316,6 +1238,7 @@ function drawParticles() {
 }
 
 function drawShadow(p) {
+    // тень на земле
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
@@ -1337,6 +1260,7 @@ function draw() {
     }
 
     drawBackground();
+    drawPlatforms();
     players.forEach(drawShadow);
     drawTrails();
     players.forEach(drawCube);
@@ -1362,6 +1286,7 @@ function updatePauseMenu() {
     pauseMenuItems = [
         { label: '▶ ИГРОК 1: ' + p1Char, action: 'p1' },
         { label: '▶ ИГРОК 2: ' + p2Char, action: 'p2' },
+        { label: '▶ ИИ: ' + (aiEnabled ? 'ВКЛ' : 'ВЫКЛ'), action: 'ai' },
         { label: '▶ ПРОДОЛЖИТЬ', action: 'resume' },
         { label: '▶ НОВАЯ ИГРА', action: 'new' }
     ];
@@ -1394,6 +1319,10 @@ function handlePauseMenu() {
         p1Wins = 0; p2Wins = 0; round = 1;
         matchEnded = false; isTransitioning = false; transitionTimer = 0;
         makePlayers(); resetRound(); updatePauseMenu();
+    } else if (action === 'ai') {
+        aiEnabled = !aiEnabled;
+        saveProgress();
+        updatePauseMenu();
     } else if (action === 'resume') {
         closePause();
     } else if (action === 'new') {
@@ -1428,6 +1357,7 @@ function loop(timestamp) {
         updateGP();
 
         if (state === 'PAUSE') {
+            snapshotKeys();
             requestAnimationFrame(loop);
             return;
         }
@@ -1448,6 +1378,7 @@ function loop(timestamp) {
         } else if (!gameOver && !isTransitioning && !matchEnded) {
             updatePlayer(players[0], 0);
             updatePlayer(players[1], 1);
+            separatePlayers();
             updateProjectiles();
         }
 
@@ -1459,10 +1390,12 @@ function loop(timestamp) {
         draw();
 
         hudAccum++;
-        if (hudAccum >= 5) {
+        if (hudAccum >= 3) {
             hudAccum = 0;
             updateAllHUD();
         }
+
+        snapshotKeys();
     }
     requestAnimationFrame(loop);
 }
@@ -1486,8 +1419,8 @@ window.addEventListener('gamepaddisconnected', updateGP);
 
 document.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
+    const code = e.code;
 
-    // R / К — рестарт (работает всегда)
     if (key === 'r' || key === 'к') {
         resetGame();
         els.roundLabel.textContent = 'РАУНД ' + round;
@@ -1496,7 +1429,6 @@ document.addEventListener('keydown', (e) => {
         return;
     }
 
-    // E / У — пауза (вместо ESC)
     if (key === 'e' || key === 'у') {
         if (state === 'FIGHT') { openPause(); e.preventDefault(); }
         else if (state === 'PAUSE') { closePause(); e.preventDefault(); }
@@ -1504,17 +1436,17 @@ document.addEventListener('keydown', (e) => {
     }
 
     if (state === 'PAUSE') {
-        if (e.key === 'ArrowDown') {
+        if (code === 'ArrowDown') {
             pauseMenuSel = (pauseMenuSel + 1) % pauseMenuItems.length;
             renderMenu();
             e.preventDefault();
         }
-        if (e.key === 'ArrowUp') {
+        if (code === 'ArrowUp') {
             pauseMenuSel = (pauseMenuSel - 1 + pauseMenuItems.length) % pauseMenuItems.length;
             renderMenu();
             e.preventDefault();
         }
-        if (e.key === 'Enter') { handlePauseMenu(); e.preventDefault(); }
+        if (code === 'Enter' || code === 'NumpadEnter') { handlePauseMenu(); e.preventDefault(); }
     }
 });
 
