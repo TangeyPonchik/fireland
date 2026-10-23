@@ -39,6 +39,15 @@ const GAMES = [
   difficulty: 5, 
   description: 'Финальная битва за свободный интернет! 90 уровней, 3 главы (Финал, Очистка, Машина), 9 боссов и 17 уровней прокачки VPN — от базового до цепной молнии и сингулярности. Собирай крипту, покупай апгрейды, используй Прокси (Q) и уничтожь Искусственный Интеллект. Трилогия завершена — настало время Машины.', 
   bg: 'linear-gradient(135deg, #07050b, #4a2348, #c9412f, #e39a63)' 
+},
+{
+    id: 'override77',
+    name: 'OVERRIDE 77',
+    icon: '🔫',
+    genre: 'Шутер, 3D, Тактический',
+    difficulty: 5,
+    description: 'Тактический 3D-шутер от первого лица на Three.js. 13 видов оружия, магазин с закупкой, раунды, бомба, AI-враги, система брони и денег. Полноценный CS-подобный геймплей прямо в браузере — без установки.',
+    bg: 'linear-gradient(135deg, #ff8800, #ff4400, #8b0000)'
 }
 ];
 
@@ -75,7 +84,8 @@ pcgamer:'ИГРЫ/Компьютер Геймера.html',
 snakebattle:'ИГРЫ/snakebattle.html',
 fireshop:'УТИЛИТЫ/FireShop.html',
 cpstest:'УТИЛИТЫ/тест cps.html',
-hypercalc: 'УТИЛИТЫ/HYPERCALC.html'
+hypercalc: 'УТИЛИТЫ/HYPERCALC.html',
+override77: 'ИГРЫ/OVERRIDE 77.html'
 };
 
 // ============================================
@@ -715,7 +725,8 @@ function checkGameAchievements(gameId) {
       cooking: 'cooking_chef', proryv2: 'proryv2_win', kontrabandist: 'cosmo_pilot',
       robo26: 'robo_hunter', fight: 'fighter', miner: 'miner_pro',
       musibox: 'musibox_dj', lastfrontier: 'zombie_survivor',
-      proryv3: 'proryv3_win', snakebattle: 'first_snake'
+      proryv3: 'proryv3_win', snakebattle: 'first_snake',
+      override77: 'override77_first'
     };
     if (gameAch[gameId]) unlock(gameAch[gameId]);
     if (s.playedGames.includes('proryv1') && s.playedGames.includes('proryv2') && s.playedGames.includes('proryv3')) {
