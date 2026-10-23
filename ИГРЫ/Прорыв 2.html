@@ -854,7 +854,7 @@ function clearSave(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}}
 
 function vpn(){return VPNS[state.vpnLevel]}
 function playerDmg(){ return BASE_DMG+vpn().dmg; }
-function playerCrit(){ return U.clamp(CRIT_CHANCE+vpn().crit,0,70); }
+function playerCrit(){ return U.clamp(CRIT_CHANCE+vpn().crit,0,50); }
 function playerDef(){ return vpn().def; }
 function coinBonus(){ return vpn().coin; }
 
@@ -1178,8 +1178,7 @@ function retreat(){
   renderAll();
   setTimeout(()=>{
     state.busy=false;
-    state.hp=state.maxHp;
-    startNode(state.nodeIdx);
+    startNode(state.nodeIdx); // startNode сам ставит state.hp = state.maxHp
   },600);
 }
 
