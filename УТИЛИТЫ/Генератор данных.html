@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор данных</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    /* Изменено: теперь блок строго по центру экрана */
+    display: flex;
+    justify-content: center;
+    align-items: center; 
+  }
+  .container {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    /* Изменено: блок стал шире (было 700px) */
+    max-width: 850px; 
+    box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-top: 0;
+    /* Изменено: заголовок стал больше */
+    font-size: 32px; 
+    margin-bottom: 30px;
+  }
+  .tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #eee;
+    cursor: pointer;
+    /* Изменено: шрифт табов больше */
+    font-size: 16px; 
+    font-weight: 600;
+    color: #555;
+    transition: all 0.2s;
+  }
+  .tab:hover { background: #e0e0e0; }
+  .tab.active {
+    background: #667eea;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  /* Изменено: шрифт подписей больше */
+  .row label { 
+    font-size: 16px; 
+    color: #444; 
+    display: flex;
+    align-items: center;
+  }
+  /* Изменено: поля ввода больше */
+  input[type="number"], input[type="text"], select {
+    padding: 10px 14px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    width: 90px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  select { width: auto; cursor: pointer; }
+  input:focus, select:focus { border-color: #667eea; }
+  
+  input[type="checkbox"] { 
+    transform: scale(1.4); 
+    margin-right: 8px; 
+    cursor: pointer;
+  }
+  button.generate {
+    width: 100%;
+    padding: 16px;
+    background: #667eea;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    /* Изменено: кнопка стала больше */
+    font-size: 18px; 
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+  button.generate:hover { 
+    background: #5568d3; 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  .result {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f7f8fc;
+    border-radius: 12px;
+    font-family: 'Consolas', monospace;
+    /* Изменено: результат крупнее */
+    font-size: 20px; 
+    word-break: break-all;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    border: 2px dashed #cbd5e1;
+  }
+  .result span { flex: 1; color: #1e293b; }
+  .copy-btn {
+    background: #764ba2;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #5d3a82; }
+  .hint { font-size: 14px; color: #888; margin-top: 12px; }
+  .strength {
+    height: 10px;
+    border-radius: 5px;
+    background: #eee;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .strength-bar { height: 100%; width: 0; transition: all 0.3s; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎲 Генератор данных</h1>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="password">🔑 Пароль</button>
+    <button class="tab" data-tab="login">👤 Логин</button>
+    <button class="tab" data-tab="nick">😎 Ник</button>
+    <button class="tab" data-tab="email">📧 Email</button>
+  </div>
+
+  <!-- ПАРОЛЬ -->
+  <div class="panel active" id="password">
+    <div class="row">
+      <label>Длина пароля:</label>
+      <input type="number" id="pwdLen" value="16" min="4" max="64">
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="pwdUpper" checked> Заглавные</label>
+      <label><input type="checkbox" id="pwdLower" checked> Строчные</label>
+      <label><input type="checkbox" id="pwdDigits" checked> Цифры</label>
+      <label><input type="checkbox" id="pwdSymbols" checked> Символы</label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="pwdNoAmbiguous"> Без похожих (0/O, l/1)</label>
+    </div>
+    <button class="generate" onclick="genPassword()">Сгенерировать пароль</button>
+    <div class="result" id="pwdResult"><span>—</span></div>
+    <div class="strength"><div class="strength-bar" id="pwdStrength"></div></div>
+  </div>
+
+  <!-- ЛОГИН -->
+  <div class="panel" id="login">
+    <div class="row">
+      <label>Стиль:</label>
+      <select id="loginStyle">
+        <option value="word+num">слово + цифры</option>
+        <option value="word_word">слово_слово</option>
+        <option value="word.word">слово.слово</option>
+        <option value="random">случайные буквы+цифры</option>
+        <option value="reverse">слово_цифры_слово</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Длина цифровой части:</label>
+      <input type="number" id="loginNumLen" value="3" min="1" max="8">
+    </div>
+    <button class="generate" onclick="genLogin()">Сгенерировать логин</button>
+    <div class="result" id="loginResult"><span>—</span></div>
+    <div class="hint">Логин — латиница, без пробелов, подходит для сайтов.</div>
+  </div>
+
+  <!-- НИК -->
+  <div class="panel" id="nick">
+    <div class="row">
+      <label>Стиль:</label>
+      <select id="nickStyle">
+        <option value="Adjective+Noun">Прилагательное + Существительное</option>
+        <option value="gamer">Геймерский (xX_Nick_Xx)</option>
+        <option value="leet">Leet (замена букв цифрами)</option>
+        <option value="short">Короткий случайный</option>
+        <option value="aesthetic">Эстетичный (со символами)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="nickNum" checked> Добавить цифры</label>
+    </div>
+    <button class="generate" onclick="genNick()">Сгенерировать ник</button>
+    <div class="result" id="nickResult"><span>—</span></div>
+  </div>
+
+  <!-- EMAIL -->
+  <div class="panel" id="email">
+    <div class="row">
+      <label>Стиль логина:</label>
+      <select id="emailStyle">
+        <option value="name">имя.фамилия</option>
+        <option value="nameNum">имя + цифры</option>
+        <option value="nick">ник + цифры</option>
+        <option value="random">случайный</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Домен:</label>
+      <select id="emailDomain">
+        <option value="gmail.com">@gmail.com</option>
+        <option value="mail.ru">@mail.ru</option>
+        <option value="yandex.ru">@yandex.ru</option>
+        <option value="outlook.com">@outlook.com</option>
+        <option value="icloud.com">@icloud.com</option>
+        <option value="random">случайный</option>
+      </select>
+    </div>
+    <button class="generate" onclick="genEmail()">Сгенерировать email</button>
+    <div class="result" id="emailResult"><span>—</span></div>
+    <div class="hint">⚠️ Это просто генератор строк, почтовые ящики не создаются.</div>
+  </div>
+</div>
+
+<script>
+// ===== Общие данные =====
+const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const LOWER = "abcdefghijklmnopqrstuvwxyz";
+const DIGITS = "0123456789";
+const SYMBOLS = "!@#$%^&*()_+-=[]{};:,.<>?";
+const AMBIGUOUS = "0O1lI";
+
+const WORDS = ["fox","wolf","cat","star","moon","sun","river","fire","ice","storm",
+  "shadow","light","dark","blue","red","green","tiger","eagle","lion","hawk",
+  "cloud","rain","snow","wind","stone","iron","gold","silver","night","dawn",
+  "code","byte","data","cyber","neon","pixel","vector","matrix","quantum","laser"];
+
+const ADJECTIVES = ["Swift","Silent","Brave","Clever","Mighty","Dark","Bright","Wild",
+  "Frozen","Burning","Shadow","Golden","Silver","Crimson","Neon","Cosmic","Atomic",
+  "Rapid","Sneaky","Fierce","Lucky","Mystic","Cyber","Hyper","Iron","Crystal"];
+
+const NOUNS = ["Fox","Wolf","Dragon","Tiger","Eagle","Lion","Hawk","Raven","Phoenix",
+  "Knight","Wizard","Ninja","Samurai","Pilot","Hunter","Rider","Master","Legend",
+  "Ghost","Storm","Blade","Arrow","Shield","Crown","King","Queen","Hero","Sniper"];
+
+const NAMES = ["alex","max","ivan","oleg","anna","maria","julia","dmitry","sergey",
+  "andrey","kate","nina","pavel","roman","yuri","lena","igor","vlad","anton","egor"];
+
+const SURNAMES = ["smirnov","ivanov","petrov","sokolov","popov","volkov","morozov",
+  "novikov","fedorov","kozlov","orlov","belov","kuznetsov","pavlov","semenov"];
+
+// ===== Утилиты =====
+const rnd = (n) => Math.floor(Math.random() * n);
+const pick = (arr) => arr[rnd(arr.length)];
+const pickStr = (str) => str[rnd(str.length)];
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = rnd(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+const randomDigits = (n) => Array.from({length:n}, () => pickStr(DIGITS)).join("");
+const randomFrom = (chars, n) => Array.from({length:n}, () => pickStr(chars)).join("");
+
+function showResult(id, value, withCopy = true) {
+  const el = document.getElementById(id);
+  if (!withCopy) { el.innerHTML = `<span>${value}</span>`; return; }
+  el.innerHTML = `<span>${value}</span><button class="copy-btn" onclick="copyText(this)">Копировать</button>`;
+}
+
+function copyText(btn) {
+  const text = btn.parentElement.querySelector('span').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "✓ Скопировано";
+    setTimeout(() => btn.textContent = "Копировать", 1200);
+  });
+}
+
+// ===== Табы =====
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  };
+});
+
+// ===== Пароль =====
+function genPassword() {
+  const len = Math.max(4, Math.min(64, +document.getElementById('pwdLen').value || 16));
+  const noAmb = document.getElementById('pwdNoAmbiguous').checked;
+  let pool = "";
+  let sets = [];
+
+  const addSet = (set) => {
+    if (noAmb) set = [...set].filter(c => !AMBIGUOUS.includes(c)).join("");
+    if (set.length === 0) return;
+    pool += set;
+    sets.push(set);
+  };
+
+  if (document.getElementById('pwdUpper').checked) addSet(UPPER);
+  if (document.getElementById('pwdLower').checked) addSet(LOWER);
+  if (document.getElementById('pwdDigits').checked) addSet(DIGITS);
+  if (document.getElementById('pwdSymbols').checked) addSet(SYMBOLS);
+
+  if (!pool) { showResult('pwdResult', 'Выберите хотя бы один набор символов'); return; }
+
+  let chars = sets.map(s => s[rnd(s.length)]);
+  const remaining = len - chars.length;
+  for (let i = 0; i < remaining; i++) chars.push(pool[rnd(pool.length)]);
+
+  const pwd = shuffle(chars).join("");
+  showResult('pwdResult', pwd);
+
+  const bar = document.getElementById('pwdStrength');
+  const entropy = len * Math.log2(pool.length);
+  let color, pct;
+  if (entropy < 40) { color = '#e74c3c'; pct = 25; }
+  else if (entropy < 60) { color = '#f39c12'; pct = 50; }
+  else if (entropy < 80) { color = '#f1c40f'; pct = 75; }
+  else { color = '#2ecc71'; pct = 100; }
+  bar.style.width = pct + '%';
+  bar.style.background = color;
+}
+
+// ===== Логин =====
+function genLogin() {
+  const style = document.getElementById('loginStyle').value;
+  const n = Math.max(1, Math.min(8, +document.getElementById('loginNumLen').value || 3));
+  let result = "";
+
+  switch (style) {
+    case "word+num": result = pick(WORDS) + randomDigits(n); break;
+    case "word_word": result = pick(WORDS) + "_" + pick(WORDS); break;
+    case "word.word": result = pick(WORDS) + "." + pick(WORDS); break;
+    case "random": {
+      const len = 8 + n;
+      let s = randomFrom(LOWER, len - n) + randomDigits(n);
+      result = shuffle([...s]).join("");
+      break;
+    }
+    case "reverse": result = pick(WORDS) + randomDigits(n) + pick(WORDS); break;
+  }
+  showResult('loginResult', result.toLowerCase());
+}
+
+// ===== Ник =====
+function genNick() {
+  const style = document.getElementById('nickStyle').value;
+  const addNum = document.getElementById('nickNum').checked;
+  const num = () => addNum ? rnd(1000) : "";
+  let result = "";
+
+  switch (style) {
+    case "Adjective+Noun":
+      result = pick(ADJECTIVES) + pick(NOUNS) + num();
+      break;
+    case "gamer":
+      result = (Math.random() < 0.5 ? "xX_" : "Xx_") + pick(NOUNS) + "_" + pick(ADJECTIVES) + (Math.random() < 0.5 ? "_Xx" : "_xX") + num();
+      break;
+    case "leet": {
+      let base = (pick(ADJECTIVES) + pick(NOUNS)).toLowerCase();
+      const map = {a:'4', e:'3', i:'1', o:'0', s:'5', t:'7'};
+      result = [...base].map(c => Math.random() < 0.5 && map[c] ? map[c] : c).join("");
+      result = result.charAt(0).toUpperCase() + result.slice(1) + num();
+      break;
+    }
+    case "short":
+      result = randomFrom(LOWER + UPPER, 4 + rnd(4)) + num();
+      break;
+    case "aesthetic":
+      result = pick(ADJECTIVES) + "⋆" + pick(NOUNS) + "⋆" + num();
+      break;
+  }
+  showResult('nickResult', result);
+}
+
+// ===== Email =====
+function genEmail() {
+  const style = document.getElementById('emailStyle').value;
+  let domain = document.getElementById('emailDomain').value;
+  if (domain === "random") {
+    domain = pick(["gmail.com","mail.ru","yandex.ru","outlook.com","icloud.com","proton.me"]);
+  }
+  let login = "";
+
+  switch (style) {
+    case "name": login = pick(NAMES) + "." + pick(SURNAMES); break;
+    case "nameNum": login = pick(NAMES) + rnd(10000); break;
+    case "nick": login = pick(NOUNS).toLowerCase() + pick(ADJECTIVES).toLowerCase() + rnd(1000); break;
+    case "random": login = randomFrom(LOWER, 6 + rnd(6)) + randomDigits(2 + rnd(3)); break;
+  }
+  showResult('emailResult', `${login}@${domain}`);
+}
+
+// Генерируем по одному примеру при загрузке
+genPassword();
+genLogin();
+genNick();
+genEmail();
+</script>
+</body>
+</html>
