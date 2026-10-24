@@ -50,7 +50,7 @@ dom2:'ИГРЫ/ДОМ 2.html',
 pcgamer:'ИГРЫ/Компьютер Геймера.html',
 snakebattle:'ИГРЫ/snakebattle.html',
 // 👇 OVERRIDE 77
-override77:'ИГРЫ/OVERRIDE77/main.html',
+override77:'ИГРЫ/OVERRIDE 77/main.html',
 fireshop:'УТИЛИТЫ/FireShop.html',
 cpstest:'УТИЛИТЫ/тест cps.html',
 hypercalc: 'УТИЛИТЫ/HYPERCALC.html'
