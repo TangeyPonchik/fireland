@@ -467,7 +467,12 @@
     }
   }
   function damageEnemy(e, dmg, head) { e.health -= dmg; A.sndHitmarker(); showHit(); e.state = 'chase'; e.lastSeen = player.pos.clone(); if (e.health <= 0 && e.alive) killEnemy(e, head); }
-  function killEnemy(e, head) { e.alive = false; e.deathTime = performance.now() / 1000; A.sndEnemyDeath(); player.kills++; GAME.kills++; GAME.score += head ? 150 : 100; GAME.money = Math.min(16000, GAME.money + 300); updateHUD(); addKillFeed(head ? 'HEADSHOT' : 'KILL'); }
+  function killEnemy(e, head) { e.alive = false; e.deathTime = performance.now() / 1000; A.sndEnemyDeath(); player.kills++; GAME.kills++; GAME.score += head ? 150 : 100; GAME.money = Math.min(16000, GAME.money + 300); updateHUD(); addKillFeed(head ? 'HEADSHOT' : 'KILL');   // 👇 Сообщаем лаунчеру об убийстве
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'override77_kill' }, '*');
+    }
+  } catch (err) {}} 
   function addKillFeed(msg) { const e = document.createElement('div'); e.className = 'kf-entry'; e.textContent = `YOU ${msg}`; document.getElementById('kill-feed').appendChild(e); setTimeout(() => e.remove(), 4000); }
 
   /* ============================================================

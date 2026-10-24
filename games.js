@@ -46,7 +46,7 @@ const GAMES = [
     icon: '🔫',
     genre: 'Шутер, 3D, Тактический',
     difficulty: 5,
-    description: 'Тактический 3D-шутер от первого лица на Three.js. 13 видов оружия, магазин с закупкой, раунды, бомба, AI-враги, система брони и денег. Полноценный CS-подобный геймплей прямо в браузере — без установки.',
+    description: 'Тактический 3D-шутер от первого лица. 24 вида оружия (пистолеты, ПП, винтовки, снайперки, дробовики, пулемёты), 4 карты (FOUNDRY, CITADEL, RIFT, COLONY), выбор стороны T/CT, магазин с закупкой, раунды, бомба, AI-враги, система брони и денег, реалистичные прицелы и FPS-счётчик. Полноценный CS-подобный геймплей прямо в браузере.',
     bg: 'linear-gradient(135deg, #ff8800, #ff4400, #8b0000)'
 }
 ];
@@ -778,6 +778,7 @@ window.toggleGameMenu = toggleGameMenu;
 window.handleGameTouchStart = handleGameTouchStart;
 window.handleGameTouchEnd = handleGameTouchEnd;
 window.showMenuSwipeHint = showMenuSwipeHint;
+window.checkHitman = checkHitman;
 
 Object.defineProperty(window, 'isGameOpen', {
   get() { return isGameOpen; },

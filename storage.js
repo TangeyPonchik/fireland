@@ -13,6 +13,7 @@ const DEFAULT_STATE = {
   gamesOpened: 0, gameOpenTimes: [], themesUsed: [], alarmUsed: false,
   totalXp: 0, level: 1,
   temporalParadox: { level: 1, totalAccumulated: 0 },
+   hitman: { level: 1, totalAccumulated: 0, totalKills: 0 },  // 👈 НОВОЕ
   favorites: [],
   streak: { current: 0, best: 0, lastLogin: null, history: [] },
   dailyQuests: { date: null, quests: [], progress: {}, completed: [] },
@@ -186,6 +187,9 @@ async function loadState() {
 
     // Фикс #35: миграции ВСЕХ полей
     if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
+    if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
+if (s.hitman.totalAccumulated === undefined) s.hitman.totalAccumulated = 0;
+if (s.hitman.totalKills === undefined) s.hitman.totalKills = 0;
     if (!s.streak) s.streak = { current: 0, best: 0, lastLogin: null, history: [] };
     if (!s.streak.history) s.streak.history = [];
     if (!s.favorites) s.favorites = [];

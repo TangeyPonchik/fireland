@@ -1,7 +1,8 @@
 // ============================================
-// FireLand · profile.js · v26.4.0
+// FireLand · profile.js · v26.4.0 + HITMAN
 // Данные XP + UI профиля + кейсы + задания + будильник
 // Фиксы: #6, #7, #23, #64, #65, #66, #71
+// НОВОЕ: достижение «Наёмный убийца» (аналог парадокса)
 // ============================================
 
 // ============================================
@@ -24,6 +25,15 @@ const LEVEL_TITLES = [
 ];
 
 const PARADOX = {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BASE_XP:100};
+
+// 👇 HITMAN — «Наёмный убийца» (аналог парадокса, но за убийства в OVERRIDE 77)
+const HITMAN = {
+  BASE_KILLS: 10,
+  KILLS_MULT_START: 1.3,
+  MULT_GROWTH: 0.1,
+  BASE_XP: 150,
+  XP_MULT: 1.25
+};
 
 const ACHIEVEMENTS = [
 {id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:50,rarity:'common'},
@@ -56,7 +66,6 @@ const ACHIEVEMENTS = [
 {id:'set_nick',icon:'✏️',name:'Именование',desc:'Установить никнейм',xp:25,rarity:'common'},
 {id:'set_avatar',icon:'🖼️',name:'Лицо с обложки',desc:'Установить аватарку',xp:50,rarity:'common'},
 {id:'all_themes',icon:'🎨',name:'Экспериментатор тем',desc:'Попробовать все 4 темы',xp:100,rarity:'rare',progress:s=>Math.min(1,s.themesUsed.length/4),progressText:s=>`${s.themesUsed.length}/4`},
-{id:'override77_first', icon:'🎯', name:'Оперативник', desc:'Запустить OVERRIDE 77', xp:100, rarity:'rare'},
 {id:'alarm_user',icon:'⏰',name:'По расписанию',desc:'Запустить будильник',xp:50,rarity:'common'},
 {id:'speedrun',icon:'⚡',name:'Спидран',desc:'Открыть 3 игры за 1 минуту',xp:150,rarity:'epic'},
 {id:'streak_3',icon:'🔥',name:'Три дня',desc:'Заходить 3 дня подряд',xp:75,rarity:'common',progress:s=>Math.min(1,s.streak.current/3),progressText:s=>`${s.streak.current}/3`},
@@ -77,7 +86,10 @@ const ACHIEVEMENTS = [
 {id:'level_75',icon:'🌟',name:'Семидесятипятилетний',desc:'Достичь 75 уровня',xp:3000,rarity:'legendary'},
 {id:'level_100',icon:'🔴',name:'АБСОЛЮТ',desc:'Достичь 100 уровня',xp:10000,rarity:'legendary'},
 {id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
-{id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true}];
+{id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true},
+// 👇 HITMAN — прогрессивное достижение за убийства в OVERRIDE 77
+{id:'hitman',icon:'💀',name:'Наёмный убийца',desc:'Убивай врагов в OVERRIDE 77',xp:0,rarity:'legendary',isHitman:true}
+];
 
 const QUEST_POOL = [
 {id:'q_play_1',icon:'🎮',name:'Первый шаг',desc:'Запусти 1 игру',xp:30,target:1,type:'games_today'},
@@ -167,6 +179,18 @@ function getParadoxLevelInfo(level) {
   const xp = Math.round(PARADOX.BASE_XP * Math.pow(PARADOX.XP_MULT, level - 1));
   return { minutes: Math.round(neededMinutes), xp };
 }
+
+// 👇 HITMAN
+function getHitmanLevelInfo(level) {
+  let neededKills = HITMAN.BASE_KILLS;
+  for (let i = 0; i < level; i++) {
+    const mult = HITMAN.KILLS_MULT_START + i * HITMAN.MULT_GROWTH;
+    neededKills *= mult;
+  }
+  const xp = Math.round(HITMAN.BASE_XP * Math.pow(HITMAN.XP_MULT, level - 1));
+  return { kills: Math.round(neededKills), xp };
+}
+
 function profileFormatTime(sec) {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
   if (h > 0) return `${h}ч ${m}м`;
@@ -228,6 +252,7 @@ function renderAchievements() {
   if (!s.achievements) s.achievements = [];
   ACHIEVEMENTS.forEach(ach => {
     if (ach.isParadox) { renderParadoxCard(grid, ach); return; }
+    if (ach.isHitman) { renderHitmanCard(grid, ach); return; }  // 👇 HITMAN
     const earned = s.achievements.includes(ach.id);
     const el = document.createElement('div');
     el.className = 'achievement' + (earned ? ' earned' : '') + (ach.isVeteran ? ' veteran' : '');
@@ -241,8 +266,9 @@ function renderAchievements() {
     el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}</div><div class="ach-xp">+${ach.xp}</div>`;
     grid.appendChild(el);
   });
-  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox).length;
-  const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox').length;
+  // 👇 HITMAN: исключаем hitman и temporal_paradox из счётчика
+  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox && !a.isHitman && !a.isVeteran).length;
+  const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox' && id !== 'hitman' && id !== 'veteran').length;
   const text = earnedNormal + '/' + totalNormal;
   const ac = document.getElementById('achCount');
   if (ac) ac.textContent = text;
@@ -252,7 +278,8 @@ function renderAchievements() {
 
 function renderParadoxCard(grid, ach) {
   const s = getState();
-  if (!s || !s.temporalParadox) return;
+  if (!s) return;
+  if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
   const p = s.temporalParadox;
   const info = getParadoxLevelInfo(p.level);
   const neededSeconds = info.minutes * 60;
@@ -261,6 +288,31 @@ function renderParadoxCard(grid, ach) {
   el.className = 'achievement paradox earned';
   el.dataset.rarity = 'legendary';
   el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name} — Уровень ${p.level}</div><div class="ach-desc">Прогресс: ${profileFormatTime(p.totalAccumulated)} / ${profileFormatTime(neededSeconds)}</div><div class="ach-progress"><div class="ach-progress-fill" style="width:${percent}%"></div></div></div><div class="ach-xp">+${info.xp}</div>`;
+  grid.appendChild(el);
+}
+
+// 👇 HITMAN карточка
+function renderHitmanCard(grid, ach) {
+  const s = getState();
+  if (!s) return;
+  if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
+  const h = s.hitman;
+  const info = getHitmanLevelInfo(h.level);
+  const neededKills = info.kills;
+  const percent = Math.min(100, ((h.totalAccumulated || 0) / neededKills) * 100);
+  const el = document.createElement('div');
+  el.className = 'achievement hitman earned';
+  el.dataset.rarity = 'legendary';
+  el.innerHTML = `
+    <div class="ach-icon">${ach.icon}</div>
+    <div class="ach-info">
+      <div class="ach-name">${ach.name} — Уровень ${h.level}</div>
+      <div class="ach-desc">До след. уровня: ${h.totalAccumulated || 0} / ${neededKills} убийств</div>
+      <div class="ach-desc" style="font-size:10px;opacity:0.7;">Всего убийств: ${h.totalKills || 0}</div>
+      <div class="ach-progress"><div class="ach-progress-fill" style="width:${percent}%;background:linear-gradient(90deg,#ef4444,#fbbf24)"></div></div>
+    </div>
+    <div class="ach-xp" style="color:#ef4444;background:rgba(239,68,68,0.15)">+${info.xp}</div>
+  `;
   grid.appendChild(el);
 }
 
@@ -295,8 +347,9 @@ function renderStats() {
   if (tg) tg.textContent = GAMES_LEN + UTILS_LEN;
   const tt = document.getElementById('totalTime');
   if (tt) tt.textContent = Math.floor(s.totalTime / 60) + ' мин';
-  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox).length;
-  const earnedNormal = (s.achievements || []).filter(id => id !== 'temporal_paradox').length;
+  // 👇 HITMAN: исключаем hitman, temporal_paradox, veteran из счётчика
+  const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox && !a.isHitman && !a.isVeteran).length;
+  const earnedNormal = (s.achievements || []).filter(id => id !== 'temporal_paradox' && id !== 'hitman' && id !== 'veteran').length;
   const text = earnedNormal + '/' + totalNormal;
   const ac = document.getElementById('achCount');
   if (ac) ac.textContent = text;
@@ -351,12 +404,11 @@ function checkVeteran() {
   if (!s) return;
   if (!s.achievements) s.achievements = [];
   if (s.achievements.includes('veteran')) return;
-  const allOthers = ACHIEVEMENTS.filter(a => !a.isVeteran && !a.isParadox);
+  const allOthers = ACHIEVEMENTS.filter(a => !a.isVeteran && !a.isParadox && !a.isHitman);
   const allEarned = allOthers.every(a => s.achievements.includes(a.id));
   if (allEarned) {
     s.achievements.push('veteran');
     s.totalXp += 1000;
-    // Фикс #23: saveState перед showVeteranToast
     if (typeof window.saveState === 'function') window.saveState();
     setTimeout(() => showVeteranToast(), 1000);
   }
@@ -398,6 +450,19 @@ function showParadoxToast(level, xp) {
   }, 5000);
 }
 
+// 👇 HITMAN тост
+function showHitmanToast(level, xp) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ef4444,#fbbf24);color:#ffffff;padding:16px 32px;border-radius:24px;font-weight:800;font-family:'Manrope',sans-serif;z-index:99999;box-shadow:0 10px 50px rgba(239,68,68,0.6);display:flex;align-items:center;gap:14px;border:2px solid rgba(255,255,255,0.4);animation:toastIn 0.4s ease;`;
+  toast.innerHTML = `<span style="font-size:36px">💀</span><div><div style="font-size:11px;opacity:0.85;letter-spacing:1.5px;font-weight:800">🎯 НАЁМНЫЙ УБИЙЦА</div><div style="font-size:17px;margin-top:2px">Уровень ${level} пройден!</div><div style="font-size:12px;opacity:0.9;margin-top:2px">Награда: <span style="color:#ffffff;font-weight:900">+${xp} XP</span></div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.transition = 'all 0.4s ease';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 400);
+  }, 5000);
+}
+
 function showVeteranToast() {
   const toast = document.createElement('div');
   toast.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ff00ff,#ff8c00,#fbbf24,#6a8aff);color:#060a1a;padding:40px 60px;border-radius:32px;font-family:'Manrope',sans-serif;text-align:center;z-index:999999;box-shadow:0 0 100px rgba(255,0,255,0.8);border:4px solid #ffffff;max-width:90vw;animation:modalIn 0.5s ease;`;
@@ -423,6 +488,60 @@ function showLevelUpToast(level) {
     setTimeout(() => toast.remove(), 400);
   }, 3000);
 }
+
+// 👇 HITMAN — проверка повышения уровня (аналог checkParadox, но для убийств)
+function checkHitman() {
+  const s = getState();
+  if (!s) return;
+  if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
+  const h = s.hitman;
+  if (h.totalAccumulated === undefined) h.totalAccumulated = 0;
+  if (h.totalKills === undefined) h.totalKills = 0;
+  let guard = 0;
+  const MAX_ITERATIONS = 100;
+  let changed = false;
+  const getInfo = getHitmanLevelInfo;
+  const getLvl = getLevelFromTotalXp;
+  while (guard++ < MAX_ITERATIONS) {
+    const info = getInfo(h.level);
+    if (info.kills < 1) break;
+    if (h.totalAccumulated < info.kills) break;
+    h.totalAccumulated -= info.kills;
+    s.totalXp += info.xp;
+    h.level++;
+    changed = true;
+    const lvlInfo = getLvl(s.totalXp);
+    const oldLevel = s.level;
+    s.level = lvlInfo.level;
+    showHitmanToast(h.level - 1, info.xp);
+    if (s.level > oldLevel) {
+      setTimeout(() => showLevelUpToast(s.level), 800);
+    }
+  }
+  if (changed) {
+    if (typeof window.saveState === 'function') window.saveState();
+    updateLevelDisplay();
+    renderStats();
+    const pm = document.getElementById('profileModal');
+    if (pm && pm.classList.contains('show')) renderAchievements();
+    // Отправляем счёт в лидерборд, если ник сохранён
+    if (s.lastSubmittedNick && typeof window.submitScore === 'function') {
+      setTimeout(window.submitScore, 1000);
+    }
+  }
+}
+
+// 👇 HITMAN — приём убийств от игры OVERRIDE 77
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'override77_kill') return;
+  const s = getState();
+  if (!s) return;
+  if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
+  s.hitman.totalKills = (s.hitman.totalKills || 0) + 1;
+  s.hitman.totalAccumulated = (s.hitman.totalAccumulated || 0) + 1;
+  checkHitman();
+  if (typeof window.saveState === 'function') window.saveState();
+});
 
 // ============================================
 // ЭКСПОРТ / ИМПОРТ / СБРОС
@@ -561,7 +680,6 @@ async function resetAllData() {
   localStorage.removeItem('abdulla_games_state_no_credits');
   localStorage.removeItem('fireland_lb_auto_refresh');
 
-  // Фикс #6: проверка DEFAULT_STATE
   const DEFAULT = window.DEFAULT_STATE;
   if (!DEFAULT || Object.keys(DEFAULT).length === 0) {
     console.error('[Reset] DEFAULT_STATE пустой — перезагрузка');
@@ -571,6 +689,7 @@ async function resetAllData() {
   window.state = JSON.parse(JSON.stringify(DEFAULT));
   window.state.ownerToken = typeof window.generateOwnerToken === 'function' ? window.generateOwnerToken() : 'tok_' + Date.now();
   window.state.unreadChatCount = 0;
+  if (!window.state.hitman) window.state.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
   if (typeof window.idbSet === 'function') await window.idbSet(STATE_KEY, window.state);
   if (typeof window.renderGames === 'function') window.renderGames();
   if (typeof window.renderUtilities === 'function') window.renderUtilities();
@@ -646,7 +765,6 @@ function getWeekStart() {
   const monday = new Date(now);
   monday.setDate(now.getDate() - dayOfWeek);
   monday.setHours(0, 0, 0, 0);
-  // Фикс #36: используем локальное dateStr
   const dStr = window.dateStr || function (d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
@@ -694,7 +812,6 @@ function openCase(type) {
   const revealTitle = document.getElementById('caseRevealTitle');
   const revealReward = document.getElementById('caseRevealReward');
   const revealRarity = document.getElementById('caseRevealRarity');
-   // Фикс #64: проверка на null элементов кейса
   if (!modal || !revealIcon || !revealTitle || !revealReward || !revealRarity) {
     console.warn('[openCase] Не найдены элементы модалки кейса');
     return;
@@ -1047,7 +1164,6 @@ function alarmRing() {
   if (alarmIsRinging) return;
   alarmIsRinging = true;
   const s = getState();
-  // Фикс #65: проверка на null
   if (alarmStatus) {
     alarmStatus.textContent = '🔔 БУДИЛЬНИК!';
     alarmStatus.classList.add('alarm-status-ringing');
@@ -1100,7 +1216,6 @@ function startAlarm() {
   if (totalSecs < 1) { alert('❌ Минимум 1 секунда!'); return; }
   if (alarmIntervalId) clearInterval(alarmIntervalId);
   alarmEndTime = Date.now() + totalSecs * 1000;
-  // Фикс #66: сброс alarmIsRinging
   alarmIsRinging = false;
   if (alarmStatus) alarmStatus.classList.remove('alarm-status-ringing');
   if (alarmIndicator) alarmIndicator.classList.add('active');
@@ -1136,17 +1251,20 @@ if (alarmCancelBtn) alarmCancelBtn.addEventListener('click', cancelAlarm);
 // ============================================
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
+window.HITMAN = HITMAN;                    // 👇 HITMAN
 window.ACHIEVEMENTS = ACHIEVEMENTS;
 window.QUEST_POOL = QUEST_POOL;
 window.getTitleForLevel = getTitleForLevel;
 window.getXpForLevel = getXpForLevel;
 window.getLevelFromTotalXp = getLevelFromTotalXp;
 window.getParadoxLevelInfo = getParadoxLevelInfo;
+window.getHitmanLevelInfo = getHitmanLevelInfo;  // 👇 HITMAN
 window.profileFormatTime = profileFormatTime;
 window.renderProfile = renderProfile;
 window.updateLevelDisplay = updateLevelDisplay;
 window.renderAchievements = renderAchievements;
 window.renderParadoxCard = renderParadoxCard;
+window.renderHitmanCard = renderHitmanCard;      // 👇 HITMAN
 window.renderRecords = renderRecords;
 window.renderStats = renderStats;
 window.checkLevelAchievements = checkLevelAchievements;
@@ -1154,8 +1272,10 @@ window.unlockAch = unlockAch;
 window.checkVeteran = checkVeteran;
 window.showAchToast = showAchToast;
 window.showParadoxToast = showParadoxToast;
+window.showHitmanToast = showHitmanToast;        // 👇 HITMAN
 window.showVeteranToast = showVeteranToast;
 window.showLevelUpToast = showLevelUpToast;
+window.checkHitman = checkHitman;                // 👇 HITMAN
 window.exportProfile = exportProfile;
 window.importProfile = function () {
   const inp = document.getElementById('importProfileInput');
@@ -1184,4 +1304,4 @@ window.cancelAlarm = cancelAlarm;
 window.updateAlarmDisplay = updateAlarmDisplay;
 window.alarmRing = alarmRing;
 
-console.log('[profile.js] Загружено v26.4.0:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');
+console.log('[profile.js] Загружено v26.4.0 + HITMAN:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');
