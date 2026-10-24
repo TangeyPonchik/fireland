@@ -1,8 +1,0 @@
-{
-  "name": "texture-gen",
-  "version": "1.0.0",
-  "type": "commonjs",
-  "dependencies": {
-    "@napi-rs/canvas": "^0.1.65"
-  }
-}
