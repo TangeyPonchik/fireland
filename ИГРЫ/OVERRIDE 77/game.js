@@ -788,6 +788,10 @@
   }
   function openBuyMenu() { if (GAME.state !== 'BUY' && GAME.state !== 'LIVE') return; buyMenuEl.style.display = 'flex'; document.exitPointerLock(); document.getElementById('buy-money').textContent = `$${GAME.money}`; if (!BUY_ITEMS[currentBuyCat]) currentBuyCat = 'pistol'; renderBuyTabs(); renderBuyItems(); }
   function closeBuyMenu() { buyMenuEl.style.display = 'none'; renderer.domElement.requestPointerLock(); }
+document.getElementById('buy-close').addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeBuyMenu();
+});
 
   /* ============================================================
      ВВОД
