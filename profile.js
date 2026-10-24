@@ -1,8 +1,7 @@
 // ============================================
-// FireLand · profile.js · v26.4.0 + HITMAN
+// FireLand · profile.js · v26.4.0 + HITMAN + VIRUS_TAMER
 // Данные XP + UI профиля + кейсы + задания + будильник
-// Фиксы: #6, #7, #23, #64, #65, #66, #71
-// НОВОЕ: достижение «Наёмный убийца» (аналог парадокса)
+// НОВОЕ: hitman (убийства в OVERRIDE 77), virus_tamer (зомби в «Последнем Рубеже»)
 // ============================================
 
 // ============================================
@@ -53,7 +52,7 @@ const ACHIEVEMENTS = [
 {id:'proryv_quadrology',icon:'👑',name:'Хранитель квадрологии',desc:'Сыграть во все четыре части Прорыва',xp:750,rarity:'legendary'},
 {id:'first_snake',icon:'🐍',name:'Первая змейка',desc:'Сыграть в Snakes Battle',xp:50,rarity:'common'},
 {id:'first_util',icon:'🛠️',name:'Инструменталист',desc:'Запустить первую утилиту',xp:50,rarity:'common'},
-{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length)/2),progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest'].includes(g)).length}/2`},
+{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest','hypercalc'].includes(g)).length)/3),progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest','hypercalc'].includes(g)).length}/3`},
 {id:'time_1min',icon:'⏱️',name:'Минутка',desc:'Провести 1 минуту в играх',xp:25,rarity:'common',progress:s=>Math.min(1,s.totalTime/60),progressText:s=>`${Math.floor(s.totalTime/60)}м/1м`},
 {id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 мин в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
 {id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 мин в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
@@ -88,7 +87,11 @@ const ACHIEVEMENTS = [
 {id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
 {id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true},
 // 👇 HITMAN — прогрессивное достижение за убийства в OVERRIDE 77
-{id:'hitman',icon:'💀',name:'Наёмный убийца',desc:'Убивай врагов в OVERRIDE 77',xp:0,rarity:'legendary',isHitman:true}
+{id:'hitman',icon:'💀',name:'Наёмный убийца',desc:'Убивай врагов в OVERRIDE 77',xp:0,rarity:'legendary',isHitman:true},
+// 👇 OVERRIDE 77 — за первый запуск
+{id:'override77_first',icon:'🎯',name:'Оперативник',desc:'Запустить OVERRIDE 77',xp:100,rarity:'rare'},
+// 👇 VIRUS_TAMER — за всех зомби в «Последнем Рубеже»
+{id:'virus_tamer',icon:'🧟',name:'Укротитель вируса',desc:'Собрать всех зомби в «Последнем Рубеже»',xp:500,rarity:'legendary'}
 ];
 
 const QUEST_POOL = [
@@ -116,7 +119,9 @@ const QUEST_POOL = [
 {id:'q_settings_view',icon:'⚙️',name:'Настройщик',desc:'Открой настройки',xp:25,target:1,type:'settings_view_today'},
 {id:'q_quests_view',icon:'📅',name:'Планировщик',desc:'Открой вкладку заданий',xp:25,target:1,type:'quests_view_today'},
 {id:'q_case_open',icon:'📦',name:'Кейс-охотник',desc:'Открой кейс',xp:60,target:1,type:'case_today'},
-{id:'q_fav_time',icon:'💫',name:'Преданность',desc:'Играй в избранную игру 5 минут',xp:150,target:300,type:'fav_time_today'}
+{id:'q_fav_time',icon:'💫',name:'Преданность',desc:'Играй в избранную игру 5 минут',xp:150,target:300,type:'fav_time_today'},
+// 👇 VIRUS_TAMER — квест на 10 зомби
+{id:'q_zombies_10',icon:'🧟',name:'Зомби-охотник',desc:'Собери 10 зомби в «Последнем Рубеже»',xp:100,target:10,type:'lastfrontier_zombies'}
 ];
 
 // ============================================
@@ -252,7 +257,7 @@ function renderAchievements() {
   if (!s.achievements) s.achievements = [];
   ACHIEVEMENTS.forEach(ach => {
     if (ach.isParadox) { renderParadoxCard(grid, ach); return; }
-    if (ach.isHitman) { renderHitmanCard(grid, ach); return; }  // 👇 HITMAN
+    if (ach.isHitman) { renderHitmanCard(grid, ach); return; }
     const earned = s.achievements.includes(ach.id);
     const el = document.createElement('div');
     el.className = 'achievement' + (earned ? ' earned' : '') + (ach.isVeteran ? ' veteran' : '');
@@ -266,7 +271,7 @@ function renderAchievements() {
     el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}</div><div class="ach-xp">+${ach.xp}</div>`;
     grid.appendChild(el);
   });
-  // 👇 HITMAN: исключаем hitman и temporal_paradox из счётчика
+  // Исключаем hitman, temporal_paradox, veteran из счётчика
   const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox && !a.isHitman && !a.isVeteran).length;
   const earnedNormal = s.achievements.filter(id => id !== 'temporal_paradox' && id !== 'hitman' && id !== 'veteran').length;
   const text = earnedNormal + '/' + totalNormal;
@@ -347,7 +352,6 @@ function renderStats() {
   if (tg) tg.textContent = GAMES_LEN + UTILS_LEN;
   const tt = document.getElementById('totalTime');
   if (tt) tt.textContent = Math.floor(s.totalTime / 60) + ' мин';
-  // 👇 HITMAN: исключаем hitman, temporal_paradox, veteran из счётчика
   const totalNormal = ACHIEVEMENTS.filter(a => !a.isParadox && !a.isHitman && !a.isVeteran).length;
   const earnedNormal = (s.achievements || []).filter(id => id !== 'temporal_paradox' && id !== 'hitman' && id !== 'veteran').length;
   const text = earnedNormal + '/' + totalNormal;
@@ -489,7 +493,7 @@ function showLevelUpToast(level) {
   }, 3000);
 }
 
-// 👇 HITMAN — проверка повышения уровня (аналог checkParadox, но для убийств)
+// 👇 HITMAN — проверка повышения уровня
 function checkHitman() {
   const s = getState();
   if (!s) return;
@@ -524,7 +528,6 @@ function checkHitman() {
     renderStats();
     const pm = document.getElementById('profileModal');
     if (pm && pm.classList.contains('show')) renderAchievements();
-    // Отправляем счёт в лидерборд, если ник сохранён
     if (s.lastSubmittedNick && typeof window.submitScore === 'function') {
       setTimeout(window.submitScore, 1000);
     }
@@ -541,6 +544,18 @@ window.addEventListener('message', (e) => {
   s.hitman.totalAccumulated = (s.hitman.totalAccumulated || 0) + 1;
   checkHitman();
   if (typeof window.saveState === 'function') window.saveState();
+});
+
+// 👇 VIRUS_TAMER — приём от «Последнего Рубежа»
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'lastfrontier_all_zombies') return;
+  const s = getState();
+  if (!s) return;
+  if (e.data.total) s.lastfrontierZombies = e.data.total;
+  if (typeof window.saveState === 'function') window.saveState();
+  if (typeof window.unlockAch === 'function') {
+    window.unlockAch('virus_tamer');
+  }
 });
 
 // ============================================
@@ -950,6 +965,8 @@ function updateQuestProgress() {
       case 'quests_view_today': progress = s.todayStats.questsViewed ? 1 : 0; break;
       case 'fav_time_today': progress = s.todayStats.favTimeSpent; break;
       case 'case_today': progress = s.todayStats.caseOpened || 0; break;
+      // 👇 VIRUS_TAMER
+      case 'lastfrontier_zombies': progress = s.lastfrontierZombies || 0; break;
     }
     const oldProgress = s.dailyQuests.progress[qId] || 0;
     if (oldProgress !== progress) {
@@ -1251,20 +1268,20 @@ if (alarmCancelBtn) alarmCancelBtn.addEventListener('click', cancelAlarm);
 // ============================================
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
-window.HITMAN = HITMAN;                    // 👇 HITMAN
+window.HITMAN = HITMAN;
 window.ACHIEVEMENTS = ACHIEVEMENTS;
 window.QUEST_POOL = QUEST_POOL;
 window.getTitleForLevel = getTitleForLevel;
 window.getXpForLevel = getXpForLevel;
 window.getLevelFromTotalXp = getLevelFromTotalXp;
 window.getParadoxLevelInfo = getParadoxLevelInfo;
-window.getHitmanLevelInfo = getHitmanLevelInfo;  // 👇 HITMAN
+window.getHitmanLevelInfo = getHitmanLevelInfo;
 window.profileFormatTime = profileFormatTime;
 window.renderProfile = renderProfile;
 window.updateLevelDisplay = updateLevelDisplay;
 window.renderAchievements = renderAchievements;
 window.renderParadoxCard = renderParadoxCard;
-window.renderHitmanCard = renderHitmanCard;      // 👇 HITMAN
+window.renderHitmanCard = renderHitmanCard;
 window.renderRecords = renderRecords;
 window.renderStats = renderStats;
 window.checkLevelAchievements = checkLevelAchievements;
@@ -1272,10 +1289,10 @@ window.unlockAch = unlockAch;
 window.checkVeteran = checkVeteran;
 window.showAchToast = showAchToast;
 window.showParadoxToast = showParadoxToast;
-window.showHitmanToast = showHitmanToast;        // 👇 HITMAN
+window.showHitmanToast = showHitmanToast;
 window.showVeteranToast = showVeteranToast;
 window.showLevelUpToast = showLevelUpToast;
-window.checkHitman = checkHitman;                // 👇 HITMAN
+window.checkHitman = checkHitman;
 window.exportProfile = exportProfile;
 window.importProfile = function () {
   const inp = document.getElementById('importProfileInput');
@@ -1304,4 +1321,4 @@ window.cancelAlarm = cancelAlarm;
 window.updateAlarmDisplay = updateAlarmDisplay;
 window.alarmRing = alarmRing;
 
-console.log('[profile.js] Загружено v26.4.0 + HITMAN:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов + UI профиля + будильник');
+console.log('[profile.js] Загружено v26.4.0 + HITMAN + VIRUS_TAMER:', ACHIEVEMENTS.length, 'достижений,', QUEST_POOL.length, 'квестов');

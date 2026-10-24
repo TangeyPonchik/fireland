@@ -1,7 +1,8 @@
 // ============================================
-// FireLand · storage.js · v26.4.0
+// FireLand · storage.js · v26.4.0 + HITMAN + VIRUS_TAMER
 // IndexedDB + save/load + DEFAULT_STATE + ownerToken
 // Фиксы: #34 (avatar), #36 (local time), #72, #74 (onblocked), #35 (миграции)
+// НОВОЕ: hitman (убийства в OVERRIDE 77), lastfrontierZombies (зомби)
 // ============================================
 
 const DEFAULT_STATE = {
@@ -13,7 +14,10 @@ const DEFAULT_STATE = {
   gamesOpened: 0, gameOpenTimes: [], themesUsed: [], alarmUsed: false,
   totalXp: 0, level: 1,
   temporalParadox: { level: 1, totalAccumulated: 0 },
-   hitman: { level: 1, totalAccumulated: 0, totalKills: 0 },  // 👈 НОВОЕ
+  // 👇 HITMAN — прогрессивное достижение за убийства в OVERRIDE 77
+  hitman: { level: 1, totalAccumulated: 0, totalKills: 0 },
+  // 👇 VIRUS_TAMER — сколько зомби собрано в «Последнем Рубеже»
+  lastfrontierZombies: 0,
   favorites: [],
   streak: { current: 0, best: 0, lastLogin: null, history: [] },
   dailyQuests: { date: null, quests: [], progress: {}, completed: [] },
@@ -61,7 +65,6 @@ function openDB() {
       resolve(dbInstance);
     };
     req.onerror = () => reject(req.error);
-    // Фикс #72: обработка blocked
     req.onblocked = () => {
       console.warn('[storage] IndexedDB blocked — закройте другие вкладки FireLand');
       reject(new Error('IDB_BLOCKED'));
@@ -94,7 +97,6 @@ async function idbSet(key, value) {
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
       tx.onabort = () => reject(new Error('IDB_ABORT'));
-      // Фикс #74: onblocked
       tx.onblocked = () => reject(new Error('IDB_BLOCKED'));
     });
   } catch (e) {
@@ -139,11 +141,9 @@ async function doSaveState() {
   try {
     window.state._savedAt = Date.now();
     await idbSet(STATE_KEY, window.state);
-    // Фикс #34: сохраняем ВСЁ, включая avatar
     try {
       localStorage.setItem('fireland_light', JSON.stringify(window.state));
     } catch (e) {
-      // Если переполнено — сохраняем без аватара
       try {
         const lightState = { ...window.state };
         delete lightState.avatar;
@@ -171,7 +171,6 @@ async function loadState() {
       if (raw) light = JSON.parse(raw);
     } catch (e) {}
 
-    // Фикс #34: если light новее, но без аватара — берём аватар из full
     if (full && light && (light._savedAt || 0) > (full._savedAt || 0)) {
       const merged = { ...DEFAULT_STATE, ...light };
       if (!merged.avatar && full.avatar) merged.avatar = full.avatar;
@@ -185,11 +184,14 @@ async function loadState() {
 
     const s = window.state;
 
-    // Фикс #35: миграции ВСЕХ полей
+    // Миграции
     if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
+    // 👇 HITMAN
     if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
-if (s.hitman.totalAccumulated === undefined) s.hitman.totalAccumulated = 0;
-if (s.hitman.totalKills === undefined) s.hitman.totalKills = 0;
+    if (s.hitman.totalAccumulated === undefined) s.hitman.totalAccumulated = 0;
+    if (s.hitman.totalKills === undefined) s.hitman.totalKills = 0;
+    // 👇 VIRUS_TAMER
+    if (s.lastfrontierZombies === undefined) s.lastfrontierZombies = 0;
     if (!s.streak) s.streak = { current: 0, best: 0, lastLogin: null, history: [] };
     if (!s.streak.history) s.streak.history = [];
     if (!s.favorites) s.favorites = [];
@@ -225,7 +227,7 @@ if (s.hitman.totalKills === undefined) s.hitman.totalKills = 0;
   }
 }
 
-// ========== Утилиты дат (локальное время — фикс #36) ==========
+// ========== Утилиты дат ==========
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -247,4 +249,4 @@ window.generateOwnerToken = generateOwnerToken;
 window.todayStr = todayStr;
 window.dateStr = dateStr;
 
-console.log('[storage.js] Загружено v26.4.0');
+console.log('[storage.js] Загружено v26.4.0 + HITMAN + VIRUS_TAMER');
