@@ -112,19 +112,40 @@ function onTexReady() {
     getEl('lobby').style.display = 'flex';
     if (typeof showPreviewWeapon === 'function') showPreviewWeapon(previewIndex);
     if (typeof buildMapSelector === 'function') buildMapSelector();
-    if (typeof loop === 'function') loop();
+    if (typeof loop === 'function') if (_texLoaded === TEX_DEFS.length && !_texReady) {
+  _texReady = true;
+  
+  // 🔧 применяем нормалки ещё раз — на случай, если материалы были созданы раньше
+  if (TEX.stone.normalMap) { wallMat.normalMap = TEX.stone.normalMap; wallMat.needsUpdate = true; }
+  if (TEX.stoneDark.normalMap) { wallDarkMat.normalMap = TEX.stoneDark.normalMap; wallDarkMat.needsUpdate = true; }
+  if (TEX.metal.normalMap) { metalMat.normalMap = TEX.metal.normalMap; metalMat.needsUpdate = true; }
+  if (TEX.wood.normalMap) { woodMat.normalMap = TEX.wood.normalMap; woodMat.needsUpdate = true; }
+  
+  if (loadEl) loadEl.style.display = 'none';
+  getEl('lobby').style.display = 'flex';
+  if (typeof showPreviewWeapon === 'function') showPreviewWeapon(previewIndex);
+  if (typeof buildMapSelector === 'function') buildMapSelector();
+  if (typeof loop === 'function') loop();
+} loop();
   }
 }
 
 TEX_DEFS.forEach(def => {
   const map = loadTex(def.file, def.repeat);
   TEX[def.key] = { map };
-  map.onLoad = () => {
-    if (def.normal) {
-      try { TEX[def.key].normalMap = normalFromImage(map.image, 0.8); } catch (e) { console.warn('normal failed:', def.key); }
-    }
-    onTexReady();
-  };
+map.onLoad = () => {
+  if (def.normal) {
+    try {
+      TEX[def.key].normalMap = normalFromImage(map.image, 0.8);
+      // применяем к материалам, если они уже созданы
+      if (def.key === 'stone' && typeof wallMat !== 'undefined') { wallMat.normalMap = TEX[def.key].normalMap; wallMat.needsUpdate = true; }
+      if (def.key === 'stoneDark' && typeof wallDarkMat !== 'undefined') { wallDarkMat.normalMap = TEX[def.key].normalMap; wallDarkMat.needsUpdate = true; }
+      if (def.key === 'metal' && typeof metalMat !== 'undefined') { metalMat.normalMap = TEX[def.key].normalMap; metalMat.needsUpdate = true; }
+      if (def.key === 'wood' && typeof woodMat !== 'undefined') { woodMat.normalMap = TEX[def.key].normalMap; woodMat.needsUpdate = true; }
+    } catch (e) { console.warn('normal failed:', def.key); }
+  }
+  onTexReady();
+};
   map.onError = () => {
     console.error('НЕ НАЙДЕНА ТЕКСТУРА:', def.file);
     onTexReady();
@@ -227,10 +248,10 @@ const fill = new THREE.DirectionalLight(0x8090c0, 0.4); fill.position.set(-40, 3
 /* ============================================================
    МАТЕРИАЛЫ
    ============================================================ */
-const wallMat = new THREE.MeshStandardMaterial({ map: stoneTex.map, normalMap: stoneTex.normalMap, roughness: 0.85, metalness: 0.02 });
-const wallDarkMat = new THREE.MeshStandardMaterial({ map: stoneDarkTex.map, normalMap: stoneDarkTex.normalMap, roughness: 0.85, metalness: 0.02 });
-const metalMat = new THREE.MeshStandardMaterial({ map: metalTex.map, normalMap: metalTex.normalMap, roughness: 0.6, metalness: 0.7 });
-const woodMat = new THREE.MeshStandardMaterial({ map: woodTex.map, normalMap: woodTex.normalMap, roughness: 0.75 });
+const wallMat = new THREE.MeshStandardMaterial({ map: stoneTex.map, roughness: 0.85, metalness: 0.02 });
+const wallDarkMat = new THREE.MeshStandardMaterial({ map: stoneDarkTex.map, roughness: 0.85, metalness: 0.02 });
+const metalMat = new THREE.MeshStandardMaterial({ map: metalTex.map, roughness: 0.6, metalness: 0.7 });
+const woodMat = new THREE.MeshStandardMaterial({ map: woodTex.map, roughness: 0.75 });
 const sandMat = new THREE.MeshStandardMaterial({ map: sandTex.map, roughness: 0.95 });
 const redSandMat = new THREE.MeshStandardMaterial({ map: redSandTex.map, roughness: 0.95 });
 const lavaMat = new THREE.MeshStandardMaterial({ map: lavaTex.map, emissive: 0xff4400, emissiveIntensity: 1.5, emissiveMap: lavaTex.map });
