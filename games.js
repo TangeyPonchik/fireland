@@ -85,7 +85,7 @@ snakebattle:'ИГРЫ/snakebattle.html',
 fireshop:'УТИЛИТЫ/FireShop.html',
 cpstest:'УТИЛИТЫ/тест cps.html',
 hypercalc: 'УТИЛИТЫ/HYPERCALC.html',
-override77: 'ИГРЫ/OVERRIDE 77.html'
+override77: 'ИГРЫ/OVERRIDE 77/main.html'
 };
 
 // ============================================
