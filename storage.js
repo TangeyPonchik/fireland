@@ -1,8 +1,8 @@
 // ============================================
-// FireLand · storage.js · v26.4.0 + HITMAN + VIRUS_TAMER
+// FireLand · storage.js · v27.0.0 + NEW_ACH
 // IndexedDB + save/load + DEFAULT_STATE + ownerToken
-// Фиксы: #34 (avatar), #36 (local time), #72, #74 (onblocked), #35 (миграции)
-// НОВОЕ: hitman (убийства в OVERRIDE 77), lastfrontierZombies (зомби)
+// НОВОЕ: поля для no_damage_win, dom2_endings, lastfrontier_bosses,
+//        override_maps, chat_100, leaderboard_top10, 1000_kills
 // ============================================
 
 const DEFAULT_STATE = {
@@ -14,10 +14,16 @@ const DEFAULT_STATE = {
   gamesOpened: 0, gameOpenTimes: [], themesUsed: [], alarmUsed: false,
   totalXp: 0, level: 1,
   temporalParadox: { level: 1, totalAccumulated: 0 },
-  // 👇 HITMAN — прогрессивное достижение за убийства в OVERRIDE 77
   hitman: { level: 1, totalAccumulated: 0, totalKills: 0 },
-  // 👇 VIRUS_TAMER — сколько зомби собрано в «Последнем Рубеже»
   lastfrontierZombies: 0,
+  // 👇 NEW: поля для новых достижений
+  noDamageWins: [],
+  dom2Endings: [],
+  lastfrontierBosses: [],
+  lastfrontierBossStreak: 0,
+  overrideMapsPlayed: [],
+  chatMessagesSent: 0,
+  // 👇
   favorites: [],
   streak: { current: 0, best: 0, lastLogin: null, history: [] },
   dailyQuests: { date: null, quests: [], progress: {}, completed: [] },
@@ -51,24 +57,14 @@ function openDB() {
   return new Promise((resolve, reject) => {
     if (dbInstance) return resolve(dbInstance);
     let req;
-    try {
-      req = indexedDB.open(DB_NAME, DB_VERSION);
-    } catch (e) {
-      return reject(e);
-    }
+    try { req = indexedDB.open(DB_NAME, DB_VERSION); } catch (e) { return reject(e); }
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
     };
-    req.onsuccess = (e) => {
-      dbInstance = e.target.result;
-      resolve(dbInstance);
-    };
+    req.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
     req.onerror = () => reject(req.error);
-    req.onblocked = () => {
-      console.warn('[storage] IndexedDB blocked — закройте другие вкладки FireLand');
-      reject(new Error('IDB_BLOCKED'));
-    };
+    req.onblocked = () => { console.warn('[storage] IndexedDB blocked'); reject(new Error('IDB_BLOCKED')); };
   });
 }
 
@@ -82,10 +78,7 @@ async function idbGet(key) {
       req.onerror = () => reject(req.error);
       req.onabort = () => reject(new Error('IDB_ABORT'));
     });
-  } catch (e) {
-    console.warn('[storage] idbGet:', e);
-    return undefined;
-  }
+  } catch (e) { console.warn('[storage] idbGet:', e); return undefined; }
 }
 
 async function idbSet(key, value) {
@@ -99,9 +92,7 @@ async function idbSet(key, value) {
       tx.onabort = () => reject(new Error('IDB_ABORT'));
       tx.onblocked = () => reject(new Error('IDB_BLOCKED'));
     });
-  } catch (e) {
-    console.warn('[storage] idbSet:', e);
-  }
+  } catch (e) { console.warn('[storage] idbSet:', e); }
 }
 
 async function idbDelete(key) {
@@ -113,9 +104,7 @@ async function idbDelete(key) {
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
-  } catch (e) {
-    console.warn('[storage] idbDelete:', e);
-  }
+  } catch (e) { console.warn('[storage] idbDelete:', e); }
 }
 
 // ========== State ==========
@@ -126,11 +115,7 @@ let pendingSave = false;
 
 function saveState(immediate = false) {
   pendingSave = true;
-  if (immediate) {
-    clearTimeout(saveTimeout);
-    doSaveState();
-    return;
-  }
+  if (immediate) { clearTimeout(saveTimeout); doSaveState(); return; }
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(doSaveState, 500);
 }
@@ -148,13 +133,9 @@ async function doSaveState() {
         const lightState = { ...window.state };
         delete lightState.avatar;
         localStorage.setItem('fireland_light', JSON.stringify(lightState));
-      } catch (e2) {
-        console.warn('[storage] localStorage переполнен');
-      }
+      } catch (e2) { console.warn('[storage] localStorage переполнен'); }
     }
-  } catch (e) {
-    console.warn('Save failed:', e);
-  }
+  } catch (e) { console.warn('Save failed:', e); }
 }
 
 function generateOwnerToken() {
@@ -186,12 +167,18 @@ async function loadState() {
 
     // Миграции
     if (!s.temporalParadox) s.temporalParadox = { level: 1, totalAccumulated: 0 };
-    // 👇 HITMAN
     if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
     if (s.hitman.totalAccumulated === undefined) s.hitman.totalAccumulated = 0;
     if (s.hitman.totalKills === undefined) s.hitman.totalKills = 0;
-    // 👇 VIRUS_TAMER
     if (s.lastfrontierZombies === undefined) s.lastfrontierZombies = 0;
+    // 👇 NEW: миграции новых полей
+    if (!s.noDamageWins) s.noDamageWins = [];
+    if (!s.dom2Endings) s.dom2Endings = [];
+    if (!s.lastfrontierBosses) s.lastfrontierBosses = [];
+    if (s.lastfrontierBossStreak === undefined) s.lastfrontierBossStreak = 0;
+    if (!s.overrideMapsPlayed) s.overrideMapsPlayed = [];
+    if (s.chatMessagesSent === undefined) s.chatMessagesSent = 0;
+    // 👇
     if (!s.streak) s.streak = { current: 0, best: 0, lastLogin: null, history: [] };
     if (!s.streak.history) s.streak.history = [];
     if (!s.favorites) s.favorites = [];
@@ -222,12 +209,9 @@ async function loadState() {
       saveState(true);
       console.log('[Owner] Токен создан:', s.ownerToken);
     }
-  } catch (e) {
-    console.warn('Load failed:', e);
-  }
+  } catch (e) { console.warn('Load failed:', e); }
 }
 
-// ========== Утилиты дат ==========
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -236,7 +220,6 @@ function dateStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
 
-// ========== Экспорт ==========
 window.DEFAULT_STATE = DEFAULT_STATE;
 window.openDB = openDB;
 window.idbGet = idbGet;
@@ -249,4 +232,4 @@ window.generateOwnerToken = generateOwnerToken;
 window.todayStr = todayStr;
 window.dateStr = dateStr;
 
-console.log('[storage.js] Загружено v26.4.0 + HITMAN + VIRUS_TAMER');
+console.log('[storage.js] Загружено v27.0.0 + NEW_ACH');

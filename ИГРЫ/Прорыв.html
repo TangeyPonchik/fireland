@@ -243,6 +243,8 @@
 
 <script>
 'use strict';
+// 👇 SPEEDRUN — время старта игры
+const gameStartTime = Date.now();
 
 // ============================================================
 //  КОНСТАНТЫ
@@ -622,6 +624,15 @@ function playerAttack(type) {
 function gameOverGood() {
   combat.gameOver = true;
   combat.busy = false;
+    // 👇 SPEEDRUN — Прорыв 1 за < 5 минут
+  const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+  if (elapsed < 300) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'speedrun_1min', time: elapsed }, '*');
+      }
+    } catch (e) {}
+  }
   const hasPortal = player.vpnLevel >= VPNS.length - 1;
   let text;
   if (hasPortal) {

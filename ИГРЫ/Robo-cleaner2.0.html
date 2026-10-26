@@ -1286,6 +1286,8 @@ function districtSVG(idx, x, y, w, h, done, fill, stroke, title, kind){
    STATE
 ============================================================ */
 let hp = 120, maxHp = 120, enemyHp = 100, enemyMaxHp = 100;
+// 👇 NO_DAMAGE_WIN — отслеживание урона за этап
+let tookDamageThisStage = false;
 let kills = 0, parts = 0, rareParts = 0, city = 0, stage = 1;
 let combo = 0, deathPenalty = 0, stageDeaths = 0;
 let xp = 0, lvl = 1, dmg = 8, spirit = 0, armor = 0;
@@ -1598,6 +1600,15 @@ function spawnEnemy(){
 function checkStage(){
     let s = Math.floor(kills/25)+1; if(s>5) s=5;
     if(s !== stage){
+                // 👇 NO_DAMAGE_WIN — этап пройден без урона
+        if (!tookDamageThisStage && s > 1) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'no_damage_win', gameId: 'robo26' }, '*');
+                }
+            } catch (e) {}
+        }
+        tookDamageThisStage = false;
         stage = s; deathPenalty = 0; stageDeaths = 0;
         maxHp = heroes[heroId].hp; hp = maxHp;
         parts += 20;
@@ -1619,6 +1630,8 @@ function getCityBonus(){
 function die(){
     isDead = true;
     combo = 0;
+    tookDamageThisStage = false;  // 👈 сброс при смерти
+        bossStreak = 0;  // 👈 сброс серии боссов
     deathPenalty += 10;
     stageDeaths++;
     const oldMax = maxHp;
@@ -1692,6 +1705,7 @@ function attack(){
             hp -= ed; if(hp < 0) hp = 0;
             log('🤖 Робот ответил -'+ed);
             if(ed > 0) fxHitPlayer('-'+ed);
+            if(ed > 0) tookDamageThisStage = true;  // 👈 урон получен
         }
     }
 
@@ -1723,7 +1737,19 @@ function attack(){
         xp += 5 + stage*2;
 
         if(Math.random() < 0.25){ const r = 1 + rand(3); rareParts += r; log('🔴 +'+r); }
-        if(currentEnemyIsBoss){ const r = 5 + rand(10); rareParts += r; log('👑 БОСС! +'+r+'🔴'); bossShield = bossDodge = false; }
+        if(currentEnemyIsBoss){
+  const r = 5 + rand(10);
+  rareParts += r;
+  log('👑 БОСС! +'+r+'🔴');
+  bossShield = bossDodge = false;
+  // 👇 BOSS_RUSH — серия боссов
+  bossStreak++;
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'robo_boss_win', streak: bossStreak }, '*');
+    }
+  } catch (e) {}
+}
         else log('✅ +'+p+'⚙️');
 
         if(!currentEnemyIsBoss && Math.random() < 0.15){

@@ -1121,6 +1121,13 @@ async function handleSendClick() {
     }
     const [saved] = await res.json();
     markSelfMessage(saved);
+    // 👇 NEW: счётчик сообщений для chat_100
+if (st.chatMessagesSent === undefined) st.chatMessagesSent = 0;
+st.chatMessagesSent++;
+chatSaveState();
+if (st.chatMessagesSent >= 100) {
+  if (typeof window.unlockAch === 'function') window.unlockAch('chat_100');
+}
     const replyMsg = CHAT.replyTo;
     renderMessage(saved, true, false, replyMsg);
     if (CHAT.searchActive) filterMessagesBySearch();
@@ -2029,6 +2036,13 @@ async function handleImageUpload(e) {
 
     const [saved] = await res.json();
     markSelfMessage(saved);
+    // 👇 NEW: счётчик сообщений для chat_100
+if (st.chatMessagesSent === undefined) st.chatMessagesSent = 0;
+st.chatMessagesSent++;
+chatSaveState();
+if (st.chatMessagesSent >= 100) {
+  if (typeof window.unlockAch === 'function') window.unlockAch('chat_100');
+}
     renderMessage(saved, true, false, CHAT.replyTo);
     cancelReply();
   } catch (err) {
@@ -2233,9 +2247,13 @@ async function uploadVoiceMessage() {
       return;
     }
 
-    const [saved] = await res.json();
-    markSelfMessage(saved);
-    renderMessage(saved, true, false, CHAT.replyTo);
+// 👇 NEW: счётчик сообщений для chat_100
+if (st.chatMessagesSent === undefined) st.chatMessagesSent = 0;
+st.chatMessagesSent++;
+chatSaveState();
+if (st.chatMessagesSent >= 100) {
+  if (typeof window.unlockAch === 'function') window.unlockAch('chat_100');
+}
     cancelReply();
   } catch (err) {
     console.warn('[Chat] voice error:', err);

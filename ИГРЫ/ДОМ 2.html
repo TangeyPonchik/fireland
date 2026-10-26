@@ -1294,6 +1294,12 @@ const scenes = {
     ending_ritual: {
         render: () => {
             state.ending = 'ritual'; state.flags.gameOver = true;
+            // 👇 ALL_ENDINGS_DOM2 — отправка концовки в лаунчер
+try {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'dom2_ending', endingId: 'ritual' }, '*');
+  }
+} catch (e) {}
             $('locationBadge').textContent = '✨ Освобождение';
             $('sceneText').innerHTML = `
                 <p>Ты открываешь дневник основателя. Читаешь вслух слова, которые никто не читал сотню лет.</p>
@@ -1315,6 +1321,12 @@ const scenes = {
     ending_mercy: {
         render: () => {
             state.ending = 'mercy'; state.flags.gameOver = true;
+            // 👇 ALL_ENDINGS_DOM2 — отправка концовки в лаунчер
+try {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'dom2_ending', endingId: 'ritual' }, '*');
+  }
+} catch (e) {}
             $('locationBadge').textContent = '🕊️ Милосердие';
             $('sceneText').innerHTML = `
                 <p>Ты протягиваешь руку. Ребёнок смотрит на неё долго. Потом берёт.</p>
@@ -1333,6 +1345,12 @@ const scenes = {
     ending_sacrifice: {
         render: () => {
             state.ending = 'sacrifice'; state.flags.gameOver = true;
+            // 👇 ALL_ENDINGS_DOM2 — отправка концовки в лаунчер
+try {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'dom2_ending', endingId: 'ritual' }, '*');
+  }
+} catch (e) {}
             $('locationBadge').textContent = '🪞 Жертва';
             $('sceneText').innerHTML = `
                 <p>Ты разбиваешь зеркало. Осколки летят во все стороны. Дом кричит — но не от боли, а от облегчения.</p>
@@ -1351,6 +1369,12 @@ const scenes = {
     ending_burn: {
         render: () => {
             state.ending = 'burn'; state.flags.gameOver = true;
+            // 👇 ALL_ENDINGS_DOM2 — отправка концовки в лаунчер
+try {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'dom2_ending', endingId: 'ritual' }, '*');
+  }
+} catch (e) {}
             $('locationBadge').textContent = '🔥 Пепел';
             $('sceneText').innerHTML = `
                 <p>Ты поджигаешь дом. Дети кричат. Дом горит три дня.</p>
@@ -1370,6 +1394,12 @@ const scenes = {
     ending_flee: {
         render: () => {
             state.ending = 'flee'; state.flags.gameOver = true;
+            // 👇 ALL_ENDINGS_DOM2 — отправка концовки в лаунчер
+try {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'dom2_ending', endingId: 'ritual' }, '*');
+  }
+} catch (e) {}
             $('locationBadge').textContent = '🏃 Бегство';
             $('sceneText').innerHTML = `
                 <p>Ты отступаешь. Зеркало остаётся целым. Дом остаётся стоять.</p>

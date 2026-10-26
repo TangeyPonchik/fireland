@@ -1,16 +1,12 @@
 // ============================================
-// FireLand Leaderboard · Supabase v19 · TOKEN PROTECTED
+// FireLand Leaderboard · Supabase v20 · TOP-10 ACH
 // ============================================
 
 const SUPABASE_URL = 'https://brqlmsbvwmycyhiluuui.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJycWxtc2J2d215Y3loaWx1dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0ODQwMDYsImV4cCI6MjEwNTA2MDAwNn0.mIW8zji9P67qIFm8V8dFcMV2wzoI6GnRYg9prxKAxj8';
 
 const LB = {
-  cache: [],
-  lastFetch: 0,
-  autoRefreshTimer: null,
-  isFetching: false,
-  isSaving: false,
+  cache: [], lastFetch: 0, autoRefreshTimer: null, isFetching: false, isSaving: false,
   autoRefreshEnabled: localStorage.getItem('fireland_lb_auto_refresh') === 'true',
 };
 
@@ -22,9 +18,7 @@ window.escapeHtml = window.escapeHtml || function (text) {
 const escapeHtml = window.escapeHtml;
 
 function lbSafeSaveState(immediate = false) {
-  if (typeof saveState === 'function') {
-    try { saveState(immediate); } catch (e) { console.warn('[LB] saveState:', e); }
-  }
+  if (typeof saveState === 'function') { try { saveState(immediate); } catch (e) { console.warn('[LB] saveState:', e); } }
 }
 function lbGetState() {
   if (typeof state !== 'undefined' && state) return state;
@@ -39,117 +33,60 @@ function lbGetTitleForLevel(level) {
   return '🌱 Новичок';
 }
 
-// ============================================
-// ОТПРАВКА СЧЁТА
-// ============================================
 async function submitScore() {
   const st = lbGetState();
-  if (!st || !st.nickname || st.nickname === 'Игрок') {
-    console.log('[LB] Не отправляю: ник не установлен');
-    return false;
-  }
-  if (typeof getLevelFromTotalXp !== 'function') {
-    console.warn('[LB] getLevelFromTotalXp не определена');
-    return false;
-  }
+  if (!st || !st.nickname || st.nickname === 'Игрок') return false;
+  if (typeof getLevelFromTotalXp !== 'function') return false;
   const lvlInfo = getLevelFromTotalXp(st.totalXp);
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score_secure`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({
-        p_nickname: st.nickname,
-        p_level: lvlInfo.level,
-        p_total_xp: st.totalXp,
-        p_achievements_count: st.achievements.length,
-        p_owner_token: st.ownerToken || '',
+        p_nickname: st.nickname, p_level: lvlInfo.level, p_total_xp: st.totalXp,
+        p_achievements_count: st.achievements.length, p_owner_token: st.ownerToken || '',
       }),
     });
-    if (!res.ok) {
-      const err = await res.text();
-      console.warn('[LB] Ошибка отправки:', res.status, err);
-      return false;
-    }
+    if (!res.ok) { console.warn('[LB] Ошибка отправки:', res.status); return false; }
     const data = await res.json();
-    if (!data.ok) {
-      console.warn('[LB] Отклонено:', data.error);
-      return false;
-    }
+    if (!data.ok) { console.warn('[LB] Отклонено:', data.error); return false; }
     st.lastSubmittedNick = st.nickname;
     lbSafeSaveState();
-    console.log('[LB] ✅ Отправлено:', st.nickname, 'Lvl', lvlInfo.level, st.totalXp, 'XP');
     return true;
-  } catch (e) {
-    console.warn('[LB] Сеть недоступна:', e.message);
-    return false;
-  }
+  } catch (e) { console.warn('[LB] Сеть недоступна:', e.message); return false; }
 }
 
-// ============================================
-// СОХРАНЕНИЕ НИКА
-// ============================================
 async function saveNickname() {
   if (LB.isSaving) return { ok: false, message: 'Уже сохраняется' };
   const st = lbGetState();
   if (!st) return { ok: false, message: 'Состояние не загружено' };
   LB.isSaving = true;
-
   const newNick = st.nickname;
-  if (!newNick || newNick === 'Игрок') {
-    LB.isSaving = false;
-    return { ok: false, message: 'Введи ник' };
-  }
-
+  if (!newNick || newNick === 'Игрок') { LB.isSaving = false; return { ok: false, message: 'Введи ник' }; }
   const lvlInfo = lbGetLevelFromTotalXp(st.totalXp);
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/upsert_score_secure`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({
-        p_nickname: newNick,
-        p_level: lvlInfo.level,
-        p_total_xp: st.totalXp,
-        p_achievements_count: st.achievements.length,
-        p_owner_token: st.ownerToken || '',
+        p_nickname: newNick, p_level: lvlInfo.level, p_total_xp: st.totalXp,
+        p_achievements_count: st.achievements.length, p_owner_token: st.ownerToken || '',
       }),
     });
-    if (!res.ok) {
-      const err = await res.text();
-      console.warn('[LB] Ошибка сохранения:', res.status, err);
-      LB.isSaving = false;
-      return { ok: false, message: 'Ошибка сервера: ' + res.status };
-    }
+    if (!res.ok) { LB.isSaving = false; return { ok: false, message: 'Ошибка сервера: ' + res.status }; }
     const data = await res.json();
     if (!data.ok) {
       LB.isSaving = false;
-      if (data.error === 'NICK_TAKEN') {
-        return { ok: false, message: 'Этот ник занят другим игроком' };
-      }
+      if (data.error === 'NICK_TAKEN') return { ok: false, message: 'Этот ник занят другим игроком' };
       return { ok: false, message: data.error || 'Ошибка' };
     }
     st.lastSubmittedNick = newNick;
     lbSafeSaveState(true);
-    console.log('[LB] ✅ Ник сохранён:', newNick);
     LB.isSaving = false;
     return { ok: true, message: 'Ник сохранён!' };
-  } catch (e) {
-    console.warn('[LB] Сеть недоступна:', e.message);
-    LB.isSaving = false;
-    return { ok: false, message: 'Нет интернета' };
-  }
+  } catch (e) { LB.isSaving = false; return { ok: false, message: 'Нет интернета' }; }
 }
 
-// ============================================
-// ЗАГРУЗКА ЛИДЕРБОРДА
-// ============================================
 async function fetchLeaderboard(force = false) {
   if (LB.isFetching) return LB.cache;
   if (!force && Date.now() - LB.lastFetch < 30000) return LB.cache;
@@ -157,50 +94,30 @@ async function fetchLeaderboard(force = false) {
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/leaderboard?select=nickname,level,total_xp,achievements_count,updated_at&order=total_xp.desc&limit=100`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-      }
+      { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
     );
-    if (!res.ok) {
-      console.warn('[LB] Ошибка загрузки:', res.status);
-      LB.isFetching = false;
-      return LB.cache;
-    }
+    if (!res.ok) { LB.isFetching = false; return LB.cache; }
     const data = await res.json();
-    LB.cache = data;
-    LB.lastFetch = Date.now();
-    LB.isFetching = false;
+    LB.cache = data; LB.lastFetch = Date.now(); LB.isFetching = false;
     return data;
-  } catch (e) {
-    console.warn('[LB] Сеть недоступна:', e.message);
-    LB.isFetching = false;
-    return LB.cache;
-  }
+  } catch (e) { LB.isFetching = false; return LB.cache; }
 }
 
-// ============================================
-// РЕНДЕР
-// ============================================
 function renderLeaderboard(data) {
   const container = document.getElementById('leaderboardContainer');
   if (!container) return;
   if (!data || data.length === 0) {
-    container.innerHTML = `
-      <div class="lb-empty">
-        <div style="font-size:64px;margin-bottom:16px;">🏆</div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:8px;">Пока пусто</div>
-        <div style="color:var(--text-secondary);font-size:14px;">
-          Сыграй в игру, получи XP — и стань первым в таблице!
-        </div>
-      </div>`;
+    container.innerHTML = `<div class="lb-empty"><div style="font-size:64px;margin-bottom:16px;">🏆</div><div style="font-size:20px;font-weight:800;margin-bottom:8px;">Пока пусто</div><div style="color:var(--text-secondary);font-size:14px;">Сыграй в игру, получи XP — и стань первым!</div></div>`;
     return;
   }
   const st = lbGetState();
   const myNick = (st && st.nickname) || 'Игрок';
   const myIndex = data.findIndex(r => r.nickname === myNick);
+
+  // 👇 NEW: топ-10 → достижение
+  if (st && myNick && myNick !== 'Игрок' && myIndex >= 0 && myIndex < 10) {
+    if (typeof window.unlockAch === 'function') window.unlockAch('leaderboard_top10');
+  }
 
   const rows = data.map((row, i) => {
     const place = i + 1;
@@ -247,31 +164,25 @@ function renderLeaderboard(data) {
         <input type="checkbox" id="lbAutoRefresh" ${LB.autoRefreshEnabled ? 'checked' : ''}>
         Автообновление
       </label>
-    </div>
-  `;
-const autoCheckbox = document.getElementById('lbAutoRefresh');
-if (autoCheckbox) {
-  autoCheckbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      LB.autoRefreshEnabled = true;
-      localStorage.setItem('fireland_lb_auto_refresh', 'true');
-      startLeaderboardAutoRefresh();
-    } else {
-      LB.autoRefreshEnabled = false;
-      localStorage.setItem('fireland_lb_auto_refresh', 'false');
-      stopLeaderboardAutoRefresh();
-    }
-  });
-  // Автозапуск, если было включено
-  if (LB.autoRefreshEnabled && !LB.autoRefreshTimer) {
-    startLeaderboardAutoRefresh();
+    </div>`;
+
+  const autoCheckbox = document.getElementById('lbAutoRefresh');
+  if (autoCheckbox) {
+    autoCheckbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        LB.autoRefreshEnabled = true;
+        localStorage.setItem('fireland_lb_auto_refresh', 'true');
+        startLeaderboardAutoRefresh();
+      } else {
+        LB.autoRefreshEnabled = false;
+        localStorage.setItem('fireland_lb_auto_refresh', 'false');
+        stopLeaderboardAutoRefresh();
+      }
+    });
+    if (LB.autoRefreshEnabled && !LB.autoRefreshTimer) startLeaderboardAutoRefresh();
   }
 }
-}
 
-// ============================================
-// ОБНОВЛЕНИЕ
-// ============================================
 async function refreshLeaderboard() {
   const btn = document.querySelector('.lb-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Загрузка...'; }
@@ -286,38 +197,23 @@ function startLeaderboardAutoRefresh() {
     const data = await fetchLeaderboard(true);
     renderLeaderboard(data);
   }, 60000);
-  console.log('[LB] Автообновление включено');
 }
-
 function stopLeaderboardAutoRefresh() {
-  if (LB.autoRefreshTimer) {
-    clearInterval(LB.autoRefreshTimer);
-    LB.autoRefreshTimer = null;
-    console.log('[LB] Автообновление выключено');
-  }
+  if (LB.autoRefreshTimer) { clearInterval(LB.autoRefreshTimer); LB.autoRefreshTimer = null; }
 }
 
-// ============================================
-// ФОРМАТ
-// ============================================
 function formatXp(xp) {
   if (xp >= 1000000) return (xp / 1000000).toFixed(2) + 'M';
   if (xp >= 1000) return (xp / 1000).toFixed(1) + 'k';
   return xp.toLocaleString('ru-RU');
 }
 
-// ============================================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================================
 async function initLeaderboard() {
   const data = await fetchLeaderboard(true);
   renderLeaderboard(data);
   console.log('[LB] Лидерборд инициализирован, записей:', data.length);
 }
 
-// ============================================
-// ЭКСПОРТ В WINDOW
-// ============================================
 window.submitScore = submitScore;
 window.saveNickname = saveNickname;
 window.fetchLeaderboard = fetchLeaderboard;
@@ -327,6 +223,5 @@ window.startLeaderboardAutoRefresh = startLeaderboardAutoRefresh;
 window.stopLeaderboardAutoRefresh = stopLeaderboardAutoRefresh;
 window.formatXp = formatXp;
 window.initLeaderboard = initLeaderboard;
-
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
