@@ -52,7 +52,8 @@ const ACHIEVEMENTS = [
 {id:'proryv_quadrology',icon:'👑',name:'Хранитель квадрологии',desc:'Сыграть во все четыре части Прорыва',xp:750,rarity:'legendary'},
 {id:'first_snake',icon:'🐍',name:'Первая змейка',desc:'Сыграть в Snakes Battle',xp:50,rarity:'common'},
 {id:'first_util',icon:'🛠️',name:'Инструменталист',desc:'Запустить первую утилиту',xp:50,rarity:'common'},
-{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest','hypercalc'].includes(g)).length)/3),progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest','hypercalc'].includes(g)).length}/3`},
+progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest','hypercalc','datagenerator','musibox'].includes(g)).length)/5),
+progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest','hypercalc','datagenerator','musibox'].includes(g)).length}/5`
 {id:'time_1min',icon:'⏱️',name:'Минутка',desc:'Провести 1 минуту в играх',xp:25,rarity:'common',progress:s=>Math.min(1,s.totalTime/60),progressText:s=>`${Math.floor(s.totalTime/60)}м/1м`},
 {id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 мин в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
 {id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 мин в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
