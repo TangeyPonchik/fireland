@@ -1,6 +1,7 @@
 /* ============================================================
    ПРОРЫВ 4 · ГЛАВА 3 «МАШИНА» · chapter3.js
    Надстройка над основным файлом.
+   FATAL PATCH: исправлены cfg, двойные обёртки
    ============================================================ */
 (function(){
 "use strict";
@@ -8,6 +9,13 @@ if(typeof G==='undefined'||typeof VPN==='undefined'){
   console.error('[chapter3] Основной файл Прорыв 4 не загружен — глава 3 не активирована.');
   return;
 }
+
+// 🔧 FIX: защита от двойной загрузки
+if(window.__chapter3_wrapped){
+  console.warn('[chapter3] Уже загружена — повторная загрузка отменена.');
+  return;
+}
+window.__chapter3_wrapped = true;
 
 /* ============================================================
    1. ПАЛИТРЫ (5 новых — индексы 10..14)
@@ -347,6 +355,7 @@ damageEnemy=function(e,dmg){
 /* ============================================================
    9. ОБЁРТКА updatePlayer — новые типы стрельбы
    ============================================================ */
+// 🔧 FIX: убрана вторая обёртка updatePlayer (была рекурсия)
 const _updatePlayer=updatePlayer;
 updatePlayer=function(f){
   _updatePlayer(f);
@@ -393,6 +402,33 @@ updatePlayer=function(f){
     }
   }else{
     G.orbits=[];
+  }
+
+  /* 🔧 FIX: обработка сингулярностей перенесена сюда (было в отдельной обёртке) */
+  if(cfg.type==='singularity' && G.singularities){
+    for(const s of G.singularities){
+      s.life-=f/60;
+      for(const e of G.enemies){
+        if(e.dead) continue;
+        const dx=s.x-(e.x+e.w/2);
+        const dy=s.y-(e.y+e.h/2);
+        const d=Math.hypot(dx,dy)||1;
+        if(d<cfg.pullRadius&&!e.flying){
+          e.x+=dx/d*cfg.pullForce*f;
+          e.y+=dy/d*cfg.pullForce*f*0.3;
+        }
+      }
+      s.tick-=f;
+      if(s.tick<=0){
+        s.tick=20;
+        for(const e of G.enemies){
+          if(e.dead) continue;
+          const d=Math.hypot((e.x+e.w/2)-s.x,(e.y+e.h/2)-s.y);
+          if(d<cfg.aoeRadius) damageEnemy(e,cfg.dmg*0.15);
+        }
+      }
+    }
+    G.singularities=G.singularities.filter(s=>s.life>0);
   }
 };
 
@@ -736,16 +772,23 @@ spawnBullet=function(x,y,ang,spd,dmg,owner,color,r){
     const last=G.bullets[G.bullets.length-1];
     if(last){last.chain=true;last.chainHits=[];last.chainDmg=dmg;last.chainLeft=cfg.chains;last.chainRange=cfg.chainRange;last.chainFalloff=cfg.chainFalloff;}
   }
+  // 🔧 FIX: убрана вторая обёртка spawnBullet (была рекурсия для сингулярности)
+  // Логика сингулярности теперь в updatePlayer
+  if(cfg&&cfg.type==='singularity'&&owner==='player'){
+    if(!G.singularities) G.singularities=[];
+    const wx=mouse.x+G.camX, wy=mouse.y;
+    G.singularities.push({x:wx,y:wy,life:cfg.aoeDur,tick:0});
+    spawnParticles(wx,wy,20,'#c0c0ff',6,4,0.05);
+  }
 };
 
 /* обёртка damageEnemy — цепная молния */
-const _damageEnemy2=damageEnemy;
+// 🔧 FIX: убрана вторая обёртка damageEnemy (была _damageEnemy2)
+// Логика цепной молнии теперь в одной обёртке
+const _damageEnemyChain=damageEnemy;
 damageEnemy=function(e,dmg){
-  const old=e.hp;
-  _damageEnemy2(e,dmg);
-  /* цепь: после попадания первой пули — искать ближайшего */
+  _damageEnemyChain(e,dmg);
   if(!e.dead) return;
-  /* ищем пулю игрока, у которой chain=true и ещё есть прыжки */
   for(const b of G.bullets){
     if(!b.chain||b.chainLeft<=0) continue;
     if(b.chainHits&&b.chainHits.includes(e)) continue;
@@ -767,63 +810,7 @@ damageEnemy=function(e,dmg){
 };
 
 /* ============================================================
-   13. СИНГУЛЯРНОСТЬ — спец-логика
-   ============================================================ */
-const _updatePlayerSingularity=updatePlayer;
-updatePlayer=function(f){
-  _updatePlayerSingularity(f);
-  const p=G.player;
-  if(!p||p.dead) return;
-  const cfg=VPN[G.vpn-1];
-  if(cfg.type==='singularity'){
-    if(!G.singularities) G.singularities=[];
-    /* активируется нажатием Q? — нет, стрельбой. Логика: при выстреле создаём точку притяжения */
-    /* уже обрабатывается в updatePlayer как выстрел — но нужен визуал */
-  }
-  /* обработка притяжения */
-  if(G.singularities){
-    for(const s of G.singularities){
-      s.life-=f/60;
-      for(const e of G.enemies){
-        if(e.dead) continue;
-        const dx=s.x-(e.x+e.w/2);
-        const dy=s.y-(e.y+e.h/2);
-        const d=Math.hypot(dx,dy)||1;
-        if(d<cfg.pullRadius&&!e.flying){
-          e.x+=dx/d*cfg.pullForce*f;
-          e.y+=dy/d*cfg.pullForce*f*0.3;
-        }
-      }
-      /* урон по площади */
-      s.tick-=f;
-      if(s.tick<=0){
-        s.tick=20;
-        for(const e of G.enemies){
-          if(e.dead) continue;
-          const d=Math.hypot((e.x+e.w/2)-s.x,(e.y+e.h/2)-s.y);
-          if(d<cfg.aoeRadius) damageEnemy(e,cfg.dmg*0.15);
-        }
-      }
-    }
-    G.singularities=G.singularities.filter(s=>s.life>0);
-  }
-};
-
-/* при выстреле сингулярностью — создать точку */
-const _spawnBullet2=spawnBullet;
-spawnBullet=function(x,y,ang,spd,dmg,owner,color,r){
-  _spawnBullet2(x,y,ang,spd,dmg,owner,color,r);
-  const cfg=VPN[G.vpn-1];
-  if(cfg&&cfg.type==='singularity'&&owner==='player'){
-    if(!G.singularities) G.singularities=[];
-    const wx=mouse.x+G.camX, wy=mouse.y;
-    G.singularities.push({x:wx,y:wy,life:cfg.aoeDur,tick:0});
-    spawnParticles(wx,wy,20,'#c0c0ff',6,4,0.05);
-  }
-};
-
-/* ============================================================
-   14. ГРАВИТАЦИЯ — переворот на время (синяя душа)
+   13. ГРАВИТАЦИЯ — переворот на время (синяя душа)
    ============================================================ */
 const _update=update;
 update=function(dt){
@@ -838,7 +825,7 @@ update=function(dt){
 };
 
 /* ============================================================
-   15. РЕНДЕР — новые объекты
+   14. РЕНДЕР — новые объекты
    ============================================================ */
 const _render=render;
 render=function(){
@@ -861,6 +848,8 @@ render=function(){
   }
   /* сингулярности */
   if(G.singularities){
+    // 🔧 FIX: cfg теперь определён в области видимости render()
+    const _cfg=VPN[G.vpn-1];
     ctx.save();
     ctx.translate(-Math.round(G.camX),0);
     for(const s of G.singularities){
@@ -875,7 +864,8 @@ render=function(){
       ctx.strokeStyle='rgba(180,180,255,'+(a*0.6)+')';
       ctx.lineWidth=2;
       ctx.setLineDash([10,10]);
-      ctx.beginPath();ctx.arc(s.x,s.y,cfg.pullRadius||340,0,7);ctx.stroke();
+      // 🔧 FIX: используем _cfg (определён выше)
+      ctx.beginPath();ctx.arc(s.x,s.y,(_cfg&&_cfg.pullRadius)||340,0,7);ctx.stroke();
       ctx.setLineDash([]);
     }
     ctx.restore();
@@ -930,18 +920,16 @@ render=function(){
 };
 
 /* ============================================================
-   16. HUD — диалог ИИ и «совет» из 3 клонов
+   15. HUD — диалог ИИ и «совет» из 3 клонов
    ============================================================ */
 const _updateHUD=updateHUD;
 updateHUD=function(){
   _updateHUD();
   const b=G.boss;
   if(b&&b.type===11&&!b.defeated){
-    /* обновляем HP-бар под «все клоны» */
     elBossName.textContent=b.name+' ('+b.clonesAlive+'/3)';
   }
   if(b&&b.type===12&&!b.defeated&&b.dialogue){
-    /* рисуем диалог поверх — через canvas */
     window.__chapter3_dialogue=b.dialogue;
   }else{
     window.__chapter3_dialogue='';
@@ -971,7 +959,7 @@ render=function(){
 };
 
 /* ============================================================
-   17. ПЕРЕХВАТ victoryScreen — финал главы 3
+   16. ПЕРЕХВАТ victoryScreen — финал главы 3
    ============================================================ */
 const _victoryScreen=victoryScreen;
 victoryScreen=function(){
@@ -997,7 +985,7 @@ victoryScreen=function(){
 };
 
 /* ============================================================
-   18. СТАРТ
+   17. СТАРТ
    ============================================================ */
 console.log('[chapter3] Глава 3 «Машина» загружена. VPN:',VPN.length,'уровней. Врагов:',Object.keys(ENEMY_TYPES).length,'типов.');
 

@@ -2,6 +2,7 @@
 /* ============================================================
    game.js — вся логика игры
    Требует: window.THREE, window.CS.Textures, window.CS.Audio
+   FATAL PATCH: исправлены bossStreak, чит-код, мёртвый код
    ============================================================ */
 (function () {
   const THREE = window.THREE;
@@ -338,6 +339,10 @@
      СОСТОЯНИЕ
      ============================================================ */
   const GAME = { state: 'LOBBY', round: 1, timer: 0, money: 800, score: 0, kills: 0, bombPlanted: false, bombTimer: 0, bombSite: bombSitePos.clone(), defuseProgress: 0, currentMap: 'FOUNDRY', playerTeam: 'T' };
+
+  // 🔧 FIX: bossStreak объявлен явно (был неявной глобальной — ReferenceError в strict mode)
+  let bossStreak = 0;
+
   const player = {
     pos: new THREE.Vector3(0, 0, 30), vel: new THREE.Vector3(),
     yaw: Math.PI, pitch: 0, height: 1.7, radius: 0.35,
@@ -467,12 +472,20 @@
     }
   }
   function damageEnemy(e, dmg, head) { e.health -= dmg; A.sndHitmarker(); showHit(); e.state = 'chase'; e.lastSeen = player.pos.clone(); if (e.health <= 0 && e.alive) killEnemy(e, head); }
-  function killEnemy(e, head) { e.alive = false; e.deathTime = performance.now() / 1000; A.sndEnemyDeath(); player.kills++; GAME.kills++; GAME.score += head ? 150 : 100; GAME.money = Math.min(16000, GAME.money + 300); updateHUD(); addKillFeed(head ? 'HEADSHOT' : 'KILL');   // 👇 Сообщаем лаунчеру об убийстве
-  try {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'override77_kill' }, '*');
-    }
-  } catch (err) {}} 
+  function killEnemy(e, head) {
+    e.alive = false; e.deathTime = performance.now() / 1000;
+    A.sndEnemyDeath();
+    player.kills++; GAME.kills++; GAME.score += head ? 150 : 100; GAME.money = Math.min(16000, GAME.money + 300);
+    updateHUD(); addKillFeed(head ? 'HEADSHOT' : 'KILL');
+    // 🔧 FIX: bossStreak теперь корректно инкрементится (переменная объявлена)
+    bossStreak++;
+    // 👇 Сообщаем лаунчеру об убийстве (оставлено для интеграции)
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'override77_kill' }, '*');
+      }
+    } catch (err) {}
+  }
   function addKillFeed(msg) { const e = document.createElement('div'); e.className = 'kf-entry'; e.textContent = `YOU ${msg}`; document.getElementById('kill-feed').appendChild(e); setTimeout(() => e.remove(), 4000); }
 
   /* ============================================================
@@ -788,10 +801,7 @@
   }
   function openBuyMenu() { if (GAME.state !== 'BUY' && GAME.state !== 'LIVE') return; buyMenuEl.style.display = 'flex'; document.exitPointerLock(); document.getElementById('buy-money').textContent = `$${GAME.money}`; if (!BUY_ITEMS[currentBuyCat]) currentBuyCat = 'pistol'; renderBuyTabs(); renderBuyItems(); }
   function closeBuyMenu() { buyMenuEl.style.display = 'none'; renderer.domElement.requestPointerLock(); }
-document.getElementById('buy-close').addEventListener('click', (e) => {
-  e.stopPropagation();
-  closeBuyMenu();
-});
+  document.getElementById('buy-close').addEventListener('click', (e) => { e.stopPropagation(); closeBuyMenu(); });
 
   /* ============================================================
      ВВОД
@@ -814,7 +824,8 @@ document.getElementById('buy-close').addEventListener('click', (e) => {
     if (!locked && buyMenuEl.style.display !== 'flex') return;
     if (e.code === 'KeyB') { if (buyMenuEl.style.display === 'flex') closeBuyMenu(); else openBuyMenu(); }
     if (e.code === 'Escape' && buyMenuEl.style.display === 'flex') closeBuyMenu();
-    if (e.code === 'KeyG') { player.health = 9999; player.maxHealth = 9999; updateHealthHUD(); }
+    // 🔧 FIX: чит-код на G удалён (был player.health = 9999)
+    // Теперь G — это просто клавиша, ничего не делает
     if (e.code === 'Digit1') equipSlot(1); if (e.code === 'Digit2') equipSlot(2); if (e.code === 'Digit3') equipSlot(3); if (e.code === 'Digit4') equipSlot(4);
   });
   document.addEventListener('contextmenu', e => e.preventDefault());

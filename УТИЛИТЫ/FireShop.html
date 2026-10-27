@@ -72,7 +72,6 @@
   .object-item.sticker-object { font-size:64px; line-height:1; }
   #canvas3d { position:absolute; inset:0; width:100%; height:100%; display:none; touch-action:none; cursor:grab; }
 
-  /* ===== ЛЕВАЯ ПАНЕЛЬ (Холст) ===== */
   .panel-left {
     width:280px;
     background:var(--glass-bg);
@@ -84,19 +83,14 @@
     z-index:20;
     margin:12px 0 12px 12px;
     border-radius:var(--radius);
-    box-shadow:
-      0 4px 20px rgba(0,0,0,.08),
-      4px 0 24px -12px rgba(255,107,53,.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,.08), 4px 0 24px -12px rgba(255,107,53,.25);
   }
-  .panel-left .panel-content {
-    flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin;
-  }
+  .panel-left .panel-content { flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin; }
   .panel-left .panel-content::-webkit-scrollbar { width:6px; }
   .panel-left .panel-content::-webkit-scrollbar-thumb { background:rgba(0,0,0,.15); border-radius:3px; }
   .panel-close-left { display:none; }
   .mobile-toggle-left { display:none; }
 
-  /* ===== ПРАВАЯ ПАНЕЛЬ (Инструменты) ===== */
   .panel-right {
     width:320px;
     background:var(--glass-bg);
@@ -108,9 +102,7 @@
     z-index:20;
     margin:12px 12px 12px 0;
     border-radius:var(--radius);
-    box-shadow:
-      0 4px 20px rgba(0,0,0,.08),
-      -4px 0 24px -12px rgba(255,107,53,.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,.08), -4px 0 24px -12px rgba(255,107,53,.25);
   }
   .panel-content { flex:1; overflow-y:auto; padding:16px; scrollbar-width:thin; }
   .panel-content::-webkit-scrollbar { width:6px; }
@@ -518,7 +510,7 @@
 'use strict';
 
 const HISTORY_MAX_COUNT = 15;
-const HISTORY_MAX_BYTES = 120 * 1024 * 1024;
+const HISTORY_MAX_BYTES = 60 * 1024 * 1024;
 const PALETTE = [
   '#ffffff','#e5e5ea','#c7c7cc','#8e8e93','#48484a','#1c1c1e','#000000','#ff6b35',
   '#f7931e','#ffcc00','#34c759','#30d158','#00c7be','#32ade6','#007aff','#5856d6',
@@ -659,44 +651,63 @@ function confirmAsync(title, text) {
 }
 
 function capture2D() {
+  const layers = S2.layers.map(l => {
+    let data;
+    try {
+      data = l.ctx.getImageData(0, 0, l.canvas.width, l.canvas.height);
+    } catch (e) {
+      console.warn('Capture failed for layer', l.id, e);
+      data = new ImageData(l.canvas.width, l.canvas.height);
+    }
+    return { id: l.id, name: l.name, visible: l.visible, data };
+  });
   return {
-    mode:'2d',
-    logicalW:S2.logicalW, logicalH:S2.logicalH,
-    layerCounter:S2.layerCounter, activeLayerId:S2.activeLayerId,
-    showGrid2d:S2.showGrid2d, bgColor:S2.bgColor,
-    layers:S2.layers.map(l => ({
-      id:l.id, name:l.name, visible:l.visible,
-      data:l.ctx.getImageData(0,0,l.canvas.width,l.canvas.height)
-    })),
-    objects:JSON.parse(JSON.stringify(S2.objects)),
-    selectedIds:S2.selectedIds.slice()
+    mode: '2d',
+    logicalW: S2.logicalW, logicalH: S2.logicalH,
+    layerCounter: S2.layerCounter, activeLayerId: S2.activeLayerId,
+    showGrid2d: S2.showGrid2d, bgColor: S2.bgColor,
+    layers,
+    objects: JSON.parse(JSON.stringify(S2.objects)),
+    selectedIds: S2.selectedIds.slice()
   };
 }
+
 function apply2D(snap) {
-  S2.logicalW = snap.logicalW; S2.logicalH = snap.logicalH;
+  S2.logicalW = snap.logicalW;
+  S2.logicalH = snap.logicalH;
   S2.layerCounter = snap.layerCounter;
   S2.showGrid2d = snap.showGrid2d;
   S2.bgColor = snap.bgColor || '#ffffff';
+
   canvas2d.width = Math.round(S2.logicalW * S2.dpr);
   canvas2d.height = Math.round(S2.logicalH * S2.dpr);
   canvas2d.style.width = S2.logicalW + 'px';
   canvas2d.style.height = S2.logicalH + 'px';
-  ctx2d.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+  ctx2d.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+
   S2.layers = snap.layers.map(s => {
     const c = document.createElement('canvas');
-    c.width = s.data.width; c.height = s.data.height;
-    const cx = c.getContext('2d',{willReadFrequently:true});
-    cx.putImageData(s.data,0,0);
-    cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
-    return { id:s.id, name:s.name, visible:s.visible, canvas:c, ctx:cx, _thumbDirty:true };
+    c.width = Math.round(S2.logicalW * S2.dpr);
+    c.height = Math.round(S2.logicalH * S2.dpr);
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    const tmp = document.createElement('canvas');
+    tmp.width = s.data.width;
+    tmp.height = s.data.height;
+    tmp.getContext('2d').putImageData(s.data, 0, 0);
+    cx.drawImage(tmp, 0, 0, S2.logicalW * S2.dpr, S2.logicalH * S2.dpr);
+    cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
+    return { id: s.id, name: s.name, visible: s.visible, canvas: c, ctx: cx, _thumbDirty: true };
   });
   S2.activeLayerId = snap.activeLayerId;
   if (!S2.layers.find(l => l.id === S2.activeLayerId) && S2.layers.length) {
-    S2.activeLayerId = S2.layers[S2.layers.length-1].id;
+    S2.activeLayerId = S2.layers[S2.layers.length - 1].id;
   }
   S2.objects = JSON.parse(JSON.stringify(snap.objects));
-  S2.selectedIds = (snap.selectedIds||[]).filter(id => S2.objects.find(o => o.id===id));
-  renderLayersList(); renderObjects(); composite2D(); fit2DToStage();
+  S2.selectedIds = (snap.selectedIds || []).filter(id => S2.objects.find(o => o.id === id));
+  renderLayersList();
+  renderObjects();
+  composite2D();
+  fit2DToStage();
 }
 
 function createLayer(name) {
@@ -704,8 +715,8 @@ function createLayer(name) {
   const c = document.createElement('canvas');
   c.width = Math.round(S2.logicalW * S2.dpr);
   c.height = Math.round(S2.logicalH * S2.dpr);
-  const cx = c.getContext('2d',{willReadFrequently:true});
-  cx.setTransform(S2.dpr,0,0,S2.dpr,0,0);
+  const cx = c.getContext('2d', { willReadFrequently: true });
+  cx.setTransform(S2.dpr, 0, 0, S2.dpr, 0, 0);
   const layer = { id:'layer_'+S2.layerCounter, name:name||('Слой '+S2.layerCounter), visible:true, canvas:c, ctx:cx, _thumbDirty:true };
   S2.layers.push(layer);
   S2.activeLayerId = layer.id;
@@ -807,9 +818,10 @@ canvas2d.addEventListener('pointerdown', e => {
   if (tool === 'fill') {
     const p = getCanvasPos2D(e);
     History.begin();
-    try { floodFill2D(p.x, p.y, S2.color); }
+    let ok = false;
+    try { floodFill2D(p.x, p.y, S2.color); ok = true; }
     catch (err) { console.error(err); toast('Ошибка заливки','⚠️'); }
-    History.commit();
+    if (ok) History.commit(); else History.cancel();
     return;
   }
   const isBrush = ['brush','pencil','marker','spray','eraser'].includes(tool);
@@ -971,14 +983,16 @@ function floodFill2D(x, y, hexColor) {
   const px = Math.round(x*S2.dpr), py = Math.round(y*S2.dpr);
   const W = canvas2d.width, H = canvas2d.height;
   if (px<0 || py<0 || px>=W || py>=H) return;
-  const compData = ctx2d.getImageData(0,0,W,H).data;
+
   const layerImg = layer.ctx.getImageData(0,0,W,H);
   const layerData = layerImg.data;
   const ti = (py*W+px)*4;
-  const tr = compData[ti], tg = compData[ti+1], tb = compData[ti+2], ta = compData[ti+3];
+  const tr = layerData[ti], tg = layerData[ti+1], tb = layerData[ti+2], ta = layerData[ti+3];
+
   const m = hexColor.replace('#','').match(/.{2}/g);
   const nr = parseInt(m[0],16), ng = parseInt(m[1],16), nb = parseInt(m[2],16);
   if (tr===nr && tg===ng && tb===nb && ta===255) return;
+
   const tol = 25;
   const visited = new Uint8Array(W*H);
   const stack = new Int32Array(W*H);
@@ -986,13 +1000,14 @@ function floodFill2D(x, y, hexColor) {
   stack[sp++] = py*W+px;
   let painted = 0;
   const MAX = W*H;
+
   while (sp>0 && painted<MAX) {
     const idx = stack[--sp];
     if (visited[idx]) continue;
     visited[idx] = 1;
     const ci = idx*4;
-    if (Math.abs(compData[ci]-tr)>tol || Math.abs(compData[ci+1]-tg)>tol ||
-        Math.abs(compData[ci+2]-tb)>tol || Math.abs(compData[ci+3]-ta)>tol) continue;
+    if (Math.abs(layerData[ci]-tr)>tol || Math.abs(layerData[ci+1]-tg)>tol ||
+        Math.abs(layerData[ci+2]-tb)>tol || Math.abs(layerData[ci+3]-ta)>tol) continue;
     layerData[ci]=nr; layerData[ci+1]=ng; layerData[ci+2]=nb; layerData[ci+3]=255;
     painted++;
     const cx = idx%W, cy = (idx/W)|0;
@@ -1533,6 +1548,7 @@ function redo() {
   updateUndoButtons(); updateMemInfo();
   toast('Возвращено', '↷');
 }
+
 function savePNG() {
   if (busy) return;
   setBusy(true, 'Сохранение...');
@@ -1574,9 +1590,10 @@ function savePNG() {
         S3.camera.aspect = 1920/1080;
         S3.camera.updateProjectionMatrix();
         S3.renderer.render(S3.scene, S3.camera);
+        const dataUrl = S3.renderer.domElement.toDataURL('image/png');
         const link = document.createElement('a');
         link.download = 'fireland_3d_' + Date.now() + '.png';
-        link.href = S3.renderer.domElement.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
         S3.renderer.setPixelRatio(prevPR);
         S3.renderer.setSize(prevSize.x, prevSize.y, false);
@@ -1593,6 +1610,7 @@ function savePNG() {
     }
   }, 50);
 }
+
 function saveProject() {
   setBusy(true, 'Сохранение проекта...');
   try {
@@ -2064,9 +2082,10 @@ function bindAll() {
       else resize3D();
     }, 300);
   });
-  stageWrap.addEventListener('wheel', e => {
+  document.addEventListener('wheel', (e) => {
     if (currentMode !== '2d') return;
     if (e.target.closest('.panel-right') || e.target.closest('.panel-left')) return;
+    if (!e.target.closest('#stageWrap')) return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     S2.zoom = Math.max(0.1, Math.min(5, S2.zoom * delta));

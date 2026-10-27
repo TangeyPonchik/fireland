@@ -1,7 +1,3 @@
-/* ============================================================
-   MUSIBOX PRO — 40 треков · 6 категорий · 4 сцены · секвенсор
-   ============================================================ */
-
 (function() {
 'use strict';
 
@@ -20,15 +16,16 @@ const DEFAULT_VOL = 0.7;
 const DEFAULT_CUTOFF = 20000;
 const PREVIEW_SECONDS = 4;
 
-/* ═══════════════════ PRNG ═══════════════════ */
-let __prngState = 0x9E3779B9 >>> 0;
-function resetSeed(s) { __prngState = (s >>> 0) || 0x9E3779B9; }
-function rnd() {
-  __prngState = (__prngState + 0x6D2B79F5) >>> 0;
-  let t = __prngState;
-  t = Math.imul(t ^ (t >>> 15), t | 1);
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+/* ═══════════════════ ЛОКАЛЬНЫЙ PRNG ═══════════════════ */
+function makePrng(seed) {
+  let s = (seed >>> 0) || 0x9E3779B9;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 function seedFromString(str) {
   let h = 2166136261 >>> 0;
@@ -38,7 +35,6 @@ function seedFromString(str) {
   }
   return h >>> 0;
 }
-const noise = () => rnd() * 2 - 1;
 
 /* ═══════════════════ НОТЫ ═══════════════════ */
 const N = {
@@ -188,6 +184,8 @@ function makeReverbIR(ctx, dur, decay) {
   const sr = ctx.sampleRate;
   const len = Math.floor(sr * dur);
   const ir = ctx.createBuffer(2, len, sr);
+  const rng = makePrng(0xDEADBEEF);
+  const noise = () => rng() * 2 - 1;
   for (let ch = 0; ch < 2; ch++) {
     const data = ir.getChannelData(ch);
     for (let i = 0; i < len; i++) {
@@ -200,8 +198,8 @@ function makeReverbIR(ctx, dur, decay) {
   return ir;
 }
 
-/* ═══════════════════ ГЕНЕРАТОРЫ ═══════════════════ */
-function genMelody(ctx, len, opts) {
+/* ═══════════════════ ГЕНЕРАТОРЫ (с локальным rng) ═══════════════════ */
+function genMelody(ctx, len, opts, rng) {
   const notes = opts.notes;
   const beats = opts.beats;
   const wave = opts.wave || 'saw';
@@ -262,7 +260,7 @@ function genMelody(ctx, len, opts) {
           s = Math.tanh(saw * 2.2) * 0.6 + Math.sin(p1 * 2) * 0.2 + Math.sin(p1 * 3) * 0.1;
         } else if (wave === 'air') {
           p1 += TAU * f / sr;
-          s = Math.sin(p1) * 0.75 + noise() * 0.06 * Math.exp(-t * 1.5);
+          s = Math.sin(p1) * 0.75 + (rng() * 2 - 1) * 0.06 * Math.exp(-t * 1.5);
         }
         if (filter > 0) {
           const a = (TAU * filter / sr) / (1 + TAU * filter / sr);
@@ -280,11 +278,12 @@ function genMelody(ctx, len, opts) {
   return makeStereo(ctx, mono, pan);
 }
 
-function genDrum(ctx, len, opts) {
+function genDrum(ctx, len, opts, rng) {
   const hits = opts.hits;
   const kind = opts.kind || 'kick';
   const pan = opts.pan || 0;
   const sr = ctx.sampleRate;
+  const noise = () => rng() * 2 - 1;
   const mono = new Float32Array(len);
   const b = bars(len, sr);
   for (let bar = 0; bar < b.totalBars; bar++) {
@@ -367,7 +366,7 @@ function genDrum(ctx, len, opts) {
   return makeStereo(ctx, mono, pan);
 }
 
-function genChordPad(ctx, len, opts) {
+function genChordPad(ctx, len, opts, rng) {
   const notes = opts.notes;
   const attack = opts.attack || 0.25;
   const reverb = opts.reverb || 0;
@@ -378,11 +377,11 @@ function genChordPad(ctx, len, opts) {
   for (let i = 0; i < notes.length; i++) {
     const f = notes[i];
     if (detune > 0) {
-      voices.push({ f: f * (1 - detune), p: rnd() * TAU, g: 0.4, ch: 0 });
-      voices.push({ f: f * (1 + detune), p: rnd() * TAU, g: 0.4, ch: 1 });
+      voices.push({ f: f * (1 - detune), p: rng() * TAU, g: 0.4, ch: 0 });
+      voices.push({ f: f * (1 + detune), p: rng() * TAU, g: 0.4, ch: 1 });
     } else {
-      voices.push({ f: f, p: rnd() * TAU, g: 0.5, ch: 0 });
-      voices.push({ f: f, p: rnd() * TAU, g: 0.5, ch: 1 });
+      voices.push({ f: f, p: rng() * TAU, g: 0.5, ch: 0 });
+      voices.push({ f: f, p: rng() * TAU, g: 0.5, ch: 1 });
     }
   }
   const L = new Float32Array(len);
@@ -418,93 +417,93 @@ function genChordPad(ctx, len, opts) {
   return buf;
 }
 
-/* ═══════════════════ 40 ТРЕКОВ ═══════════════════ */
+/* ═══════════════════ 40 ТРЕКОВ (используют локальный rng) ═══════════════════ */
 const TRACKS = {
-  kick: { label: 'KICK', color: '#ff6b6b', cat: 'beat', emoji: '🥁', desc: 'Бочка 1 и 3', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'kick', hits: [{ t: 0 }, { t: 2 }] });
+  kick: { label: 'KICK', color: '#ff6b6b', cat: 'beat', emoji: '🥁', desc: 'Бочка 1 и 3', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'kick', hits: [{ t: 0 }, { t: 2 }] }, rng);
   }},
-  snare: { label: 'SNARE', color: '#ffa94d', cat: 'beat', emoji: '🥁', desc: 'Малый 2 и 4', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'snare', hits: [{ t: 1 }, { t: 3 }] });
+  snare: { label: 'SNARE', color: '#ffa94d', cat: 'beat', emoji: '🥁', desc: 'Малый 2 и 4', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'snare', hits: [{ t: 1 }, { t: 3 }] }, rng);
   }},
-  hihat: { label: 'HIHAT', color: '#ffd43b', cat: 'beat', emoji: '🎩', desc: 'Хэт 1/8', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'hat', hits: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map(function(t) { return { t: t, a: t % 1 === 0 ? 1 : 0.65 }; }) });
+  hihat: { label: 'HIHAT', color: '#ffd43b', cat: 'beat', emoji: '🎩', desc: 'Хэт 1/8', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'hat', hits: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map(function(t) { return { t: t, a: t % 1 === 0 ? 1 : 0.65 }; }) }, rng);
   }},
-  clap: { label: 'CLAP', color: '#e8590c', cat: 'beat', emoji: '👏', desc: 'Хлопок 2 и 4', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'clap', hits: [{ t: 1 }, { t: 3 }] });
+  clap: { label: 'CLAP', color: '#e8590c', cat: 'beat', emoji: '👏', desc: 'Хлопок 2 и 4', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'clap', hits: [{ t: 1 }, { t: 3 }] }, rng);
   }},
-  tom: { label: 'TOM', color: '#ff922b', cat: 'beat', emoji: '🥁', desc: 'Том 2 и 4', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'tom', hits: [{ t: 1, f: 90 }, { t: 3, f: 90 }] });
+  tom: { label: 'TOM', color: '#ff922b', cat: 'beat', emoji: '🥁', desc: 'Том 2 и 4', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'tom', hits: [{ t: 1, f: 90 }, { t: 3, f: 90 }] }, rng);
   }},
-  rim: { label: 'RIM', color: '#fab005', cat: 'beat', emoji: '🥁', desc: 'Римшот 8-е', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'rim', hits: [0.5, 1.5, 2.5, 3.5].map(function(t) { return { t: t }; }) });
+  rim: { label: 'RIM', color: '#fab005', cat: 'beat', emoji: '🥁', desc: 'Римшот 8-е', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'rim', hits: [0.5, 1.5, 2.5, 3.5].map(function(t) { return { t: t }; }) }, rng);
   }},
-  shaker: { label: 'SHAKER', color: '#ffe066', cat: 'beat', emoji: '🥚', desc: 'Шейкер 1/16', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'shaker', hits: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75].map(function(t) { return { t: t, a: t % 0.5 === 0 ? 1 : 0.6 }; }) });
+  shaker: { label: 'SHAKER', color: '#ffe066', cat: 'beat', emoji: '🥚', desc: 'Шейкер 1/16', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'shaker', hits: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75].map(function(t) { return { t: t, a: t % 0.5 === 0 ? 1 : 0.6 }; }) }, rng);
   }},
-  crash: { label: 'CRASH', color: '#fcc419', cat: 'beat', emoji: '💥', desc: 'Крэш на 1', gen: function(ctx, len) {
-    return genDrum(ctx, len, { kind: 'crash', hits: [{ t: 0 }] });
-  }},
-
-  lead: { label: 'LEAD', color: '#6ee7ff', cat: 'melody', emoji: '🎤', desc: 'Лид-пульс', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.A4, N.C5], beats: [0,1,2,3], wave: 'square', env: [0.01,0.15,0.65,0.2], drive: 1.3, reverb: 0.15 });
-  }},
-  pluck: { label: 'PLUCK', color: '#0c8599', cat: 'melody', emoji: '🎸', desc: 'Плак-щипок', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.E4], beats: [0,1,2,3], wave: 'tri', env: [0.005,0.5,0.15,0.4], drive: 1.2 });
-  }},
-  bell: { label: 'BELL', color: '#66d9e8', cat: 'melody', emoji: '🔔', desc: 'FM-колокол', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.A5], beats: [0,2], wave: 'bell', env: [0.005,0.3,0.3,0.6], reverb: 0.3 });
-  }},
-  marimba: { label: 'MARIMBA', color: '#67e8f9', cat: 'melody', emoji: '🎵', desc: 'Маримба 1/8', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.A4, N.G4, N.E4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.4,0.2,0.4], reverb: 0.15 });
-  }},
-  arp: { label: 'ARP', color: '#3bc9db', cat: 'melody', emoji: '🎹', desc: 'Арпеджио 1/8', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.2,0.5,0.3], drive: 1.3, reverb: 0.15 });
-  }},
-  glass: { label: 'GLASS', color: '#cffafe', cat: 'melody', emoji: '🥂', desc: 'FM-стекло', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.C6, N.E6, N.G5, N.E6], beats: [0,1,2,3], wave: 'bell', env: [0.005,0.3,0.3,0.6], reverb: 0.4 });
-  }},
-  musicbox: { label: 'MBOX', color: '#a5f3fc', cat: 'melody', emoji: '🎁', desc: 'Шкатулка', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.G5, N.E5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], reverb: 0.3 });
-  }},
-  flute: { label: 'FLUTE', color: '#7dd3fc', cat: 'melody', emoji: '🪈', desc: 'Флейта', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.C5, N.D5, N.E5, N.G5, N.E5, N.D5, N.C5, N.A4], beats: [0,1,2,3], wave: 'air', env: [0.08,0.15,0.8,0.15], vibrato: 0.012, reverb: 0.25 });
+  crash: { label: 'CRASH', color: '#fcc419', cat: 'beat', emoji: '💥', desc: 'Крэш на 1', gen: function(ctx, len, rng) {
+    return genDrum(ctx, len, { kind: 'crash', hits: [{ t: 0 }] }, rng);
   }},
 
-  bass: { label: 'BASS', color: '#51cf66', cat: 'bass', emoji: '🎸', desc: 'Бас-пила', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A2, N.A2, N.C3, N.G2], beats: [0,1,2,3], wave: 'sine', env: [0.02,0.1,0.85,0.12], drive: 1.2 });
+  lead: { label: 'LEAD', color: '#6ee7ff', cat: 'melody', emoji: '🎤', desc: 'Лид-пульс', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.A4, N.C5], beats: [0,1,2,3], wave: 'square', env: [0.01,0.15,0.65,0.2], drive: 1.3, reverb: 0.15 }, rng);
   }},
-  sub: { label: 'SUB', color: '#2f9e44', cat: 'bass', emoji: '🎸', desc: 'Саб A1/G1', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.C2], beats: [0,2], wave: 'sine', env: [0.05,0.1,0.9,0.15] });
+  pluck: { label: 'PLUCK', color: '#0c8599', cat: 'melody', emoji: '🎸', desc: 'Плак-щипок', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.E4], beats: [0,1,2,3], wave: 'tri', env: [0.005,0.5,0.15,0.4], drive: 1.2 }, rng);
   }},
-  acidbass: { label: 'ACID', color: '#69db7c', cat: 'bass', emoji: '🎛️', desc: 'TB-303', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A2, N.C3, N.D3, N.E3, N.D3, N.C3], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.1,0.6,0.3], filter: 2200, drive: 2 });
+  bell: { label: 'BELL', color: '#66d9e8', cat: 'melody', emoji: '🔔', desc: 'FM-колокол', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.A5], beats: [0,2], wave: 'bell', env: [0.005,0.3,0.3,0.6], reverb: 0.3 }, rng);
   }},
-  deepbass: { label: 'DEEP', color: '#37b24d', cat: 'bass', emoji: '🎸', desc: 'Глубокий саб', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.1,0.9,0.15], drive: 1.1 });
+  marimba: { label: 'MARIMBA', color: '#67e8f9', cat: 'melody', emoji: '🎵', desc: 'Маримба 1/8', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.C4, N.E4, N.G4, N.A4, N.G4, N.E4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.4,0.2,0.4], reverb: 0.15 }, rng);
   }},
-  bass808: { label: '808', color: '#7c3aed', cat: 'bass', emoji: '🔊', desc: '808 A1/C2', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A1, N.C2, N.A1, 49], beats: [0,2], wave: 'sine', env: [0.02,0.05,0.9,0.2], drive: 1.4 });
+  arp: { label: 'ARP', color: '#3bc9db', cat: 'melody', emoji: '🎹', desc: 'Арпеджио 1/8', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.2,0.5,0.3], drive: 1.3, reverb: 0.15 }, rng);
   }},
-  screw808: { label: 'SCREW', color: '#b45309', cat: 'bass', emoji: '🔊', desc: 'Замедленный 808', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A1, 49, N.E2, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.08,0.9,0.2], drive: 1.6 });
+  glass: { label: 'GLASS', color: '#cffafe', cat: 'melody', emoji: '🥂', desc: 'FM-стекло', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.C6, N.E6, N.G5, N.E6], beats: [0,1,2,3], wave: 'bell', env: [0.005,0.3,0.3,0.6], reverb: 0.4 }, rng);
+  }},
+  musicbox: { label: 'MBOX', color: '#a5f3fc', cat: 'melody', emoji: '🎁', desc: 'Шкатулка', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.G5, N.E5, N.C5, N.A4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], reverb: 0.3 }, rng);
+  }},
+  flute: { label: 'FLUTE', color: '#7dd3fc', cat: 'melody', emoji: '🪈', desc: 'Флейта', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.C5, N.D5, N.E5, N.G5, N.E5, N.D5, N.C5, N.A4], beats: [0,1,2,3], wave: 'air', env: [0.08,0.15,0.8,0.15], vibrato: 0.012, reverb: 0.25 }, rng);
   }},
 
-  voxah: { label: 'VOX AH', color: '#5c7cfa', cat: 'voice', emoji: '🎤', desc: 'Гласная «А»', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], beats: [1,3], wave: 'sine', env: [0.1,0.2,0.7,0.25], vibrato: 0.02, reverb: 0.25 });
+  bass: { label: 'BASS', color: '#51cf66', cat: 'bass', emoji: '🎸', desc: 'Бас-пила', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A2, N.A2, N.C3, N.G2], beats: [0,1,2,3], wave: 'sine', env: [0.02,0.1,0.85,0.12], drive: 1.2 }, rng);
   }},
-  voxhey: { label: 'HEY', color: '#9775fa', cat: 'voice', emoji: '🎤', desc: '«ХЭЙ» на 1 и 3', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A4, N.A4, N.C5, N.A4], beats: [0,2], wave: 'sine', env: [0.02,0.15,0.5,0.3], vibrato: 0.015, reverb: 0.2 });
+  sub: { label: 'SUB', color: '#2f9e44', cat: 'bass', emoji: '🎸', desc: 'Саб A1/G1', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.C2], beats: [0,2], wave: 'sine', env: [0.05,0.1,0.9,0.15] }, rng);
   }},
-  choir: { label: 'CHOIR', color: '#748ffc', cat: 'voice', emoji: '🎤', desc: 'Хор Am7', gen: function(ctx, len) {
-    return genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], attack: 0.35, reverb: 0.28, detune: 0.005 });
+  acidbass: { label: 'ACID', color: '#69db7c', cat: 'bass', emoji: '🎛️', desc: 'TB-303', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A2, N.C3, N.D3, N.E3, N.D3, N.C3], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'saw', env: [0.005,0.1,0.6,0.3], filter: 2200, drive: 2 }, rng);
   }},
-  angel: { label: 'ANGEL', color: '#c4b5fd', cat: 'voice', emoji: '😇', desc: '12 голосов + реверб', gen: function(ctx, len) {
-    return genChordPad(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.C6], attack: 0.35, reverb: 0.32, detune: 0.004 });
+  deepbass: { label: 'DEEP', color: '#37b24d', cat: 'bass', emoji: '🎸', desc: 'Глубокий саб', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A1, N.A1, 49, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.1,0.9,0.15], drive: 1.1 }, rng);
   }},
-  demon: { label: 'DEMON', color: '#4c1d95', cat: 'voice', emoji: '👹', desc: 'Sub-octave', gen: function(ctx, len) {
-    return genChordPad(ctx, len, { notes: [N.A2, N.E3, N.A3, N.C4], attack: 0.25, reverb: 0.22, detune: 0.005, lp: 1800 });
+  bass808: { label: '808', color: '#7c3aed', cat: 'bass', emoji: '🔊', desc: '808 A1/C2', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A1, N.C2, N.A1, 49], beats: [0,2], wave: 'sine', env: [0.02,0.05,0.9,0.2], drive: 1.4 }, rng);
   }},
-  robot: { label: 'ROBOT', color: '#a78bfa', cat: 'voice', emoji: '🤖', desc: 'Ring + LFSR', gen: function(ctx, len) {
+  screw808: { label: 'SCREW', color: '#b45309', cat: 'bass', emoji: '🔊', desc: 'Замедленный 808', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A1, 49, N.E2, N.A1], beats: [0,2], wave: 'sine', env: [0.03,0.08,0.9,0.2], drive: 1.6 }, rng);
+  }},
+
+  voxah: { label: 'VOX AH', color: '#5c7cfa', cat: 'voice', emoji: '🎤', desc: 'Гласная «А»', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], beats: [1,3], wave: 'sine', env: [0.1,0.2,0.7,0.25], vibrato: 0.02, reverb: 0.25 }, rng);
+  }},
+  voxhey: { label: 'HEY', color: '#9775fa', cat: 'voice', emoji: '🎤', desc: '«ХЭЙ» на 1 и 3', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A4, N.A4, N.C5, N.A4], beats: [0,2], wave: 'sine', env: [0.02,0.15,0.5,0.3], vibrato: 0.015, reverb: 0.2 }, rng);
+  }},
+  choir: { label: 'CHOIR', color: '#748ffc', cat: 'voice', emoji: '🎤', desc: 'Хор Am7', gen: function(ctx, len, rng) {
+    return genChordPad(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4], attack: 0.35, reverb: 0.28, detune: 0.005 }, rng);
+  }},
+  angel: { label: 'ANGEL', color: '#c4b5fd', cat: 'voice', emoji: '😇', desc: '12 голосов + реверб', gen: function(ctx, len, rng) {
+    return genChordPad(ctx, len, { notes: [N.C5, N.E5, N.G5, N.A5, N.C6], attack: 0.35, reverb: 0.32, detune: 0.004 }, rng);
+  }},
+  demon: { label: 'DEMON', color: '#4c1d95', cat: 'voice', emoji: '👹', desc: 'Sub-octave', gen: function(ctx, len, rng) {
+    return genChordPad(ctx, len, { notes: [N.A2, N.E3, N.A3, N.C4], attack: 0.25, reverb: 0.22, detune: 0.005, lp: 1800 }, rng);
+  }},
+  robot: { label: 'ROBOT', color: '#a78bfa', cat: 'voice', emoji: '🤖', desc: 'Ring + LFSR', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
     const notes = [N.A1, N.C2, N.E2, 49];
@@ -532,9 +531,10 @@ const TRACKS = {
     return makeStereo(ctx, b.d, 0);
   }},
 
-  riser: { label: 'RISER', color: '#cc5de8', cat: 'fx', emoji: '📈', desc: 'Нарастание', gen: function(ctx, len) {
+  riser: { label: 'RISER', color: '#cc5de8', cat: 'fx', emoji: '📈', desc: 'Нарастание', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
+    const noise = () => rng() * 2 - 1;
     for (let bar = 0; bar < b2.totalBars; bar++) {
       const off = Math.floor(bar * b2.barS + 3 * BEAT * b.sr);
       const sLen = Math.min(Math.floor(b.sr * BEAT * 0.95), len - off);
@@ -552,7 +552,7 @@ const TRACKS = {
     applyFade(b.d, b.sr, 4);
     return makeStereo(ctx, b.d, 0.2);
   }},
-  sweep: { label: 'SWEEP', color: '#b197fc', cat: 'fx', emoji: '🌀', desc: 'Свип 5кГц→100', gen: function(ctx, len) {
+  sweep: { label: 'SWEEP', color: '#b197fc', cat: 'fx', emoji: '🌀', desc: 'Свип 5кГц→100', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     let p = 0;
     for (let i = 0; i < len; i++) {
@@ -566,9 +566,10 @@ const TRACKS = {
     applyFade(b.d, b.sr, 6);
     return makeStereo(ctx, b.d, 0);
   }},
-  impact: { label: 'IMPACT', color: '#5f3dc4', cat: 'fx', emoji: '💥', desc: 'Бум + реверб', gen: function(ctx, len) {
+  impact: { label: 'IMPACT', color: '#5f3dc4', cat: 'fx', emoji: '💥', desc: 'Бум + реверб', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
+    const noise = () => rng() * 2 - 1;
     for (let bar = 0; bar < b2.totalBars; bar++) {
       const off = Math.floor(bar * b2.barS);
       const n = Math.min(Math.floor(b.sr * 0.9), len - off);
@@ -586,7 +587,7 @@ const TRACKS = {
     applyFade(b.d, b.sr, 5);
     return makeStereo(ctx, b.d, 0);
   }},
-  zap: { label: 'ZAP', color: '#d0bfff', cat: 'fx', emoji: '⚡', desc: 'Зап-пиу на 1 и 3', gen: function(ctx, len) {
+  zap: { label: 'ZAP', color: '#d0bfff', cat: 'fx', emoji: '⚡', desc: 'Зап-пиу на 1 и 3', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
     for (let bar = 0; bar < b2.totalBars; bar++) {
@@ -606,15 +607,16 @@ const TRACKS = {
     applyFade(b.d, b.sr, 3);
     return makeStereo(ctx, b.d, 0);
   }},
-  glitch: { label: 'GLITCH', color: '#f783ac', cat: 'fx', emoji: '📺', desc: 'Bit-crush', gen: function(ctx, len) {
+  glitch: { label: 'GLITCH', color: '#f783ac', cat: 'fx', emoji: '📺', desc: 'Bit-crush', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
+    const noise = () => rng() * 2 - 1;
     for (let bar = 0; bar < b2.totalBars; bar++) {
       for (let k = 0; k < 10; k++) {
-        const step = Math.floor(rnd() * 16);
+        const step = Math.floor(rng() * 16);
         const off = Math.floor(bar * b2.barS + step * (BEAT / 4) * b.sr);
         const n = Math.floor(b.sr * 0.025);
-        const bc = 4 + Math.floor(rnd() * 8);
+        const bc = 4 + Math.floor(rng() * 8);
         for (let i = 0; i < n && off + i < len; i++) {
           const t = i / b.sr;
           const raw = noise() * Math.exp(-t * 90) * 0.7;
@@ -627,9 +629,10 @@ const TRACKS = {
     applyFade(b.d, b.sr, 2);
     return makeStereo(ctx, b.d, 0.25);
   }},
-  noise: { label: 'NOISE', color: '#9775fa', cat: 'fx', emoji: '📡', desc: 'Шум-выброс', gen: function(ctx, len) {
+  noise: { label: 'NOISE', color: '#9775fa', cat: 'fx', emoji: '📡', desc: 'Шум-выброс', gen: function(ctx, len, rng) {
     const b = toBuf(ctx, len);
     const b2 = bars(len, b.sr);
+    const noise = () => rng() * 2 - 1;
     for (let bar = 0; bar < b2.totalBars; bar++) {
       const off = Math.floor(bar * b2.barS);
       const n = Math.floor(b.sr * 0.18);
@@ -645,23 +648,23 @@ const TRACKS = {
     return makeStereo(ctx, b.d, 0.15);
   }},
 
-  guzheng: { label: 'GUZHENG', color: '#dc2626', cat: 'world', emoji: '🎋', desc: 'Цитра пентатоника', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.D4, N.E4, N.G4, N.E4, N.D4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.2,0.4], reverb: 0.22 });
+  guzheng: { label: 'GUZHENG', color: '#dc2626', cat: 'world', emoji: '🎋', desc: 'Цитра пентатоника', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.D4, N.E4, N.G4, N.E4, N.D4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.2,0.4], reverb: 0.22 }, rng);
   }},
-  erhu: { label: 'ERHU', color: '#b91c1c', cat: 'world', emoji: '🎻', desc: 'Китайская скрипка', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.D5, N.C5, N.A4, N.G4, N.A4], beats: [0,1,2,3], wave: 'sine', env: [0.05,0.15,0.7,0.2], vibrato: 0.02, reverb: 0.2 });
+  erhu: { label: 'ERHU', color: '#b91c1c', cat: 'world', emoji: '🎻', desc: 'Китайская скрипка', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A4, N.C5, N.E5, N.D5, N.C5, N.A4, N.G4, N.A4], beats: [0,1,2,3], wave: 'sine', env: [0.05,0.15,0.7,0.2], vibrato: 0.02, reverb: 0.2 }, rng);
   }},
-  sax: { label: 'SAX', color: '#dc2626', cat: 'world', emoji: '🎷', desc: 'Саксофон — длинные', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.D3, N.E3, N.G3, N.A3, N.C4], beats: [{t:0,f:N.D3,d:0.9},{t:1,f:N.G3,d:1.4},{t:2.75,f:N.A3,d:0.5},{t:3.25,f:N.G3,d:0.35},{t:3.6,f:N.E3,d:0.35}], wave: 'reed', filter: 3200, env: [0.1,0.25,0.75,0.2], vibrato: 0.018, reverb: 0.25 });
+  sax: { label: 'SAX', color: '#dc2626', cat: 'world', emoji: '🎷', desc: 'Саксофон — длинные', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.D3, N.E3, N.G3, N.A3, N.C4], beats: [{t:0,f:N.D3,d:0.9},{t:1,f:N.G3,d:1.4},{t:2.75,f:N.A3,d:0.5},{t:3.25,f:N.G3,d:0.35},{t:3.6,f:N.E3,d:0.35}], wave: 'reed', filter: 3200, env: [0.1,0.25,0.75,0.2], vibrato: 0.018, reverb: 0.25 }, rng);
   }},
-  trumpet: { label: 'TRUMPET', color: '#f59e0b', cat: 'world', emoji: '🎺', desc: 'Труба — фанфары', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.C5, N.A5, N.E5], beats: [{t:0,f:N.A3,d:0.35},{t:0.5,f:N.C4,d:0.35},{t:1,f:N.E4,d:0.35},{t:1.75,f:N.G4,d:0.7},{t:2.5,f:N.A4,d:0.35},{t:3,f:N.C5,d:0.35},{t:3.5,f:N.A4,d:0.5}], wave: 'saw', filter: 4500, env: [0.02,0.1,0.7,0.15], drive: 1.8, reverb: 0.18 });
+  trumpet: { label: 'TRUMPET', color: '#f59e0b', cat: 'world', emoji: '🎺', desc: 'Труба — фанфары', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.C5, N.A5, N.E5], beats: [{t:0,f:N.A3,d:0.35},{t:0.5,f:N.C4,d:0.35},{t:1,f:N.E4,d:0.35},{t:1.75,f:N.G4,d:0.7},{t:2.5,f:N.A4,d:0.35},{t:3,f:N.C5,d:0.35},{t:3.5,f:N.A4,d:0.5}], wave: 'saw', filter: 4500, env: [0.02,0.1,0.7,0.15], drive: 1.8, reverb: 0.18 }, rng);
   }},
-  harp: { label: 'HARP', color: '#f472b6', cat: 'world', emoji: '🎵', desc: 'Арфа арпеджио', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], reverb: 0.28 });
+  harp: { label: 'HARP', color: '#f472b6', cat: 'world', emoji: '🎵', desc: 'Арфа арпеджио', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.A3, N.C4, N.E4, N.G4, N.A4, N.G4, N.E4, N.C4], beats: [0,0.5,1,1.5,2,2.5,3,3.5], wave: 'sine', env: [0.005,0.5,0.15,0.4], reverb: 0.28 }, rng);
   }},
-  violin: { label: 'VIOLIN', color: '#ec4899', cat: 'world', emoji: '🎻', desc: 'Скрипка с вибрато', gen: function(ctx, len) {
-    return genMelody(ctx, len, { notes: [N.G4, N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.E4], beats: [0,1,2,3], wave: 'saw', detune: 0.003, filter: 3500, env: [0.08,0.15,0.75,0.2], vibrato: 0.018, reverb: 0.22 });
+  violin: { label: 'VIOLIN', color: '#ec4899', cat: 'world', emoji: '🎻', desc: 'Скрипка с вибрато', gen: function(ctx, len, rng) {
+    return genMelody(ctx, len, { notes: [N.G4, N.A4, N.C5, N.D5, N.C5, N.A4, N.G4, N.E4], beats: [0,1,2,3], wave: 'saw', detune: 0.003, filter: 3500, env: [0.08,0.15,0.75,0.2], vibrato: 0.018, reverb: 0.22 }, rng);
   }}
 };
 
@@ -781,13 +784,13 @@ function useAudioManager() {
       const lp = await idbGet('loopPatterns');
       if (lp && typeof lp === 'object') setLoopPatterns(lp);
       const mv = await idbGet('masterVol');
-      if (typeof mv === 'number') setMasterVol(mv);
+      if (typeof mv === 'number') { setMasterVol(mv); masterVolRef.current = mv; }
       const rv = await idbGet('reverbOn');
       if (typeof rv === 'boolean') setReverbOn(rv);
     })();
   }, []);
 
-  // Сохранение в БД (debounce)
+  // Сохранение (debounce)
   useEffect(function() {
     if (Object.keys(volumes).length === 0) return;
     const t = setTimeout(function() { idbSet('volumes', volumes); }, 300);
@@ -815,7 +818,6 @@ function useAudioManager() {
     return function() { clearTimeout(t); };
   }, [reverbOn]);
 
-  // Инициализация контекста
   const initAudio = useCallback(async function() {
     if (ctxRef.current) {
       if (ctxRef.current.state === 'suspended') await ctxRef.current.resume();
@@ -852,7 +854,6 @@ function useAudioManager() {
     limiter.release.value = 0.08;
 
     const reverb = ctx.createConvolver();
-    resetSeed(seedFromString('reverb-ir-pro'));
     reverb.buffer = makeReverbIR(ctx, 2.2, 2.2);
     const reverbWet = ctx.createGain();
     reverbWet.gain.value = reverbOnRef.current ? 0.4 : 0;
@@ -879,7 +880,6 @@ function useAudioManager() {
     reverbWetRef.current = reverbWet;
   }, []);
 
-  // Обновление master/reverb
   useEffect(function() {
     if (!masterRef.current || !ctxRef.current) return;
     masterRef.current.gain.setTargetAtTime(masterVol, ctxRef.current.currentTime, 0.05);
@@ -889,16 +889,15 @@ function useAudioManager() {
     reverbWetRef.current.gain.setTargetAtTime(reverbOn ? 0.4 : 0, ctxRef.current.currentTime, 0.1);
   }, [reverbOn]);
 
-  // Генерация буфера
   const getBuffer = useCallback(function(key) {
     if (buffersRef.current[key]) return buffersRef.current[key];
     const ctx = ctxRef.current;
     const track = TRACKS[key];
     if (!ctx || !track) return null;
     const len = Math.floor(LOOP_SECONDS * ctx.sampleRate);
-    resetSeed(seedFromString(key + '|pro'));
     try {
-      buffersRef.current[key] = track.gen(ctx, len);
+      const rng = makePrng(seedFromString(key + '|pro'));
+      buffersRef.current[key] = track.gen(ctx, len, rng);
     } catch (e) {
       console.warn('Gen failed:', key, e);
       return null;
@@ -906,7 +905,6 @@ function useAudioManager() {
     return buffersRef.current[key];
   }, []);
 
-  // Создание источника
   const attachSource = useCallback(function(key, whenTime) {
     const ctx = ctxRef.current;
     if (!ctx) return;
@@ -938,9 +936,13 @@ function useAudioManager() {
     sourcesRef.current[key] = src;
     gainsRef.current[key] = g;
     filtersRef.current[key] = filt;
+
+    // Синхронизация loopStart: если стартуем в прошлом — сдвигаем
+    if (whenTime < loopStartRef.current) {
+      loopStartRef.current = whenTime;
+    }
   }, [getBuffer]);
 
-  // Стоп трека
   const stopSource = useCallback(function(key) {
     if (previewTimersRef.current[key]) {
       clearTimeout(previewTimersRef.current[key]);
@@ -968,7 +970,6 @@ function useAudioManager() {
     delete filtersRef.current[key];
   }, []);
 
-  // Применение mute/solo/vol к живому узлу
   const applyLiveGain = useCallback(function(key) {
     const g = gainsRef.current[key];
     if (!g || !ctxRef.current) return;
@@ -981,7 +982,6 @@ function useAudioManager() {
     g.gain.linearRampToValueAtTime(vol, now + 0.06);
   }, []);
 
-  // Start all
   const start = useCallback(async function() {
     await initAudio();
     const ctx = ctxRef.current;
@@ -999,12 +999,12 @@ function useAudioManager() {
     });
   }, [initAudio, attachSource]);
 
-  // Stop all
   const stop = useCallback(function() {
     setIsPlaying(false);
     Object.keys(sourcesRef.current).forEach(stopSource);
     Object.keys(previewTimersRef.current).forEach(function(k) {
       clearTimeout(previewTimersRef.current[k]);
+      delete previewTimersRef.current[k];
     });
     previewTimersRef.current = {};
     sourcesRef.current = {};
@@ -1017,17 +1017,14 @@ function useAudioManager() {
     lastLoopIdxRef.current = -1;
   }, [stopSource]);
 
-  // Cycle track: 1 клик — preview 4s, 2 — loop, 3 — off
   const cycleTrack = useCallback(function(key) {
     const active = activeTracksRef.current[key];
     const preview = previewTracksRef.current[key];
 
     if (active) {
-      // loop → off
       setActiveTracks(function(prev) { const n = Object.assign({}, prev); delete n[key]; return n; });
       stopSource(key);
     } else if (preview) {
-      // preview → loop
       if (previewTimersRef.current[key]) {
         clearTimeout(previewTimersRef.current[key]);
         delete previewTimersRef.current[key];
@@ -1035,7 +1032,6 @@ function useAudioManager() {
       setPreviewTracks(function(prev) { const n = Object.assign({}, prev); delete n[key]; return n; });
       setActiveTracks(function(prev) { const n = Object.assign({}, prev); n[key] = true; return n; });
     } else {
-      // off → preview
       if (!ctxRef.current) {
         initAudio().then(function() {
           setPreviewTracks(function(prev) { const n = Object.assign({}, prev); n[key] = true; return n; });
@@ -1048,10 +1044,7 @@ function useAudioManager() {
     }
 
     function schedulePreviewAttach(k) {
-      if (!isPlaying) {
-        // Если не играет — просто запускаем
-        if (ctxRef.current && ctxRef.current.state === 'suspended') ctxRef.current.resume();
-      }
+      if (ctxRef.current && ctxRef.current.state === 'suspended') ctxRef.current.resume();
       if (previewTimersRef.current[k]) clearTimeout(previewTimersRef.current[k]);
       previewTimersRef.current[k] = setTimeout(function() {
         delete previewTimersRef.current[k];
@@ -1064,9 +1057,8 @@ function useAudioManager() {
         stopSource(k);
       }, PREVIEW_SECONDS * 1000);
     }
-  }, [stopSource, initAudio, isPlaying]);
+  }, [stopSource, initAudio]);
 
-  // Синхронизация источников с состоянием
   useEffect(function() {
     if (!isPlaying || !ctxRef.current) return;
     const ctx = ctxRef.current;
@@ -1079,30 +1071,24 @@ function useAudioManager() {
         const timeToNext = LOOP_SECONDS - posInLoop;
         const isAlmost = timeToNext < 0.1;
         const whenTime = isAlmost ? ctx.currentTime + 0.02 : ctx.currentTime + timeToNext + 0.02;
-        pendingRef_check(key, whenTime);
+        setPendingTracks(function(prev) { const n = Object.assign({}, prev); n[key] = true; return n; });
+        const delay = Math.max(0, (whenTime - ctx.currentTime) * 1000) + 30;
+        setTimeout(function() {
+          setPendingTracks(function(prev) { const n = Object.assign({}, prev); delete n[key]; return n; });
+          setPendingProgress(function(prev) { const n = Object.assign({}, prev); delete n[key]; return n; });
+        }, delay);
         attachSource(key, whenTime);
       } else if (!want && existing) {
         stopSource(key);
       }
     });
-
-    function pendingRef_check(k, whenTime) {
-      setPendingTracks(function(prev) { const n = Object.assign({}, prev); n[k] = true; return n; });
-      const delay = Math.max(0, (whenTime - ctx.currentTime) * 1000) + 30;
-      setTimeout(function() {
-        setPendingTracks(function(prev) { const n = Object.assign({}, prev); delete n[k]; return n; });
-        setPendingProgress(function(prev) { const n = Object.assign({}, prev); delete n[k]; return n; });
-      }, delay);
-    }
   }, [activeTracks, previewTracks, isPlaying, attachSource, stopSource]);
 
-  // mute/solo/vol → живые узлы
   useEffect(function() {
     if (!isPlaying) return;
     Object.keys(sourcesRef.current).forEach(applyLiveGain);
   }, [mutedTracks, soloedTracks, volumes, isPlaying, applyLiveGain]);
 
-  // RAF-цикл: обновление currentBar + pendingProgress + секвенсор (глушение по тактам)
   useEffect(function() {
     if (!isPlaying) return;
     let raf;
@@ -1120,7 +1106,6 @@ function useAudioManager() {
         currentBarRef.current = curBar;
         setCurrentBar(curBar);
 
-        // Секвенсор: применить loopPatterns к живым источникам
         Object.keys(sourcesRef.current).forEach(function(key) {
           const pat = loopPatternsRef.current[key];
           if (!pat) return;
@@ -1137,7 +1122,6 @@ function useAudioManager() {
         });
       }
 
-      // Progress для pending
       const posInLoop = elapsed >= 0 ? (elapsed % LOOP_SECONDS) : 0;
       const remaining = 1 - (posInLoop / LOOP_SECONDS);
       setPendingProgress(function(prev) {
@@ -1153,14 +1137,12 @@ function useAudioManager() {
     return function() { cancelAnimationFrame(raf); };
   }, [isPlaying]);
 
-  // Изменение громкости
   const changeVolume = useCallback(function(key, val) {
     setVolumes(function(prev) { const n = Object.assign({}, prev); n[key] = val; return n; });
     volumesRef.current[key] = val;
     applyLiveGain(key);
   }, [applyLiveGain]);
 
-  // Изменение частоты
   const changeCutoff = useCallback(function(key, val) {
     setCutoffs(function(prev) { const n = Object.assign({}, prev); n[key] = val; return n; });
     cutoffsRef.current[key] = val;
@@ -1173,7 +1155,6 @@ function useAudioManager() {
     }
   }, []);
 
-  // Избранное
   const toggleFav = useCallback(function(key) {
     setFavorites(function(prev) {
       const n = new Set(prev);
@@ -1182,7 +1163,6 @@ function useAudioManager() {
     });
   }, []);
 
-  // Mute/Solo
   const toggleMute = useCallback(function(key) {
     setMutedTracks(function(prev) {
       const n = new Set(prev);
@@ -1191,6 +1171,7 @@ function useAudioManager() {
       return n;
     });
   }, []);
+
   const toggleSolo = useCallback(function(key) {
     setSoloedTracks(function(prev) {
       const n = new Set(prev);
@@ -1200,8 +1181,9 @@ function useAudioManager() {
     });
   }, []);
 
-  // Toggle loop dot (секвенсор)
+  /* toggleLoopDot — побочный эффект после setState */
   const toggleLoopDot = useCallback(function(key, index) {
+    let newArr;
     setLoopPatterns(function(prev) {
       const n = Object.assign({}, prev);
       let arr = n[key];
@@ -1209,10 +1191,14 @@ function useAudioManager() {
       arr = arr.slice();
       arr[index] = !arr[index];
       n[key] = arr;
-      // Применить прямо сейчас
+      newArr = arr;
+      return n;
+    });
+    if (newArr) {
+      loopPatternsRef.current[key] = newArr;
       const g = gainsRef.current[key];
       if (g && ctxRef.current) {
-        const isBarOn = arr[currentBarRef.current] !== false;
+        const isBarOn = newArr[currentBarRef.current] !== false;
         const baseVol = volumesRef.current[key] !== undefined ? volumesRef.current[key] : DEFAULT_VOL;
         let vol = isBarOn ? baseVol : 0;
         if (soloedRef.current.size > 0 && !soloedRef.current.has(key)) vol = 0;
@@ -1222,11 +1208,9 @@ function useAudioManager() {
         g.gain.setValueAtTime(g.gain.value, now);
         g.gain.linearRampToValueAtTime(vol, now + 0.05);
       }
-      return n;
-    });
+    }
   }, []);
 
-  // Reset all
   const resetAll = useCallback(function() {
     stop();
     setActiveTracks({});
@@ -1239,7 +1223,6 @@ function useAudioManager() {
     setVolumes(def);
   }, [stop]);
 
-  // Снимок текущего микса (для сцен)
   const snapshot = useCallback(function() {
     return {
       activeTracks: Object.assign({}, activeTracksRef.current),
@@ -1248,24 +1231,27 @@ function useAudioManager() {
     };
   }, []);
 
-  // Загрузка из снимка (для сцен)
+  /* loadSnapshot — заменяет, а не мержит */
   const loadSnapshot = useCallback(async function(snap) {
     stop();
     if (!snap) return;
-    setActiveTracks(snap.activeTracks || {});
-    activeTracksRef.current = snap.activeTracks || {};
-    setLoopPatterns(snap.loopPatterns || {});
-    loopPatternsRef.current = snap.loopPatterns || {};
-    if (snap.volumes) {
-      const v = Object.assign({}, volumesRef.current, snap.volumes);
-      setVolumes(v);
-      volumesRef.current = v;
-    }
+    const at = snap.activeTracks || {};
+    setActiveTracks(at);
+    activeTracksRef.current = at;
+    const lp = snap.loopPatterns || {};
+    setLoopPatterns(lp);
+    loopPatternsRef.current = lp;
+    const v = {};
+    Object.keys(TRACKS).forEach(function(k) {
+      v[k] = (snap.volumes && typeof snap.volumes[k] === 'number') ? snap.volumes[k] : DEFAULT_VOL;
+    });
+    setVolumes(v);
+    volumesRef.current = v;
     setPreviewTracks({});
+    previewTracksRef.current = {};
     await start();
   }, [stop, start]);
 
-  // Export/Import
   const exportMix = useCallback(function() {
     return {
       v: 1,
@@ -1278,9 +1264,12 @@ function useAudioManager() {
     };
   }, [favorites]);
 
+  /* importMix — сбрасывает preview и таймеры */
   const importMix = useCallback(async function(data) {
     if (!data) return;
     stop();
+    setPreviewTracks({});
+    previewTracksRef.current = {};
     if (data.activeTracks) {
       const at = {};
       Object.keys(data.activeTracks).forEach(function(k) {
@@ -1310,39 +1299,35 @@ function useAudioManager() {
     if (data.favorites && Array.isArray(data.favorites)) {
       setFavorites(new Set(data.favorites.filter(function(k) { return !!TRACKS[k]; })));
     }
-    if (typeof data.masterVol === 'number') setMasterVol(data.masterVol);
+    if (typeof data.masterVol === 'number') { setMasterVol(data.masterVol); masterVolRef.current = data.masterVol; }
     if (typeof data.reverbOn === 'boolean') setReverbOn(data.reverbOn);
     await start();
   }, [stop, start]);
 
-  // Запись через OfflineAudioContext (рендерит микс целиком)
+  /* renderMixToWav — с чанками, чтобы не фризить UI */
   const renderMixToWav = useCallback(async function(durationSeconds) {
     const active = activeTracksRef.current;
     const preview = previewTracksRef.current;
     const keys = Object.keys(TRACKS).filter(function(k) { return active[k] || preview[k]; });
     if (keys.length === 0) throw new Error('Нет активных треков');
 
-    // Генерируем буферы синхронно в offline-контексте
     const sampleRate = 44100;
     const totalLen = Math.floor(durationSeconds * sampleRate);
     const offline = new OfflineAudioContext(2, totalLen, sampleRate);
 
-    // Рендер каждого трека с учётом громкости и loopPatterns
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const track = TRACKS[key];
       const monoLen = Math.floor(LOOP_SECONDS * sampleRate);
-      resetSeed(seedFromString(key + '|pro'));
       let buffer;
       try {
-        // Используем ВРЕМЕННЫЙ контекст для генерации (генераторы не привязаны к ctx после генерации)
         const tmp = new OfflineAudioContext(2, monoLen, sampleRate);
-        buffer = track.gen(tmp, monoLen);
+        const rng = makePrng(seedFromString(key + '|pro'));
+        buffer = track.gen(tmp, monoLen, rng);
       } catch (e) {
         console.warn('Render fail:', key, e);
         continue;
       }
-      // Зацикливаем на всю длительность
       const src = offline.createBufferSource();
       src.buffer = buffer;
       src.loop = true;
@@ -1356,10 +1341,8 @@ function useAudioManager() {
       if (mutedRef.current.has(key)) vol = 0;
       g.gain.value = vol;
 
-      // loopPatterns: если массив — заглушаем на выключенных тактах
       const pat = loopPatternsRef.current[key];
       if (pat && Array.isArray(pat)) {
-        // Планируем gain для каждого такта
         g.gain.setValueAtTime(0, 0);
         const barSamples = Math.floor(ONE_BAR * sampleRate);
         let pos = 0;
@@ -1372,11 +1355,18 @@ function useAudioManager() {
 
       src.connect(filt).connect(g).connect(offline.destination);
       src.start(0);
+
+      if (i % 2 === 0) await new Promise(r => setTimeout(r, 0));
     }
 
-    // Ограничитель в конце
     const rendered = await offline.startRendering();
     return encodeWav(rendered);
+  }, []);
+
+  /* setMasterVol с синхронизацией ref */
+  const setMasterVolSafe = useCallback((v) => {
+    masterVolRef.current = v;
+    setMasterVol(v);
   }, []);
 
   return {
@@ -1385,7 +1375,7 @@ function useAudioManager() {
     masterVol, reverbOn,
     start, stop, cycleTrack, changeVolume, changeCutoff,
     toggleFav, toggleMute, toggleSolo, toggleLoopDot,
-    setMasterVol, setReverbOn, resetAll,
+    setMasterVol: setMasterVolSafe, setReverbOn, resetAll,
     snapshot, loadSnapshot, exportMix, importMix,
     renderMixToWav
   };
@@ -1422,9 +1412,7 @@ function encodeWav(audioBuffer) {
   view.setUint32(40, dataSize, true);
 
   const channels = [];
-  for (let ch = 0; ch < numChannels; ch++) {
-    channels.push(audioBuffer.getChannelData(ch));
-  }
+  for (let ch = 0; ch < numChannels; ch++) channels.push(audioBuffer.getChannelData(ch));
   let offset = 44;
   for (let i = 0; i < numFrames; i++) {
     for (let ch = 0; ch < numChannels; ch++) {
@@ -1535,9 +1523,7 @@ function SettingsPopup(props) {
   }, [props.onClose]);
 
   useEffect(function() {
-    const handler = function(e) {
-      if (e.key === 'Escape') props.onClose();
-    };
+    const handler = function(e) { if (e.key === 'Escape') props.onClose(); };
     document.addEventListener('keydown', handler);
     return function() { document.removeEventListener('keydown', handler); };
   }, [props.onClose]);
@@ -1635,21 +1621,15 @@ function RecordPopup(props) {
   const [rendering, setRendering] = useState(false);
 
   useEffect(function() {
-    return function() {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-    };
+    return function() { if (blobUrl) URL.revokeObjectURL(blobUrl); };
   }, [blobUrl]);
 
   const handleRender = async function() {
     setRendering(true);
     setStatus('⏳ Рендеринг...');
     setProgress(0);
-    // Прогресс-бар фейковый (рендер синхронный)
     let p = 0;
-    const iv = setInterval(function() {
-      p = Math.min(0.9, p + 0.1);
-      setProgress(p);
-    }, 100);
+    const iv = setInterval(function() { p = Math.min(0.9, p + 0.1); setProgress(p); }, 100);
 
     try {
       const wavBlob = await props.onRender(duration);
@@ -1708,7 +1688,18 @@ function SharePopup(props) {
   useEffect(function() {
     try {
       const mix = props.exportMix();
-      const json = JSON.stringify(mix);
+      // Компактный формат
+      const compact = {
+        a: Object.keys(mix.activeTracks).filter(function(k) { return mix.activeTracks[k]; }),
+        l: Object.keys(mix.loopPatterns).reduce(function(o, k) {
+          o[k] = mix.loopPatterns[k].map(function(x) { return x ? 1 : 0; }).join('');
+          return o;
+        }, {}),
+        v: mix.volumes,
+        m: mix.masterVol,
+        r: mix.reverbOn ? 1 : 0
+      };
+      const json = JSON.stringify(compact);
       const encoded = btoa(unescape(encodeURIComponent(json)));
       const base = window.location.href.split('#')[0];
       setUrl(base + '#mix=' + encoded);
@@ -1752,15 +1743,14 @@ function GuidePopup(props) {
         <div class="guide__item"><b>1 клик</b> по плитке — превью 4 секунды, потом само выключится</div>
         <div class="guide__item"><b>2 клика</b> (пока играет превью) — зацикливается навсегда</div>
         <div class="guide__item"><b>3 клика</b> — выключить трек</div>
-        <div class="guide__item">💡 Клик по плитке — это не toggle, а трёхпозиционный переключатель. Так можно послушать трек, не зацикливаясь на нём.</div>
+        <div class="guide__item">💡 Клик по плитке — это не toggle, а трёхпозиционный переключатель.</div>
       </div>
 
       <div class="guide__section">
         <h3>Секвенсор (4 такта)</h3>
         <div class="guide__item">Внизу экрана — панель <b>🎬 Секвенсор</b>. Каждая строка = трек, 4 клетки = 4 такта.</div>
         <div class="guide__item">Клик по клетке — включить/выключить трек на этом такте.</div>
-        <div class="guide__item">Если все клетки трека включены — трек играет весь луп. Если выключить 3-й такт — трек молчит только там.</div>
-        <div class="guide__item">Так строят структуру: барабаны весь луп, мелодия только на 3-4 такте, акценты на 1-м.</div>
+        <div class="guide__item">Если все клетки трека включены — трек играет весь луп.</div>
         <div class="guide__item">Текущий такт подсвечивается жёлтой рамкой в секвенсоре.</div>
       </div>
 
@@ -1770,24 +1760,21 @@ function GuidePopup(props) {
         <div class="guide__item"><b>Клик</b> — загрузить сцену (мгновенный переход).</div>
         <div class="guide__item"><b>Долгий тап / правый клик</b> — сохранить текущий микс в сцену.</div>
         <div class="guide__item">Зелёная точка на кнопке = сцена не пуста.</div>
-        <div class="guide__item">Схема: A = интро, B = куплет, C = припев, D = финал. Переключаешь — получается песня.</div>
       </div>
 
       <div class="guide__section">
         <h3>Настройки трека</h3>
         <div class="guide__item"><b>Долгий тап / правый клик</b> по плитке — открывает настройки.</div>
         <div class="guide__item"><b>Громкость</b> — ползунок 0-100%.</div>
-        <div class="guide__item"><b>Частота</b> — срез высоких частот (lowpass). Убавь — звук станет глуше.</div>
-        <div class="guide__item"><b>★ Избранное</b> — помечает трек, счётчик в toolbar.</div>
-        <div class="guide__item"><b>🎯 Solo</b> — слышно только этот трек, остальные приглушаются.</div>
-        <div class="guide__item"><b>🔇 Mute</b> — трек играет, но не слышно.</div>
+        <div class="guide__item"><b>Частота</b> — срез высоких частот (lowpass).</div>
+        <div class="guide__item"><b>★ Избранное</b>, <b>🎯 Solo</b>, <b>🔇 Mute</b>.</div>
       </div>
 
       <div class="guide__section">
         <h3>Запись и шаринг</h3>
-        <div class="guide__item"><b>🎙️ Запись</b> — рендерит текущий микс в WAV. Выбери длительность (8/16/32 сек), нажми «Рендер», подожди — и скачай файл.</div>
-        <div class="guide__item"><b>🔗 Share</b> — кодирует микс в URL. Скинь ссылку другу — он откроет и услышит твой трек.</div>
-        <div class="guide__item">Всё сохраняется в браузере (IndexedDB). При следующем открытии громкости, избранное и паттерны на месте.</div>
+        <div class="guide__item"><b>🎙️ Запись</b> — рендерит текущий микс в WAV. Выбери длительность (8/16/32 сек), нажми «Рендер».</div>
+        <div class="guide__item"><b>🔗 Share</b> — кодирует микс в URL (компактный формат). Скинь ссылку другу.</div>
+        <div class="guide__item">Всё сохраняется в браузере (IndexedDB).</div>
       </div>
 
       <div class="guide__section">
@@ -1825,7 +1812,7 @@ function App() {
     toastTimer.current = setTimeout(function() { setToast(null); }, 2500);
   }, []);
 
-  // URL hash restore
+  // URL hash restore (компактный формат)
   useEffect(function() {
     const hash = window.location.hash;
     if (hash.startsWith('#mix=')) {
@@ -1833,7 +1820,18 @@ function App() {
         const encoded = hash.slice(5);
         const json = decodeURIComponent(escape(atob(encoded)));
         const data = JSON.parse(json);
-        audio.importMix(data).then(function() {
+        const expanded = {
+          activeTracks: {},
+          loopPatterns: {},
+          volumes: data.v || {},
+          masterVol: data.m,
+          reverbOn: data.r === 1
+        };
+        (data.a || []).forEach(function(k) { expanded.activeTracks[k] = true; });
+        Object.keys(data.l || {}).forEach(function(k) {
+          expanded.loopPatterns[k] = data.l[k].split('').map(function(c) { return c === '1'; });
+        });
+        audio.importMix(expanded).then(function() {
           showToast('📥 Микс загружен из ссылки');
         }).catch(function() {
           showToast('❌ Не удалось загрузить', true);
@@ -1845,7 +1843,6 @@ function App() {
     }
   }, []);
 
-  // Загрузить сцены
   useEffect(function() {
     (async function() {
       const s = await idbGet('scenes');
@@ -1886,10 +1883,7 @@ function App() {
   const handleOpenSettings = useCallback(function(id, e) {
     const rect = e.currentTarget ? e.currentTarget.getBoundingClientRect() : { left: e.clientX, top: e.clientY };
     setSettingsId(id);
-    setSettingsPos({
-      x: rect.left + (rect.width || 0) + 8,
-      y: rect.top
-    });
+    setSettingsPos({ x: rect.left + (rect.width || 0) + 8, y: rect.top });
   }, []);
 
   const togglePlay = useCallback(async function() {
@@ -1939,15 +1933,11 @@ function App() {
         <button class=${'btn' + (audio.isPlaying ? ' btn--stop' : '')} onClick=${togglePlay}>
           ${audio.isPlaying ? '⏸ Стоп' : '▶ Играть'}
         </button>
-        <button class="btn btn--ghost" onClick=${function() { setShowRecord(true); }}>
-          🎙️ WAV
-        </button>
+        <button class="btn btn--ghost" onClick=${function() { setShowRecord(true); }}>🎙️ WAV</button>
         <button class="btn btn--ghost" onClick=${function() { setShowShare(true); }}>🔗 Share</button>
         <button class="btn btn--ghost" onClick=${function() { setShowGuide(true); }}>🎓 Гид</button>
       </div>
-      <span class="toolbar__count">
-        Активно: <b>${activeCount}</b> / 40
-      </span>
+      <span class="toolbar__count">Активно: <b>${activeCount}</b> / 40</span>
     </div>
 
     <div class="scenes">
@@ -2041,7 +2031,6 @@ function App() {
   </div>`;
 }
 
-/* Запуск */
 render(html`<${App} />`, document.getElementById('root'));
 
 })();

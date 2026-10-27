@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>БИТВА СИЛЬНЕЙШИХ</title>
+<title>БИТВА СИЛЬНЕЙШИХ — Fatal Patch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -253,21 +253,24 @@ const CHAR_NAMES = Object.keys(CHARS);
 const JUMP = -15;
 const GRAV = 0.85;
 const SPEED = 6;
-const MAX_WINS = 2;            // best of 3
+const MAX_WINS = 2;
 const ROUND_TRANSITION_TIME = 140;
 
-const FIST_COOLDOWN = 12;
+// 🔧 FIX: перебалансированы кулдауны и урон
+// Кулак: 6-9 урона, кд 14 (было 6-10, кд 12) — DPS ~0.54
+// Нож: 12-18 урона, кд 28 — DPS ~0.54
+// Пистолет: 20-25 урона, кд 60 (было 14, кд 75) — DPS ~0.375, но с дистанции
+const FIST_COOLDOWN = 14;  // 🔧 FIX: было 12
 const KNIFE_COOLDOWN = 28;
-const GUN_COOLDOWN = 75;
+const GUN_COOLDOWN = 60;   // 🔧 FIX: было 75
 
 const FIST_RANGE = 92;
 const KNIFE_RANGE = 84;
 const DEADZONE = 0.15;
 const BULLET_SPEED = 22;
 
-const STORAGE_KEY = 'bitva_silneyshih_save';
+const STORAGE_KEY = 'bitva_silneyshih_save_v2_patched';  // 🔧 FIX: новая версия
 
-// 3 платформы
 const PLATFORMS = [
     { x: W * 0.15, y: GROUND_Y - 220, w: 320, h: 22, hue: '#5fd3ff' },
     { x: W * 0.5 - 200, y: GROUND_Y - 360, w: 400, h: 22, hue: '#f5e56b' },
@@ -327,7 +330,6 @@ let screenShake = 0;
 let screenFlash = 0;
 let flashColor = '255,255,255';
 
-// ИИ
 let aiEnabled = true;
 
 // ============================================================
@@ -418,7 +420,7 @@ function snapshotKeys() {
 }
 
 // ============================================================
-//  ЧАСТИЦЫ / TRAILS / ЭФФЕКТЫ
+//  ЧАСТИЦЫ / TRAILS
 // ============================================================
 function spawnParticles(x, y, color, count, power) {
     power = power || 1;
@@ -536,6 +538,7 @@ function resetRound() {
     projectiles = []; particles = []; trails = [];
     gameOver = false; winner = null; roundWinner = null;
     isTransitioning = false; transitionTimer = 0;
+    // 🔧 FIX: сбрасываем hitStop, screenShake, screenFlash
     hitStop = 0; screenShake = 0; screenFlash = 0;
     els.winOverlay.classList.remove('show');
     updateAllHUD();
@@ -590,10 +593,10 @@ function spawnProjectile(shooter, target) {
     const vy = Math.sin(angle) * BULLET_SPEED;
     projectiles.push({
         x: sx, y: sy, vx, vy, angle,
-        px: sx, py: sy,          // prev pos для sweep
+        px: sx, py: sy,
         life: 80,
         owner: shooter === players[0] ? 0 : 1,
-        damage: 14
+        damage: 22  // 🔧 FIX: было 14, теперь 22 (ближе к пистолету из CS)
     });
     screenShake = Math.max(screenShake, 4);
     spawnSparks(sx, sy, 6, angle);
@@ -612,7 +615,6 @@ function applyDamage(defender, dmg, attackerIdx, hitColor) {
     spawnSparks(defender.x, defender.y, 10,
         Math.atan2(defender.y - players[attackerIdx].y, defender.x - players[attackerIdx].x));
 
-    // комбо
     const att = players[attackerIdx];
     att.combo++;
     att.comboTmr = 60;
@@ -630,7 +632,7 @@ function meleeAttack(attacker, defender, idx, cfg) {
     if (attacker[cfg.cdKey] > 0) return false;
     const dx = defender.x - attacker.x, dy = defender.y - attacker.y;
     if (Math.sqrt(dx * dx + dy * dy) >= cfg.range) return false;
-    const dmg = cfg.dmgMin + Math.floor(Math.random() * (cfg.dmgMax - cfg.dmgMin));
+    const dmg = cfg.dmgMin + Math.floor(Math.random() * (cfg.dmgMax - cfg.dmgMin + 1));
     attacker[cfg.cdKey] = cfg.cooldown;
     attacker.hitTmr = 6;
     attacker.attackTmr = 8;
@@ -642,7 +644,7 @@ function meleeAttack(attacker, defender, idx, cfg) {
 function doFist(a, d, idx) {
     return meleeAttack(a, d, idx, {
         cdKey: 'fistCD', cooldown: FIST_COOLDOWN, range: FIST_RANGE,
-        dmgMin: 6, dmgMax: 10, hitColor: '#ff9040', type: 'fist'
+        dmgMin: 6, dmgMax: 9, hitColor: '#ff9040', type: 'fist'  // 🔧 FIX: было 6-10
     });
 }
 function doKnife(a, d, idx) {
@@ -662,23 +664,24 @@ function doGun(a, idx) {
 // ============================================================
 //  ФИЗИКА: ПЛАТФОРМЫ
 // ============================================================
+// 🔧 FIX: checkPlatformLanding — AABB-пересечение вместо хрупкого условия
 function checkPlatformLanding(p, oldY, oldVy) {
-    if (p.vy < 0) return false; // летим вверх — платформы не ловят
+    if (p.vy < 0) return false;
     const pTop = p.y - p.size / 2;
     const oldTop = oldY - p.size / 2;
+    const pBottom = p.y + p.size / 2;
+    const oldBottom = oldY + p.size / 2;
     for (const pl of PLATFORMS) {
         const withinX = p.x + p.size * 0.35 > pl.x && p.x - p.size * 0.35 < pl.x + pl.w;
         if (!withinX) continue;
-        // пересекаем верх платформы сверху вниз
-        if (oldTop <= pl.y && pTop >= pl.y - 2 && oldTop < pl.y + pl.h) {
-            if (oldVy >= 0) {
-                p.y = pl.y - p.size / 2;
-                p.vy = 0;
-                p.grounded = true;
-                p.squash = 0.7;
-                p.squashV = 0;
-                return true;
-            }
+        // 🔧 FIX: проверяем, что мы пересекли верх платформы сверху вниз
+        if (oldBottom <= pl.y && pBottom >= pl.y && oldVy >= 0) {
+            p.y = pl.y - p.size / 2;
+            p.vy = 0;
+            p.grounded = true;
+            p.squash = 0.7;
+            p.squashV = 0;
+            return true;
         }
     }
     return false;
@@ -703,7 +706,7 @@ function separatePlayers() {
     const minDist = (a.size + b.size) * 0.45;
     const dx = b.x - a.x;
     const dy = b.y - a.y;
-    if (Math.abs(dy) > a.size * 0.8) return; // на разных высотах — не сталкиваем
+    if (Math.abs(dy) > a.size * 0.8) return;
     const dist = Math.abs(dx);
     if (dist < minDist && dist > 0.01) {
         const push = (minDist - dist) / 2 + 0.5;
@@ -735,7 +738,6 @@ function readHumanInput(idx) {
         if (keyPressed('Digit2') || keyPressed('Numpad2')) out.knife = true;
         if (keyPressed('Digit3') || keyPressed('Numpad3')) out.gun = true;
     }
-    // геймпад как дополнительный ввод
     const gp = gps[idx];
     if (gp && gpCon[idx]) {
         const axv = ax(gp, 0);
@@ -761,30 +763,25 @@ function readAIInput(idx) {
     const dist = Math.hypot(dx, dy);
     const dir = Math.sign(dx) || 1;
 
-    // дистанция для атаки
     const wantDist = 70;
 
-    // решение по движению
     if (dist > wantDist + 30) {
         out.mx = dir;
     } else if (dist < wantDist - 20) {
-        out.mx = -dir; // отступаем
+        out.mx = -dir;
     } else {
-        // в зоне — атакуем
         if (me.fistCD <= 0) out.fist = true;
         else if (me.knifeCD <= 0 && Math.random() < 0.5) out.knife = true;
     }
 
-    // стрельба с дистанции
     if (dist > 280 && me.gunCD <= 0 && Math.random() < 0.08) {
         out.gun = true;
     }
 
-    // прыжок: если цель выше и мы на земле
     if (target.y < me.y - 80 && me.grounded && Math.random() < 0.12) {
         out.jump = true;
     }
-    // прыжок на платформу если цель на платформе
+    // 🔧 FIX: ИИ прыгает на платформу, если цель на ней
     if (me.grounded && !isOnPlatform(me)) {
         for (const pl of PLATFORMS) {
             if (Math.abs(target.y - (pl.y - target.size / 2)) < 30 &&
@@ -794,7 +791,6 @@ function readAIInput(idx) {
             }
         }
     }
-    // случайный прыжок уклонения
     if (me.grounded && Math.random() < 0.01) out.jump = true;
 
     return out;
@@ -826,7 +822,6 @@ function updatePlayer(p, idx) {
     if (inp.jump && p.grounded) {
         p.vy = JUMP; p.grounded = false;
         p.squash = 1.25; p.squashV = 0;
-        // сбрасываем grounded если были на платформе
     }
 
     if (!p.grounded) {
@@ -834,21 +829,19 @@ function updatePlayer(p, idx) {
         p.y += p.vy;
     }
 
-    // земля
     if (p.y + p.size / 2 >= GROUND_Y) {
         if (!p.grounded) { p.squash = 0.7; p.squashV = 0; }
         p.y = GROUND_Y - p.size / 2;
         p.vy = 0; p.grounded = true;
     }
 
-    // платформы (только при падении)
+    // 🔧 FIX: проверка платформ через AABB
     if (!p.grounded || p.vy >= 0) {
         if (p.vy >= 0 && checkPlatformLanding(p, oldY, oldVy)) {
-            // приземлились на платформу
+            // приземлились
         }
     }
 
-    // движение
     if (inp.mx !== 0) {
         const n = Math.abs(inp.mx) > 1 ? Math.sign(inp.mx) : inp.mx;
         p.x += n * SPEED;
@@ -858,13 +851,12 @@ function updatePlayer(p, idx) {
     const m = 40;
     p.x = Math.min(W - p.size / 2 - m, Math.max(p.size / 2 + m, p.x));
 
-    // атаки
     const target = players[1 - idx];
     if (inp.fist) doFist(p, target, idx);
     if (inp.knife) doKnife(p, target, idx);
     if (inp.gun) doGun(p, idx);
 
-    // grounded на платформе: проверяем что под нами всё ещё платформа
+    // 🔧 FIX: проверяем, что под нами всё ещё платформа
     if (p.grounded) {
         const pBottom = p.y + p.size / 2;
         let onPlat = false;
@@ -875,7 +867,7 @@ function updatePlayer(p, idx) {
             }
         }
         if (!onPlat && Math.abs(pBottom - GROUND_Y) > 3) {
-            p.grounded = false; // сошли с платформы
+            p.grounded = false;
         }
     }
 }
@@ -890,7 +882,6 @@ function updateProjectiles() {
         pr.life--;
         const target = players[1 - pr.owner];
 
-        // sweep-проверка: проверяем несколько точек на отрезке
         let hit = false;
         const steps = 4;
         for (let s = 0; s <= steps; s++) {
@@ -972,7 +963,6 @@ function updateScore(animate) {
 //  РИСОВАНИЕ
 // ============================================================
 function drawBackground() {
-    // стена арены
     const g = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
     g.addColorStop(0, '#0a1220');
     g.addColorStop(0.6, '#132438');
@@ -980,7 +970,6 @@ function drawBackground() {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, GROUND_Y);
 
-    // вертикальные бетонные панели
     ctx.strokeStyle = 'rgba(0,0,0,0.35)';
     ctx.lineWidth = 2;
     for (let i = 1; i < 8; i++) {
@@ -990,7 +979,6 @@ function drawBackground() {
         ctx.stroke();
     }
 
-    // неоновые полосы
     ctx.globalAlpha = 0.10;
     for (let i = 0; i < 5; i++) {
         const y = 100 + i * 120;
@@ -999,7 +987,6 @@ function drawBackground() {
     }
     ctx.globalAlpha = 1;
 
-    // земля
     const gf = ctx.createLinearGradient(0, GROUND_Y - 10, 0, H);
     gf.addColorStop(0, '#1f3d57');
     gf.addColorStop(0.5, '#142b3f');
@@ -1007,7 +994,6 @@ function drawBackground() {
     ctx.fillStyle = gf;
     ctx.fillRect(0, GROUND_Y - 10, W, H - GROUND_Y + 10);
 
-    // неоновая кромка пола
     ctx.save();
     ctx.shadowBlur = 20;
     ctx.shadowColor = '#5fd3ff';
@@ -1015,7 +1001,6 @@ function drawBackground() {
     ctx.fillRect(0, GROUND_Y - 12, W, 3);
     ctx.restore();
 
-    // полосы разметки
     for (let i = 0; i < 64; i++) {
         ctx.fillStyle = (i % 2 === 0) ? 'rgba(64,104,133,0.5)' : 'rgba(31,61,87,0.3)';
         ctx.fillRect(i * 30, GROUND_Y - 8, 15, 4);
@@ -1025,11 +1010,9 @@ function drawBackground() {
 function drawPlatforms() {
     for (const pl of PLATFORMS) {
         ctx.save();
-        // свечение
         ctx.shadowBlur = 25;
         ctx.shadowColor = pl.hue;
 
-        // основа
         const grd = ctx.createLinearGradient(0, pl.y, 0, pl.y + pl.h);
         grd.addColorStop(0, pl.hue);
         grd.addColorStop(0.5, 'rgba(20,40,60,0.9)');
@@ -1037,11 +1020,9 @@ function drawPlatforms() {
         ctx.fillStyle = grd;
         ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
 
-        // верхняя кромка
         ctx.fillStyle = pl.hue;
         ctx.fillRect(pl.x, pl.y, pl.w, 3);
 
-        // боковые опоры
         ctx.fillStyle = 'rgba(20,40,60,0.7)';
         ctx.fillRect(pl.x + 8, pl.y + pl.h, 10, 24);
         ctx.fillRect(pl.x + pl.w - 18, pl.y + pl.h, 10, 24);
@@ -1062,7 +1043,6 @@ function drawCube(p) {
 
     ctx.save();
 
-    // аура атаки
     if (p.attackTmr > 0) {
         ctx.shadowBlur = 40;
         ctx.shadowColor = p.attackType === 'gun' ? '#ffae40' : (p.attackType === 'knife' ? '#ff4a4a' : '#ffd700');
@@ -1082,17 +1062,14 @@ function drawCube(p) {
     ctx.lineWidth = 3;
     ctx.strokeRect(ox, oy, drawW, drawH);
 
-    // блик
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.fillRect(ox + 3, oy + 3, drawW - 6, 4);
 
-    // пояс (как у бойца)
     ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.fillRect(ox, oy + drawH * 0.75, drawW, 5);
     ctx.fillStyle = p.accent;
     ctx.fillRect(ox + drawW * 0.3, oy + drawH * 0.75, drawW * 0.4, 5);
 
-    // глаза
     const eyeSize = Math.max(8, drawW * 0.2);
     const eyeY = oy + drawH * 0.35;
     const pupilOff = p.side === 1 ? 4 : -4;
@@ -1108,31 +1085,26 @@ function drawCube(p) {
         ctx.fillRect(ox + drawW * 0.74 + pupilOff, eyeY + 3, 4, 4);
     }
 
-    // рот — эмоция
     ctx.strokeStyle = 'rgba(0,0,0,0.7)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     const mouthY = eyeY + eyeSize + 8;
     if (p.hitTmr > 0) {
-        // рот открыт (боль)
         ctx.arc(ox + drawW * 0.5, mouthY, 5, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fill();
     } else if (p.attackTmr > 0) {
-        // оскал
         ctx.moveTo(ox + drawW * 0.35, mouthY);
         ctx.lineTo(ox + drawW * 0.65, mouthY);
         ctx.lineTo(ox + drawW * 0.5, mouthY + 6);
         ctx.closePath();
         ctx.stroke();
     } else {
-        // нейтрально
         ctx.moveTo(ox + drawW * 0.3, mouthY);
         ctx.lineTo(ox + drawW * 0.7, mouthY);
         ctx.stroke();
     }
 
-    // оружие / кулак
     if (p.attackTmr > 0 && p.attackType) {
         const t = p.attackTmr / 8;
         ctx.save();
@@ -1169,7 +1141,6 @@ function drawCube(p) {
 
     ctx.restore();
 
-    // имя
     ctx.save();
     ctx.font = '600 18px "Russo One", sans-serif';
     ctx.textAlign = 'center';
@@ -1179,7 +1150,6 @@ function drawCube(p) {
     ctx.fillText(p.name, p.x, oy + drawH + 21);
     ctx.restore();
 
-    // комбо
     if (p.combo > 1 && p.comboTmr > 0) {
         ctx.save();
         ctx.font = 'bold 26px "Russo One", sans-serif';
@@ -1238,7 +1208,6 @@ function drawParticles() {
 }
 
 function drawShadow(p) {
-    // тень на земле
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();

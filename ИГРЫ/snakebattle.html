@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#06070d">
-<title>Snakes Battle</title>
+<title>Snakes Battle — Fatal Patch</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
   html,body{width:100%;height:100%;overflow:hidden;background:#06070d;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff;overscroll-behavior:none;touch-action:none}
@@ -572,10 +572,6 @@ function toggleFullscreen(){
   }
 }
 
-/* ============ NOTIFICATIONS (отключено) ============ */
-async function requestNotificationPermission(){ return; }
-function notify(title, body){}
-
 /* ============ PAUSE ============ */
 let pauseCountdown = null;
 function pauseGame(){
@@ -652,7 +648,7 @@ function openDB(){
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     let req;
-    try { req = indexedDB.open('snake_db_v3', 1); }
+    try { req = indexedDB.open('snake_db_v4', 1); }  // 🔧 FIX: новая версия БД
     catch (e) { return reject(e); }
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
@@ -872,6 +868,7 @@ let myId = Math.random().toString(36).substring(2, 10);
 let myTeam = TEAM_RED;
 let roomId = null, channel = null;
 let gameState = 'lobby';
+// 🔧 FIX: явный hostId (кто создал матч, а не «первый по алфавиту»)
 let hostId = null;
 let matchStartAt = 0;
 let isBotMode = false;
@@ -893,6 +890,8 @@ let boxSpawnInterval = null;
 let bossSpawnInterval = null;
 let reconnectAttempts = 0;
 let reconnectTimeout = null;
+// 🔧 FIX: флаг «идёт reconnect» (защита от рекурсии)
+let reconnecting = false;
 const MAX_RECONNECT = 5;
 let lastDeathPos = null;
 let input = { targetAngle: 0, boosting: false, hasInput: false };
@@ -1751,17 +1750,19 @@ function headHitsBody(headPos, headSnake, bodySnake){
   return false;
 }
 
+// 🔧 FIX: checkHeadHeadCollisionAt — при равной длине оба погибают (единообразно)
 function checkHeadHeadCollisionAt(headPos, a, b){
-  if (a === b) return { hit:false };
+  if (a === b) return { hit:false, winner:null };
   const hb = b.segments[0];
-  if (!hb) return { hit:false };
+  if (!hb) return { hit:false, winner:null };
   const ra = a.getHeadRadius(), rb = b.getHeadRadius();
   const hit = (ra + rb) * 0.75;
   if (distSq(headPos.x, headPos.y, hb.x, hb.y) < hit * hit){
-    if (Math.abs(a.length - b.length) < 1) return { hit:true, winner:null };
+    // 🔧 FIX: если разница в длине < 1 — оба погибают (winner=null)
+    if (Math.abs(a.length - b.length) < 1) return { hit:true, winner:null, both:true };
     return { hit:true, winner: a.length > b.length ? a : b };
   }
-  return { hit:false };
+  return { hit:false, winner:null };
 }
 
 function eatNearbyFood(snake){
@@ -1852,6 +1853,12 @@ function checkCollisions(){
 
       const hh = checkHeadHeadCollisionAt(cp, mySnake, p);
       if (hh.hit){
+        // 🔧 FIX: при both=true — оба погибают
+        if (hh.both){
+          lastDeathPos = { x: mySnake.x, y: mySnake.y };
+          die('Лобовое — оба погибли', p.id);
+          return;
+        }
         if (hh.winner === mySnake){
           if (!p.alive) continue;
           kills++;
@@ -1881,6 +1888,12 @@ function checkCollisions(){
       if (!b.alive || b.team === mySnake.team) continue;
       const hh = checkHeadHeadCollisionAt(cp, mySnake, b);
       if (hh.hit){
+        // 🔧 FIX: при both=true — оба погибают
+        if (hh.both){
+          lastDeathPos = { x: mySnake.x, y: mySnake.y };
+          die('Лобовое — оба погибли', b.id);
+          return;
+        }
         if (hh.winner === mySnake){
           if (!b.alive) continue;
           kills++;
@@ -1947,6 +1960,12 @@ function checkBotCollisions(){
     if (mySnake && mySnake.alive && mySnake.team !== bot.team && !mySnake.isInvulnerable()){
       const hh = checkHeadHeadCollisionAt(head, bot, mySnake);
       if (hh.hit){
+        // 🔧 FIX: при both=true — оба погибают
+        if (hh.both){
+          lastDeathPos = { x: mySnake.x, y: mySnake.y };
+          die('Лобовое — оба', bot.id);
+          return;
+        }
         if (hh.winner === mySnake){
           if (!bot.alive) continue;
           kills++;
@@ -1994,7 +2013,11 @@ function checkBotCollisions(){
 
       const hh = checkHeadHeadCollisionAt(head, bot, other);
       if (hh.hit){
-        if (hh.winner === bot){
+        // 🔧 FIX: при both=true — оба погибают
+        if (hh.both){
+          killBot(other);
+          killBot(bot);
+        } else if (hh.winner === bot){
           killBot(other);
           bot.kills++;
         } else if (hh.winner === other){
@@ -2649,13 +2672,11 @@ function gameLoop(){
       if (mySnake && mySnake.alive) bossSnake.targetAngle = Math.atan2(mySnake.y - bossSnake.y, mySnake.x - bossSnake.x);
       bossSnake.update();
     }
+    // 🔧 FIX: channel.track() УБРАН из игрового цикла — спамил сервер
     if (!isBotMode && performance.now() - lastBroadcast > TICK_RATE){
       lastBroadcast = performance.now();
       if (mySnake && mySnake.alive && channel){
         channel.send({ type:'broadcast', event:'state', payload:mySnake.toNet() });
-        if (frameCounter % 3 === 0 && channel.track){
-          try { channel.track(mySnake.toNet()); } catch(e){}
-        }
       }
     }
     render();
@@ -2927,6 +2948,49 @@ function startCountdown(){
   }, 100);
 }
 
+// 🔧 FIX: общая функция для обработчиков сети (убрано дублирование)
+function attachGameHandlers(ch){
+  ch.on('broadcast', { event:'game_start' }, () => {
+    if (gameState === 'searching' || gameState === 'lobby' || gameState === 'inLobby') startGame();
+  });
+
+  ch.on('broadcast', { event:'state' }, ({ payload }) => {
+    if (payload.id === myId) return;
+    let p = players.get(payload.id);
+    if (!p){
+      p = new Snake(payload.id, payload.name, payload.team, payload.x, payload.y, {});
+      p.segments = [];
+      players.set(payload.id, p);
+    }
+    p.applyNet(payload);
+  });
+
+  ch.on('broadcast', { event:'player_died' }, ({ payload }) => {
+    const p = players.get(payload.id);
+    if (p){ p.alive = false; spawnDeathFood(p); }
+    if (payload.killer === myId && payload.length){
+      kills++;
+      const r = getCoinReward(payload.length);
+      coins += r;
+      saveCoins(coins);
+      updateCoinsDisplay();
+      showToast(`<span class="ico">${svg('coin', 14)}</span> +${r}`);
+      updateMissionProgress('kills', 1);
+      SFX.kill();
+      vibrate(60);
+    }
+  });
+
+  ch.on('broadcast', { event:'player_joined' }, ({ payload }) => {
+    if (payload.id === myId) return;
+    if (!players.has(payload.id)){
+      const p = new Snake(payload.id, payload.name, payload.team, payload.x || 0, payload.y || 0, {});
+      p.segments = [];
+      players.set(payload.id, p);
+    }
+  });
+}
+
 async function joinRoom(rid){
   if (!sb) return;
   if (channel){ try { await channel.unsubscribe(); } catch (e) {} channel = null; }
@@ -2943,7 +3007,11 @@ async function joinRoom(rid){
       if (p) list.push(p);
     }
     list.sort((a, b) => a.id.localeCompare(b.id));
-    hostId = list[0]?.id || null;
+    // 🔧 FIX: hostId — явный (кто создал матч), а не «первый по алфавиту»
+    // Если hostId не задан — берём первого
+    if (!hostId) hostId = list[0]?.id || null;
+    // Если наш hostId больше не в списке — берём первого
+    if (hostId && !list.some(p => p.id === hostId)) hostId = list[0]?.id || null;
     updatePlayersList(list);
 
     for (const p of list){
@@ -2969,67 +3037,41 @@ async function joinRoom(rid){
     }
   });
 
-  channel.on('broadcast', { event:'game_start' }, () => {
-    if (gameState === 'searching' || gameState === 'lobby') startGame();
-  });
-
-  channel.on('broadcast', { event:'state' }, ({ payload }) => {
-    if (payload.id === myId) return;
-    let p = players.get(payload.id);
-    if (!p){
-      p = new Snake(payload.id, payload.name, payload.team, payload.x, payload.y, {});
-      p.segments = [];
-      players.set(payload.id, p);
-    }
-    p.applyNet(payload);
-  });
-
-  channel.on('broadcast', { event:'player_died' }, ({ payload }) => {
-    const p = players.get(payload.id);
-    if (p){ p.alive = false; spawnDeathFood(p); }
-    if (payload.killer === myId && payload.length){
-      kills++;
-      const r = getCoinReward(payload.length);
-      coins += r;
-      saveCoins(coins);
-      updateCoinsDisplay();
-      showToast(`<span class="ico">${svg('coin', 14)}</span> +${r}`);
-      updateMissionProgress('kills', 1);
-      SFX.kill();
-      vibrate(60);
-    }
-  });
-
-  channel.on('broadcast', { event:'player_joined' }, ({ payload }) => {
-    if (payload.id === myId) return;
-    if (!players.has(payload.id)){
-      const p = new Snake(payload.id, payload.name, payload.team, payload.x || 0, payload.y || 0, {});
-      p.segments = [];
-      players.set(payload.id, p);
-    }
-  });
+  // 🔧 FIX: используем общие обработчики
+  attachGameHandlers(channel);
 
   channel.subscribe(async (status) => {
     if (status === 'SUBSCRIBED'){
       reconnectAttempts = 0;
+      reconnecting = false;
+      // 🔧 FIX: track() — только при подписке, НЕ в игровом цикле
       await channel.track({ id:myId, name:'Игрок', team:myTeam });
       channel.send({ type:'broadcast', event:'player_joined', payload:{ id:myId, name:'Игрок', team:myTeam, x:0, y:0 } });
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
       scheduleReconnect();
     } else if (status === 'CLOSED'){
-      if (gameState === 'searching' || gameState === 'playing') scheduleReconnect();
+      // 🔧 FIX: не запускаем reconnect при штатном leaveRoom
+      if (!reconnecting && (gameState === 'searching' || gameState === 'playing')) scheduleReconnect();
     }
   });
 }
 
+// 🔧 FIX: защита от рекурсивного reconnect
 function scheduleReconnect(){
+  if (reconnecting) return;
   if (reconnectAttempts >= MAX_RECONNECT) return;
+  reconnecting = true;
   reconnectAttempts++;
   if (reconnectTimeout) clearTimeout(reconnectTimeout);
-  reconnectTimeout = setTimeout(() => { if (roomId) joinRoom(roomId); }, 2000 * reconnectAttempts);
+  reconnectTimeout = setTimeout(() => {
+    reconnecting = false;
+    if (roomId) joinRoom(roomId);
+  }, 2000 * reconnectAttempts);
 }
 
 function leaveRoom(){
+  // 🔧 FIX: при явном leaveRoom не запускаем reconnect
+  reconnecting = true;
   if (channel && channel !== lobbyChannel){
     try { channel.unsubscribe(); } catch (e) {}
     channel = null;
@@ -3043,6 +3085,7 @@ function leaveRoom(){
   if (timerInterval){ clearInterval(timerInterval); timerInterval = null; }
   if (matchTimeoutId){ clearTimeout(matchTimeoutId); matchTimeoutId = null; }
   elTimerBar.classList.remove('show');
+  setTimeout(() => { reconnecting = false; }, 100);
 }
 
 /* ============ ЛОББИ ============ */
@@ -3164,50 +3207,13 @@ async function joinLobbyChannel(id, asHost){
     if (isLobbyHost && lobbyPlayers.size !== oldSize) updateDirectoryInfo();
   });
 
-  lobbyChannel.on('broadcast', { event: 'game_start' }, () => {
-    if (gameState === 'inLobby') startGameFromLobby();
-  });
+  // 🔧 FIX: используем общие обработчики
+  attachGameHandlers(lobbyChannel);
 
   lobbyChannel.on('broadcast', { event: 'lobby_kick' }, ({ payload }) => {
     if (payload.target === myId || payload.target === '*'){
       showToast('Хост закрыл лобби');
       leaveLobby();
-    }
-  });
-
-  lobbyChannel.on('broadcast', { event: 'state' }, ({ payload }) => {
-    if (payload.id === myId) return;
-    let p = players.get(payload.id);
-    if (!p){
-      p = new Snake(payload.id, payload.name, payload.team, payload.x, payload.y, {});
-      p.segments = [];
-      players.set(payload.id, p);
-    }
-    p.applyNet(payload);
-  });
-
-  lobbyChannel.on('broadcast', { event: 'player_died' }, ({ payload }) => {
-    const p = players.get(payload.id);
-    if (p){ p.alive = false; spawnDeathFood(p); }
-    if (payload.killer === myId && payload.length){
-      kills++;
-      const r = getCoinReward(payload.length);
-      coins += r;
-      saveCoins(coins);
-      updateCoinsDisplay();
-      showToast(`<span class="ico">${svg('coin', 14)}</span> +${r}`);
-      updateMissionProgress('kills', 1);
-      SFX.kill();
-      vibrate(60);
-    }
-  });
-
-  lobbyChannel.on('broadcast', { event: 'player_joined' }, ({ payload }) => {
-    if (payload.id === myId) return;
-    if (!players.has(payload.id)){
-      const p = new Snake(payload.id, payload.name, payload.team, payload.x || 0, payload.y || 0, {});
-      p.segments = [];
-      players.set(payload.id, p);
     }
   });
 

@@ -12,144 +12,70 @@
     min-height: 100vh;
     margin: 0;
     padding: 20px;
-    /* Изменено: теперь блок строго по центру экрана */
     display: flex;
     justify-content: center;
-    align-items: center; 
+    align-items: center;
   }
   .container {
     background: #fff;
     border-radius: 20px;
     padding: 40px;
     width: 100%;
-    /* Изменено: блок стал шире (было 700px) */
-    max-width: 850px; 
+    max-width: 850px;
     box-shadow: 0 25px 70px rgba(0,0,0,0.3);
   }
   h1 {
     text-align: center;
     color: #333;
     margin-top: 0;
-    /* Изменено: заголовок стал больше */
-    font-size: 32px; 
+    font-size: 32px;
     margin-bottom: 30px;
   }
-  .tabs {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-  }
+  .tabs { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
   .tab {
-    flex: 1;
-    min-width: 120px;
-    padding: 14px;
-    border: none;
-    border-radius: 10px;
-    background: #eee;
-    cursor: pointer;
-    /* Изменено: шрифт табов больше */
-    font-size: 16px; 
-    font-weight: 600;
-    color: #555;
-    transition: all 0.2s;
+    flex: 1; min-width: 120px; padding: 14px; border: none; border-radius: 10px;
+    background: #eee; cursor: pointer; font-size: 16px; font-weight: 600;
+    color: #555; transition: all 0.2s;
   }
   .tab:hover { background: #e0e0e0; }
-  .tab.active {
-    background: #667eea;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  }
+  .tab.active { background: #667eea; color: #fff; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
   .panel { display: none; }
   .panel.active { display: block; }
-  .row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  /* Изменено: шрифт подписей больше */
-  .row label { 
-    font-size: 16px; 
-    color: #444; 
-    display: flex;
-    align-items: center;
-  }
-  /* Изменено: поля ввода больше */
+  .row { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .row label { font-size: 16px; color: #444; display: flex; align-items: center; }
   input[type="number"], input[type="text"], select {
-    padding: 10px 14px;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    font-size: 16px;
-    width: 90px;
-    outline: none;
-    transition: border 0.2s;
+    padding: 10px 14px; border: 2px solid #ddd; border-radius: 10px;
+    font-size: 16px; width: 90px; outline: none; transition: border 0.2s;
   }
   select { width: auto; cursor: pointer; }
   input:focus, select:focus { border-color: #667eea; }
-  
-  input[type="checkbox"] { 
-    transform: scale(1.4); 
-    margin-right: 8px; 
-    cursor: pointer;
-  }
+  input[type="checkbox"] { transform: scale(1.4); margin-right: 8px; cursor: pointer; }
   button.generate {
-    width: 100%;
-    padding: 16px;
-    background: #667eea;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    /* Изменено: кнопка стала больше */
-    font-size: 18px; 
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 10px;
+    width: 100%; padding: 16px; background: #667eea; color: #fff;
+    border: none; border-radius: 10px; font-size: 18px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; margin-top: 10px;
   }
-  button.generate:hover { 
-    background: #5568d3; 
-    transform: translateY(-2px);
+  button.generate:hover {
+    background: #5568d3; transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
   }
   .result {
-    margin-top: 20px;
-    padding: 20px;
-    background: #f7f8fc;
-    border-radius: 12px;
-    font-family: 'Consolas', monospace;
-    /* Изменено: результат крупнее */
-    font-size: 20px; 
-    word-break: break-all;
-    min-height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    border: 2px dashed #cbd5e1;
+    margin-top: 20px; padding: 20px; background: #f7f8fc; border-radius: 12px;
+    font-family: 'Consolas', monospace; font-size: 20px; word-break: break-all;
+    min-height: 70px; display: flex; align-items: center; justify-content: space-between;
+    gap: 15px; border: 2px dashed #cbd5e1;
   }
-  .result span { flex: 1; color: #1e293b; }
+  .result span { flex: 1; color: #1e293b; overflow-wrap: anywhere; }
   .copy-btn {
-    background: #764ba2;
-    color: #fff;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: background 0.2s;
+    background: #764ba2; color: #fff; border: none; padding: 10px 18px;
+    border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600;
+    white-space: nowrap; transition: background 0.2s;
   }
   .copy-btn:hover { background: #5d3a82; }
   .hint { font-size: 14px; color: #888; margin-top: 12px; }
   .strength {
-    height: 10px;
-    border-radius: 5px;
-    background: #eee;
-    margin-top: 12px;
-    overflow: hidden;
+    height: 10px; border-radius: 5px; background: #eee;
+    margin-top: 12px; overflow: hidden;
   }
   .strength-bar { height: 100%; width: 0; transition: all 0.3s; }
 </style>
@@ -165,7 +91,6 @@
     <button class="tab" data-tab="email">📧 Email</button>
   </div>
 
-  <!-- ПАРОЛЬ -->
   <div class="panel active" id="password">
     <div class="row">
       <label>Длина пароля:</label>
@@ -183,9 +108,9 @@
     <button class="generate" onclick="genPassword()">Сгенерировать пароль</button>
     <div class="result" id="pwdResult"><span>—</span></div>
     <div class="strength"><div class="strength-bar" id="pwdStrength"></div></div>
+    <div class="hint" id="pwdEntropy"></div>
   </div>
 
-  <!-- ЛОГИН -->
   <div class="panel" id="login">
     <div class="row">
       <label>Стиль:</label>
@@ -206,7 +131,6 @@
     <div class="hint">Логин — латиница, без пробелов, подходит для сайтов.</div>
   </div>
 
-  <!-- НИК -->
   <div class="panel" id="nick">
     <div class="row">
       <label>Стиль:</label>
@@ -225,7 +149,6 @@
     <div class="result" id="nickResult"><span>—</span></div>
   </div>
 
-  <!-- EMAIL -->
   <div class="panel" id="email">
     <div class="row">
       <label>Стиль логина:</label>
@@ -254,7 +177,6 @@
 </div>
 
 <script>
-// ===== Общие данные =====
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER = "abcdefghijklmnopqrstuvwxyz";
 const DIGITS = "0123456789";
@@ -280,7 +202,6 @@ const NAMES = ["alex","max","ivan","oleg","anna","maria","julia","dmitry","serge
 const SURNAMES = ["smirnov","ivanov","petrov","sokolov","popov","volkov","morozov",
   "novikov","fedorov","kozlov","orlov","belov","kuznetsov","pavlov","semenov"];
 
-// ===== Утилиты =====
 const rnd = (n) => Math.floor(Math.random() * n);
 const pick = (arr) => arr[rnd(arr.length)];
 const pickStr = (str) => str[rnd(str.length)];
@@ -295,21 +216,33 @@ const shuffle = (arr) => {
 const randomDigits = (n) => Array.from({length:n}, () => pickStr(DIGITS)).join("");
 const randomFrom = (chars, n) => Array.from({length:n}, () => pickStr(chars)).join("");
 
+/* Безопасная вставка — textContent, без XSS */
 function showResult(id, value, withCopy = true) {
   const el = document.getElementById(id);
-  if (!withCopy) { el.innerHTML = `<span>${value}</span>`; return; }
-  el.innerHTML = `<span>${value}</span><button class="copy-btn" onclick="copyText(this)">Копировать</button>`;
+  el.innerHTML = "";
+  const span = document.createElement("span");
+  span.textContent = value;
+  el.appendChild(span);
+  if (!withCopy) return;
+  const btn = document.createElement("button");
+  btn.className = "copy-btn";
+  btn.textContent = "Копировать";
+  btn.onclick = () => copyText(btn);
+  el.appendChild(btn);
 }
 
 function copyText(btn) {
-  const text = btn.parentElement.querySelector('span').textContent;
+  const span = btn.previousElementSibling;
+  const text = span ? span.textContent : "";
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = "✓ Скопировано";
+    setTimeout(() => btn.textContent = "Копировать", 1200);
+  }).catch(() => {
+    btn.textContent = "Не удалось";
     setTimeout(() => btn.textContent = "Копировать", 1200);
   });
 }
 
-// ===== Табы =====
 document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -319,7 +252,15 @@ document.querySelectorAll('.tab').forEach(tab => {
   };
 });
 
-// ===== Пароль =====
+/* Честная энтропия: сумма по наборам + остаток по пулу */
+function calcEntropy(len, sets, pool) {
+  let bits = 0;
+  for (const s of sets) bits += Math.log2(s.length);
+  const rest = len - sets.length;
+  if (rest > 0) bits += rest * Math.log2(pool.length || 1);
+  return bits;
+}
+
 function genPassword() {
   const len = Math.max(4, Math.min(64, +document.getElementById('pwdLen').value || 16));
   const noAmb = document.getElementById('pwdNoAmbiguous').checked;
@@ -338,7 +279,12 @@ function genPassword() {
   if (document.getElementById('pwdDigits').checked) addSet(DIGITS);
   if (document.getElementById('pwdSymbols').checked) addSet(SYMBOLS);
 
-  if (!pool) { showResult('pwdResult', 'Выберите хотя бы один набор символов'); return; }
+  if (!pool) {
+    showResult('pwdResult', 'Выберите хотя бы один набор символов', false);
+    document.getElementById('pwdStrength').style.width = '0%';
+    document.getElementById('pwdEntropy').textContent = '';
+    return;
+  }
 
   let chars = sets.map(s => s[rnd(s.length)]);
   const remaining = len - chars.length;
@@ -348,7 +294,7 @@ function genPassword() {
   showResult('pwdResult', pwd);
 
   const bar = document.getElementById('pwdStrength');
-  const entropy = len * Math.log2(pool.length);
+  const entropy = calcEntropy(len, sets, pool);
   let color, pct;
   if (entropy < 40) { color = '#e74c3c'; pct = 25; }
   else if (entropy < 60) { color = '#f39c12'; pct = 50; }
@@ -356,9 +302,10 @@ function genPassword() {
   else { color = '#2ecc71'; pct = 100; }
   bar.style.width = pct + '%';
   bar.style.background = color;
+  document.getElementById('pwdEntropy').textContent =
+    `Энтропия: ${entropy.toFixed(1)} бит · наборов: ${sets.length}`;
 }
 
-// ===== Логин =====
 function genLogin() {
   const style = document.getElementById('loginStyle').value;
   const n = Math.max(1, Math.min(8, +document.getElementById('loginNumLen').value || 3));
@@ -379,7 +326,6 @@ function genLogin() {
   showResult('loginResult', result.toLowerCase());
 }
 
-// ===== Ник =====
 function genNick() {
   const style = document.getElementById('nickStyle').value;
   const addNum = document.getElementById('nickNum').checked;
@@ -410,7 +356,6 @@ function genNick() {
   showResult('nickResult', result);
 }
 
-// ===== Email =====
 function genEmail() {
   const style = document.getElementById('emailStyle').value;
   let domain = document.getElementById('emailDomain').value;
@@ -428,7 +373,6 @@ function genEmail() {
   showResult('emailResult', `${login}@${domain}`);
 }
 
-// Генерируем по одному примеру при загрузке
 genPassword();
 genLogin();
 genNick();

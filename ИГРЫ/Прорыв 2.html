@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ПРОРЫВ 2 — Промежуточный рубеж (Neon)</title>
+<title>ПРОРЫВ 2 — Промежуточный рубеж (Neon) — Fatal Patch</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
   
-  /* Фон с неоновой сеткой */
   body{
     background: #05050a;
     background-image: 
@@ -26,7 +25,6 @@
     -webkit-tap-highlight-color:transparent;
   }
 
-  /* Основной контейнер - большой и светящийся */
   .game{
     width:100%;
     max-width: 800px;
@@ -43,7 +41,6 @@
     overflow: hidden;
   }
 
-  /* Переливающаяся рамка сверху */
   .game::before {
     content: '';
     position: absolute;
@@ -59,7 +56,6 @@
     100% { background-position: 300% 50%; }
   }
 
-  /* Заголовок */
   .title{
     text-align:center;
     font-size:42px;
@@ -86,7 +82,6 @@
     text-shadow: 0 0 10px rgba(160, 160, 255, 0.5);
   }
 
-  /* Верхняя панель */
   .topbar{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -176,7 +171,6 @@
     animation: gradientMove 2s linear infinite;
   }
 
-  /* Вкладки */
   .tabs{
     display:flex;
     gap:10px;
@@ -212,12 +206,10 @@
   }
   .tab:active{transform:scale(0.96)}
 
-  /* Панели */
   .panel{display:none}
   .panel.active{display:block;animation:fade .3s}
   @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-  /* Карточка врага */
   .nodeinfo{
     background: linear-gradient(160deg, rgba(20, 0, 40, 0.8), rgba(0, 10, 30, 0.9));
     border: 1px solid rgba(0, 255, 255, 0.4);
@@ -314,7 +306,6 @@
     animation: gradientMove 2s linear infinite;
   }
 
-  /* Кнопки атак */
   .attacks{
     display:grid;
     grid-template-columns:1fr 1fr 1fr;
@@ -369,7 +360,6 @@
     50%{transform:scale(1.05)}
   }
 
-  /* Кнопка отступления */
   .retreat{
     width:100%;
     padding:16px;
@@ -390,7 +380,6 @@
   .retreat:active:not(:disabled){transform:scale(0.98)}
   .retreat:disabled{opacity:0.3; cursor:not-allowed}
 
-  /* Лог */
   .log{
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(0, 255, 255, 0.2);
@@ -413,7 +402,6 @@
   }
   .log .entry:first-child::before{content:'▸ '; color:#ff00ff; text-shadow:0 0 10px #ff00ff;}
 
-  /* Магазин и предметы */
   .card{
     background: rgba(15, 15, 30, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -459,7 +447,6 @@
   .cbtn:disabled{opacity:0.4; cursor:not-allowed; background:#333; box-shadow:none;}
   .cbtn.owned{background: linear-gradient(135deg, #00ff88, #008855); box-shadow:0 0 20px rgba(0, 255, 136, 0.4);}
 
-  /* Инвентарь */
   .inv{
     display:flex;
     flex-wrap:wrap;
@@ -490,7 +477,6 @@
   .invitem:hover{background:rgba(255, 0, 255, 0.3); box-shadow:0 0 25px rgba(255,0,255,0.6); transform:translateY(-2px)}
   .invitem:active{transform:scale(0.95)}
 
-  /* Статы */
   .statslist{
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(0, 255, 255, 0.3);
@@ -534,7 +520,6 @@
   .achitem .aname{font-size:14px; font-weight:800; color:#ffcc66; text-shadow:0 0 10px rgba(255,170,0,0.5)}
   .achitem .adesc{font-size:12px; color:#a0a0c0; margin-top:2px}
 
-  /* Основная кнопка */
   .btnmain{
     width:100%;
     padding:18px;
@@ -557,7 +542,6 @@
   .btnmain.secondary{background: rgba(255, 255, 255, 0.1); color:#fff; border:1px solid rgba(255, 255, 255, 0.3); box-shadow:none;}
   .btnmain.danger{background: linear-gradient(135deg, #ff0055, #880022); color:#fff; box-shadow: 0 0 30px rgba(255, 0, 85, 0.4);}
 
-  /* Концовка */
   .ending{
     padding:40px 30px;
     border-radius:20px;
@@ -607,7 +591,6 @@
   }
   .ending .estats b { color:#fff; text-shadow:0 0 10px currentColor; }
 
-  /* Тост */
   .toast{
     position:fixed;
     top:30px;
@@ -638,7 +621,7 @@
 <body>
 <div class="game">
   <div class="title">ПРОРЫВ 2</div>
-  <div class="subtitle">ПРОЙДИ 20 УЗЛОВ · КУПИ КИБЕРПОРТАЛ X</div>
+  <div class="subtitle">ПРОЙДИ 20 УЗЛОВ · КУПИ КИБЕРПОРТАЛ X · FATAL PATCH</div>
 
   <div class="topbar">
     <div class="statbox">
@@ -724,7 +707,7 @@
 (function(){
 'use strict';
 
-const SAVE_KEY='proryv2_save_v1';
+const SAVE_KEY='proryv2_save_v2_patched';  // 🔧 FIX: новая версия сохранений (из-за изменений баланса)
 const MAX_HP=100, XP_PER_LEVEL=100, HEAL_PER_KILL=12;
 const MEDKIT_HEAL=30, MEDKIT_DROP=0.5, POISON_DROP=0.15;
 const CRIT_CHANCE=10, CRIT_MULT=2;
@@ -784,7 +767,9 @@ const state={
   critCount:0, inv:[], achs:[],
   enemyHp:0, enemyMaxHp:0,
   busy:false, gameOver:false, weakRevealed:false,
-  usedAttack:null
+  usedAttack:null,
+  // 🔧 FIX: флаг «сохранять HP при старте узла» (для retreat)
+  preserveHpOnNextNode:false
 };
 
 const $=id=>document.getElementById(id);
@@ -1014,7 +999,10 @@ function renderAll(){
   renderStats();renderNode();renderShop();renderInv();renderAch();
 }
 
-function startNode(idx){
+// 🔧 FIX: startNode теперь принимает preserveHp
+// Если preserveHp=true — HP не восстанавливается (для retreat)
+// Если false (по умолчанию) — HP = maxHp (новый узел)
+function startNode(idx, preserveHp){
   if(idx>=ENEMIES.length){renderEnding(true);return}
   state.nodeIdx=idx;
   state.gameOver=false;
@@ -1024,7 +1012,11 @@ function startNode(idx){
   const e=ENEMIES[idx];
   state.enemyMaxHp=e.hp;
   state.enemyHp=e.hp;
-  state.hp=state.maxHp;
+  // 🔧 FIX: HP восстанавливается только если не preserveHp
+  if(!preserveHp){
+    state.hp=state.maxHp;
+  }
+  state.preserveHpOnNextNode=false; // сбрасываем флаг
   $('comboEl').classList.remove('on');
   clearLog();
   log('⚔️ '+e.name+' — '+e.hp+' HP');
@@ -1050,11 +1042,8 @@ function playerAttack(type){
   S.click();
 
   const isWeak=type===e.weak;
-  if(isWeak&&!state.weakRevealed){
-    state.weakRevealed=true;
-    renderNode();
-  }
-  if(state.usedAttack&&state.usedAttack!==type&&!state.weakRevealed){
+  // 🔧 FIX: упрощена логика раскрытия слабости — раскрываем при первом ЛЮБОМ ударе
+  if(!state.weakRevealed){
     state.weakRevealed=true;
     renderNode();
   }
@@ -1096,6 +1085,8 @@ function playerAttack(type){
 
 function enemyTurn(){
   if(state.gameOver) return;
+  // 🔧 FIX: проверка, что враг ещё жив (иначе — не бьёт)
+  if(state.enemyHp<=0) return;
   const e=ENEMIES[state.nodeIdx];
   if(!e) return;
 
@@ -1168,6 +1159,7 @@ function defeat(){
   vib(120);
 }
 
+// 🔧 FIX: retreat теперь сохраняет HP (не восстанавливает через startNode)
 function retreat(){
   if(state.busy||state.gameOver) return;
   state.busy=true;
@@ -1178,7 +1170,8 @@ function retreat(){
   renderAll();
   setTimeout(()=>{
     state.busy=false;
-    startNode(state.nodeIdx); // startNode сам ставит state.hp = state.maxHp
+    // 🔧 FIX: передаём preserveHp=true — HP не восстановится
+    startNode(state.nodeIdx, true);
   },600);
 }
 
@@ -1288,7 +1281,7 @@ $('resetBtn').addEventListener('click',resetGame);
 
 function init(){
   if(load()){
-    log('💾 Прогресс загружен');
+    log('💾 Прогресс загружен (патченная версия)');
   }else{
     log('💰 Начинай прорыв!');
   }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>⛏️ Шахтер - Кликер</title>
+    <title>⛏️ Шахтер - Кликер — Fatal Patch</title>
     <style>
         * { 
             margin: 0; 
@@ -48,7 +48,6 @@
             color: var(--text-primary);
         }
         
-        /* Текстурированный фон — каменная порода */
         body::before {
             content: '';
             position: fixed;
@@ -62,7 +61,6 @@
             pointer-events: none;
         }
         
-        /* Кирки как водяной знак */
         body::after {
             content: '⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️ ⛏️';
             position: fixed;
@@ -101,7 +99,6 @@
             border: 1px solid var(--border-gold);
         }
         
-        /* Декоративные уголки */
         .game-container::before,
         .game-container::after {
             content: '◆';
@@ -719,7 +716,6 @@
         
         .save-indicator.show { opacity: 1; }
         
-        /* Настройки помощников */
         .helper-config {
             background: var(--bg-darker);
             border: 1px solid var(--border);
@@ -764,7 +760,6 @@
             color: var(--text-primary);
         }
         
-        /* Буст выживания */
         .survival-boost-info {
             background: rgba(212, 169, 66, 0.08);
             border: 1px solid var(--border-gold);
@@ -875,17 +870,20 @@
     
     <script>
         // ============================================
-        // 🛡️ СИСТЕМА СОХРАНЕНИЯ (без изменений)
+        // 🛡️ СИСТЕМА СОХРАНЕНИЯ
         // ============================================
         
-        const SAVE_KEY = 'minerGame_v3';
-        const DB_NAME = 'MinerGameDB';
+        const SAVE_KEY = 'minerGame_v4_patched';  // 🔧 FIX: новая версия
+        const SAVE_VERSION = 4;  // 🔧 FIX: версия сохранения
+        const DB_NAME = 'MinerGameDB_v4';  // 🔧 FIX: новая БД
         const DB_STORE = 'saves';
         const DB_VERSION = 1;
         
         let db = null;
         let saveInProgress = false;
         let pendingSave = false;
+        let lastSaveTime = 0;  // 🔧 FIX: троттлинг сохранений
+        const SAVE_THROTTLE_MS = 2000;  // 🔧 FIX: не чаще раза в 2 сек
         
         async function initIndexedDB() {
             return new Promise((resolve) => {
@@ -944,12 +942,20 @@
             }
         }
         
+        // 🔧 FIX: троттлинг сохранений
         async function saveGame() {
             if (!gameState) return;
+            const now = Date.now();
+            if (now - lastSaveTime < SAVE_THROTTLE_MS) {
+                pendingSave = true;
+                return;
+            }
             if (saveInProgress) { pendingSave = true; return; }
             saveInProgress = true;
+            lastSaveTime = now;
             try {
-                gameState._timestamp = Date.now();
+                gameState._timestamp = now;
+                gameState._version = SAVE_VERSION;  // 🔧 FIX: версия в сохранении
                 const data = JSON.stringify(gameState);
                 const [lsOk, idbOk] = await Promise.all([
                     Promise.resolve(saveToLocalStorage(data)),
@@ -958,7 +964,7 @@
                 if (lsOk || idbOk) showSaveIndicator();
             } catch(e) {}
             saveInProgress = false;
-            if (pendingSave) { pendingSave = false; saveGame(); }
+            if (pendingSave) { pendingSave = false; setTimeout(saveGame, SAVE_THROTTLE_MS); }
         }
         
         async function loadGame(defaultState) {
@@ -975,7 +981,15 @@
                 } else {
                     dataToUse = lsData || idbData;
                 }
-                if (dataToUse) return JSON.parse(dataToUse);
+                if (dataToUse) {
+                    const parsed = JSON.parse(dataToUse);
+                    // 🔧 FIX: проверка версии
+                    if (parsed._version !== SAVE_VERSION) {
+                        console.warn('Версия сохранения устарела — сброс');
+                        return JSON.parse(JSON.stringify(defaultState));
+                    }
+                    return parsed;
+                }
             } catch(e) {}
             return JSON.parse(JSON.stringify(defaultState));
         }
@@ -1061,6 +1075,11 @@
             meteorite: { name: 'Метеоритная кирка', power: 40, cost: 100000, materials: { meteoriteIngot: 10 } },
             adamantite: { name: 'Адамантиевая кирка', power: 50, cost: 120000, materials: { adamantiteIngot: 10 } }
         };
+        
+        // 🔧 FIX: явный порядок силы кирок (для helperMinerWork)
+        const PICKAXE_POWER_ORDER = ['stone','copper','iron','chrome','diamond','emerald','ruby','obsidian','oil','electric','dragon','mithril','crystal','meteorite','adamantite'];
+        const PICKAXE_INDEX = {};
+        PICKAXE_POWER_ORDER.forEach((id, i) => { PICKAXE_INDEX[id] = i; });
         
         const planets = {
             earth: { name: 'Земля', resources: ['coal', 'iron', 'gold', 'copper', 'chrome'], chances: { coal: 0.35, iron: 0.25, gold: 0.1, copper: 0.18, chrome: 0.07 }, background: 'image1.jpeg', requiredPickaxe: null, cost: 0, pet: { id: 'cat', name: 'Кошка', icon: '🐱', chance: 0.03, bonus: 'sell_bonus', bonusValue: 1.15, description: '+15% к продаже' } },
@@ -1319,7 +1338,7 @@
         }
         
         // ============================================
-        // ⛏️ ДОБЫЧА (с гарантией 1 ресурса)
+        // ⛏️ ДОБЫЧА
         // ============================================
         
         function mine() {
@@ -1340,7 +1359,6 @@
             if (petBonus && petBonus.bonus === 'mining_bonus') power *= petBonus.bonusValue;
             
             if (gameState.creativeMode) {
-                // В креативе тоже проверяем место
                 for (const res of planet.resources) {
                     if (countInventory() < MAX_INVENTORY) {
                         gameState.inventory[res] = (gameState.inventory[res] || 0) + 10;
@@ -1358,7 +1376,6 @@
                 
                 let gotAny = false;
                 
-                // Первый проход: обычные роллы
                 for (const { res, chance } of rolls) {
                     if (Math.random() < chance) {
                         gameState.inventory[res] = (gameState.inventory[res] || 0) + 1;
@@ -1366,8 +1383,6 @@
                     }
                 }
                 
-                // ГАРАНТИЯ: если ничего не выпало — даём один ресурс
-                // Выбираем случайный ресурс, взвешенный по шансам
                 if (!gotAny) {
                     let random = Math.random() * totalChance;
                     for (const { res, chance } of rolls) {
@@ -1377,14 +1392,12 @@
                             break;
                         }
                     }
-                    // Fallback — если что-то пошло не так, даём первый ресурс
                     if (!gotAny) {
                         const firstRes = planet.resources[0];
                         gameState.inventory[firstRes] = (gameState.inventory[firstRes] || 0) + 1;
                     }
                 }
                 
-                // Проверка питомца
                 if (planet.pet && !gameState.pets.includes(planet.pet.id) && Math.random() < planet.pet.chance) {
                     gameState.pets.push(planet.pet.id);
                     if (!gameState.activePet) gameState.activePet = planet.pet.id;
@@ -1413,7 +1426,6 @@
         
         function switchTab(e, name) {
             currentTab = name;
-            // Используем currentTarget — правильная кнопка
             const target = e.currentTarget || e.target;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -1541,7 +1553,7 @@
         }
         
         // ============================================
-        // 🔥 ПЛАВИЛЬНЯ (фикс gold)
+        // 🔥 ПЛАВИЛЬНЯ
         // ============================================
         
         function renderSmelting() {
@@ -1632,7 +1644,6 @@
             }
         }
         
-        // Рендер очереди БЕЗ сохранения (сохранение отдельно)
         function renderSmeltingQueue() {
             const container = document.getElementById('smelting-queue');
             if (!container) return;
@@ -1665,7 +1676,6 @@
             });
         }
         
-        // Отдельная функция: обработка завершённых плавок (вызывается из gameLoop)
         function processCompletedSmelting() {
             if (!gameState.smeltingQueue.length) return false;
             
@@ -1687,7 +1697,7 @@
             }
             
             if (completed > 0) {
-                saveGame(); // одно сохранение на пачку
+                saveGame();
                 updateUI();
                 updateTabIndicators();
                 return true;
@@ -1919,7 +1929,6 @@
                 } else {
                     html += '<div style="color:var(--success-light);font-weight:bold;margin-top:5px;font-size:0.85em;">✓ РАБОТАЕТ</div>';
                     
-                    // Настройка помощника
                     let configHtml = '';
                     let options = '';
                     
@@ -2074,7 +2083,7 @@
         }
         
         // ============================================
-        // 🎮 РЕЖИМ ВЫЖИВАНИЯ (с бустом)
+        // 🎮 РЕЖИМ ВЫЖИВАНИЯ
         // ============================================
         
         function startSurvivalMode() {
@@ -2104,7 +2113,6 @@
             gameState.survivalUnlocked = true;
             gameState.seenHelp = true;
             
-            // БУСТ
             gameState.money = 5000;
             for (const [inp, recipe] of Object.entries(smeltingRecipes)) {
                 if (recipe.output !== 'food') {
@@ -2222,20 +2230,21 @@
         }
         
         // ============================================
-        // 🤖 ПОМОЩНИКИ (с настройками)
+        // 🤖 ПОМОЩНИКИ
         // ============================================
         
+        // 🔧 FIX: helperMinerWork — правильная проверка силы кирки
         function helperMinerWork() {
             if (!gameState.helpers.miner || gameState.food < 1) return false;
             
             const planet = planets[gameState.currentPlanet];
             const pickaxe = pickaxes[gameState.currentPickaxe];
             
-            if (planet.requiredPickaxe && gameState.currentPickaxe !== planet.requiredPickaxe) {
-                const requiredOrder = ['stone', 'copper', 'iron', 'chrome', 'diamond', 'emerald', 'ruby', 'obsidian', 'oil', 'electric', 'dragon', 'mithril', 'crystal', 'meteorite', 'adamantite'];
-                const currentIndex = requiredOrder.indexOf(gameState.currentPickaxe);
-                const requiredIndex = requiredOrder.indexOf(planet.requiredPickaxe);
-                if (currentIndex < requiredIndex) return false;
+            // 🔧 FIX: используем PICKAXE_INDEX для проверки «сила кирки >= требуемая»
+            if (planet.requiredPickaxe) {
+                const currentIdx = PICKAXE_INDEX[gameState.currentPickaxe] ?? -1;
+                const requiredIdx = PICKAXE_INDEX[planet.requiredPickaxe] ?? -1;
+                if (currentIdx < requiredIdx) return false;
             }
             
             let power = pickaxe.power;
@@ -2252,7 +2261,6 @@
             } else if (planet.resources.includes(configuredRes)) {
                 toMine = [configuredRes];
             } else {
-                // Настроен на ресурс, которого нет на планете — копаем всё
                 toMine = planet.resources;
             }
             
@@ -2347,13 +2355,11 @@
         
         // ==== ИГРОВОЙ ЦИКЛ ====
         let lastHelperTime = Date.now();
-        let lastSaveTime = Date.now();
         let lastSmeltingRender = 0;
         
         function gameLoop() {
             const now = Date.now();
             
-            // Помощники раз в секунду
             if (now - lastHelperTime >= 1000 && gameState) {
                 lastHelperTime = now;
                 let changed = false;
@@ -2378,18 +2384,10 @@
                 }
             }
             
-            // Обработка завершённых плавок (батчем)
             if (gameState && gameState.smeltingQueue.length > 0) {
                 processCompletedSmelting();
             }
             
-            // Автосохранение
-            if (now - lastSaveTime >= 30000) {
-                lastSaveTime = now;
-                saveGame();
-            }
-            
-            // Рендер очереди плавки
             if (currentTab === 'smelting' && gameState && gameState.smeltingQueue.length > 0 && now - lastSmeltingRender >= 100) {
                 lastSmeltingRender = now;
                 renderSmeltingQueue();
@@ -2414,7 +2412,6 @@
             await initIndexedDB();
             gameState = await loadGame(defaultState);
             
-            // Миграция старых сохранений (v2 → v3)
             if (gameState.helperConfig === undefined) {
                 gameState.helperConfig = {
                     minerResource: 'all',

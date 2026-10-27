@@ -5,230 +5,68 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HYPERCALC — 20 режимов</title>
 <style>
-/* ================= БАЗА ================= */
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --cy:#00f0ff; --mg:#ff00e0; --lm:#7cff00;
-  --glass:rgba(10,20,35,.62);
-}
+:root{--cy:#00f0ff;--mg:#ff00e0;--lm:#7cff00;--glass:rgba(10,20,35,.62)}
 html,body{height:100%}
-body{
-  font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
-  background:#04060b;color:#e6f7ff;
-  display:flex;justify-content:center;padding:18px;
-  min-height:100vh;overflow-x:hidden;
-  -webkit-tap-highlight-color:transparent;
-}
-
-/* ================= ФОН ================= */
+body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:#04060b;color:#e6f7ff;display:flex;justify-content:center;padding:18px;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
 .bg{position:fixed;inset:-20%;z-index:-3;background:#04060b}
-.bg::before{
-  content:"";position:absolute;inset:0;
-  background:conic-gradient(from 0deg,#00f0ff40,#ff00e040,#7cff0030,#00f0ff40);
-  filter:blur(90px);animation:spin 26s linear infinite;
-}
-.bg::after{
-  content:"";position:absolute;inset:0;
-  background:
-    radial-gradient(circle at 15% 20%,rgba(0,240,255,.20),transparent 45%),
-    radial-gradient(circle at 85% 80%,rgba(255,0,224,.20),transparent 45%),
-    radial-gradient(circle at 50% 50%,#04060b 55%,transparent 100%);
-}
+.bg::before{content:"";position:absolute;inset:0;background:conic-gradient(from 0deg,#00f0ff40,#ff00e040,#7cff0030,#00f0ff40);filter:blur(90px);animation:spin 26s linear infinite}
+.bg::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 15% 20%,rgba(0,240,255,.20),transparent 45%),radial-gradient(circle at 85% 80%,rgba(255,0,224,.20),transparent 45%),radial-gradient(circle at 50% 50%,#04060b 55%,transparent 100%)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.grid-lines{
-  position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.28;
-  background-image:
-    linear-gradient(rgba(0,240,255,.09) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,240,255,.09) 1px,transparent 1px);
-  background-size:48px 48px;
-  mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 85%);
-}
-.scan{
-  position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.25;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 1px,transparent 1px 4px);
-}
-
-/* ================= КАРКАС ================= */
+.grid-lines{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.28;background-image:linear-gradient(rgba(0,240,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.09) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(circle at 50% 40%,#000 30%,transparent 85%)}
+.scan{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.25;background:repeating-linear-gradient(0deg,rgba(0,0,0,.5) 0 1px,transparent 1px 4px)}
 .app{width:min(1020px,100%);display:flex;flex-direction:column;gap:16px;position:relative;z-index:3}
-
 header{text-align:center;padding-top:6px}
-h1{
-  font-size:clamp(30px,7vw,56px);font-weight:900;letter-spacing:.14em;
-  background:linear-gradient(90deg,#00f0ff,#ff00e0,#7cff00,#00f0ff);
-  background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:flow 7s linear infinite;
-  filter:drop-shadow(0 0 22px rgba(0,240,255,.55));
-}
+h1{font-size:clamp(30px,7vw,56px);font-weight:900;letter-spacing:.14em;background:linear-gradient(90deg,#00f0ff,#ff00e0,#7cff00,#00f0ff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 7s linear infinite;filter:drop-shadow(0 0 22px rgba(0,240,255,.55))}
 h1 span{filter:drop-shadow(0 0 22px rgba(255,0,224,.55))}
 @keyframes flow{to{background-position:300% 0}}
 .sub{font-size:12px;letter-spacing:.35em;text-transform:uppercase;color:#4fb9d8;margin-top:4px}
-
-/* ================= РЕЖИМЫ ================= */
-.modes{
-  display:flex;flex-wrap:wrap;gap:7px;justify-content:center;
-  padding:10px;border-radius:18px;
-  background:rgba(255,255,255,.025);
-  border:1px solid rgba(0,240,255,.16);
-  backdrop-filter:blur(14px);
-}
-.mode{
-  display:flex;align-items:center;gap:6px;
-  padding:7px 12px;border-radius:11px;cursor:pointer;
-  font-size:12.5px;font-weight:600;letter-spacing:.02em;
-  color:#8fd7f0;background:rgba(0,240,255,.05);
-  border:1px solid rgba(0,240,255,.14);
-  transition:transform .15s,background .2s,box-shadow .2s,color .2s;
-  white-space:nowrap;font-family:inherit;
-}
+.modes{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;padding:10px;border-radius:18px;background:rgba(255,255,255,.025);border:1px solid rgba(0,240,255,.16);backdrop-filter:blur(14px)}
+.mode{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:11px;cursor:pointer;font-size:12.5px;font-weight:600;letter-spacing:.02em;color:#8fd7f0;background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.14);transition:transform .15s,background .2s,box-shadow .2s,color .2s;white-space:nowrap;font-family:inherit}
 .mode:hover{background:rgba(0,240,255,.16);color:#dffbff;transform:translateY(-2px)}
-.mode.active{
-  color:#04060b;font-weight:800;
-  background:linear-gradient(135deg,#00f0ff,#ff00e0);
-  border-color:transparent;
-  box-shadow:0 0 22px rgba(0,240,255,.6),0 0 42px rgba(255,0,224,.35);
-  transform:translateY(-2px);
-}
+.mode.active{color:#04060b;font-weight:800;background:linear-gradient(135deg,#00f0ff,#ff00e0);border-color:transparent;box-shadow:0 0 22px rgba(0,240,255,.6),0 0 42px rgba(255,0,224,.35);transform:translateY(-2px)}
 .mode span{font-size:15px}
-
-/* ================= ПАНЕЛЬ ================= */
-.panel{
-  position:relative;padding:20px;border-radius:26px;
-  background:var(--glass);
-  border:1px solid rgba(0,240,255,.22);
-  backdrop-filter:blur(22px);
-  box-shadow:0 0 50px rgba(0,240,255,.13),inset 0 0 80px rgba(0,240,255,.03);
-  animation:pop .35s cubic-bezier(.2,1.2,.4,1);
-  min-height:380px;
-}
+.panel{position:relative;padding:20px;border-radius:26px;background:var(--glass);border:1px solid rgba(0,240,255,.22);backdrop-filter:blur(22px);box-shadow:0 0 50px rgba(0,240,255,.13),inset 0 0 80px rgba(0,240,255,.03);animation:pop .35s cubic-bezier(.2,1.2,.4,1);min-height:380px}
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
-.panel::before{
-  content:"";position:absolute;inset:-1px;border-radius:26px;padding:1px;
-  background:linear-gradient(135deg,rgba(0,240,255,.5),transparent 40%,transparent 60%,rgba(255,0,224,.5));
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
-}
-
-/* ================= ДИСПЛЕЙ ================= */
-.display{
-  background:rgba(0,0,0,.55);
-  border:1px solid rgba(0,240,255,.28);
-  border-radius:18px;padding:16px 18px;
-  min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;
-  box-shadow:inset 0 0 40px rgba(0,240,255,.09);
-  overflow:hidden;
-}
-.display .expr{
-  font-family:ui-monospace,Consolas,monospace;
-  font-size:15px;color:#5fd3ff;min-height:20px;
-  word-break:break-all;opacity:.85;text-align:right;
-}
-.display .result{
-  font-family:ui-monospace,Consolas,monospace;
-  font-size:clamp(26px,7vw,44px);font-weight:800;text-align:right;
-  color:#fff;text-shadow:0 0 24px rgba(0,240,255,.85),0 0 60px rgba(0,240,255,.4);
-  word-break:break-all;line-height:1.1;
-}
-
-/* ================= КЛАВИШИ ================= */
+.panel::before{content:"";position:absolute;inset:-1px;border-radius:26px;padding:1px;background:linear-gradient(135deg,rgba(0,240,255,.5),transparent 40%,transparent 60%,rgba(255,0,224,.5));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.display{background:rgba(0,0,0,.55);border:1px solid rgba(0,240,255,.28);border-radius:18px;padding:16px 18px;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;box-shadow:inset 0 0 40px rgba(0,240,255,.09);overflow:hidden}
+.display .expr{font-family:ui-monospace,Consolas,monospace;font-size:15px;color:#5fd3ff;min-height:20px;word-break:break-all;opacity:.85;text-align:right}
+.display .result{font-family:ui-monospace,Consolas,monospace;font-size:clamp(26px,7vw,44px);font-weight:800;text-align:right;color:#fff;text-shadow:0 0 24px rgba(0,240,255,.85),0 0 60px rgba(0,240,255,.4);word-break:break-all;line-height:1.1}
+.display .result.err{color:#ff6b8a;font-size:clamp(16px,3.5vw,24px);text-shadow:0 0 18px rgba(255,60,100,.6)}
 .keys{display:grid;gap:9px;margin-top:15px}
-.key{
-  font-family:inherit;
-  padding:17px 4px;border-radius:14px;cursor:pointer;
-  font-size:19px;font-weight:700;color:#d6f6ff;
-  border:1px solid rgba(0,240,255,.2);
-  background:linear-gradient(180deg,rgba(0,240,255,.09),rgba(0,240,255,.02));
-  transition:transform .1s,box-shadow .18s,background .18s;
-  user-select:none;
-}
+.key{font-family:inherit;padding:17px 4px;border-radius:14px;cursor:pointer;font-size:19px;font-weight:700;color:#d6f6ff;border:1px solid rgba(0,240,255,.2);background:linear-gradient(180deg,rgba(0,240,255,.09),rgba(0,240,255,.02));transition:transform .1s,box-shadow .18s,background .18s;user-select:none}
 .key:hover{background:linear-gradient(180deg,rgba(0,240,255,.24),rgba(0,240,255,.07));box-shadow:0 0 20px rgba(0,240,255,.45)}
 .key:active{transform:scale(.93)}
 .key.op{color:#ff8ceb;border-color:rgba(255,0,224,.32);background:linear-gradient(180deg,rgba(255,0,224,.15),rgba(255,0,224,.03))}
 .key.op:hover{box-shadow:0 0 20px rgba(255,0,224,.5)}
 .key.fn{font-size:14px;color:#b6ff8a;border-color:rgba(124,255,0,.28);background:linear-gradient(180deg,rgba(124,255,0,.11),rgba(124,255,0,.02))}
 .key.fn:hover{box-shadow:0 0 20px rgba(124,255,0,.42)}
-.key.eq{
-  color:#04060b;font-weight:900;
-  background:linear-gradient(135deg,#00f0ff,#ff00e0);border-color:transparent;
-  box-shadow:0 0 26px rgba(0,240,255,.55);
-}
-
-/* ================= ТУЛБАР ================= */
+.key.eq{color:#04060b;font-weight:900;background:linear-gradient(135deg,#00f0ff,#ff00e0);border-color:transparent;box-shadow:0 0 26px rgba(0,240,255,.55)}
 .toolbar{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
-.chip{
-  font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;
-  padding:7px 14px;border-radius:10px;cursor:pointer;
-  color:#8fd7f0;background:rgba(0,240,255,.06);
-  border:1px solid rgba(0,240,255,.2);transition:.2s;
-}
+.chip{font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;padding:7px 14px;border-radius:10px;cursor:pointer;color:#8fd7f0;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.2);transition:.2s}
 .chip:hover{background:rgba(0,240,255,.16)}
 .chip.active{color:#04060b;background:linear-gradient(135deg,#00f0ff,#7cff00);border-color:transparent;box-shadow:0 0 18px rgba(0,240,255,.5)}
 .spacer{flex:1}
 .hint{font-size:11px;color:#4a8fa8;letter-spacing:.1em}
-
-/* ================= ФОРМЫ ================= */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 .field{display:flex;flex-direction:column;gap:7px}
-.field label{
-  font-size:11px;text-transform:uppercase;letter-spacing:.14em;
-  color:#57c9ec;font-weight:700;
-}
-input,select{
-  font-family:inherit;font-size:16px;font-weight:600;
-  width:100%;padding:12px 14px;border-radius:13px;outline:none;
-  color:#eaffff;background:rgba(0,0,0,.5);
-  border:1px solid rgba(0,240,255,.24);
-  transition:border-color .2s,box-shadow .2s;
-  appearance:none;
-}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#57c9ec;font-weight:700}
+input,select{font-family:inherit;font-size:16px;font-weight:600;width:100%;padding:12px 14px;border-radius:13px;outline:none;color:#eaffff;background:rgba(0,0,0,.5);border:1px solid rgba(0,240,255,.24);transition:border-color .2s,box-shadow .2s;appearance:none}
 input:focus,select:focus{border-color:#00f0ff;box-shadow:0 0 18px rgba(0,240,255,.45)}
-select{
-  background-image:linear-gradient(45deg,transparent 50%,#00f0ff 50%),linear-gradient(135deg,#00f0ff 50%,transparent 50%);
-  background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;
-  background-size:6px 6px,6px 6px;background-repeat:no-repeat;
-  padding-right:38px;cursor:pointer;
-}
+select{background-image:linear-gradient(45deg,transparent 50%,#00f0ff 50%),linear-gradient(135deg,#00f0ff 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;padding-right:38px;cursor:pointer}
 select option{background:#0a1420;color:#eaffff}
 input[type=date]{color-scheme:dark}
-
-.result-box{
-  margin-top:16px;padding:16px 18px;border-radius:16px;
-  background:linear-gradient(135deg,rgba(0,240,255,.10),rgba(255,0,224,.07));
-  border:1px solid rgba(0,240,255,.3);
-  box-shadow:inset 0 0 40px rgba(0,240,255,.06);
-}
-.big{
-  font-family:ui-monospace,Consolas,monospace;
-  font-size:clamp(20px,5vw,30px);font-weight:800;color:#00f0ff;
-  text-shadow:0 0 18px rgba(0,240,255,.8);word-break:break-all;
-}
+.result-box{margin-top:16px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(0,240,255,.10),rgba(255,0,224,.07));border:1px solid rgba(0,240,255,.3);box-shadow:inset 0 0 40px rgba(0,240,255,.06)}
+.big{font-family:ui-monospace,Consolas,monospace;font-size:clamp(20px,5vw,30px);font-weight:800;color:#00f0ff;text-shadow:0 0 18px rgba(0,240,255,.8);word-break:break-all}
 .muted{font-size:12.5px;color:#6ba9c2;margin-top:8px;line-height:1.6}
 .rows{display:flex;flex-direction:column;gap:9px;margin-top:14px}
-.row{
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:11px 15px;border-radius:12px;
-  background:rgba(0,240,255,.05);
-  border:1px solid rgba(0,240,255,.13);
-  font-size:14px;
-}
-.row b{
-  font-family:ui-monospace,Consolas,monospace;
-  color:#7cff00;font-size:16px;text-shadow:0 0 14px rgba(124,255,0,.6);
-  text-align:right;word-break:break-all;
-}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 15px;border-radius:12px;background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.13);font-size:14px}
+.row b{font-family:ui-monospace,Consolas,monospace;color:#7cff00;font-size:16px;text-shadow:0 0 14px rgba(124,255,0,.6);text-align:right;word-break:break-all}
 .row span{color:#8fd7f0}
-.swap{
-  font-family:inherit;margin-top:14px;padding:11px 20px;border-radius:12px;cursor:pointer;
-  font-size:13px;font-weight:800;letter-spacing:.06em;
-  color:#04060b;background:linear-gradient(135deg,#7cff00,#00f0ff);
-  border:none;transition:.2s;box-shadow:0 0 20px rgba(124,255,0,.35);
-}
+.swap{font-family:inherit;margin-top:14px;padding:11px 20px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:800;letter-spacing:.06em;color:#04060b;background:linear-gradient(135deg,#7cff00,#00f0ff);border:none;transition:.2s;box-shadow:0 0 20px rgba(124,255,0,.35)}
 .swap:hover{filter:brightness(1.15);transform:translateY(-1px)}
-.sec-title{
-  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#ff6ee0;
-  font-weight:800;margin:20px 0 4px;text-shadow:0 0 14px rgba(255,0,224,.5);
-}
+.sec-title{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#ff6ee0;font-weight:800;margin:20px 0 4px;text-shadow:0 0 14px rgba(255,0,224,.5)}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(0,240,255,.35);border-radius:9px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -251,9 +89,6 @@ input[type=date]{color-scheme:dark}
 
 <script>
 "use strict";
-/* ═══════════════════════════════════════════════
-   УТИЛИТЫ
-   ═══════════════════════════════════════════════ */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -265,11 +100,9 @@ function fmt(n) {
   return String(parseFloat(n.toPrecision(12)));
 }
 
-/* ═══════════════════════════════════════════════
-   ПАРСЕР МАТЕМАТИЧЕСКИХ ВЫРАЖЕНИЙ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ПАРСЕР (исправленный) ═══════════ */
 function factorial(n) {
-  if (n < 0 || !Number.isInteger(n)) return NaN;
+  if (!Number.isInteger(n) || n < 0) return NaN;
   if (n > 170) return Infinity;
   let r = 1;
   for (let k = 2; k <= n; k++) r *= k;
@@ -319,6 +152,7 @@ function evalExpr(input, deg = false) {
     if (s[i] === "+") { i++; return pUnary(); }
     return pPower();
   }
+  // Степень: право-ассоциативна, связывает сильнее унарного минуса
   function pPower() {
     const base = pAtom();
     if (s[i] === "^") { i++; return Math.pow(base, pUnary()); }
@@ -351,7 +185,11 @@ function evalExpr(input, deg = false) {
       } else fail("Неизвестно: " + name);
     } else fail("Лишний символ: " + (s[i] || "конец"));
 
-    while (s[i] === "!") { i++; v = factorial(v); }
+    while (s[i] === "!") {
+      i++;
+      if (!Number.isInteger(v) || v < 0) fail("Факториал: целое ≥ 0");
+      v = factorial(v);
+    }
     return v;
   }
 
@@ -360,13 +198,11 @@ function evalExpr(input, deg = false) {
   return out;
 }
 
-/* ═══════════════════════════════════════════════
-   КЛАВИАТУРЫ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ КЛАВИАТУРЫ ═══════════ */
 const STD_KEYS = [
   { label: "C",  act: "clear", cls: "fn" },
   { label: "⌫",  act: "back",  cls: "fn" },
-  { label: "%",  ins: "/100",  cls: "fn" },
+  { label: "%",  ins: "%",     cls: "fn" },
   { label: "÷",  ins: "/",     cls: "op" },
   { label: "7",  ins: "7" }, { label: "8", ins: "8" }, { label: "9", ins: "9" },
   { label: "×",  ins: "*",     cls: "op" },
@@ -386,42 +222,36 @@ const SCI_KEYS = [
   { label: "(",   ins: "(", cls: "fn" },
   { label: ")",   ins: ")", cls: "fn" },
   { label: "÷",   ins: "/", cls: "op" },
-
   { label: "sin", ins: "sin(", cls: "fn" },
   { label: "cos", ins: "cos(", cls: "fn" },
   { label: "tan", ins: "tan(", cls: "fn" },
   { label: "π",   ins: "π",    cls: "fn" },
   { label: "×",   ins: "*",    cls: "op" },
-
   { label: "ln",  ins: "ln(",  cls: "fn" },
   { label: "log", ins: "log(", cls: "fn" },
   { label: "√",   ins: "sqrt(",cls: "fn" },
   { label: "^",   ins: "^",    cls: "op" },
   { label: "−",   ins: "-",    cls: "op" },
-
   { label: "7", ins: "7" }, { label: "8", ins: "8" }, { label: "9", ins: "9" },
   { label: "x²", ins: "^2", cls: "fn" },
   { label: "+",  ins: "+",  cls: "op" },
-
   { label: "4", ins: "4" }, { label: "5", ins: "5" }, { label: "6", ins: "6" },
   { label: "!", ins: "!", cls: "fn" },
   { label: "=", act: "eq", cls: "eq" },
-
   { label: "1", ins: "1" }, { label: "2", ins: "2" }, { label: "3", ins: "3" },
   { label: ".", ins: "." }, { label: "0", ins: "0" }
 ];
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: КАЛЬКУЛЯТОР (стандарт / научный)
-   ═══════════════════════════════════════════════ */
+/* ═══════════ КАЛЬКУЛЯТОР ═══════════ */
 function calcMode(scientific) {
-  const st = { expr: "", deg: true, frozen: false, answer: 0 };
+  const st = { expr: "", deg: true, frozen: false, answer: 0, error: null };
   const keys = scientific ? SCI_KEYS : STD_KEYS;
   const cols = scientific ? 5 : 4;
 
   const preview = () => {
-    if (!st.expr) return 0;
-    try { return evalExpr(st.expr, st.deg); } catch (e) { return null; }
+    if (!st.expr) return { value: 0 };
+    try { return { value: evalExpr(st.expr, st.deg) }; }
+    catch (e) { return { error: e.message }; }
   };
 
   return {
@@ -451,9 +281,16 @@ function calcMode(scientific) {
         exprEl.textContent = st.expr;
         if (st.frozen) {
           resEl.textContent = fmt(st.answer);
+          resEl.classList.remove("err");
         } else {
-          const v = preview();
-          resEl.textContent = v === null ? (st.expr ? "…" : "0") : fmt(v);
+          const p = preview();
+          if (p.error) {
+            resEl.textContent = "Ошибка: " + p.error;
+            resEl.classList.add("err");
+          } else {
+            resEl.textContent = fmt(p.value);
+            resEl.classList.remove("err");
+          }
         }
       };
 
@@ -480,8 +317,13 @@ function calcMode(scientific) {
           if (st.frozen) { st.expr = String(st.answer); st.frozen = false; }
           st.expr = st.expr.startsWith("-") ? st.expr.slice(1) : "-" + st.expr;
         } else if (act === "eq") {
-          const v = preview();
-          if (v !== null && st.expr) { st.answer = v; st.frozen = true; }
+          const p = preview();
+          if (p.error) {
+            resEl.textContent = "Ошибка: " + p.error;
+            resEl.classList.add("err");
+            return;
+          }
+          if (st.expr) { st.answer = p.value; st.frozen = true; }
         }
         paint();
       });
@@ -497,11 +339,10 @@ function calcMode(scientific) {
   };
 }
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ПРОГРАММИСТ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ПРОГРАММИСТ (исправленный) ═══════════ */
 function progMode() {
   const st = { buf: "0", base: 10, acc: null, op: null, fresh: true };
+  const DIGITS = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
 
   const curVal = () => parseInt(st.buf || "0", st.base) || 0;
 
@@ -520,13 +361,17 @@ function progMode() {
     }
   };
 
+  // 32-битная беззнаковая ширина для HEX/BIN
   const toBase = (n, b) => {
     if (!isFinite(n)) return "—";
     const v = Math.trunc(n);
-    return (b === 10 ? String(v) : (v < 0 ? "-" : "") + Math.abs(v).toString(b).toUpperCase());
+    if (b === 10) return String(v);
+    if (b === 16 || b === 2) {
+      const u = v < 0 ? (v >>> 0) : v;
+      return u.toString(b).toUpperCase();
+    }
+    return (v < 0 ? "-" : "") + Math.abs(v).toString(b).toUpperCase();
   };
-
-  const DIGITS = ["0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"];
 
   return {
     html() {
@@ -547,9 +392,8 @@ function progMode() {
            "4","5","6","NOT","/",
            "1","2","3","*","-",
            "A","B","C","+","=",
-           "D","E","F","0",".back"].map(k => {
-          if (k === ".back") return "";
-          const isDigit = DIGITS.includes(k);
+           "D","E","F","0","00"].map(k => {
+          const isDigit = DIGITS.includes(k) || k === "00";
           const cls = isDigit ? "" : (k === "=" ? "eq" : (["+","-","*","/"].includes(k) ? "op" : "fn"));
           return `<button class="key ${cls}" data-k="${k}">${k}</button>`;
         }).join("")}
@@ -591,13 +435,17 @@ function progMode() {
           if (d >= st.base) return;
           if (st.fresh || st.buf === "0") { st.buf = k; st.fresh = false; }
           else st.buf += k;
+        } else if (k === "00") {
+          if (st.fresh || st.buf === "0") { st.buf = "0"; st.fresh = false; }
+          else st.buf += "00";
         } else if (k === "C") {
           st.buf = "0"; st.acc = null; st.op = null; st.fresh = true;
         } else if (k === "⌫") {
           st.buf = st.buf.length > 1 ? st.buf.slice(0, -1) : "0";
         } else if (k === "NOT") {
           const v = ~curVal();
-          st.buf = toBase(v, st.base); st.fresh = true;
+          st.buf = toBase(v, st.base);
+          st.fresh = true;
         } else if (k === "=") {
           const v = curVal();
           if (st.op !== null && st.acc !== null) {
@@ -619,9 +467,7 @@ function progMode() {
   };
 }
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: КОНВЕРТЕР (универсальный)
-   ═══════════════════════════════════════════════ */
+/* ═══════════ КОНВЕРТЕР ═══════════ */
 function convMode(cfg) {
   return {
     html() {
@@ -669,51 +515,19 @@ function convMode(cfg) {
   };
 }
 
-/* ═══════════════════════════════════════════════
-   ДАННЫЕ ЕДИНИЦ
-   ═══════════════════════════════════════════════ */
-const LENGTH = {
-  "м":1,"км":1000,"см":0.01,"мм":0.001,"мкм":1e-6,
-  "миля":1609.344,"ярд":0.9144,"фут":0.3048,"дюйм":0.0254,
-  "мор. миля":1852,"а.е.":1.495978707e11,"свет. год":9.4607e15
-};
-const MASS = {
-  "кг":1,"г":0.001,"мг":1e-6,"т":1000,"центнер":100,
-  "фунт":0.45359237,"унция":0.028349523,"карат":0.0002,"стоун":6.35029318
-};
-const SPEED = {
-  "м/с":1,"км/ч":0.2777778,"миль/ч":0.44704,"узел":0.5144444,
-  "фут/с":0.3048,"км/с":1000,"мах":340.29
-};
-const AREA = {
-  "м²":1,"км²":1e6,"см²":1e-4,"га":10000,"ар":100,
-  "акр":4046.8564224,"фут²":0.09290304,"дюйм²":0.00064516,"миля²":2589988.11
-};
-const VOLUME = {
-  "литр":1,"мл":0.001,"м³":1000,"см³":0.001,
-  "галлон (US)":3.785411784,"пинта (US)":0.473176473,
-  "чашка (US)":0.2365882365,"жидк. унция":0.0295735296,"баррель нефти":158.9872949
-};
-const TIME = {
-  "секунда":1,"мс":0.001,"минута":60,"час":3600,"сутки":86400,
-  "неделя":604800,"месяц (30.44д)":2629800,"год (365.25д)":31557600,"век":3155760000
-};
-const DATA = {
-  "байт":1,"КБ":1024,"МБ":1048576,"ГБ":1073741824,"ТБ":1099511627776,
-  "ПБ":1125899906842624,"бит":0.125,"Кбит":128,"Мбит":131072,"Гбит":134217728
-};
-const CURRENCY = {
-  "USD $":1,"EUR €":0.92,"GBP £":0.79,"RUB ₽":0.0108,"CNY ¥":0.14,
-  "JPY ¥":0.0064,"KZT ₸":0.0021,"UAH ₴":0.024,"TRY ₺":0.031,
-  "BTC ₿":66000,"ETH Ξ":3100
-};
-
+/* ═══════════ ЕДИНИЦЫ ═══════════ */
+const LENGTH = {"м":1,"км":1000,"см":0.01,"мм":0.001,"мкм":1e-6,"миля":1609.344,"ярд":0.9144,"фут":0.3048,"дюйм":0.0254,"мор. миля":1852,"а.е.":1.495978707e11,"свет. год":9.4607e15};
+const MASS = {"кг":1,"г":0.001,"мг":1e-6,"т":1000,"центнер":100,"фунт":0.45359237,"унция":0.028349523,"карат":0.0002,"стоун":6.35029318};
+const SPEED = {"м/с":1,"км/ч":0.2777778,"миль/ч":0.44704,"узел":0.5144444,"фут/с":0.3048,"км/с":1000,"мах":340.29};
+const AREA = {"м²":1,"км²":1e6,"см²":1e-4,"га":10000,"ар":100,"акр":4046.8564224,"фут²":0.09290304,"дюйм²":0.00064516,"миля²":2589988.11};
+const VOLUME = {"литр":1,"мл":0.001,"м³":1000,"см³":0.001,"галлон (US)":3.785411784,"пинта (US)":0.473176473,"чашка (US)":0.2365882365,"жидк. унция":0.0295735296,"баррель нефти":158.9872949};
+const TIME = {"секунда":1,"мс":0.001,"минута":60,"час":3600,"сутки":86400,"неделя":604800,"месяц (30.44д)":2629800,"год (365.25д)":31557600,"век":3155760000};
+const DATA = {"байт":1,"КБ":1024,"МБ":1048576,"ГБ":1073741824,"ТБ":1099511627776,"ПБ":1125899906842624,"бит":0.125,"Кбит":128,"Мбит":131072,"Гбит":134217728};
+const CURRENCY = {"USD $":1,"EUR €":0.92,"GBP £":0.79,"RUB ₽":0.0108,"CNY ¥":0.14,"JPY ¥":0.0064,"KZT ₸":0.0021,"UAH ₴":0.024,"TRY ₺":0.031,"BTC ₿":66000,"ETH Ξ":3100};
 const toC   = { "°C": v => v, "°F": v => (v - 32) * 5 / 9, "K": v => v - 273.15 };
 const fromC = { "°C": v => v, "°F": v => v * 9 / 5 + 32, "K": v => v + 273.15 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ИМТ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ИМТ ═══════════ */
 const bmiMode = {
   html() {
     return `
@@ -721,10 +535,7 @@ const bmiMode = {
       <div class="field"><label>Вес, кг</label><input type="number" id="bw" value="70" step="0.1"></div>
       <div class="field"><label>Рост, см</label><input type="number" id="bh" value="175" step="0.1"></div>
     </div>
-    <div class="result-box">
-      <div class="big" id="bout">—</div>
-      <div class="muted" id="bcat"></div>
-    </div>
+    <div class="result-box"><div class="big" id="bout">—</div><div class="muted" id="bcat"></div></div>
     <div class="rows" id="brows"></div>`;
   },
   init(root) {
@@ -756,9 +567,7 @@ const bmiMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: КРЕДИТ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ КРЕДИТ ═══════════ */
 const loanMode = {
   html() {
     return `
@@ -791,9 +600,7 @@ const loanMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ПРОЦЕНТЫ И СКИДКИ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ПРОЦЕНТЫ ═══════════ */
 const percentMode = {
   html() {
     return `
@@ -803,14 +610,12 @@ const percentMode = {
       <div class="field"><label>Скидка, %</label><input type="number" id="pd" value="25"></div>
     </div>
     <div class="rows" id="prow1"></div>
-
     <div class="sec-title">X% от Y</div>
     <div class="grid2">
       <div class="field"><label>Процент, %</label><input type="number" id="px" value="15"></div>
       <div class="field"><label>Число</label><input type="number" id="py" value="2000"></div>
     </div>
     <div class="rows" id="prow2"></div>
-
     <div class="sec-title">A от B — сколько %</div>
     <div class="grid2">
       <div class="field"><label>A</label><input type="number" id="pa" value="30"></div>
@@ -826,10 +631,8 @@ const percentMode = {
       g("#prow1").innerHTML = `
         <div class="row"><span>К оплате</span><b>${fmt(fin)}</b></div>
         <div class="row"><span>Экономия</span><b>${fmt(save)}</b></div>`;
-
       const x = parseFloat(g("#px").value) || 0, y = parseFloat(g("#py").value) || 0;
       g("#prow2").innerHTML = `<div class="row"><span>${x}% от ${y}</span><b>${fmt(x * y / 100)}</b></div>`;
-
       const a = parseFloat(g("#pa").value) || 0, b = parseFloat(g("#pb").value) || 0;
       g("#prow3").innerHTML = `<div class="row"><span>${a} от ${b}</span><b>${b === 0 ? "—" : (a / b * 100).toFixed(2) + " %"}</b></div>`;
     };
@@ -838,9 +641,7 @@ const percentMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: РАЗНИЦА ДАТ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ДАТЫ ═══════════ */
 function ymdDiff(a, b) {
   if (a > b) [a, b] = [b, a];
   let y = b.getFullYear() - a.getFullYear();
@@ -884,9 +685,7 @@ const dateMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ЧАЕВЫЕ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ЧАЕВЫЕ ═══════════ */
 const tipMode = {
   html() {
     return `
@@ -917,9 +716,7 @@ const tipMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: СЛУЧАЙНЫЕ ЧИСЛА
-   ═══════════════════════════════════════════════ */
+/* ═══════════ РАНДОМ ═══════════ */
 const randomMode = {
   html() {
     return `
@@ -945,9 +742,10 @@ const randomMode = {
       const type = g("#rtype").value;
       const lo = Math.min(a, b), hi = Math.max(a, b);
       const out = [];
+      const span = hi - lo + 1;
       for (let k = 0; k < n; k++) {
         out.push(type === "int"
-          ? Math.floor(Math.random() * (hi - lo + 1)) + lo
+          ? Math.floor(Math.random() * span) + lo
           : +(Math.random() * (hi - lo) + lo).toFixed(4));
       }
       g("#rout").textContent = out.join("  ·  ");
@@ -957,9 +755,7 @@ const randomMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ТРИГОНОМЕТРИЯ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ТРИГОНОМЕТРИЯ ═══════════ */
 const trigMode = {
   html() {
     return `
@@ -982,22 +778,20 @@ const trigMode = {
       const data = [
         ["sin", s], ["cos", c], ["tan", t],
         ["cot", 1 / t], ["sec", 1 / c], ["csc", 1 / s],
-        ["asin", Math.asin(s)], ["acos", Math.acos(c)], ["atan", Math.atan(t)]
+        ["asin*", Math.asin(s)], ["acos*", Math.acos(c)], ["atan*", Math.atan(t)]
       ];
       rows.innerHTML = data.map(([n, val], idx) => {
         let x = val;
         if (unit.value === "deg" && idx >= 6) x = x * 180 / Math.PI;
         return `<div class="row"><span>${n}</span><b>${Number.isFinite(x) ? x.toFixed(6) : "—"}</b></div>`;
-      }).join("");
+      }).join("") + `<div class="muted">* главное значение (не исходный угол)</div>`;
     };
     [ang, unit].forEach(el => el.addEventListener("input", upd));
     upd();
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕЖИМ: ВОЗРАСТ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ ВОЗРАСТ ═══════════ */
 const ageMode = {
   html() {
     return `
@@ -1010,14 +804,13 @@ const ageMode = {
     const out = root.querySelector("#aout"), sub = root.querySelector("#asub"), rows = root.querySelector("#arows");
     const upd = () => {
       const b = new Date(inp.value);
-      if (isNaN(b)) { out.textContent = "—"; return; }
+      if (isNaN(b)) { out.textContent = "—"; sub.textContent = ""; rows.innerHTML = ""; return; }
       const now = new Date();
       if (b > now) { out.textContent = "Ещё не родился 🚀"; sub.textContent = ""; rows.innerHTML = ""; return; }
       const { y, m, d } = ymdDiff(b, now);
       const days = Math.floor((now - b) / 86400000);
       out.textContent = `${y} лет ${m} мес ${d} дн`;
       sub.textContent = `Всего ${days.toLocaleString("ru-RU")} дней`;
-      // следующий день рождения
       let nb = new Date(now.getFullYear(), b.getMonth(), b.getDate());
       if (nb < now) nb = new Date(now.getFullYear() + 1, b.getMonth(), b.getDate());
       const toBday = Math.ceil((nb - now) / 86400000);
@@ -1031,27 +824,20 @@ const ageMode = {
   }
 };
 
-/* ═══════════════════════════════════════════════
-   РЕГИСТРАЦИЯ 20 РЕЖИМОВ
-   ═══════════════════════════════════════════════ */
+/* ═══════════ РЕЖИМЫ ═══════════ */
 const MODES = [
   { icon: "🔢", name: "Стандарт",     mode: calcMode(false) },
   { icon: "🧪", name: "Научный",      mode: calcMode(true) },
   { icon: "💻", name: "Программист",  mode: progMode() },
-
   { icon: "💱", name: "Валюты",       mode: convMode({ units: CURRENCY, note: "⚠️ Курсы демонстрационные — не для реальных сделок." }) },
   { icon: "📏", name: "Длина",        mode: convMode({ units: LENGTH }) },
   { icon: "⚖️", name: "Масса",        mode: convMode({ units: MASS }) },
-  { icon: "🌡️", name: "Температура",  mode: convMode({
-      units: { "°C": 1, "°F": 1, "K": 1 },
-      conv: (v, f, t) => fromC[t](toC[f](v))
-    }) },
+  { icon: "🌡️", name: "Температура",  mode: convMode({ units: { "°C": 1, "°F": 1, "K": 1 }, conv: (v, f, t) => fromC[t](toC[f](v)) }) },
   { icon: "🚀", name: "Скорость",     mode: convMode({ units: SPEED }) },
   { icon: "🗺️", name: "Площадь",      mode: convMode({ units: AREA }) },
   { icon: "🧊", name: "Объём",        mode: convMode({ units: VOLUME }) },
   { icon: "⏱️", name: "Время",        mode: convMode({ units: TIME }) },
   { icon: "💾", name: "Данные",       mode: convMode({ units: DATA }) },
-
   { icon: "🫀", name: "ИМТ",          mode: bmiMode },
   { icon: "🏦", name: "Кредит",       mode: loanMode },
   { icon: "🏷️", name: "Проценты",     mode: percentMode },
@@ -1062,9 +848,6 @@ const MODES = [
   { icon: "🎂", name: "Возраст",      mode: ageMode }
 ];
 
-/* ═══════════════════════════════════════════════
-   РЕНДЕР
-   ═══════════════════════════════════════════════ */
 const modesEl = document.getElementById("modes");
 const panelEl = document.getElementById("panel");
 let current = 0;
@@ -1093,14 +876,26 @@ modesEl.addEventListener("click", (e) => {
   renderPanel();
 });
 
-/* горячие клавиши для стандартного режима */
+/* Горячие клавиши — с маппингом для научного режима */
+const keyToIns = {
+  "s": "sin(", "c": "cos(", "t": "tan(",
+  "l": "ln(", "g": "log(", "r": "sqrt(",
+  "p": "π", "e": "e", "^": "^", "!": "!"
+};
+
 document.addEventListener("keydown", (e) => {
   if (current > 2) return;
   const k = e.key;
   if (/^[0-9.+\-*/()^!%]$/.test(k)) {
     const btn = panelEl.querySelector(`.key[data-ins="${k}"]`);
-    if (btn) { btn.click(); e.preventDefault(); }
-  } else if (k === "Enter" || k === "=") {
+    if (btn) { btn.click(); e.preventDefault(); return; }
+  }
+  const ins = keyToIns[k.toLowerCase()];
+  if (ins) {
+    const btn = panelEl.querySelector(`.key[data-ins="${ins}"]`);
+    if (btn) { btn.click(); e.preventDefault(); return; }
+  }
+  if (k === "Enter" || k === "=") {
     const btn = panelEl.querySelector('.key[data-act="eq"]');
     if (btn) { btn.click(); e.preventDefault(); }
   } else if (k === "Backspace") {

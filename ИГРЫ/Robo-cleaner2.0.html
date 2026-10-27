@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Robo-Cleaner 2.6 — Neon Edition</title>
+<title>Robo-Cleaner 2.6 — Neon Edition — Fatal Patch</title>
 <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     :root{
@@ -1188,7 +1188,6 @@ function renderCityMap(cityPct){
             <path d="M0 200 L1200 200"/><path d="M0 500 L1200 500"/><path d="M400 0 L400 700"/><path d="M800 0 L800 700"/>
         </g>
     `;
-    // 6 районов
     map += districtSVG(0, 30, 30, 340, 150, done(0), fillOn(0), strokeOn(0), 'ПОРТ', 'port');
     map += districtSVG(1, 430, 30, 340, 150, done(1), fillOn(1), strokeOn(1), 'ЦЕНТР', 'center');
     map += districtSVG(2, 830, 30, 340, 150, done(2), fillOn(2), strokeOn(2), 'ЗАВОД', 'factory');
@@ -1286,7 +1285,9 @@ function districtSVG(idx, x, y, w, h, done, fill, stroke, title, kind){
    STATE
 ============================================================ */
 let hp = 120, maxHp = 120, enemyHp = 100, enemyMaxHp = 100;
-// 👇 NO_DAMAGE_WIN — отслеживание урона за этап
+// 🔧 FIX: bossStreak и tookDamageThisStage объявлены явно
+// (были неявными глобальными — ReferenceError в strict mode)
+let bossStreak = 0;
 let tookDamageThisStage = false;
 let kills = 0, parts = 0, rareParts = 0, city = 0, stage = 1;
 let combo = 0, deathPenalty = 0, stageDeaths = 0;
@@ -1364,8 +1365,8 @@ let lastAttackType = "", attackCount = 0;
 /* ============================================================
    SAVE / LOAD
 ============================================================ */
-const SAVE_KEY = 'robo_cleaner_2_6_save_v1';
-const SAVE_VERSION = 2;
+const SAVE_KEY = 'robo_cleaner_2_6_save_v2_patched';  // 🔧 FIX: новая версия
+const SAVE_VERSION = 3;  // 🔧 FIX: новая версия
 let saveInitialized = false;
 
 function collectSave(){
@@ -1387,6 +1388,7 @@ function collectSave(){
         usedPromos,
         unlocked,
         isDead,
+        bossStreak,  // 🔧 FIX: сохраняем серию боссов
         enemySvgKey: currentEnemySvgKey,
         enemyVisualName: currentEnemyVisualName
     };
@@ -1432,13 +1434,13 @@ function applySave(data){
         usedPromos = data.usedPromos || usedPromos;
         unlocked = data.unlocked || unlocked;
         isDead = data.isDead ?? isDead;
+        // 🔧 FIX: восстанавливаем bossStreak
+        bossStreak = data.bossStreak ?? 0;
         currentEnemySvgKey = data.enemySvgKey || 'drone';
         currentEnemyVisualName = data.enemyVisualName || '';
 
-        // визуал игрока
         updatePlayerVisual();
 
-        // визуал врага
         if(currentEnemySvgKey && ROBOT_SVGS[currentEnemySvgKey]){
             $('enemySlot').innerHTML = ROBOT_SVGS[currentEnemySvgKey];
         }
@@ -1447,12 +1449,10 @@ function applySave(data){
             $('enemyLabel').textContent = currentEnemyVisualName;
         }
 
-        // сложность
         document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
         const activeDiff = document.querySelector(`.diff-btn[onclick*="${difficulty}"]`);
         if(activeDiff) activeDiff.classList.add('active');
 
-        // смерть
         if(isDead){
             $('deathKills').textContent = kills;
             $('deathPenaltyVal').textContent = '-10';
@@ -1600,7 +1600,7 @@ function spawnEnemy(){
 function checkStage(){
     let s = Math.floor(kills/25)+1; if(s>5) s=5;
     if(s !== stage){
-                // 👇 NO_DAMAGE_WIN — этап пройден без урона
+        // 👇 NO_DAMAGE_WIN — этап пройден без урона
         if (!tookDamageThisStage && s > 1) {
             try {
                 if (window.parent && window.parent !== window) {
@@ -1608,6 +1608,7 @@ function checkStage(){
                 }
             } catch (e) {}
         }
+        // 🔧 FIX: сбрасываем флаг урона на новом этапе
         tookDamageThisStage = false;
         stage = s; deathPenalty = 0; stageDeaths = 0;
         maxHp = heroes[heroId].hp; hp = maxHp;
@@ -1630,8 +1631,10 @@ function getCityBonus(){
 function die(){
     isDead = true;
     combo = 0;
-    tookDamageThisStage = false;  // 👈 сброс при смерти
-        bossStreak = 0;  // 👈 сброс серии боссов
+    // 🔧 FIX: сброс флага урона при смерти
+    tookDamageThisStage = false;
+    // 🔧 FIX: сброс серии боссов при смерти
+    bossStreak = 0;
     deathPenalty += 10;
     stageDeaths++;
     const oldMax = maxHp;
@@ -1650,6 +1653,8 @@ function die(){
 function respawn(){
     isDead = false;
     $('deathOverlay').classList.remove('show');
+    // 🔧 FIX: сброс флага урона при респавне
+    tookDamageThisStage = false;
     spawnEnemy();
     log('🤖 Система перезапущена. В бой!');
     update();
@@ -1705,7 +1710,8 @@ function attack(){
             hp -= ed; if(hp < 0) hp = 0;
             log('🤖 Робот ответил -'+ed);
             if(ed > 0) fxHitPlayer('-'+ed);
-            if(ed > 0) tookDamageThisStage = true;  // 👈 урон получен
+            // 🔧 FIX: урон получен — отмечаем
+            if(ed > 0) tookDamageThisStage = true;
         }
     }
 
@@ -1738,18 +1744,18 @@ function attack(){
 
         if(Math.random() < 0.25){ const r = 1 + rand(3); rareParts += r; log('🔴 +'+r); }
         if(currentEnemyIsBoss){
-  const r = 5 + rand(10);
-  rareParts += r;
-  log('👑 БОСС! +'+r+'🔴');
-  bossShield = bossDodge = false;
-  // 👇 BOSS_RUSH — серия боссов
-  bossStreak++;
-  try {
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'robo_boss_win', streak: bossStreak }, '*');
-    }
-  } catch (e) {}
-}
+            const r = 5 + rand(10);
+            rareParts += r;
+            log('👑 БОСС! +'+r+'🔴');
+            bossShield = bossDodge = false;
+            // 🔧 FIX: bossStreak теперь корректно инкрементится
+            bossStreak++;
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'robo_boss_win', streak: bossStreak }, '*');
+                }
+            } catch (e) {}
+        }
         else log('✅ +'+p+'⚙️');
 
         if(!currentEnemyIsBoss && Math.random() < 0.15){
@@ -1999,6 +2005,9 @@ function resetProgress(){
     dailyDone = { kills:false, parts:false, combos:false };
     dailyRewardTaken = false;
     isDead = false; difficulty = 2;
+    // 🔧 FIX: сброс счётчиков при сбросе прогресса
+    bossStreak = 0;
+    tookDamageThisStage = false;
     craftedShield = craftedPower = craftedHeal = false;
     activeBuff = null; buffDuration = 0;
     tutorialKills = 0; hintsIdx = 0; dialogIdx = 0;
@@ -2059,7 +2068,7 @@ function switchTab(id){
     const loaded = loadSave();
     if(loaded){
         update();
-        log('💾 Прогресс загружен.');
+        log('💾 Прогресс загружен (патченная версия).');
     } else {
         selectHero(0);
         spawnEnemy();
@@ -2078,7 +2087,6 @@ function switchTab(id){
         if(document.visibilityState === 'hidden') saveNow();
     });
 
-    // кросс-вкладочная синхронизация
     window.addEventListener('storage', (e) => {
         if(e.key === SAVE_KEY){
             loadSave();

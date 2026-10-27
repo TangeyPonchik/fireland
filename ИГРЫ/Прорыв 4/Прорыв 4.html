@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ПРОРЫВ 4 · ФИНАЛ + ОЧИСТКА</title>
+<title>ПРОРЫВ 4 · ФИНАЛ + ОЧИСТКА — Fatal Patch</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%;overflow:hidden;background:#07050b;
@@ -188,7 +188,7 @@
       <div class="hud-tl">
         <div class="hearts" id="hearts"></div>
         <div class="hpwrap"><i class="hpfill" id="hpfill"></i></div>
-        <div class="lvl" id="lvl">УРОВЕНЬ 1 / 60</div>
+        <div class="lvl" id="lvl">УРОВЕНЬ 1 / 90</div>
         <div class="chapter" id="chapter">ГЛАВА 1 · ФИНАЛ</div>
       </div>
       <div class="hud-tr">
@@ -581,6 +581,11 @@ const G={
   shopOnClose:null
 };
 
+// 🔧 FIX: bossStreak и tookDamageThisStage объявлены явно
+// (были неявными глобальными — ReferenceError в strict mode)
+let bossStreak = 0;
+let tookDamageThisStage = false;
+
 function rr(x,y,w,h,r){
   r=Math.min(r,w/2,h/2);
   ctx.beginPath();
@@ -841,7 +846,6 @@ function spawnEpic(n){
    ФИЗИКА
    ============================================================ */
 function moveAndCollide(e,f){
-  // 1. Движение по X
   e.x+=e.vx*f;
   for(const pl of G.platforms){
     if(aabb(e,pl)){
@@ -850,8 +854,6 @@ function moveAndCollide(e,f){
       e.vx=0;
     }
   }
-  
-  // 2. Движение по Y (ОТКАТ: твердые платформы)
   e.y+=e.vy*f;
   e.onGround=false;
   for(const pl of G.platforms){
@@ -942,7 +944,6 @@ function updateBullets(f){
         SFX.bossHit();
       }
     }else{
-      // ФИКС УРОНА: Теперь проверяем пересечение пули (AABB) с игроком
       if(p&&!p.dead&&p.invuln<=0&&
          b.x+b.r > p.x && b.x-b.r < p.x+p.w &&
          b.y+b.r > p.y && b.y-b.r < p.y+p.h){
@@ -1116,7 +1117,6 @@ function drawProxyFx(){
   }
 }
 
-// ФИКС МОНЕТОК: они больше не теряются
 function dropCoins(x,y,total,count){
   count=count||3;
   const per=Math.max(1,Math.floor(total/count));
@@ -1126,7 +1126,7 @@ function dropCoins(x,y,total,count){
     G.coins.push({
       x:x+rnd(20,-20),y:y+rnd(10,-10),
       vx:rnd(4,-4),vy:rnd(-3,-9),
-      amount:amt,life:999, // Живут вечно, пока не соберут
+      amount:amt,life:999,
       phase:rnd(Math.PI*2),collected:false
     });
   }
@@ -1134,21 +1134,19 @@ function dropCoins(x,y,total,count){
 function updateCoins(f){
   const p=G.player;
   for(const c of G.coins){
-    // Если собрана - пропускаем
     if(c.collected) continue;
 
     if(p&&!p.dead){
       const dx=(p.x+p.w/2)-c.x;
       const dy=(p.y+p.h/2)-c.y;
       const d=Math.hypot(dx,dy)||1;
-      const radius=(G.state==='levelclear')?999:160; // На финише притягиваются со всей карты
+      const radius=(G.state==='levelclear')?999:160;
       
       if(d<radius){
         const pull=(G.state==='levelclear'?40:22)*(1-d/radius);
         c.vx+=(dx/d)*pull*f;
         c.vy+=(dy/d)*pull*f;
       }
-      // Если близко - собираем
       if(d<30){
         G.crypto+=c.amount;
         c.collected=true;
@@ -1158,13 +1156,11 @@ function updateCoins(f){
       }
     }
     
-    // Физика падения
     c.vy+=0.45*f;
     c.x+=c.vx*f;
     c.y+=c.vy*f;
     c.vx*=Math.pow(0.94,f);
     
-    // Коллизия с полом
     for(const pl of G.platforms){
       if(c.x>pl.x&&c.x<pl.x+pl.w&&c.y>pl.y-8&&c.y<pl.y+pl.h){
         c.y=pl.y;c.vy=-c.vy*0.35;
@@ -1173,7 +1169,6 @@ function updateCoins(f){
       }
     }
   }
-  // Удаляем только собранные
   G.coins=G.coins.filter(c=>!c.collected);
 }
 function drawCoins(){
@@ -1263,6 +1258,8 @@ function hurtPlayer(dmg){
   G.shake=Math.min(G.shake+10,20);
   G.camZoomTarget=1.02;
   spawnParticles(p.x+p.w/2,p.y+p.h/2,12,'#ff9a6a',5,3.5,0.2);
+  // 🔧 FIX: отмечаем, что игрок получил урон на этом этапе
+  if(dmg>0) tookDamageThisStage = true;
   if(p.hp<=0){p.hp=0;playerDie();}
 }
 function playerDie(){
@@ -1280,7 +1277,7 @@ function playerDie(){
    ============================================================ */
 function activateProxy(){
   if(G.state!=='playing') return;
-  if(G.hitstop>0) return; // Нельзя юзать во время заморозки кадра
+  if(G.hitstop>0) return;
   if(G.proxy<=0) return;
   if(G.proxyCd>0) return;
   const p=G.player;
@@ -2421,7 +2418,7 @@ function updateHUD(){
     ?'linear-gradient(90deg,#c9603f,#e59a5b 55%,#f3c98a)'
     :'linear-gradient(90deg,#8c1f26,#c9412f 60%,#e07a4a)';
 
-  'УРОВЕНЬ '+G.level+' / 90';
+  elLvl.textContent='УРОВЕНЬ '+G.level+' / 90';
   elChapter.textContent=chapterName(G.level);
   elVpn.textContent=VPN[G.vpn-1].name;
   elCoins.textContent='₿ '+G.crypto;
@@ -2468,7 +2465,7 @@ function showPauseMenu(){
     <h2>ПРОРЫВ 4</h2>
     <div class="sub" style="margin-bottom:8px">
       ${chapterName(G.level)}<br>
-      Уровень <b style="color:#e79a5b">${G.level}</b> из 60<br>
+      Уровень <b style="color:#e79a5b">${G.level}</b> из 90<br>
       Жизней: <b style="color:#e79a5b">${G.lives}</b> &nbsp;·&nbsp;
       Крипта: <b style="color:#ffd966">₿ ${G.crypto}</b><br>
       ${VPN[G.vpn-1].name}${G.proxy>0?' &nbsp;·&nbsp; Прокси ур. '+G.proxy:''}
@@ -2758,6 +2755,9 @@ function startGame(){
   G.proxy=0;
   G.proxyCd=0;
   G.savedHp=100;
+  // 🔧 FIX: сброс счётчиков при старте новой игры
+  bossStreak = 0;
+  tookDamageThisStage = false;
   startLevel(1);
 }
 function startLevel(n){
@@ -2875,7 +2875,9 @@ function loop(now){
 /* ============================================================
    СТАРТ
    ============================================================ */
-// Первичный вызов resize, чтобы --u не был 0px
+// 🔧 FIX: флаг для chapter3.js — защита от двойных обёрток
+window.__chapter3_wrapped = false;
+
 requestAnimationFrame(() => {
   resize();
   
