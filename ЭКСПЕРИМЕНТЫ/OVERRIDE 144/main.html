@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OVERRIDE 144</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="loading">ЗАГРУЗКА...</div>
+<div id="fps-counter">FPS: --</div>
+
+<!-- ============ ЛОББИ ============ -->
+<div id="lobby" style="display:none">
+  <div class="lobby-bg"></div>
+  <div class="lobby-top">
+    <div class="brand">
+      <span class="brand-main">OVERRIDE</span>
+      <span class="brand-num">144</span>
+    </div>
+    <div class="profile-mini">
+      <div class="pm-rank" id="pm-rank">SILVER I</div>
+      <div class="pm-level">LVL <b id="pm-level">1</b></div>
+      <div class="pm-xp"><div class="pm-xp-fill" id="pm-xp-fill"></div></div>
+      <div class="pm-stats"><span id="pm-kills">0</span> K · <span id="pm-hs">0%</span> HS</div>
+    </div>
+  </div>
+
+  <div class="lobby-main">
+    <div class="lobby-left">
+      <canvas id="preview"></canvas>
+      <div class="preview-weapon">
+        <div id="wcat">RIFLE</div>
+        <div id="wname">AK-47</div>
+      </div>
+      <div class="weapon-arrows">
+        <button class="arrow" id="prev-w">◀</button>
+        <button class="arrow" id="next-w">▶</button>
+      </div>
+      <div class="weapon-stats">
+        <div class="wstat"><span>DMG</span><div class="bar"><i id="s-dmg"></i></div><span class="v" id="v-dmg"></span></div>
+        <div class="wstat"><span>RATE</span><div class="bar"><i id="s-rate"></i></div><span class="v" id="v-rate"></span></div>
+        <div class="wstat"><span>ACC</span><div class="bar"><i id="s-acc"></i></div><span class="v" id="v-acc"></span></div>
+        <div class="wstat"><span>MAG</span><div class="bar"><i id="s-mag"></i></div><span class="v" id="v-mag"></span></div>
+      </div>
+    </div>
+
+    <div class="lobby-right">
+      <div class="lobby-section">
+        <div class="section-title">РЕЖИМ</div>
+        <div id="mode-selector" class="selector-row"></div>
+      </div>
+      <div class="lobby-section">
+        <div class="section-title">СТОРОНА</div>
+        <div id="team-selector" class="selector-row">
+          <button class="team-btn active" data-team="T">T</button>
+          <button class="team-btn" data-team="CT">CT</button>
+        </div>
+      </div>
+      <div class="lobby-section">
+        <div class="section-title">КАРТА</div>
+        <div id="map-selector" class="selector-row"></div>
+      </div>
+      <div class="lobby-tabs">
+        <button class="ltab active" data-tab="play">ИГРА</button>
+        <button class="ltab" data-tab="inventory">ИНВЕНТАРЬ</button>
+        <button class="ltab" data-tab="cases">КЕЙСЫ</button>
+        <button class="ltab" data-tab="quests">ЗАДАНИЯ</button>
+        <button class="ltab" data-tab="settings">НАСТРОЙКИ</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="deploy">DEPLOY</button>
+
+  <div class="controls">
+    <b>WASD</b> · <b>SPACE</b> · <b>SHIFT</b> · <b>CTRL</b> присесть · <b>ЛКМ</b> огонь · <b>ПКМ</b> прицел · <b>R</b> перезарядка · <b>B</b> магазин · <b>G</b> граната · <b>1-4</b> слоты · <b>E</b> бомба · <b>F</b> инспект
+  </div>
+</div>
+
+<!-- ============ ПАНЕЛИ ЛОББИ (оверлеи) ============ -->
+<div id="panel-inventory" class="lobby-panel">
+  <div class="panel-head"><h2>ИНВЕНТАРЬ</h2><button class="panel-close" data-close="inventory">✕</button></div>
+  <div class="inv-grid" id="inv-grid"></div>
+</div>
+
+<div id="panel-cases" class="lobby-panel">
+  <div class="panel-head"><h2>КЕЙСЫ</h2><button class="panel-close" data-close="cases">✕</button></div>
+  <div class="cases-row">
+    <div class="case-card" data-case="standard">
+      <div class="case-icon">◆</div>
+      <div class="case-name">STANDARD CASE</div>
+      <div class="case-price">$1000</div>
+      <button class="case-open">ОТКРЫТЬ</button>
+    </div>
+    <div class="case-card" data-case="premium">
+      <div class="case-icon premium">✦</div>
+      <div class="case-name">PREMIUM CASE</div>
+      <div class="case-price">$3000</div>
+      <button class="case-open">ОТКРЫТЬ</button>
+    </div>
+  </div>
+  <div class="case-result" id="case-result"></div>
+</div>
+
+<div id="panel-quests" class="lobby-panel">
+  <div class="panel-head"><h2>ЗАДАНИЯ</h2><button class="panel-close" data-close="quests">✕</button></div>
+  <div class="quests-list" id="quests-list"></div>
+</div>
+
+<div id="panel-settings" class="lobby-panel">
+  <div class="panel-head"><h2>НАСТРОЙКИ</h2><button class="panel-close" data-close="settings">✕</button></div>
+  <div class="settings-list">
+    <label>Чувствительность мыши <input type="range" id="set-sens" min="0.5" max="3" step="0.1" value="1"><span id="set-sens-v">1.0</span></label>
+    <label>Громкость <input type="range" id="set-vol" min="0" max="1" step="0.05" value="0.7"><span id="set-vol-v">0.7</span></label>
+    <label>FOV <input type="range" id="set-fov" min="60" max="100" step="1" value="75"><span id="set-fov-v">75</span></label>
+  </div>
+</div>
+
+<!-- ============ HUD ============ -->
+<canvas id="reticle-canvas"></canvas>
+<div id="vignette"></div>
+<div id="grain"></div>
+<div id="damage-overlay"></div>
+<div id="flash-overlay"></div>
+
+<div id="radar"><canvas id="radar-canvas" width="180" height="180"></canvas></div>
+
+<div id="buy-menu">
+  <div class="buy-container">
+    <button id="buy-close" title="Закрыть">✕</button>
+    <div class="buy-header"><h2>BUY MENU</h2><div class="buy-money" id="buy-money">$800</div></div>
+    <div class="buy-tabs" id="buy-tabs"></div>
+    <div class="buy-grid" id="buy-items"></div>
+    <div class="buy-hint">ЛКМ — купить · <b>B</b> / <b>ESC</b> — закрыть</div>
+  </div>
+</div>
+
+<div id="pause-screen"><h2>PAUSED</h2><p>CLICK TO RESUME</p></div>
+
+<div id="death-screen">
+  <h2>YOU DIED</h2>
+  <p id="death-msg">MISSION FAILED</p>
+  <div class="final" id="final-score">SCORE: 0 · KILLS: 0</div>
+  <div>
+    <button id="retry">TRY AGAIN</button>
+    <button id="main-menu" class="secondary">MAIN MENU</button>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="hit-marker"></div>
+  <div id="kill-feed"></div>
+  <div id="money-hud">$800</div>
+  <div id="top-hud">
+    <div id="team-badge">T</div>
+    <div class="th-block"><span class="th-label">ROUND</span><span class="val" id="round-num">1</span></div>
+    <div id="round-timer">00:15</div>
+    <div class="th-block"><span class="th-label">T</span><span class="val" id="score-t">0</span></div>
+    <div class="th-block"><span class="th-label">CT</span><span class="val" id="score-ct">0</span></div>
+    <div id="bomb-status">BOMB PLANTED</div>
+    <div id="mode-badge" class="mode">DEFUSAL</div>
+  </div>
+  <div id="planting-bar"><div id="planting-fill"></div></div>
+  <div id="stats">
+    <div><span id="health">100</span><span id="armor">[0]</span></div>
+    <div id="health-label">HP / ARMOR</div>
+  </div>
+  <div id="ammo">
+    <div><span id="ammo-current">30</span> <span id="ammo-reserve">/ 90</span></div>
+    <div class="weapon-name" id="ammo-weapon">AK-47</div>
+  </div>
+  <div id="grenade-slots"></div>
+  <div id="weapon-slots"></div>
+  <div id="wave-info" style="display:none">WAVE <b id="wave-num">1</b></div>
+</div>
+
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="arrays.js"></script>
+<script src="textures.js"></script>
+<script src="logic.js"></script>
+</body>
+</html>

@@ -1,14 +1,7 @@
 // ============================================
-// FireLand · profile.js · v27.0.0 + NEW_ACH
-// Данные XP + UI профиля + кейсы + задания + будильник
-// НОВОЕ: hitman, virus_tamer, no_damage_win, speedrun_1min,
-//        all_endings_dom2, perfect_deck, boss_rush, all_zombies_bosses,
-//        all_maps_override, chat_100, leaderboard_top10, 1000_kills
+// FireLand · profile.js · v27.1.0 + ACH_BUTTONS
 // ============================================
 
-// ============================================
-// ДАННЫЕ
-// ============================================
 const LEVEL_TITLES = [
 {min:1,max:2,title:'🌱 Новичок'},{min:3,max:4,title:'🌿 Ученик'},{min:5,max:6,title:'🎯 Опытный'},{min:7,max:8,title:'⚔️ Ветеран'},
 {min:9,max:10,title:'🛡️ Мастер'},{min:11,max:12,title:'👑 Гроссмейстер'},{min:13,max:14,title:'🌟 Элита'},{min:15,max:16,title:'🔥 Легенда'},
@@ -29,7 +22,7 @@ const PARADOX = {BASE_TIME:30,XP_MULT:1.2,TIME_MULT_START:1.4,MULT_GROWTH:0.1,BA
 const HITMAN = { BASE_KILLS: 10, KILLS_MULT_START: 1.3, MULT_GROWTH: 0.1, BASE_XP: 150, XP_MULT: 1.25 };
 
 const ACHIEVEMENTS = [
-// ========== ТУТОРИАЛ (лёгкие, без XP, не в счётчике) ==========
+// ========== ТУТОРИАЛ ==========
 {id:'first_game',icon:'🎮',name:'Первый шаг',desc:'Запустить любую игру',xp:0,rarity:'common',type:'tutorial'},
 {id:'set_nick',icon:'✏️',name:'Именование',desc:'Установить никнейм',xp:0,rarity:'common',type:'tutorial'},
 {id:'set_avatar',icon:'🖼️',name:'Лицо с обложки',desc:'Установить аватарку',xp:0,rarity:'common',type:'tutorial'},
@@ -40,37 +33,37 @@ const ACHIEVEMENTS = [
 {id:'case_first',icon:'📦',name:'Первая коробка',desc:'Открыть первый кейс',xp:0,rarity:'common',type:'tutorial'},
 {id:'first_util',icon:'🛠️',name:'Инструменталист',desc:'Запустить первую утилиту',xp:0,rarity:'common',type:'tutorial'},
 {id:'import_profile',icon:'📥',name:'Перенос',desc:'Импортировать профиль',xp:0,rarity:'common',type:'tutorial'},
-{id:'musibox_dj',icon:'🎧',name:'Диджей',desc:'Запустить Musibox Pro',xp:0,rarity:'common',type:'tutorial'},
-{id:'cosmo_pilot',icon:'🚀',name:'Космопилот',desc:'Сыграть в Контрабандиста',xp:0,rarity:'common',type:'tutorial'},
-{id:'robo_hunter',icon:'🤖',name:'Охотник на роботов',desc:'Сыграть в Robo-Cleaner',xp:0,rarity:'common',type:'tutorial'},
-{id:'fighter',icon:'👊',name:'Боец',desc:'Сыграть в Битву',xp:0,rarity:'common',type:'tutorial'},
-{id:'miner_pro',icon:'⛏️',name:'Шахтёр-профи',desc:'Сыграть в Шахтёра',xp:0,rarity:'common',type:'tutorial'},
-{id:'cooking_chef',icon:'🍳',name:'Шеф-повар',desc:'Сыграть в Кулинарию',xp:0,rarity:'common',type:'tutorial'},
-{id:'proryv1_win',icon:'💻',name:'Прорыв совершен',desc:'Сыграть в Прорыв 1',xp:0,rarity:'common',type:'tutorial'},
-{id:'proryv3_win',icon:'🌐',name:'Финал прорыва',desc:'Сыграть в Прорыв 3',xp:0,rarity:'common',type:'tutorial'},
-{id:'first_snake',icon:'🐍',name:'Первая змейка',desc:'Сыграть в Snakes Battle',xp:0,rarity:'common',type:'tutorial'},
-{id:'zombie_survivor',icon:'🧟',name:'Выживший',desc:'Сыграть в Последний рубеж',xp:0,rarity:'common',type:'tutorial'},
-{id:'override77_first',icon:'🎯',name:'Оперативник',desc:'Запустить OVERRIDE 77',xp:0,rarity:'common',type:'tutorial'},
+{id:'musibox_dj',icon:'🎧',name:'Диджей',desc:'Запустить Musibox Pro',xp:0,rarity:'common',type:'tutorial',gameId:'musibox'},
+{id:'cosmo_pilot',icon:'🚀',name:'Космопилот',desc:'Сыграть в Контрабандиста',xp:0,rarity:'common',type:'tutorial',gameId:'kontrabandist'},
+{id:'robo_hunter',icon:'🤖',name:'Охотник на роботов',desc:'Сыграть в Robo-Cleaner',xp:0,rarity:'common',type:'tutorial',gameId:'robo26'},
+{id:'fighter',icon:'👊',name:'Боец',desc:'Сыграть в Битву',xp:0,rarity:'common',type:'tutorial',gameId:'fight'},
+{id:'miner_pro',icon:'⛏️',name:'Шахтёр-профи',desc:'Сыграть в Шахтёра',xp:0,rarity:'common',type:'tutorial',gameId:'miner'},
+{id:'cooking_chef',icon:'🍳',name:'Шеф-повар',desc:'Сыграть в Кулинарию',xp:0,rarity:'common',type:'tutorial',gameId:'cooking'},
+{id:'proryv1_win',icon:'💻',name:'Прорыв совершен',desc:'Сыграть в Прорыв 1',xp:0,rarity:'common',type:'tutorial',gameId:'proryv1'},
+{id:'proryv3_win',icon:'🌐',name:'Финал прорыва',desc:'Сыграть в Прорыв 3',xp:0,rarity:'common',type:'tutorial',gameId:'proryv3'},
+{id:'first_snake',icon:'🐍',name:'Первая змейка',desc:'Сыграть в Snakes Battle',xp:0,rarity:'common',type:'tutorial',gameId:'snakebattle'},
+{id:'zombie_survivor',icon:'🧟',name:'Выживший',desc:'Сыграть в Последний рубеж',xp:0,rarity:'common',type:'tutorial',gameId:'lastfrontier'},
+{id:'override77_first',icon:'🎯',name:'Оперативник',desc:'Запустить OVERRIDE 77',xp:0,rarity:'common',type:'tutorial',gameId:'override77'},
 {id:'all_themes',icon:'🎨',name:'Экспериментатор тем',desc:'Попробовать все 4 темы',xp:0,rarity:'common',type:'tutorial',progress:s=>Math.min(1,s.themesUsed.length/4),progressText:s=>`${s.themesUsed.length}/4`},
 
-// ========== НАСТОЯЩИЕ ДОСТИЖЕНИЯ (с XP, в счётчике) ==========
-{id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
-{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/(window.GAMES?.length||15)),progressText:s=>`${s.playedGames.length}/${window.GAMES?.length||15}`},
-{id:'dom_escape',icon:'🏚️',name:'Выбрался из ДОМА',desc:'Пройти квест ДОМ',xp:150,rarity:'epic'},
-{id:'dom2_burner',icon:'🩸',name:'Сжигатель якорей',desc:'Сжечь 3 якоря в ДОМ 2',xp:300,rarity:'legendary'},
-{id:'proryv_quadrology',icon:'👑',name:'Хранитель квадрологии',desc:'Сыграть во все четыре части Прорыва',xp:750,rarity:'legendary'},
-{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты',xp:150,rarity:'rare',
+// ========== НАСТОЯЩИЕ ДОСТИЖЕНИЯ ==========
+{id:'five_games',icon:'🎯',name:'Пятёрочка',desc:'Запустить 5 разных игр',xp:75,rarity:'common',progress:s=>Math.min(1,s.playedGames.length/5),progressText:s=>`${s.playedGames.length}/5`},
+{id:'all_games',icon:'🏆',name:'Коллекционер',desc:'Запустить все игры в лаунчере',xp:200,rarity:'epic',progress:s=>Math.min(1,s.playedGames.length/(window.GAMES?.length||15)),progressText:s=>`${s.playedGames.length}/${window.GAMES?.length||15}`},
+{id:'dom_escape',icon:'🏚️',name:'Выбрался из ДОМА',desc:'Пройти квест ДОМ',xp:150,rarity:'epic',gameId:'dom'},
+{id:'dom2_burner',icon:'🩸',name:'Сжигатель якорей',desc:'Сжечь 3 якоря в ДОМ 2',xp:300,rarity:'legendary',gameId:'dom2'},
+{id:'proryv_quadrology',icon:'👑',name:'Хранитель квадрологии',desc:'Сыграть во все 4 части Прорыва',xp:750,rarity:'legendary'},
+{id:'all_utils',icon:'⚙️',name:'Мастер утилит',desc:'Запустить все утилиты во вкладке Функции',xp:150,rarity:'rare',
   progress:s=>Math.min(1,(s.playedGames.filter(g=>['fireshop','cpstest','hypercalc','datagenerator','musibox'].includes(g)).length)/5),
   progressText:s=>`${s.playedGames.filter(g=>['fireshop','cpstest','hypercalc','datagenerator','musibox'].includes(g)).length}/5`
 },
-{id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 мин в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
-{id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 мин в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
+{id:'time_10min',icon:'⌚',name:'10 минут',desc:'Провести 10 минут в играх',xp:75,rarity:'common',progress:s=>Math.min(1,s.totalTime/600),progressText:s=>`${Math.floor(s.totalTime/60)}м/10м`},
+{id:'time_30min',icon:'🕐',name:'Полчаса',desc:'Провести 30 минут в играх',xp:150,rarity:'rare',progress:s=>Math.min(1,s.totalTime/1800),progressText:s=>`${Math.floor(s.totalTime/60)}м/30м`},
 {id:'time_1hour',icon:'🕰️',name:'Час за играми',desc:'Провести 1 час в играх',xp:250,rarity:'epic',progress:s=>Math.min(1,s.totalTime/3600),progressText:s=>`${Math.floor(s.totalTime/60)}м/60м`},
 {id:'time_5hours',icon:'⏰',name:'Марафонец',desc:'Провести 5 часов в играх',xp:500,rarity:'legendary',progress:s=>Math.min(1,s.totalTime/18000),progressText:s=>`${Math.floor(s.totalTime/60)}м/300м`},
 {id:'night_owl',icon:'🦉',name:'Полуночник',desc:'Играть после 00:00',xp:50,rarity:'common'},
-{id:'early_bird',icon:'🐦',name:'Ранняя пташка',desc:'Играть до 7:00',xp:50,rarity:'common'},
-{id:'repeat_25',icon:'🔄',name:'Верный фанат',desc:'Запустить игру 25 раз',xp:200,rarity:'epic',progress:s=>Math.min(1,s.gamesOpened/25),progressText:s=>`${s.gamesOpened}/25`},
-{id:'repeat_100',icon:'🔁',name:'Фанатик',desc:'Запустить игру 100 раз',xp:750,rarity:'legendary',progress:s=>Math.min(1,s.gamesOpened/100),progressText:s=>`${s.gamesOpened}/100`},
+{id:'early_bird',icon:'🐦',name:'Ранняя пташка',desc:'Играть до 7:00 утра',xp:50,rarity:'common'},
+{id:'repeat_25',icon:'🔄',name:'Верный фанат',desc:'Запустить игры 25 раз',xp:200,rarity:'epic',progress:s=>Math.min(1,s.gamesOpened/25),progressText:s=>`${s.gamesOpened}/25`},
+{id:'repeat_100',icon:'🔁',name:'Фанатик',desc:'Запустить игры 100 раз',xp:750,rarity:'legendary',progress:s=>Math.min(1,s.gamesOpened/100),progressText:s=>`${s.gamesOpened}/100`},
 {id:'speedrun',icon:'⚡',name:'Спидран',desc:'Открыть 3 игры за 1 минуту',xp:150,rarity:'epic'},
 {id:'streak_7',icon:'🔥',name:'Неделя',desc:'Заходить 7 дней подряд',xp:200,rarity:'epic',progress:s=>Math.min(1,s.streak.current/7),progressText:s=>`${s.streak.current}/7`},
 {id:'streak_30',icon:'👑',name:'Месяц',desc:'Заходить 30 дней подряд',xp:1000,rarity:'legendary',progress:s=>Math.min(1,s.streak.current/30),progressText:s=>`${s.streak.current}/30`},
@@ -87,20 +80,20 @@ const ACHIEVEMENTS = [
 {id:'level_100',icon:'🔴',name:'АБСОЛЮТ',desc:'Достичь 100 уровня',xp:10000,rarity:'legendary'},
 {id:'veteran',icon:'🏅',name:'Ветеран',desc:'Собрать ВСЕ обычные достижения',xp:1000,rarity:'legendary',isVeteran:true},
 {id:'temporal_paradox',icon:'🌀',name:'Временной парадокс',desc:'Копи время во всех играх',xp:0,rarity:'legendary',isParadox:true},
-{id:'hitman',icon:'💀',name:'Наёмный убийца',desc:'Убивай врагов в OVERRIDE 77',xp:0,rarity:'legendary',isHitman:true},
-{id:'virus_tamer',icon:'🧟',name:'Укротитель вируса',desc:'Собрать всех зомби в «Последнем Рубеже»',xp:500,rarity:'legendary'},
+{id:'hitman',icon:'💀',name:'Наёмный убийца',desc:'Убивай врагов в шутере OVERRIDE 77',xp:0,rarity:'legendary',isHitman:true,gameId:'override77'},
+{id:'virus_tamer',icon:'🧟',name:'Укротитель вируса',desc:'Собери ВСЕ карты (кроме боссов) в «Последнем рубеже»',xp:500,rarity:'legendary',gameId:'lastfrontier'},
 
-// ========== НОВЫЕ НАСТОЯЩИЕ ДОСТИЖЕНИЯ (postMessage) ==========
-{id:'no_damage_win',icon:'🛡️',name:'Неуязвимый',desc:'Пройти любую игру без потери HP',xp:500,rarity:'epic'},
-{id:'speedrun_1min',icon:'⚡',name:'Спидраннер',desc:'Пройти Прорыв 1 за < 5 минут',xp:750,rarity:'legendary'},
-{id:'all_endings_dom2',icon:'🩸',name:'Все концовки',desc:'Открыть все 5 концовок ДОМ 2',xp:1000,rarity:'legendary'},
-{id:'perfect_deck',icon:'🃏',name:'Идеальная колода',desc:'5 карт 10 уровня в «Последнем Рубеже»',xp:800,rarity:'epic'},
-{id:'boss_rush',icon:'👹',name:'Босс-раш',desc:'Победить 10 боссов подряд без поражений',xp:1500,rarity:'legendary'},
-{id:'chat_100',icon:'💬',name:'Душа компании',desc:'Отправить 100 сообщений в чат',xp:300,rarity:'rare'},
-{id:'leaderboard_top10',icon:'🏆',name:'Элита',desc:'Войти в топ-10 лидерборда',xp:2000,rarity:'legendary'},
-{id:'all_maps_override',icon:'🗺️',name:'Картограф',desc:'Сыграть на всех 4 картах OVERRIDE 77',xp:400,rarity:'epic'},
-{id:'1000_kills',icon:'💀',name:'Машина смерти',desc:'1000 убийств в OVERRIDE 77 (суммарно)',xp:1000,rarity:'legendary'},
-{id:'all_zombies_bosses',icon:'🧟',name:'Повелитель орды',desc:'Победить всех 10 боссов «Последнего Рубежа»',xp:2500,rarity:'legendary'}
+// ========== НОВЫЕ НАСТОЯЩИЕ ДОСТИЖЕНИЯ ==========
+{id:'no_damage_win',icon:'🛡️',name:'Неуязвимый',desc:'Пройди этап в Robo-Cleaner без потери HP',xp:500,rarity:'epic',gameId:'robo26'},
+{id:'speedrun_1min',icon:'⚡',name:'Спидраннер',desc:'Пройди Прорыв 1 за < 5 минут',xp:750,rarity:'legendary',gameId:'proryv1'},
+{id:'all_endings_dom2',icon:'🩸',name:'Все концовки',desc:'Открой все 5 концовок в хорроре ДОМ 2',xp:1000,rarity:'legendary',gameId:'dom2'},
+{id:'perfect_deck',icon:'🃏',name:'Идеальная колода',desc:'Собери 5 карт 10-го уровня в «Последнем рубеже»',xp:800,rarity:'epic',gameId:'lastfrontier'},
+{id:'boss_rush',icon:'👹',name:'Босс-раш',desc:'Победи 5 боссов подряд без смертей (Robo-Cleaner)',xp:1500,rarity:'legendary',gameId:'robo26'},
+{id:'chat_100',icon:'💬',name:'Душа компании',desc:'Отправь 100 сообщений в чат FireLand',xp:300,rarity:'rare'},
+{id:'leaderboard_top10',icon:'🏆',name:'Элита',desc:'Войди в ТОП-10 игроков в таблице лидеров',xp:2000,rarity:'legendary'},
+{id:'all_maps_override',icon:'🗺️',name:'Картограф',desc:'Сыграй на всех 4 картах в OVERRIDE 77',xp:400,rarity:'epic',gameId:'override77'},
+{id:'1000_kills',icon:'💀',name:'Машина смерти',desc:'Сделай 1000 убийств в OVERRIDE 77 (суммарно)',xp:1000,rarity:'legendary',gameId:'override77'},
+{id:'all_zombies_bosses',icon:'🧟',name:'Повелитель орды',desc:'Победи ВСЕХ 10 боссов в «Последнем рубеже»',xp:2500,rarity:'legendary',gameId:'lastfrontier'}
 ];
 
 const QUEST_POOL = [
@@ -132,9 +125,6 @@ const QUEST_POOL = [
 {id:'q_zombies_10',icon:'🧟',name:'Зомби-охотник',desc:'Собери 10 зомби в «Последнем Рубеже»',xp:100,target:10,type:'lastfrontier_zombies'}
 ];
 
-// ============================================
-// ХЕЛПЕРЫ
-// ============================================
 function getState() { return window.state || null; }
 
 function getTitleForLevel(level) {
@@ -195,9 +185,6 @@ function profileFormatTime(sec) {
   return `${s}с`;
 }
 
-// ============================================
-// UI ПРОФИЛЯ
-// ============================================
 function renderProfile() {
   const s = getState();
   if (!s) return;
@@ -226,6 +213,7 @@ function updateLevelDisplay() {
   set('xpText', `${lvlInfo.currentXp} / ${lvlInfo.neededXp} XP • Всего: ${s.totalXp}`);
 }
 
+// 👇 РЕНДЕР ДОСТИЖЕНИЙ
 function renderAchievements() {
   const grid = document.getElementById('achievementsGrid');
   if (!grid) return;
@@ -250,7 +238,8 @@ function renderAchievements() {
       const txt = ach.progressText ? ach.progressText(s) : '';
       progressHtml = `<div class="ach-progress"><div class="ach-progress-fill" style="width:${p * 100}%"></div></div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${txt}</div>`;
     }
-    el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}</div><div class="ach-xp">+${ach.xp}</div>`;
+    const playBtnHtml = ach.gameId ? `<button class="ach-play-btn" onclick="event.stopPropagation(); window.openGame('${ach.gameId}')">🎮 Играть</button>` : '';
+    el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}${playBtnHtml}</div><div class="ach-xp">+${ach.xp}</div>`;
     grid.appendChild(el);
   });
 
@@ -273,7 +262,8 @@ function renderAchievements() {
       const txt = ach.progressText ? ach.progressText(s) : '';
       progressHtml = `<div class="ach-progress"><div class="ach-progress-fill" style="width:${p * 100}%"></div></div><div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${txt}</div>`;
     }
-    el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}</div><div class="ach-xp" style="opacity:0.5">—</div>`;
+    const playBtnHtml = ach.gameId ? `<button class="ach-play-btn" onclick="event.stopPropagation(); window.openGame('${ach.gameId}')">🎮 Играть</button>` : '';
+    el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name}</div><div class="ach-desc">${ach.desc}</div>${progressHtml}${playBtnHtml}</div><div class="ach-xp" style="opacity:0.5">—</div>`;
     grid.appendChild(el);
   });
 
@@ -313,7 +303,17 @@ function renderHitmanCard(grid, ach) {
   const el = document.createElement('div');
   el.className = 'achievement hitman earned';
   el.dataset.rarity = 'legendary';
-  el.innerHTML = `<div class="ach-icon">${ach.icon}</div><div class="ach-info"><div class="ach-name">${ach.name} — Уровень ${h.level}</div><div class="ach-desc">До след. уровня: ${h.totalAccumulated || 0} / ${neededKills} убийств</div><div class="ach-desc" style="font-size:10px;opacity:0.7;">Всего убийств: ${h.totalKills || 0}</div><div class="ach-progress"><div class="ach-progress-fill" style="width:${percent}%;background:linear-gradient(90deg,#ef4444,#fbbf24)"></div></div></div><div class="ach-xp" style="color:#ef4444;background:rgba(239,68,68,0.15)">+${info.xp}</div>`;
+  el.innerHTML = `
+    <div class="ach-icon">${ach.icon}</div>
+    <div class="ach-info">
+      <div class="ach-name">${ach.name} — Уровень ${h.level}</div>
+      <div class="ach-desc">До след. уровня: ${h.totalAccumulated || 0} / ${neededKills} убийств</div>
+      <div class="ach-desc" style="font-size:10px;opacity:0.7;">Всего убийств: ${h.totalKills || 0}</div>
+      <div class="ach-progress"><div class="ach-progress-fill" style="width:${percent}%;background:linear-gradient(90deg,#ef4444,#fbbf24)"></div></div>
+      <button class="ach-play-btn" onclick="event.stopPropagation(); window.openGame('override77')">🎮 Играть</button>
+    </div>
+    <div class="ach-xp" style="color:#ef4444;background:rgba(239,68,68,0.15)">+${info.xp}</div>
+  `;
   grid.appendChild(el);
 }
 
@@ -353,9 +353,6 @@ function renderStats() {
   const ach = document.getElementById('achCountHeader'); if (ach) ach.textContent = text;
 }
 
-// ============================================
-// ДОСТИЖЕНИЯ
-// ============================================
 function checkLevelAchievements() {
   const s = getState();
   if (!s) return;
@@ -462,7 +459,6 @@ function checkHitman() {
   const s = getState();
   if (!s) return;
   if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
-  // 👇 1000_kills
   if (s.hitman.totalKills >= 1000) unlockAch('1000_kills');
   const h = s.hitman;
   if (h.totalAccumulated === undefined) h.totalAccumulated = 0;
@@ -487,26 +483,14 @@ function checkHitman() {
   }
 }
 
-// ============================================
-// 👇 ОБРАБОТЧИКИ POSTMESSAGE ОТ ИГР
-// ============================================
+// 👇 ОБРАБОТЧИКИ POSTMESSAGE
 window.addEventListener('message', (e) => {
   if (!e.data || !e.data.type) return;
   const s = getState();
   if (!s) return;
   const t = e.data.type;
   const unlock = window.unlockAch || function(){};
-// 👇 BOSS_RUSH от Robo-Cleaner
-window.addEventListener('message', (e) => {
-  if (!e.data || e.data.type !== 'robo_boss_win') return;
-  const s = getState();
-  if (!s) return;
-  if (e.data.streak >= 5) {
-    if (typeof window.unlockAch === 'function') window.unlockAch('boss_rush');
-  }
-});
 
-  // 💀 HITMAN — убийство в OVERRIDE 77
   if (t === 'override77_kill') {
     if (!s.hitman) s.hitman = { level: 1, totalAccumulated: 0, totalKills: 0 };
     s.hitman.totalKills = (s.hitman.totalKills || 0) + 1;
@@ -516,7 +500,6 @@ window.addEventListener('message', (e) => {
     return;
   }
 
-  // 🧟 VIRUS_TAMER — все зомби в «Последнем Рубеже»
   if (t === 'lastfrontier_all_zombies') {
     if (e.data.total) s.lastfrontierZombies = e.data.total;
     if (typeof window.saveState === 'function') window.saveState();
@@ -524,7 +507,6 @@ window.addEventListener('message', (e) => {
     return;
   }
 
-  // 🛡️ NO_DAMAGE_WIN — победа без потери HP
   if (t === 'no_damage_win') {
     if (!s.noDamageWins) s.noDamageWins = [];
     const gid = e.data.gameId || 'unknown';
@@ -536,14 +518,12 @@ window.addEventListener('message', (e) => {
     return;
   }
 
-  // ⚡ SPEEDRUN_1MIN — Прорыв 1 за < 5 мин
   if (t === 'speedrun_1min') {
     const time = Number(e.data.time) || 0;
     if (time > 0 && time < 300) unlock('speedrun_1min');
     return;
   }
 
-  // 🩸 ALL_ENDINGS_DOM2 — все концовки ДОМ 2
   if (t === 'dom2_ending') {
     if (!s.dom2Endings) s.dom2Endings = [];
     const endingId = e.data.endingId;
@@ -555,13 +535,11 @@ window.addEventListener('message', (e) => {
     return;
   }
 
-  // 🃏 PERFECT_DECK — 5 карт 10 ур. в «Последнем Рубеже»
   if (t === 'lastfrontier_perfect_deck') {
     unlock('perfect_deck');
     return;
   }
 
-  // 👹/🧟 BOSS_WIN — босс «Последнего Рубежа» побеждён
   if (t === 'lastfrontier_boss_win') {
     if (!s.lastfrontierBosses) s.lastfrontierBosses = [];
     const bossId = e.data.bossId;
@@ -577,7 +555,6 @@ window.addEventListener('message', (e) => {
     return;
   }
 
-  // 🗺️ OVERRIDE_MAP — карта сыграна в OVERRIDE 77
   if (t === 'override77_map') {
     if (!s.overrideMapsPlayed) s.overrideMapsPlayed = [];
     const mapId = e.data.mapId;
@@ -588,11 +565,14 @@ window.addEventListener('message', (e) => {
     }
     return;
   }
+
+  if (t === 'robo_boss_win') {
+    if (e.data.streak >= 5) unlock('boss_rush');
+    return;
+  }
 });
 
-// ============================================
 // ЭКСПОРТ / ИМПОРТ / СБРОС
-// ============================================
 async function exportProfile() {
   const s = getState();
   if (!s) return;
@@ -722,9 +702,7 @@ async function resetAllData() {
   alert(dbDeleted ? '🔄 Всё сброшено, аккаунт удалён из базы.' : '🔄 Локальный прогресс сброшен.');
 }
 
-// ============================================
 // КЕЙСЫ
-// ============================================
 const CASE_REWARDS = {
   common: [{icon:'💰',name:'+100 XP',type:'xp',value:100},{icon:'💵',name:'+150 XP',type:'xp',value:150},{icon:'💎',name:'+200 XP',type:'xp',value:200}],
   rare: [{icon:'💠',name:'+400 XP',type:'xp',value:400},{icon:'🎯',name:'+500 XP',type:'xp',value:500},{icon:'📈',name:'+600 XP',type:'xp',value:600}],
@@ -810,9 +788,7 @@ function initCasesUI() {
   if (weeklyBtn) weeklyBtn.addEventListener('click', () => openCase('weekly'));
 }
 
-// ============================================
 // ЗАДАНИЯ
-// ============================================
 function checkDailyQuests() {
   const s = getState(); if (!s) return;
   const today = window.todayStr ? window.todayStr() : new Date().toISOString().slice(0, 10);
@@ -927,9 +903,7 @@ function showDailyBonusToast() {
   setTimeout(() => { toast.style.transition = 'all 0.5s ease'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 4000);
 }
 
-// ============================================
 // БУДИЛЬНИК
-// ============================================
 const alarmModal = document.getElementById('alarmModal');
 const alarmCloseBtn = document.getElementById('alarmCloseBtn');
 const alarmToggleBtn = document.getElementById('alarmToggleBtn');
@@ -1042,9 +1016,7 @@ function cancelAlarm() {
 if (alarmStartBtn) alarmStartBtn.addEventListener('click', startAlarm);
 if (alarmCancelBtn) alarmCancelBtn.addEventListener('click', cancelAlarm);
 
-// ============================================
 // ЭКСПОРТ
-// ============================================
 window.LEVEL_TITLES = LEVEL_TITLES;
 window.PARADOX = PARADOX;
 window.HITMAN = HITMAN;
@@ -1097,4 +1069,4 @@ window.cancelAlarm = cancelAlarm;
 window.updateAlarmDisplay = updateAlarmDisplay;
 window.alarmRing = alarmRing;
 
-console.log('[profile.js] Загружено v27.0.0 + NEW_ACH:', ACHIEVEMENTS.length, 'достижений (', ACHIEVEMENTS.filter(a=>a.type!=='tutorial').length, 'настоящих,', ACHIEVEMENTS.filter(a=>a.type==='tutorial').length, 'туториал)');
+console.log('[profile.js] Загружено v27.1.0 + ACH_BUTTONS:', ACHIEVEMENTS.length, 'достижений');
